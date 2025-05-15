@@ -22,15 +22,15 @@ def get() -> dict:
         None
     """
     return {
-        "host": env.getstr("PLATFORM_HOST", default="localhost"),
-        "port": env.getint("PLATFORM_PORT", default=0),
+        "host": env.getstr("ITENTIAL_MCP_PLATFORM_HOST", default="localhost"),
+        "port": env.getint("ITENTIAL_MCP_PLATFORM_PORT", default=0),
 
-        "use_tls": not env.getbool("PLATFORM_DISABLE_TLS", default=False),
-        "verify": not env.getbool("PLATFORM_DISABLE_VERFITY", default=False),
+        "use_tls": not env.getbool("ITENTIAL_MCP_PLATFORM_DISABLE_TLS", default=False),
+        "verify": not env.getbool("ITENTIAL_MCP_PLATFORM_DISABLE_VERFITY", default=False),
 
-        "user": env.getstr("PLATFORM_USER", default="admin"),
-        "password": env.getstr("PLATFORM_PASSWORD", default="admin"),
+        "user": env.getstr("ITENTIAL_MCP_PLATFORM_USER", default="admin"),
+        "password": env.getstr("ITENTIAL_MCP_PLATFORM_PASSWORD", default="admin"),
 
-        "client_id": env.getstr("PLATFORM_CLIENT_ID"),
-        "client_secret": env.getstr("PLATFORM_CLIENT_SECRET"),
+        "client_id": env.getstr("ITENTIAL_MCP_PLATFORM_CLIENT_ID"),
+        "client_secret": env.getstr("ITENTIAL_MCP_PLATFORM_CLIENT_SECRET"),
     }
