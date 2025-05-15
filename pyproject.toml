@@ -1,0 +1,74 @@
+[project]
+name = "itential-mcp"
+description = "Itential MCP Server"
+
+dependencies = [
+    "fastmcp>=2.2.10",
+    "ipsdk>=0.1.1",
+]
+
+dynamic = [ "version" ]
+
+requires-python = ">=3.10"
+readme = "README.md"
+license = "Apache-2.0"
+
+keywords = [
+    "mcp",
+    "mcp server",
+    "mcp client",
+    "model context protocol",
+    "fastmcp",
+    "llm",
+    "agent",
+]
+
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
+]
+
+[[project.authors]]
+name = "Itential"
+email = "opensource@itential.com"
+
+[project.urls]
+Homepage = "https://itential.com"
+Repository = "https://github.com/itential/itential-mcp"
+Documentation = "https://github.com/itential/itential-mcp"
+
+[project.scripts]
+itential-mcp = "itential_mcp.cli:run"
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning>=0.7.0"]
+build-backend = "hatchling.build"
+
+[tool.setuptools.dynamic]
+version = { attr = "itential_mcp.metadata.version" } 
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+vcs = "git"
+style = "pep440"
+bump = true
+fallback-version = "0.0.0"
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-asyncio",
+    "q",
+    "ruff",
+    "build"
+]
+
+
