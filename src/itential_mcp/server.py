@@ -70,17 +70,18 @@ def register_tools(mcp: FastMCP) -> None:
 
     # Import the modules, add them to globals and mcp
     for module_name in module_files:
-        spec = importlib.util.spec_from_file_location(module_name, os.path.join(path, f"{module_name}.py"))
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+        if not module_name.startswith("_"):
+            spec = importlib.util.spec_from_file_location(module_name, os.path.join(path, f"{module_name}.py"))
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
 
-        # Add the module to globals
-        globals()[module_name] = module
+            # Add the module to globals
+            globals()[module_name] = module
 
-        # Inspect the module to retreive all of the functions
-        for name, f in inspect.getmembers(module, inspect.isfunction):
-            if not name.startswith("_"):
-                mcp.add_tool(f)
+            # Inspect the module to retreive all of the functions
+            for name, f in inspect.getmembers(module, inspect.isfunction):
+                if not name.startswith("_"):
+                    mcp.add_tool(f)
 
 
 async def run(
@@ -122,6 +123,7 @@ async def run(
             raise ValueError("invalid setting for log_level")
 
 
+
     # Initialize FastMCP server
     # Available keyword args:
     #   - name
@@ -144,7 +146,11 @@ async def run(
         log_level=log_level.upper(),
     )
 
-    register_tools(mcp)
+    try:
+        register_tools(mcp)
+    except Exception as exc:
+        print(f"ERROR: failed to  import tool: {str(exc)}", file=sys.stderr)
+        sys.exit(1)
 
     kwargs = {
         "transport": transport,
@@ -160,5 +166,6 @@ async def run(
         await mcp.run_async(**kwargs)
     except KeyboardInterrupt:
         sys.exit(0)
-    except Exception:
+    except Exception as exc:
+        print(f"ERROR: failed to  import tool: {str(exc)}", file=sys.stderr)
         sys.exit(1)
