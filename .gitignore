@@ -5,9 +5,15 @@ build/
 dist/
 wheels/
 *.egg-info
+coverage.*
+htmlcov/
+.pytest_cache/
+.coverage
 
 # Virtual environments
 .venv
 
 # dotenv 
 .env
+
+
