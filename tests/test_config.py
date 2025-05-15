@@ -32,14 +32,14 @@ class TestConfig:
 
     def test_config_with_env_vars(self):
         os.environ.update({
-            "PLATFORM_HOST": "platform.local",
-            "PLATFORM_PORT": "443",
-            "PLATFORM_DISABLE_TLS": "true",
-            "PLATFORM_DISABLE_VERFITY": "true",
-            "PLATFORM_USER": "itential",
-            "PLATFORM_PASSWORD": "secret",
-            "PLATFORM_CLIENT_ID": "client123",
-            "PLATFORM_CLIENT_SECRET": "secret456"
+            "ITENTIAL_MCP_PLATFORM_HOST": "platform.local",
+            "ITENTIAL_MCP_PLATFORM_PORT": "443",
+            "ITENTIAL_MCP_PLATFORM_DISABLE_TLS": "true",
+            "ITENTIAL_MCP_PLATFORM_DISABLE_VERFITY": "true",
+            "ITENTIAL_MCP_PLATFORM_USER": "itential",
+            "ITENTIAL_MCP_PLATFORM_PASSWORD": "secret",
+            "ITENTIAL_MCP_PLATFORM_CLIENT_ID": "client123",
+            "ITENTIAL_MCP_PLATFORM_CLIENT_SECRET": "secret456"
         })
 
         expected = {
