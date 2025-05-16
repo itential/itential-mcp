@@ -1,7 +1,39 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from ipsdk.platform import AsyncPlatform
+
 from fastmcp import Context
+
+
+async def _get_group_id_from_name(
+    client: AsyncPlatform,
+    name: str
+) -> str:
+    """
+    Get the group ID for the group name
+
+    This function will attempt to find the group ID for the group name
+    specified in the `name` argument.   If the group exists, the group
+    id will be returned to the calling function.  If the group does not
+    exist, this function will raise an exception.
+
+    Args:
+        client (AsyncPlatform): An instance of `ipsdk.platform.AsyncPlatform`
+        name (str): The group name translate to group ID
+
+    Returns:
+        str: The group ID associated with the group name
+
+    Raises:
+        ValueErorr: If the group name is not found on the server
+    """
+    res = client.get("/authorization/groups")
+    for item in res.json()["results"]:
+        if item["name"] == name:
+            return item["_id"]
+    else:
+        raise ValueError(f"group `{name}` not found")
 
 
 async def get_workflows(
@@ -20,6 +52,8 @@ async def get_workflows(
     conclusion of a successful run.
 
     Args:
+        ctx (Context): The FastMCP Context object
+
         include_projects (bool): Include all workflows associated with
             projects in the return data.  If this value is set to True
             the list of projects will include global workflows and workflows
@@ -37,7 +71,7 @@ async def get_workflows(
     Raises:
         None
     """
-    await ctx.info("insidex get_workflows(...)")
+    await ctx.info("inside get_workflows(...)")
 
     client = ctx.request_context.lifespan_context.get("client")
 
@@ -68,3 +102,69 @@ async def get_workflows(
         skip += limit
 
     return results
+
+
+async def start_workflow(
+    ctx: Context,
+    name: str,
+    description: str | None = None,
+    variables: dict | None = None,
+    groups: list | None = None,
+) -> dict:
+    """
+    Start a workflow
+
+    Itential Platform provides a set of workflows that can be run from the
+    server.  This function provides a way to start workflow.  It will
+    attempt to start the workflow specified by the `name` argument.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+        name (str): The name of the workflow to start
+        description (str): A short summary description that describes this
+            particular workflow run
+        variables: (dict): One or more variables to inject into the workflow
+            when it is started
+        groups (list): A list of groups that have access to the running
+            workflow.  This function will handle translating the list
+            of group names to group ids.
+
+    Returns:
+        dict: A Python dict object that is the job document from Itential
+            Platform workflow engine
+
+    Raises:
+        ValueError: Raised if one of the specified groups does not exist
+            on the server
+        ValueError: Raises if the workflow specified by `name` does not
+            exist on the server
+    """
+    await ctx.info("inside get_workflows(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    group_ids = list()
+    if groups is not None:
+        try:
+            for item in groups:
+                group_ids.append(_get_group_id_from_name(client, item))
+        except ValueError:
+            await ctx.error(f"group `{item}` does not exist")
+            raise
+
+    body = {
+        "workflow": name,
+        "options": {
+            "description": description,
+            "type": "automation",
+            "variables": {} if variables is None else variables,
+            "groups": group_ids,
+        }
+    }
+
+    res = await client.post(
+        "/operations-manager/jobs/start",
+        json=body
+    )
+
+    return res.json()
