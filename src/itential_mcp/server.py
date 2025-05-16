@@ -13,9 +13,7 @@ from typing import Any, Literal
 
 from fastmcp import FastMCP
 
-import ipsdk
-
-from . import config
+from . import client
 
 
 @asynccontextmanager
@@ -36,12 +34,9 @@ async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
     Raises:
         None
     """
-    kwargs = config.get()
-    kwargs["want_async"] = True
-
     async with AsyncExitStack():
         yield {
-            "client": ipsdk.platform_factory(**kwargs)
+            "client": client.PlatformClient()
         }
 
 
