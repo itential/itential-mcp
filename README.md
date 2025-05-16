@@ -1,4 +1,4 @@
-# itenial-mcp
+# itential-mcp
 
 The `itential-mcp` application provides a MCP server for connecting to Itential
 Platform.  The MCP server exposes a set of tools that can be attached to an LLM
