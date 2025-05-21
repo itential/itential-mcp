@@ -55,12 +55,14 @@ Build and run as a container:
 make container
 
 # Run the container with environment variables
-docker run -e ITENTIAL_MCP_TRANSPORT=sse \
-             -e ITENTIAL_MCP_PLATFORM_HOST=platform.example.com \
-             -e ITENTIAL_MCP_PLATFORM_USER=admin \
-             -e ITENTIAL_MCP_PLATFORM_PASSWORD=password \
-             -p 8000:8000 \
-             itential-mcp:devel
+docker run -p 8000:8000 \
+  --env ITENTIAL_MCP_TRANSPORT=sse \
+  --env ITENTIAL_MCP_HOST=0.0.0.0 \
+  --env ITENTIAL_MCP_PORT=8000 \
+  --env ITENTIAL_MCP_PLATFORM_HOST=URL \
+  --env ITENTIAL_MCP_PLATFORM_CLIENT_ID=CLIENT_ID \
+  --env ITENTIAL_MCP_PLATFORM_CLIENT_SECRET=CLIENT_SECRET \
+  itential-mcp:devel
 ```
 
 ## 📝 Basic Usage
