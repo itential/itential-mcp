@@ -67,7 +67,7 @@ docker run -e ITENTIAL_MCP_TRANSPORT=sse \
 Start the MCP server with default settings _(stdio transport)_:
 
 ```bash
-itential-mcp --transport sse --host 0.0.0.0 --port 8000
+itential-mcp --transport --host 0.0.0.0 --port 8000
 ```
 
 Start with SSE transport:
