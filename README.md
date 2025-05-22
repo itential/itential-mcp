@@ -80,25 +80,26 @@ itential-mcp --transport sse --host 0.0.0.0 --port 8000
 
 ### Server Options
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--transport` | Transport protocol (stdio or sse) | stdio |
-| `--host` | Host address to listen on | localhost |
-| `--port` | Port to listen on | 8000 |
-| `--log-level` | Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL) | INFO |
+| Option        | Description                                       | Default   |
+|---------------|---------------------------------------------------|-----------|
+| `--transport` | Transport protocol (stdio or sse)                 | stdio     |
+| `--host`      | Host address to listen on                         | localhost |
+| `--port`      | Port to listen on                                 | 8000      |
+| `--log-level` | Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL) | INFO      |
 
 ### Platform Configuration
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--platform-host` | Itential Platform hostname | localhost |
-| `--platform-port` | Platform port (0 = auto-detect) | 0 |
-| `--platform-disable-tls` | Disable TLS for platform connection | false |
-| `--platform-disable-verify` | Disable certificate verification | false |
-| `--platform-user` | Username for authentication | admin |
-| `--platform-password` | Password for authentication | admin |
-| `--platform-client-id` | OAuth client ID | none |
-| `--platform-client-secret` | OAuth client secret | none |
+| Option                      | Description                         | Default   |
+|-----------------------------|-------------------------------------|-----------|
+| `--platform-host`           | Itential Platform hostname          | localhost |
+| `--platform-port`           | Platform port (0 = auto-detect)     | 0         |
+| `--platform-disable-tls`    | Disable TLS for platform connection | false     |
+| `--platform-disable-verify` | Disable certificate verification    | false     |
+| `--platform-timeout`        | Connection timeout                  | 30        |
+| `--platform-user`           | Username for authentication         | admin     |
+| `--platform-password`       | Password for authentication         | admin     |
+| `--platform-client-id`      | OAuth client ID                     | none      |
+| `--platform-client-secret`  | OAuth client secret                 | none      |
 
 ### Environment Variables
 
@@ -136,22 +137,22 @@ from fastmcp import Context
 async def my_new_tool(ctx: Context) -> dict:
     """
     Description of what the tool does
-    
+
     Args:
         ctx (Context): The FastMCP Context object
-        
+
     Returns:
         dict: The response data
-        
+
     Raises:
         None
     """
     # Get the platform client
     client = ctx.request_context.lifespan_context.get("client")
-    
+
     # Make API requests
     res = await client.get("/your/api/path")
-    
+
     # Return JSON-serializable results
     return res.json()
 ```

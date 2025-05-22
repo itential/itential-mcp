@@ -26,7 +26,8 @@ class TestConfig:
             "user": "admin",
             "password": "admin",
             "client_id": None,
-            "client_secret": None
+            "client_secret": None,
+            "timeout": 30,
         }
         assert get() == expected
 
@@ -39,7 +40,8 @@ class TestConfig:
             "ITENTIAL_MCP_PLATFORM_USER": "itential",
             "ITENTIAL_MCP_PLATFORM_PASSWORD": "secret",
             "ITENTIAL_MCP_PLATFORM_CLIENT_ID": "client123",
-            "ITENTIAL_MCP_PLATFORM_CLIENT_SECRET": "secret456"
+            "ITENTIAL_MCP_PLATFORM_CLIENT_SECRET": "secret456",
+            "ITENTIAL_MCP_PLATFORM_TIMEOUT": "123"
         })
 
         expected = {
@@ -50,7 +52,8 @@ class TestConfig:
             "user": "itential",
             "password": "secret",
             "client_id": "client123",
-            "client_secret": "secret456"
+            "client_secret": "secret456",
+            "timeout": 123
         }
 
         assert get() == expected

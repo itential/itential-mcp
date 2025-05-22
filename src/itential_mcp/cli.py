@@ -110,6 +110,11 @@ def parse_args(args: Sequence) -> dict[str, Any]:
         help="Client secret to use when authenticating to the server with OAuth",
     )
 
+    platform_group.add_argument(
+        "--platform-timeout",
+        help="Configure the connection timeout in seconds (default=30)",
+    )
+
     args = parser.parse_args(args=args)
 
     kwargs = {}
