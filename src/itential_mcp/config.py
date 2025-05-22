@@ -26,7 +26,7 @@ def get() -> dict:
         "port": env.getint("ITENTIAL_MCP_PLATFORM_PORT", default=0),
 
         "use_tls": not env.getbool("ITENTIAL_MCP_PLATFORM_DISABLE_TLS", default=False),
-        "verify": not env.getbool("ITENTIAL_MCP_PLATFORM_DISABLE_VERFITY", default=False),
+        "verify": not env.getbool("ITENTIAL_MCP_PLATFORM_DISABLE_VERIFY", default=False),
         "timeout": env.getint("ITENTIAL_MCP_PLATFORM_TIMEOUT", default=30),
 
         "user": env.getstr("ITENTIAL_MCP_PLATFORM_USER", default="admin"),
