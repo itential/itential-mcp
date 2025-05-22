@@ -59,4 +59,4 @@ premerge: clean lint test
 # Build a container image that include the MCP server.  The server will start
 # when the container is run and can be configured using environment variables
 container:
-	${CONTAINER_RUNTIME} build ${PWD} --tag ${CONTAINER_TAG}
+	${CONTAINER_RUNTIME} build ${PWD} --file Containerfile --tag ${CONTAINER_TAG}

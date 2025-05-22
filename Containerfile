@@ -13,21 +13,18 @@ ENV UV_COMPILE_BYTECODE=1
 # Copy from the cache instead of linking since it's a mounted volume
 ENV UV_LINK_MODE=copy
 
+COPY pyproject.toml .
+COPY README.md .
+
 # Generate uv lock file
-RUN --mount=type=bind,source=pyproject.toml,target=pyproject.toml  \
-    --mount=type=bind,source=README.md,target=README.md,relabel=shared  \
-    uv lock
+RUN uv lock
 
 # Install the project's dependencies using the lockfile
-RUN --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    --mount=type=bind,source=uv.lock,target=uv.lock,relabel=shared \
-    uv sync --frozen --no-install-project --no-dev --no-editable
+RUN uv sync --frozen --no-install-project --no-dev --no-editable
 
 # Then, add the rest of the project source code and install it
 ADD . /app
-RUN --mount=type=bind,source=uv.lock,target=uv.lock \
-    uv sync --frozen --no-dev --no-editable
-
+RUN uv sync --frozen --no-dev --no-editable
 
 # Create the final container with the application installed
 FROM python:3.10-slim
