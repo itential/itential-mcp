@@ -11,6 +11,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from . import server
+from . import env
 
 
 def parse_args(args: Sequence) -> dict[str, Any]:
@@ -121,15 +122,21 @@ def parse_args(args: Sequence) -> dict[str, Any]:
 
     for key, value in dict(args._get_kwargs()).items():
         envkey = f"ITENTIAL_MCP_{key}".upper()
+
         if key.startswith("platform"):
             if value is not None:
                 if envkey not in os.environ:
                     os.environ[envkey] = str(value)
         else:
-            if envkey in os.environ:
-                kwargs[key] = os.environ[envkey]
+            if isinstance(value, bool):
+                v = env.getbool(envkey, default=value)
+            elif isinstance(value, int):
+                v = env.getint(envkey, default=value)
+            elif isinstance(value, str):
+                v = env.getstr(envkey, default=value)
             else:
-                kwargs[key] = value
+                v = value
+            kwargs[key] = v
 
     return kwargs
 
