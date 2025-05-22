@@ -68,5 +68,5 @@ class TestCLI:
         parsed = parse_args(args)
 
         assert parsed["transport"] == "sse"
-        assert parsed["port"] == "1234"  # Note: string because taken from env
+        assert parsed["port"] == 1234
 
