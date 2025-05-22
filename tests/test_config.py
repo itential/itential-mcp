@@ -36,7 +36,7 @@ class TestConfig:
             "ITENTIAL_MCP_PLATFORM_HOST": "platform.local",
             "ITENTIAL_MCP_PLATFORM_PORT": "443",
             "ITENTIAL_MCP_PLATFORM_DISABLE_TLS": "true",
-            "ITENTIAL_MCP_PLATFORM_DISABLE_VERFITY": "true",
+            "ITENTIAL_MCP_PLATFORM_DISABLE_VERIFY": "true",
             "ITENTIAL_MCP_PLATFORM_USER": "itential",
             "ITENTIAL_MCP_PLATFORM_PASSWORD": "secret",
             "ITENTIAL_MCP_PLATFORM_CLIENT_ID": "client123",
@@ -57,4 +57,3 @@ class TestConfig:
         }
 
         assert get() == expected
-
