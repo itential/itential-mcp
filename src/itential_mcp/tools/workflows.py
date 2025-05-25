@@ -1,6 +1,8 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+import urllib.parse
+
 from ipsdk.platform import AsyncPlatform
 
 from fastmcp import Context
@@ -36,10 +38,46 @@ async def _get_group_id_from_name(
         raise ValueError(f"group `{name}` not found")
 
 
+async def describe_workflow(
+    ctx: Context,
+    name: str
+) -> dict:
+    """
+    Describe a workflow in detail
+
+    Workflows can be uniquely described by the workflow name.  The `name`
+    argument is used to find the specified workflow and return the entire
+    workflow document.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+        name: (str): The name of the specific worklow to retrieve from the
+            Itential Platform server.  This value represents the name of the
+            workflow as it is seen in the UI.
+
+        Returns:
+            dict: A Python dict object that describes the workflow specified
+                by the `name` argument
+
+    Raises:
+        None
+    """
+    await ctx.info("inside describe_workflow(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    res = await client.get(
+        urllib.parse.quote(f"/automation-studio/workflows/detailed/{name}")
+    )
+
+    return res.json()
+
+
+
 async def get_workflows(
     ctx: Context,
-    name: str | None = None,
-    include_projects: bool = False
+    include_projects: bool = False,
 ) -> list[dict]:
     """
     Return a list of workflows from an Itential Platform server
@@ -59,10 +97,6 @@ async def get_workflows(
             the list of projects will include global workflows and workflows
             associated with projects.  If this value is set to False it will
             only return global workflows.  The default value is False
-
-        name: (str): The name of the specific worklow to retrieve from the
-            Itential Platform server.  This value represents the name of the
-            workflow as it is seen in the UI.
 
     Returns:
         list[dict]: A Python list of dict objects that represent the available
@@ -85,16 +119,23 @@ async def get_workflows(
 
     params["exclude-project-members"] = include_projects
 
-    if name is not None:
-        params["equals[name]"] = name
-
     results = list()
 
     while True:
         res = await client.get("/automation-studio/workflows", params=params)
 
         data = res.json()
-        results.extend(data["items"])
+
+        for item in data.get("items") or list():
+            results.append({
+                "_id": item.get("_id"),
+                "created": item.get("created"),
+                "created_by": item.get("created_by"),
+                "updated": item.get("last_updated"),
+                "updated_by": item.get("last_updated_by"),
+                "name": item.get("name"),
+                "description": item.get("description")
+            })
 
         if len(results) == data["total"]:
             break
