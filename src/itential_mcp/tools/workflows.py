@@ -76,9 +76,8 @@ async def get_workflows(
     client = ctx.request_context.lifespan_context.get("client")
 
     limit = 100
-    skip = 0
 
-    params = {}
+    params = {"limit": limit}
 
     if include_projects is None:
         include_projects = False
@@ -88,9 +87,12 @@ async def get_workflows(
     if name is not None:
         params["equals[name]"] = name
 
+    skip = 0
     results = list()
 
     while True:
+        params["skip"] = skip
+
         res = await client.get("/automation-studio/workflows", params=params)
 
         data = res.json()
