@@ -36,7 +36,7 @@ async def get_devices(ctx: Context) -> list[dict]:
         body = {
             "options": {
                 "order": "ascending",
-                "sort": {"name": 1},
+                "sort": [{"name": 1}],
                 "start": start,
                 "limit": limit
 
@@ -58,9 +58,3 @@ async def get_devices(ctx: Context) -> list[dict]:
         start += limit
 
     return results
-
-
-    res = await client.post("/configuration_manager/devices")
-
-    return res.json()
-
