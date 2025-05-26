@@ -113,6 +113,8 @@ def parse_args(args: Sequence) -> dict[str, Any]:
 
     platform_group.add_argument(
         "--platform-timeout",
+        type=int,
+        default=30,
         help="Configure the connection timeout in seconds (default=30)",
     )
 
