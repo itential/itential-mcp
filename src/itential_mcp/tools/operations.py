@@ -2,7 +2,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from fastmcp import Context
-from typing import Optional, Dict, List, Any
+from typing import Optional, Dict, Any
 import asyncio
 from fastmcp.exceptions import FastMCPError
 
