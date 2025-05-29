@@ -58,7 +58,7 @@ class PlatformClient(object):
         Send the request to the server and return the response
 
         Args:
-            method (str): The HTTP method to invoke.  This should be one of
+            method (str): The HTTP method to invoke. This should be one of
                 "GET", "POST", "PUT", "DELETE"
 
             path (str): The full URL path to send the reques to
@@ -87,7 +87,7 @@ class PlatformClient(object):
         Send a HTTP GET request to the server
 
         Args:
-            path (str): The full path to send the HTTP request o
+            path (str): The full path to send the HTTP request to
 
             params (dict): A Python dict object to be converted to a query
                 string and appended to the path
@@ -112,7 +112,7 @@ class PlatformClient(object):
         Send a HTTP POST request to the server
 
         Args:
-            path (str): The full path to send the HTTP request o
+            path (str): The full path to send the HTTP request to
 
             params (dict): A Python dict object to be converted to a query
                 string and appended to the path
@@ -139,7 +139,7 @@ class PlatformClient(object):
         """
         Send a HTTP PUT request to the server
         Args:
-            path (str): The full path to send the HTTP request o
+            path (str): The full path to send the HTTP request to
 
             params (dict): A Python dict object to be converted to a query
                 string and appended to the path
@@ -164,7 +164,7 @@ class PlatformClient(object):
         """
         Send a HTTP DELETE request to the server
         Args:
-            path (str): The full path to send the HTTP request o
+            path (str): The full path to send the HTTP request to
 
             params (dict): A Python dict object to be converted to a query
                 string and appended to the path

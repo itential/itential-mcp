@@ -19,7 +19,7 @@ def parse_args(args: Sequence) -> dict[str, Any]:
     Parses any arguments
 
     This function will parse the arguments identified by the `args` argument
-    and return a Namespace object with the values.   Typically this is used
+    and return a Namespace object with the values. Typically this is used
     to parse command line arguments passed when the application starts.
 
     Args:

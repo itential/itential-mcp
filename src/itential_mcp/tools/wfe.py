@@ -9,7 +9,7 @@ async def get_job_metrics(ctx: Context) -> list[dict]:
     Get the aggregate job metrics from workflow engine
 
     The Itential Platform workflow engine maintains records that aggregate
-    workflow job metrics over the life of automation executions.  This
+    workflow job metrics over the life of automation executions. This
     function will return the aggregate job metrics for automations that
     have been executed by Itential Platform.
 
@@ -59,7 +59,7 @@ async def get_task_metrics(ctx: Context) -> list[dict]:
     Get the aggregate task metrics from workflow engine
 
     The Itential Platform workflow engine maintains records that aggregate
-    workflow task metrics over the life of automation executions.  This
+    workflow task metrics over the life of automation executions. This
     function will return the aggregate task metrics for automations that
     have been executed by Itential Platform.
 
