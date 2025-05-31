@@ -16,8 +16,8 @@ async def _get_group_id_from_name(
     Get the group ID for the group name
 
     This function will attempt to find the group ID for the group name
-    specified in the `name` argument.   If the group exists, the group
-    id will be returned to the calling function.  If the group does not
+    specified in the `name` argument. If the group exists, the group
+    id will be returned to the calling function. If the group does not
     exist, this function will raise an exception.
 
     Args:
@@ -45,7 +45,7 @@ async def describe_workflow(
     """
     Describe a workflow in detail
 
-    Workflows can be uniquely described by the workflow name.  The `name`
+    Workflows can be uniquely described by the workflow name. The `name`
     argument is used to find the specified workflow and return the entire
     workflow document.
 
@@ -53,7 +53,7 @@ async def describe_workflow(
         ctx (Context): The FastMCP Context object
 
         name: (str): The name of the specific worklow to retrieve from the
-            Itential Platform server.  This value represents the name of the
+            Itential Platform server. This value represents the name of the
             workflow as it is seen in the UI.
 
         Returns:
@@ -83,8 +83,8 @@ async def get_workflows(
     Return a list of workflows from an Itential Platform server
 
     Itential Platform workflows orchestrate services against infrastructure
-    and are identified by the "name" field in the object.   Workflows are
-    comprised of tasks which perform API calls to perform actions.  The
+    and are identified by the "name" field in the object. Workflows are
+    comprised of tasks which perform API calls to perform actions. The
     inputSchema defines the data required to start the workflow and the
     outputSchema defines the data structure the workflow can provide at the
     conclusion of a successful run.
@@ -93,10 +93,10 @@ async def get_workflows(
         ctx (Context): The FastMCP Context object
 
         include_projects (bool): Include all workflows associated with
-            projects in the return data.  If this value is set to True
+            projects in the return data. If this value is set to True
             the list of projects will include global workflows and workflows
-            associated with projects.  If this value is set to False it will
-            only return global workflows.  The default value is False
+            associated with projects. If this value is set to False it will
+            only return global workflows. The default value is False
 
     Returns:
         list[dict]: A Python list of dict objects that represent the available
@@ -157,8 +157,8 @@ async def start_workflow(
     """
     Start a workflow
 
-    Itential Platform provides a set of workflows that can be run from the
-    server.  This function provides a way to start workflow.  It will
+    Itential Platform provides a set of workflows that can be triggered via API.
+    This function provides a way to start a workflow. It will
     attempt to start the workflow specified by the `name` argument.
 
     Args:

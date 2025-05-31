@@ -10,7 +10,7 @@ async def get_devices(ctx: Context) -> list[dict]:
 
     Itential Platform will federate device information from multiple
     sources and make it available to workflows for performing tasks
-    against physical devices.  This function will query Itential Platform
+    against physical devices. This function will query Itential Platform
     and return all of the devices known to it.
 
     Args:
