@@ -6,12 +6,15 @@ from fastmcp import Context
 
 async def get_job_status(ctx: Context, job_id: str) -> dict:
     """
-    Get the status of a job from the Itential Platform
+    Get the status of a job from the Itential Platform. 
+    
+    This job_id can be obtained after launching a workflow or triggering 
+    an endpoint.
 
     Args:
         ctx (Context): The FastMCP Context object
 
-        job_id (str): The job identifier returned from thjob _id returned
+        job_id (str): The job identifier returned from the job _id returned
             for any triggered job
 
     Returns:
