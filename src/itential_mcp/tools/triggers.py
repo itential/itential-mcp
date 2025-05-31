@@ -9,10 +9,10 @@ async def get_trigger_endpoints(ctx: Context) -> list[dict]:
     Get trigger endpoints from the Itential Platform
 
     Itential Platform provides a mechanism to add one or more triggers to a
-    automation job in Operations Manager.  Different trigger types offer
-    different ways to launch a job.   This function will retrieve all of
+    automation job in Operations Manager. Different trigger types offer
+    different ways to launch a job. This function will retrieve all of
     the defined triggers of type `endpoint` and return them as a list
-    of dict objects
+    of dict objects.
 
     Args:
         ctx (Context): The FastMCP Context object

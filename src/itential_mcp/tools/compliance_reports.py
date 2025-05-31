@@ -15,7 +15,7 @@ async def describe_compliance_report(ctx: Context, report_id: str) -> dict:
 
     Returns:
         dict: A Python dict object that represents the output from running a
-            compliance report against devices in the infrastructure
+            compliance report (golden config) against devices in the infrastructure
 
     Raises:
         None

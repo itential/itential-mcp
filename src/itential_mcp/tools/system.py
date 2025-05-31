@@ -9,7 +9,7 @@ async def get_health(ctx: Context) -> dict:
     Get the Itential Platforms server health
 
     The server health response will return data about the overall health of
-    the server.  It will return keys that include the current server status
+    the server. It will return keys that include the current server status
     including details about memory and CPU utilization, version information
     for the server and dependencies as well as the system CPU architecture.
 
@@ -21,8 +21,8 @@ async def get_health(ctx: Context) -> dict:
     and dependent library versions.
 
     The health response also includes details about running applications and
-    adapters.  The `applications` key provides details about applications and
-    the `adapters` key provides detailsa about adapters.  This includes the
+    adapters. The `applications` key provides details about applications and
+    the `adapters` key provides detailsa about adapters. This includes the
     current running state of the application or adatper as well as the
     memory and CPU usage statistics and uptime.
 
