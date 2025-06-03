@@ -52,7 +52,7 @@ async def get_devices(ctx: Context) -> list[dict]:
 
         results.extend(data["list"])
 
-        if len(results) == data["total"]:
+        if len(results) == data["return_count"]:
             break
 
         start += limit
