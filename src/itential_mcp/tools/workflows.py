@@ -1,102 +1,51 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-import urllib.parse
-
-from ipsdk.platform import AsyncPlatform
+from datetime import datetime, timezone
 
 from fastmcp import Context
 
 
-async def _get_group_id_from_name(
-    client: AsyncPlatform,
-    name: str
-) -> str:
+async def _epoch_to_timestamp(ms: int) -> str:
     """
-    Get the group ID for the group name
-
-    This function will attempt to find the group ID for the group name
-    specified in the `name` argument. If the group exists, the group
-    id will be returned to the calling function. If the group does not
-    exist, this function will raise an exception.
-
-    Args:
-        client (AsyncPlatform): An instance of `ipsdk.platform.AsyncPlatform`
-        name (str): The group name translate to group ID
-
-    Returns:
-        str: The group ID associated with the group name
-
-    Raises:
-        ValueErorr: If the group name is not found on the server
     """
-    res = client.get("/authorization/groups")
-    for item in res.json()["results"]:
-        if item["name"] == name:
-            return item["_id"]
-    else:
-        raise ValueError(f"group `{name}` not found")
+    dt = datetime.fromtimestamp(ms / 1000, tz=timezone.utc)
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-async def describe_workflow(
-    ctx: Context,
-    name: str
-) -> dict:
+async def _account_id_to_username(ctx: Context, account_id: str) -> str:
     """
-    Describe a workflow in detail
-
-    Workflows can be uniquely described by the workflow name. The `name`
-    argument is used to find the specified workflow and return the entire
-    workflow document.
-
-    Args:
-        ctx (Context): The FastMCP Context object
-
-        name: (str): The name of the specific worklow to retrieve from the
-            Itential Platform server. This value represents the name of the
-            workflow as it is seen in the UI.
-
-        Returns:
-            dict: A Python dict object that describes the workflow specified
-                by the `name` argument
-
-    Raises:
-        None
     """
-    await ctx.info("inside describe_workflow(...)")
-
     client = ctx.request_context.lifespan_context.get("client")
-
-    res = await client.get(
-        urllib.parse.quote(f"/automation-studio/workflows/detailed/{name}")
-    )
-
-    return res.json()
+    res = await client.get(f"/authorization/accounts/{account_id}")
+    return res.json()["username"]
 
 
-
-async def get_workflows(
-    ctx: Context,
-    include_projects: bool = False,
-) -> list[dict]:
+async def get_workflows(ctx: Context) -> list[dict]:
     """
-    Return a list of workflows from an Itential Platform server
+    Get all API endpoint triggers from Itential Platform
 
-    Itential Platform workflows orchestrate services against infrastructure
-    and are identified by the "name" field in the object. Workflows are
-    comprised of tasks which perform API calls to perform actions. The
-    inputSchema defines the data required to start the workflow and the
-    outputSchema defines the data structure the workflow can provide at the
-    conclusion of a successful run.
+    This tool will retrieve all of the API endpoint triggers (routes) that
+    can be called by external services.  The tool will return a list of
+    triggers where each element in the list represents a callable API
+    route.
+
+    The fields available for each element include:
+
+        * _id: The unique identifier for this route
+        * name: The name of the trigger as configured in Platform
+        * description: Short description of the triggers function
+        * schema: The input schema for the launching the trigger based
+            on http://json-schema.org/draft-07/schema
+        * routeName: The name of the API used to start the endpoint
+        * created: ISO 8601 timestamp of when the trigger was created
+        * createdBy: Account name that created the trigger
+        * updated: ISO 8601 timestamp of when the trigger was last updated
+        * updatedBy: Account name that last updated the trigger
+        * lastExecuted: ISO 8601 timestamp this trigger was last executed
 
     Args:
         ctx (Context): The FastMCP Context object
-
-        include_projects (bool): Include all workflows associated with
-            projects in the return data. If this value is set to True
-            the list of projects will include global workflows and workflows
-            associated with projects. If this value is set to False it will
-            only return global workflows. The default value is False
 
     Returns:
         list[dict]: A Python list of dict objects that represent the available
@@ -114,32 +63,44 @@ async def get_workflows(
 
     params = {"limit": limit}
 
-    if include_projects is None:
-        include_projects = False
-
-    params["exclude-project-members"] = include_projects
-
     results = list()
 
     while True:
-        params["skip"] = skip
+        params.update({
+            "skip": skip,
+            "equalsField": "type",
+            "equals": "endpoint",
+            "enabled": True,
+        })
 
-        res = await client.get("/automation-studio/workflows", params=params)
+        res = await client.get(
+            "/operations-manager/triggers",
+            params=params,
+        )
 
         data = res.json()
 
-        for item in data.get("items") or list():
+        for item in data.get("data") or list():
+
+            if item.get("lastExecuted") is not None:
+                lastExecuted = _epoch_to_timestamp(item["lastExecuted"])
+            else:
+                lastExecuted = None
+
             results.append({
                 "_id": item.get("_id"),
-                "created": item.get("created"),
-                "created_by": item.get("created_by"),
-                "updated": item.get("last_updated"),
-                "updated_by": item.get("last_updated_by"),
                 "name": item.get("name"),
-                "description": item.get("description")
+                "description": item.get("description"),
+                "schema": item.get("schema"),
+                "routeName": item.get("routeName"),
+                "created": item.get("created"),
+                "createdBy": item.get("createdBy"),
+                "updated": item.get("lastUpdated"),
+                "updatedBy": item.get("lastUpdatedBy"),
+                "lastExecuted": lastExecuted,
             })
 
-        if len(results) == data["total"]:
+        if len(results) == data["metadata"]["total"]:
             break
 
         skip += limit
@@ -149,65 +110,82 @@ async def get_workflows(
 
 async def start_workflow(
     ctx: Context,
-    name: str,
-    description: str | None = None,
-    variables: dict | None = None,
-    groups: list | None = None,
+    route_name: str,
+    data: dict | None = None,
 ) -> dict:
     """
-    Start a workflow
+    Start an API endpoint trigger from Itential Platform
 
-    Itential Platform provides a set of workflows that can be triggered via API.
-    This function provides a way to start a workflow. It will
-    attempt to start the workflow specified by the `name` argument.
+    This tool is responsible for calling the API endpoint trigger based
+    on the `route` argument.  The `route` argument provides the name of
+    API endpoint trigger to call.
+
+    Optionally, the `data` argument can be used to provide data in the
+    body of the request when invoking the API endpoint route.
+
+    The tool will return an object that represents the started job
+    in Itential Platform.  It containes the following fields:
+
+        * _id: The unique identifier for this job
+        * name: The name of the API endpoint trigger
+        * description: Short description of the API endpoint trigger
+        * tasks: The full set of tasks to be executed
+        * created: ISO 8601 timestamp of when the trigger was created
+        * createdBy: Account name that created the trigger
+        * updated: ISO 8601 timestamp of when the trigger was last updated
+        * updatedBy: Account name that last updated the trigger
+        * status: The status of the job.  This will return one of the
+            following values: `error`, `complete`, `running`, `canceled`,
+            `incomplete` or `paused`
+        * metrics: Job metrics that include the job start time, job end
+            time and account
 
     Args:
         ctx (Context): The FastMCP Context object
-        name (str): The name of the workflow to start
-        description (str): A short summary description that describes this
-            particular workflow run
-        variables: (dict): One or more variables to inject into the workflow
-            when it is started
-        groups (list): A list of groups that have access to the running
-            workflow.  This function will handle translating the list
-            of group names to group ids.
+        route_name (str): The API endpoint route to start
+        data: (dict): Data to use in the request as input to the API route
 
     Returns:
-        dict: A Python dict object that is the job document from Itential
-            Platform workflow engine
+        dict: A Python dict object that represents the relevant data from
+            the job document API.
 
     Raises:
-        ValueError: Raised if one of the specified groups does not exist
-            on the server
-        ValueError: Raises if the workflow specified by `name` does not
-            exist on the server
+        None
+
     """
-    await ctx.info("inside get_workflows(...)")
+    await ctx.info("inside run_workflow(...)")
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    group_ids = list()
-    if groups is not None:
-        try:
-            for item in groups:
-                group_ids.append(_get_group_id_from_name(client, item))
-        except ValueError:
-            await ctx.error(f"group `{item}` does not exist")
-            raise
-
-    body = {
-        "workflow": name,
-        "options": {
-            "description": description,
-            "type": "automation",
-            "variables": {} if variables is None else variables,
-            "groups": group_ids,
-        }
-    }
-
     res = await client.post(
-        "/operations-manager/jobs/start",
-        json=body
+        f"/operations-manager/triggers/endpoint/{route_name}",
+        json=data,
     )
 
-    return res.json()
+    data = res.json()["data"]
+
+    metrics = {}
+
+    metrics_data = data.get("metrics") or {}
+
+    if metrics_data.get("start_time") is not None:
+        metrics["start_time"] = await _epoch_to_timestamp(metrics_data["start_time"])
+
+    if metrics_data.get("end_time") is not None:
+        metrics["end_time"] = await _epoch_to_timestamp(metrics_data["end_time"])
+
+    if metrics_data.get("user") is not None:
+        metrics["user"] = await _account_id_to_username(ctx, metrics_data["user"])
+
+    return {
+        "_id": data["_id"],
+        "name": data["name"],
+        "description": data["description"],
+        "tasks": data["tasks"],
+        "status": data["status"],
+        "metrics": metrics,
+        "updated": data["last_updated"],
+        "updated_by": data["last_updated_by"],
+        "created": data["created"],
+        "created_by": data["created_by"],
+    }
