@@ -125,6 +125,10 @@ The MCP server provides the following tools for interaction with Itential Platfo
 - `get_workflows`: List available workflows (with optional filtering)
 - `start_workflow`: Start a workflow with provided variables and permissions
 
+### Job Tools
+- `get_jobs`: List all jobs (with optional filtering)
+- `describe_job`: Get details about a specific job (based on job_id)
+
 ## 🛠️ Adding new Tools
 Adding a new tool is simple:
 
