@@ -34,24 +34,29 @@ async def get_job_metrics(ctx: Context) -> list[dict]:
     limit = 100
     skip = 0
 
+    params = {"limit": limit}
+
     results = list()
 
     while True:
-        res = await client.get("/workflow_engine/jobs/metrics")
+        params["skip"] = skip
+
+        res = await client.get(
+            "/workflow_engine/jobs/metrics",
+            params=params,
+        )
 
         data = res.json()
-        results.extend(data["results"])
+        elements = data.get("results") or list()
 
-        if len(results) == data["total"]:
+        results.extend(elements)
+
+        if len(elements) == data["total"]:
             break
 
         skip += limit
 
     return results
-
-    res = await client.get("/workflow_engine/jobs/metrics")
-
-    return res.json()
 
 
 async def get_task_metrics(ctx: Context) -> list[dict]:
@@ -97,4 +102,3 @@ async def get_task_metrics(ctx: Context) -> list[dict]:
         skip += limit
 
     return results
-
