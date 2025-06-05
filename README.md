@@ -122,12 +122,15 @@ The MCP server provides the following tools for interaction with Itential Platfo
 - `get_task_metrics`: Get aggregated workflow task metrics
 
 ### Workflow Management Tools
-- `get_workflows`: List available workflows (with optional filtering)
+- `get_workflows`: List available workflows
 - `start_workflow`: Start a workflow with provided variables and permissions
 
 ### Job Tools
 - `get_jobs`: List all jobs (with optional filtering)
 - `describe_job`: Get details about a specific job (based on job_id)
+
+Note: See [here](docs/exposing-workflows.md) for information about how to
+properly expose workflows to the MCP server
 
 ## 🛠️ Adding new Tools
 Adding a new tool is simple:
