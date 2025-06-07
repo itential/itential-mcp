@@ -73,9 +73,9 @@ def register_tools(mcp: FastMCP) -> None:
             # Add the module to globals
             globals()[module_name] = module
 
-            # Inspect the module to retreive all of the functions
+            # Inspect the module to retreive all of the functions.
             for name, f in inspect.getmembers(module, inspect.isfunction):
-                if not name.startswith("_"):
+                if not name.startswith("_") and f.__module__ == module_name:
                     mcp.add_tool(f)
 
 
