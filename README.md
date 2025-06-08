@@ -129,6 +129,16 @@ The MCP server provides the following tools for interaction with Itential Platfo
 - `get_jobs`: List all jobs (with optional filtering)
 - `describe_job`: Get details about a specific job (based on job_id)
 
+### Command Template Tools
+- `get_command_templates`: List all configured command templates
+- `describe_command_template`: Get details about a specific command template
+- `run_command_template`: Run a command template against a set of devices
+
+### Device Tools
+- `get_devices`: Get a list of devices from Itential Platform
+- `run_command`: Run a command against one or more devices
+
+
 Note: See [here](docs/exposing-workflows.md) for information about how to
 properly expose workflows to the MCP server
 
