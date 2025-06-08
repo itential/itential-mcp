@@ -1,10 +1,18 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from typing import Annotated
+
+from pydantic import Field
+
 from fastmcp import Context
 
 
-async def get_devices(ctx: Context) -> list[dict]:
+async def get_devices(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+) -> list[dict]:
     """
     Retrieve all devies known to Itential Platform
 
@@ -39,7 +47,6 @@ async def get_devices(ctx: Context) -> list[dict]:
                 "sort": [{"name": 1}],
                 "start": start,
                 "limit": limit
-
             }
         }
 

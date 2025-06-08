@@ -1,12 +1,21 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from typing import Annotated
+
+from pydantic import Field
+
 from fastmcp import Context
 
 
 async def get_jobs(
-    ctx: Context,
-    status: str | None = None
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    status: Annotated[str | None, Field(
+        description="Job status used to filter the results",
+        default=None
+    )]
 ) -> list[dict]:
     """
     Get all jobs from the Itential Platform server
@@ -91,7 +100,14 @@ async def get_jobs(
     return results
 
 
-async def describe_job(ctx: Context, job_id: str) -> dict:
+async def describe_job(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    job_id: Annotated[str, Field(
+        description="The ID used to retreive the job"
+    )]
+) -> dict:
     """
     Get details about a job from Itential Platform
 
