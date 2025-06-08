@@ -1,27 +1,21 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from datetime import datetime, timezone
+from typing import Annotated
+
+from pydantic import Field
 
 from fastmcp import Context
 
-
-async def _epoch_to_timestamp(ms: int) -> str:
-    """
-    """
-    dt = datetime.fromtimestamp(ms / 1000, tz=timezone.utc)
-    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+from itential_mcp import timeutils
+from itential_mcp import functions
 
 
-async def _account_id_to_username(ctx: Context, account_id: str) -> str:
-    """
-    """
-    client = ctx.request_context.lifespan_context.get("client")
-    res = await client.get(f"/authorization/accounts/{account_id}")
-    return res.json()["username"]
-
-
-async def get_workflows(ctx: Context) -> list[dict]:
+async def get_workflows(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )]
+) -> list[dict]:
     """
     Get all API endpoint triggers from Itential Platform
 
@@ -83,7 +77,7 @@ async def get_workflows(ctx: Context) -> list[dict]:
         for item in data.get("data") or list():
 
             if item.get("lastExecuted") is not None:
-                lastExecuted = _epoch_to_timestamp(item["lastExecuted"])
+                lastExecuted = timeutils.epoch_to_timestamp(item["lastExecuted"])
             else:
                 lastExecuted = None
 
@@ -109,9 +103,16 @@ async def get_workflows(ctx: Context) -> list[dict]:
 
 
 async def start_workflow(
-    ctx: Context,
-    route_name: str,
-    data: dict | None = None,
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    route_name: Annotated[str, Field(
+        description="The name of the API endpoint used to start the workflow"
+    )],
+    data: Annotated[dict | None, Field(
+        description="Data to include in the request body when calling the route",
+        default=None
+    )]
 ) -> dict:
     """
     Start an API endpoint trigger from Itential Platform
@@ -169,13 +170,13 @@ async def start_workflow(
     metrics_data = data.get("metrics") or {}
 
     if metrics_data.get("start_time") is not None:
-        metrics["start_time"] = await _epoch_to_timestamp(metrics_data["start_time"])
+        metrics["start_time"] = timeutils.epoch_to_timestamp(metrics_data["start_time"])
 
     if metrics_data.get("end_time") is not None:
-        metrics["end_time"] = await _epoch_to_timestamp(metrics_data["end_time"])
+        metrics["end_time"] = timeutils.epoch_to_timestamp(metrics_data["end_time"])
 
     if metrics_data.get("user") is not None:
-        metrics["user"] = await _account_id_to_username(ctx, metrics_data["user"])
+        metrics["user"] = await functions.account_id_to_username(ctx, metrics_data["user"])
 
     return {
         "_id": data["_id"],
