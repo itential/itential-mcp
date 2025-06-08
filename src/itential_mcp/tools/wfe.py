@@ -1,10 +1,18 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from typing import Annotated
+
+from pydantic import Field
+
 from fastmcp import Context
 
 
-async def get_job_metrics(ctx: Context) -> list[dict]:
+async def get_job_metrics(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )]
+) -> list[dict]:
     """
     Get the aggregate job metrics from workflow engine
 
@@ -59,7 +67,11 @@ async def get_job_metrics(ctx: Context) -> list[dict]:
     return results
 
 
-async def get_task_metrics(ctx: Context) -> list[dict]:
+async def get_task_metrics(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )]
+) -> list[dict]:
     """
     Get the aggregate task metrics from workflow engine
 
@@ -102,3 +114,4 @@ async def get_task_metrics(ctx: Context) -> list[dict]:
         skip += limit
 
     return results
+
