@@ -14,6 +14,7 @@ from typing import Any, Literal
 from fastmcp import FastMCP
 
 from . import client
+from . import cache
 
 
 @asynccontextmanager
@@ -36,7 +37,8 @@ async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
     """
     async with AsyncExitStack():
         yield {
-            "client": client.PlatformClient()
+            "client": client.PlatformClient(),
+            "cache": cache.Cache()
         }
 
 
