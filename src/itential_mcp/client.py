@@ -29,7 +29,8 @@ class PlatformClient(object):
         Raises:
             None
         """
-        return ipsdk.platform_factory(want_async=True, **config.get())
+        cfg = config.get()
+        return ipsdk.platform_factory(want_async=True, **cfg.platform)
 
     async def _make_response(self, res: httpx.Response) -> response.Response:
         """

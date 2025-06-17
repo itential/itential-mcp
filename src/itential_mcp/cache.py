@@ -6,6 +6,7 @@ import threading
 
 from typing import Any
 
+
 class Cache(object):
     """
     The Cache class implements a basic, thread safe implementation of a

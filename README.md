@@ -56,9 +56,9 @@ make container
 
 # Run the container with environment variables
 docker run -p 8000:8000 \
-  --env ITENTIAL_MCP_TRANSPORT=sse \
-  --env ITENTIAL_MCP_HOST=0.0.0.0 \
-  --env ITENTIAL_MCP_PORT=8000 \
+  --env ITENTIAL_MCP_SERVER_TRANSPORT=sse \
+  --env ITENTIAL_MCP_SERVER_HOST=0.0.0.0 \
+  --env ITENTIAL_MCP_SERVER_PORT=8000 \
   --env ITENTIAL_MCP_PLATFORM_HOST=URL \
   --env ITENTIAL_MCP_PLATFORM_CLIENT_ID=CLIENT_ID \
   --env ITENTIAL_MCP_PLATFORM_CLIENT_SECRET=CLIENT_SECRET \
@@ -78,14 +78,22 @@ Start with SSE transport:
 itential-mcp --transport sse --host 0.0.0.0 --port 8000
 ```
 
+### General Options
+
+| Option     | Description             | Default |
+|------------|-------------------------|---------|
+| `--config` | Path to the config file | none    |
+
 ### Server Options
 
-| Option        | Description                                       | Default   |
-|---------------|---------------------------------------------------|-----------|
-| `--transport` | Transport protocol (stdio or sse)                 | stdio     |
-| `--host`      | Host address to listen on                         | localhost |
-| `--port`      | Port to listen on                                 | 8000      |
-| `--log-level` | Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL) | INFO      |
+| Option           | Description                                       | Default            |
+|------------------|---------------------------------------------------|--------------------|
+| `--transport`    | Transport protocol (stdio or sse)                 | stdio              |
+| `--host`         | Host address to listen on                         | localhost          |
+| `--port`         | Port to listen on                                 | 8000               |
+| `--log-level`    | Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL) | INFO               |
+| `--include-tags` | Tags to include registered tools                  | none               |
+| `--exclude-tags` | Tags to exclude registered tools                  | experimental,beta  |
 
 ### Platform Configuration
 
@@ -103,13 +111,33 @@ itential-mcp --transport sse --host 0.0.0.0 --port 8000
 
 ### Environment Variables
 
-All command line options can also be set using environment variables prefixed with `ITENTIAL_MCP_`. For example:
+All command line options can also be set using environment variables prefixed with `ITENTIAL_MCP_SERVER_`. For example:
 
 ```bash
-export ITENTIAL_MCP_TRANSPORT=sse
+export ITENTIAL_MCP_SERVER_TRANSPORT=sse
 export ITENTIAL_MCP_PLATFORM_HOST=platform.example.com
 itential-mcp  # Will use the environment variables
 ```
+
+### Configuration file
+
+The server configuration can also be specified using a configuration file.  The
+configuration file can be used to pass in all the configuration parameters.  To
+use a configuration file, simply pass in the `--config <path>` command line
+argument where `<path>` points to the configuration file to load.
+
+The format and values for the configuration file are documented
+[here](docs/mcp.conf.example)
+
+When configuration options are specified in multiple places the following
+precedence for determinting the value to be used will be honored from highest
+to lowest:
+
+1. Environment variable
+2. Command line option
+3. Configuration file
+4. Default value
+
 
 ## 💡 Available Tools
 The MCP server provides the following tools for interaction with Itential Platform:

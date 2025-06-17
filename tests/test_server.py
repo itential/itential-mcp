@@ -2,59 +2,83 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 import sys
-from unittest.mock import AsyncMock, MagicMock
+import asyncio
+
+from unittest.mock import patch, MagicMock, AsyncMock
 
 import pytest
 
 from itential_mcp import server
 
 
-def test_register_tools_imports_and_registers_functions(tmp_path, monkeypatch):
-    # Setup mock tools directory
+@pytest.mark.asyncio
+async def test_lifespan_yields_client_and_cache():
+    mcp = MagicMock()
+    async with server.lifespan(mcp) as context:
+        assert "client" in context
+        assert "cache" in context
+        assert context["client"].__class__.__name__ == "PlatformClient"
+        assert context["cache"].__class__.__name__ == "Cache"
+
+
+def test_register_tools(tmp_path, monkeypatch):
+    # Setup a temporary tools directory with a sample tool module
     tools_dir = tmp_path / "tools"
     tools_dir.mkdir()
-    tool_file = tools_dir / "sample.py"
-    tool_file.write_text("def test_func():\n    return True")
+    sample_tool = tools_dir / "echo.py"
+    sample_tool.write_text(
+        "def hello():\n"
+        "    return 'world'\n"
+    )
 
-    # Patch __file__ to trick server into using our tmp tools dir
-    monkeypatch.setattr(server, "__file__", str(tmp_path / "server.py"))
+    # Patch __file__ to point to fake module with tools path
+    monkeypatch.setattr(server, "__file__", str(tmp_path / "fake.py"))
 
-    # Patch importlib and FastMCP behavior
-    mock_add_tool = MagicMock()
-    mock_mcp = MagicMock()
-    mock_mcp.add_tool = mock_add_tool
+    mcp = MagicMock()
+    server.register_tools(mcp)
 
-    server.register_tools(mock_mcp)
-    assert mock_add_tool.called
-
-
-@pytest.mark.asyncio
-async def test_run_stdio(monkeypatch):
-    mock_run_async = AsyncMock()
-    mock_mcp_class = MagicMock(return_value=MagicMock(run_async=mock_run_async))
-
-    monkeypatch.setattr(server, "FastMCP", mock_mcp_class)
-
-    exit_calls = []
-
-    def fake_exit(code):
-        exit_calls.append(code)
-        raise SystemExit()
-
-    monkeypatch.setattr(sys, "exit", fake_exit)
-
-    await server.run(transport="stdio", log_level="INFO")
-    mock_run_async.assert_awaited_once()
+    # Tool `hello` from `echo` module should be added
+    assert mcp.tool.called
+    args, kwargs = mcp.tool.call_args
+    assert args[0].__name__ == "hello"
+    assert "tags" in kwargs
+    assert "hello" in kwargs["tags"]
 
 
 @pytest.mark.asyncio
-async def test_run_invalid_transport_raises():
-    with pytest.raises(ValueError, match="invalid setting for transport"):
-        await server.run(transport="invalid")
+@patch("itential_mcp.server.register_tools")
+@patch("itential_mcp.server.FastMCP.run_async", new_callable=AsyncMock)
+@patch("itential_mcp.server.config.get")
+async def test_run_stdio_success(mock_config_get, mock_run_async, mock_register_tools):
+    mock_config = MagicMock()
+    mock_config.server = {
+        "transport": "stdio",
+        "log_level": "INFO",
+        "include_tags": [],
+        "exclude_tags": [],
+    }
+    mock_config_get.return_value = mock_config
+
+    result = await server.run()
+    assert mock_run_async.called
+    assert result is None or result == 0
 
 
 @pytest.mark.asyncio
-async def test_run_invalid_log_level_raises():
-    with pytest.raises(ValueError, match="invalid setting for log_level"):
-        await server.run(log_level="INVALID")
+@patch("itential_mcp.server.register_tools", side_effect=Exception("tool error"))
+@patch("itential_mcp.server.config.get")
+def test_run_tool_import_error(mock_config_get, mock_register_tools):
+    mock_config = MagicMock()
+    mock_config.server = {
+        "transport": "stdio",
+        "log_level": "INFO",
+        "include_tags": [],
+        "exclude_tags": [],
+    }
+    mock_config_get.return_value = mock_config
+
+    with patch.object(sys, "stderr"), pytest.raises(SystemExit) as excinfo:
+        asyncio.run(server.run())
+
+    assert excinfo.value.code == 1
 

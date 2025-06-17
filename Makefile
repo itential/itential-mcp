@@ -27,7 +27,7 @@ help:
 # The test target will invoke the unit tests using pytest.   This target
 # requires uv to be installed and the environment created.
 test:
-	uv run pytest tests -v
+	uv run pytest tests -v -s
 
 # Builds the local environment which can be used for development or simply
 # running the server from source.  This target requires `uv` to be installed

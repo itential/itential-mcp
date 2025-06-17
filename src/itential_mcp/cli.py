@@ -5,16 +5,22 @@ import os
 import sys
 import asyncio
 import argparse
+import traceback
 
 from collections.abc import Sequence
 
-from typing import Any
-
 from . import server
-from . import env
 
 
-def parse_args(args: Sequence) -> dict[str, Any]:
+LEGACY_ENV_VARS = frozenset((
+    ("ITENTIAL_MCP_TRANSPORT", "ITENTIAL_MCP_SERVER_TRANSPORT"),
+    ("ITENTIAL_MCP_HOST", "ITENTIAL_MCP_SERVER_HOST"),
+    ("ITENTIAL_MCP_PORT", "ITENTIAL_MCP_SERVER_PORT"),
+    ("ITENTIAL_MCP_LOG_LEVEL", "ITENTIAL_MCP_SERVER_LOG_LEVEL"),
+))
+
+
+def parse_args(args: Sequence) -> None:
     """
     Parses any arguments
 
@@ -26,39 +32,56 @@ def parse_args(args: Sequence) -> dict[str, Any]:
         args (Sequence): The list of arguments to parse
 
     Returns:
-        dict[str, Any]: Returns a Python dict object that has parsed the args
+        None
 
     Raises:
         None
     """
     parser = argparse.ArgumentParser(prog="itential-mcp")
 
+    parser.add_argument(
+        "--config",
+        help="The Itential MCP configuration file"
+    )
+
     # MCP Server arguments
     server_group = parser.add_argument_group("MCP Server")
 
     server_group.add_argument(
         "--transport",
-        default="stdio",
+        dest="server_transport",
         help="The MCP server transport to use (default=stdio)"
     )
 
     server_group.add_argument(
         "--host",
-        default="localhost",
+        dest="server_host",
         help="Address to listen for connections on (default=localhost)"
     )
 
     server_group.add_argument(
         "--port",
         type=int,
-        default=8000,
+        dest="server_port",
         help="Port to listen for connections on (default=8000)",
     )
 
     server_group.add_argument(
         "--log-level",
-        default="INFO",
+        dest="server_log_level",
         help="Logging level.  One of DEBUG, INFO, WARNING, ERROR, CRITICAL.  (default=INFO)"
+    )
+
+    server_group.add_argument(
+        "--include-tags",
+        dest="server_include_tags",
+        help="Include tools that match one of these tags"
+    )
+
+    server_group.add_argument(
+        "--exclude-tags",
+        dest="server_exclude_tags",
+        help="Exclude any tool that matches one of these tags"
     )
 
     # Itential Platform arguments
@@ -66,14 +89,12 @@ def parse_args(args: Sequence) -> dict[str, Any]:
 
     platform_group.add_argument(
         "--platform-host",
-        default="localhost",
         help="The host address of Itential Platform to connect to (default=localhost)"
     )
 
     platform_group.add_argument(
         "--platform-port",
         type=int,
-        default=0,
         help="The port to use when connecting to Itential Platform (default=0)"
     )
 
@@ -91,13 +112,11 @@ def parse_args(args: Sequence) -> dict[str, Any]:
 
     platform_group.add_argument(
         "--platform-user",
-        default="admin",
         help="Username to use when authenticating to the server (default=admin)"
     )
 
     platform_group.add_argument(
         "--platform-password",
-        default="admin",
         help="Password to use when authenticating to the server (default=admin)"
     )
 
@@ -114,33 +133,29 @@ def parse_args(args: Sequence) -> dict[str, Any]:
     platform_group.add_argument(
         "--platform-timeout",
         type=int,
-        default=30,
         help="Configure the connection timeout in seconds (default=30)",
     )
 
     args = parser.parse_args(args=args)
 
-    kwargs = {}
-
     for key, value in dict(args._get_kwargs()).items():
         envkey = f"ITENTIAL_MCP_{key}".upper()
-
-        if key.startswith("platform"):
+        if key.startswith("platform") or key.startswith("server"):
             if value is not None:
                 if envkey not in os.environ:
+                    if isinstance(value, str):
+                        value = ", ".join(value.split(","))
                     os.environ[envkey] = str(value)
-        else:
-            if isinstance(value, bool):
-                v = env.getbool(envkey, default=value)
-            elif isinstance(value, int):
-                v = env.getint(envkey, default=value)
-            elif isinstance(value, str):
-                v = env.getstr(envkey, default=value)
-            else:
-                v = value
-            kwargs[key] = v
 
-    return kwargs
+    conf_file = args.config
+    if conf_file is not None:
+        os.environ["ITENTIAL_MCP_CONFIG"] = conf_file
+
+    # XXX (privateip) This will check for any values that use the legacy
+    # environment variables which did not include the _SERVER_ in the name.
+    for oldvar, newvar in LEGACY_ENV_VARS:
+        if oldvar in os.environ and newvar not in os.environ:
+            os.environ[newvar] = os.environ.pop(oldvar)
 
 
 def run() -> int:
@@ -157,6 +172,8 @@ def run() -> int:
         None
     """
     try:
-        return asyncio.run(server.run(**parse_args(sys.argv[1:])))
+        parse_args(sys.argv[1:])
+        return asyncio.run(server.run())
     except Exception:
+        traceback.print_exc()
         sys.exit(1)
