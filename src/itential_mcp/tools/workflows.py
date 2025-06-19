@@ -22,16 +22,17 @@ async def get_workflows(
     This tool will retrieve all of the API endpoint triggers (routes) that
     can be called by external services.  The tool will return a list of
     triggers where each element in the list represents a callable API
-    route.
+    route. Use the name as the identifier for the workflow. The routeName 
+    is used for job triggering only.
 
     The fields available for each element include:
 
         * _id: The unique identifier for this route
-        * name: The name of the trigger as configured in Platform
+        * name: The name of the workflow as configured in Platform
         * description: Short description of the triggers function
         * schema: The input schema for the launching the trigger based
             on http://json-schema.org/draft-07/schema
-        * routeName: The name of the API used to start the endpoint
+        * routeName: The API route used to start the endpoint
         * created: ISO 8601 timestamp of when the trigger was created
         * createdBy: Account name that created the trigger
         * updated: ISO 8601 timestamp of when the trigger was last updated
