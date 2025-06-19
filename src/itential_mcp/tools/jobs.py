@@ -1,5 +1,6 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+import re
 
 from typing import Annotated
 
@@ -166,3 +167,82 @@ async def describe_job(
         "metrics": data["metrics"],
         "updated": data["last_updated"]
     }
+
+
+async def get_single_workflow_jobs(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    workflow_name: Annotated[str, Field(
+        description="The workflow name used for the job"
+    )]
+) -> list[dict]:
+    """
+    Get details about jobs for given a workflow from Itential Platform
+
+    When a workflow is started a new job is automatically created that
+    contains the status of the job.  All details about the job are stored
+    in the job document.  The job document provides information about
+    the execution of a workflow.
+
+    This function will retrieve multiple job documents from Itential Platform based
+    on the provided `workflow_name` argument.   
+
+    The job documents will return the following:
+        * _id: The unique identifier for this job
+        * name: The name of the API endpoint trigger
+        * description: Short description of the API endpoint trigger
+        * type: Identifies the type of job.  Valid values for type are
+            `automation`, `resource:action`, or `resource:compliance`
+        * tasks: The full set of tasks to be executed
+        * updated: ISO 8601 timestamp of when the trigger was last updated
+        * status: The status of the job.  This will return one of the
+            following values: `error`, `complete`, `running`, `canceled`,
+            `incomplete` or `paused`
+        * metrics: Job metrics that include the job start time, job end
+            time and account
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+        workflow_name (str): The workflow_name
+
+    Returns:
+        dict: A list of job status dicts from the server
+
+    Raises:
+        None
+    """
+
+    await ctx.info("inside describe_job(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    res = await client.get("/operations-manager/jobs")
+
+    res_json = res.json()
+    data = res_json.get("data", [])
+
+    if not isinstance(data, list):
+        await ctx.error(f"Unexpected 'data' format in job response: {type(data)}")
+        return None
+
+    results = list()
+
+    pattern = re.compile(f".*{re.escape(workflow_name)}.*", re.IGNORECASE)
+
+    for item in data:
+        if pattern.search(item.get("name")):
+
+            results.append({
+                "_id": item.get("_id"),
+                "name": item.get("name", ""),
+                "description": item.get("description", ""),
+                "type": item.get("type", ""),
+                "tasks": item.get("tasks", []),
+                "status": item.get("status", "unknown"),
+                "metrics": item.get("metrics", {}),
+                "updated": item.get("last_updated", "")
+            })
+
+    return results
