@@ -1,0 +1,157 @@
+# This is an example Itential MCP server configuration file.  It shows the
+# availble configuration options.   Configuration options are grouped into
+# sections. For each configuration option, there is a description of the option
+# along with the application default setting and name of the environment
+# varilable that can be used to override the value.
+
+# The server section handles configuration options for running the MCP server.
+# All configuration options in this section are optional and can be overridden
+# using environment variables prefixed with ITENTIAL_MCP_SERVER
+[server]
+
+# Configures the transport to use when starting the MCP server.  This
+# configuration option accepts one of two valid values: `sse` or `stdio`.  
+#
+# Default value: stdio
+# Environment variable: ITENTIAL_MCP_SERVER_TRANSPORT
+#
+# transport = sse
+
+# Sets the IP address to listen for connections on.  This value must be a valid
+# IP address used by MCP clients to connect to this server.  This value is only
+# valid when transport is set to `sse`.  
+#
+# Default value: localhost
+# Environment variable: ITENTIAL_MCP_SERVER_HOST
+#
+# host = localhost
+
+# Sets the port to use when listening for connections.  Setting this value will
+# configure the port the MCP server will listen for connections on.  This value
+# is only valid when the transport is set to `sse`, otherwise it is ignored.  
+#
+# Default value: 8000
+# Environment variable: ITENTIAL_MCP_SERVER_PORT
+#
+# port = 8000
+
+# Configures the logging level for output of log messages when running the
+# server.  This configuration option accepts one of the following values:
+# `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.  
+#
+# Default value: INFO
+# Environment variable: ITENTIAL_MCP_SERVER_LOG_LEVEL
+#
+# log_level = INFO
+
+# Configures the list of tags to including when starting the server.  This
+# value will control which tools are available when the server is started.
+# Every tool registed with this MCP server has a default tag that includes the
+# tools name.  To explicitly include a set of tools, set this value to a comma
+# delimited list of tool names. 
+#
+# Default value: null
+# Environment variable: ITENTIAL_MCP_SERVER_INCLUDE_TAGS
+#
+# include_tags =  
+
+# Configures the list of tags to exclude when starting the server.  This
+# configuration option will instruct the MCP server to exclude specific tools
+# from being exposed by the server.  To explicitly exclude a set of tools, set
+# this value to a comma delimited list of tool names.
+#
+# Default value: experimental, beta
+# Environment variable: ITENTIAL_MCP_SERVER_EXCLUDE_TAGS
+#
+# exclude_tags = experimental, beta
+
+
+# The platform section handles configuration options for connecting to an
+# instance of Itential Platform.  All configuration options in this section are
+# optional and can be override using environment variables prefixed with
+# ITENTIAL_MCP_PLATFORM.
+[platform]
+
+# The host configuration option configures the hostname or IP address of the
+# Itnetial Platform server to connect to for making API calls.  
+#
+# Default value: localhost
+# Environment variable: ITENTIAL_MCP_PLATFORM_HOST
+#
+# host = localhost
+
+# Configures the port to use when connecting to the Itential Platform server
+# API.  If this value is set to 0, the port value will use standard port values
+# based on the `disable_tls` configuration setting.  When `disable_tls` is
+# False, the port value is set to 443 and when `disable_tls` is True, the port
+# value is 80.   
+#
+# Default value: 0
+# Environment variable: ITENTIAL_MCP_PLATFORM_PORT
+#
+# port = 0
+
+# Enable or disable the use of TLS when connecting to the Itential Platform
+# server API.   When this value is set to True, the MCP server will not attempt
+# to connect using TLS.  When this value is set to False, the MCP server will
+# attempt to use TLS when connecting to the server.  
+#
+# Default value: false
+# Environment variable: ITENTIAL_MCP_PLATFORM_DISABLE_TLS
+#
+# disable_tls = False
+
+# Enable or disable certificate verification when connecting to the Itential
+# Platform server API using TLS.  This value is only valid when `disable_tls`
+# is set to False.   Setting this value to True will disable the certificate
+# validation and setting this value to False will enable the certificate
+# validation.  
+#
+# Default value: false
+# Environment variable: ITENTIAL_MCP_PLATFORM_DISABLE_VERIFY
+#
+# disable_verify = False
+
+# Configures the username to use when connecting to the Itential Platform
+# server API using standard (basic) authorization.  The username is along with
+# the password to authenticate the connection.   If both `client_id` and
+# `client_secret` are configured, this option is ignored. 
+#
+# Default value: admin
+# Environment variable: ITENTIAL_MCP_PLATFORM_USER 
+#
+# user = admin
+
+# Configures the password to use when connecting to the Itential Platform
+# server API using standard (basic) authorization.  
+#
+# Default value: admin
+# Environment variable: ITENTIAL_MCP_PLATFORM_PASSWORD
+#
+# password = admin
+
+# Sets the client ID to use when connecting to the Itential Platform server API
+# using OAuth.  The client id is provided when creating a new service account
+# in Itential Platform.   
+#
+# Default value: null
+# Environment variable: ITENTIAL_MCP_PLATFORM_CLIENT_ID
+# client_id = 
+
+# Sets the client secret to use when connecting to the Itential Platform server
+# API using OAuth authentication.  The client secret is provied when creating a
+# new service account in Itential Platform
+#
+# Default value: null
+# Environment variable: ITENTIAL_MCP_PLATFORM_CLIENT_SECRET
+#
+# client_secret = 
+
+# Configures the connection and request timeout value in seconds.  This value
+# will cause connection attempts and requests to error if a response is not
+# recieved within the timeout value.  
+#
+# Default value: 30
+# Environment variable: ITENTIAL_MCP_PLATFORM_TIMEOUT
+#
+# timeout = 30
