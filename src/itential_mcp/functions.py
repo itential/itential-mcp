@@ -20,7 +20,7 @@ async def workflow_id_to_name(ctx: Context, workflow_id: str) -> str:
         str: The workflow name based on the specified workflow ID
 
     Raises:
-        None
+        ValueError: If the specified workflow id cannot be found
     """
     cache = ctx.request_context.lifespan_context.get("cache")
 
@@ -29,12 +29,20 @@ async def workflow_id_to_name(ctx: Context, workflow_id: str) -> str:
         return value
 
     client = ctx.request_context.lifespan_context.get("client")
+
     res = await client.get(
         "/automation-studio/workflows",
-        params={"equals[_id]": workflow_id}
+        params={
+            "equals[_id]": workflow_id,
+            "include": "_id,name",
+        }
     )
 
     data = res.json()
+
+    if data["total"] == 0:
+        raise ValueError(f"unable to find workflow with id {workflow_id}")
+
     value = data["items"][0]["name"]
 
     cache.put(f"/workflows/{workflow_id}", value)
@@ -70,9 +78,37 @@ async def account_id_to_username(ctx: Context, account_id: str) -> str:
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    res = await client.get(f"/authorization/accounts/{account_id}")
+    limit = 100
+    skip = 0
+    cnt = 0
 
-    value = res.json()["username"]
+    params = {"limit": limit}
+
+    while True:
+        params["skip"] = skip
+
+        res = await client.get(
+            "/authorization/accounts",
+            params=params
+        )
+
+        data = res.json()
+        results = data["results"]
+
+        for item in results:
+            if item["_id"] == account_id:
+                value = item["username"]
+                break
+
+        cnt += len(results)
+
+        if cnt == data["total"]:
+            break
+
+        skip += limit
+
+    if value is None:
+        raise ValueError(f"unable to find account with id {account_id}")
 
     cache.put(f"/accounts/{account_id}", value)
 
