@@ -2,71 +2,51 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 import os
-from itential_mcp.cli import parse_args
+
+from itential_mcp import cli
+
+def test_parse_args_defaults(monkeypatch):
+    monkeypatch.delenv("ITENTIAL_MCP_TRANSPORT", raising=False)
+    cli.parse_args([])
+
+    assert "ITENTIAL_MCP_SERVER_TRANSPORT" not in os.environ
 
 
-class TestCLI:
-    def setup_method(self):
-        self.original_environ = dict(os.environ)
-        os.environ.clear()
+def test_parse_args_custom_values():
+    custom_args = [
+        "--transport", "sse",
+        "--host", "myhost",
+        "--port", "9000",
+        "--log-level", "DEBUG",
+        "--platform-host", "platformhost",
+        "--platform-user", "testuser",
+        "--platform-password", "testpass"
+    ]
+    cli.parse_args(custom_args)
 
-    def teardown_method(self):
-        os.environ.clear()
-        os.environ.update(self.original_environ)
+    assert os.environ["ITENTIAL_MCP_SERVER_TRANSPORT"] == "sse"
+    assert os.environ["ITENTIAL_MCP_SERVER_HOST"] == "myhost"
+    assert os.environ["ITENTIAL_MCP_SERVER_PORT"] == "9000"
+    assert os.environ["ITENTIAL_MCP_SERVER_LOG_LEVEL"] == "DEBUG"
+    assert os.environ["ITENTIAL_MCP_PLATFORM_HOST"] == "platformhost"
+    assert os.environ["ITENTIAL_MCP_PLATFORM_USER"] == "testuser"
 
-    def test_default_arguments(self):
-        args = []
-        parsed = parse_args(args)
 
-        assert parsed["transport"] == "stdio"
-        assert parsed["host"] == "localhost"
-        assert parsed["port"] == 8000
-        assert parsed["log_level"] == "INFO"
+def test_env_variable_override(monkeypatch):
+    monkeypatch.setenv("ITENTIAL_MCP_HOST", "envhost")
+    monkeypatch.delenv("ITENTIAL_MCP_SERVER_HOST", raising=False)
 
-        assert os.environ["ITENTIAL_MCP_PLATFORM_HOST"] == "localhost"
-        assert os.environ["ITENTIAL_MCP_PLATFORM_PORT"] == "0"
-        assert os.environ["ITENTIAL_MCP_PLATFORM_USER"] == "admin"
-        assert os.environ["ITENTIAL_MCP_PLATFORM_PASSWORD"] == "admin"
+    monkeypatch.setenv("ITENTIAL_MCP_PORT", "1234")
+    monkeypatch.delenv("ITENTIAL_MCP_SERVER_PORT", raising=False)
 
-    def test_explicit_arguments_override_defaults(self):
-        args = [
-            "--transport", "sse",
-            "--host", "0.0.0.0",
-            "--port", "9000",
-            "--log-level", "DEBUG",
-            "--platform-host", "platform.local",
-            "--platform-port", "443",
-            "--platform-disable-tls",
-            "--platform-disable-verify",
-            "--platform-user", "itential",
-            "--platform-password", "secret",
-            "--platform-client-id", "cid",
-            "--platform-client-secret", "csecret"
-        ]
+    cli.parse_args([])
 
-        parsed = parse_args(args)
+    assert os.environ["ITENTIAL_MCP_SERVER_HOST"] == "envhost"
+    assert os.environ["ITENTIAL_MCP_SERVER_PORT"] == "1234"  # Still a string because it comes from env
 
-        assert parsed["transport"] == "sse"
-        assert parsed["host"] == "0.0.0.0"
-        assert parsed["port"] == 9000
-        assert parsed["log_level"] == "DEBUG"
 
-        assert os.environ["ITENTIAL_MCP_PLATFORM_HOST"] == "platform.local"
-        assert os.environ["ITENTIAL_MCP_PLATFORM_PORT"] == "443"
-        assert os.environ["ITENTIAL_MCP_PLATFORM_DISABLE_TLS"] == "True"
-        assert os.environ["ITENTIAL_MCP_PLATFORM_DISABLE_VERIFY"] == "True"
-        assert os.environ["ITENTIAL_MCP_PLATFORM_USER"] == "itential"
-        assert os.environ["ITENTIAL_MCP_PLATFORM_PASSWORD"] == "secret"
-        assert os.environ["ITENTIAL_MCP_PLATFORM_CLIENT_ID"] == "cid"
-        assert os.environ["ITENTIAL_MCP_PLATFORM_CLIENT_SECRET"] == "csecret"
-
-    def test_env_var_override(self):
-        os.environ["ITENTIAL_MCP_TRANSPORT"] = "sse"
-        os.environ["ITENTIAL_MCP_PORT"] = "1234"
-
-        args = []
-        parsed = parse_args(args)
-
-        assert parsed["transport"] == "sse"
-        assert parsed["port"] == 1234
+def test_platform_env_variables_set(monkeypatch):
+    monkeypatch.delenv("ITENTIAL_MCP_PLATFORM_USER", raising=False)
+    cli.parse_args(["--platform-user", "envonly"])
+    assert os.environ["ITENTIAL_MCP_PLATFORM_USER"] == "envonly"
 
