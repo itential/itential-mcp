@@ -9,11 +9,12 @@ import importlib.util
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, AsyncExitStack
 
-from typing import Any, Literal
+from typing import Any
 
 from fastmcp import FastMCP
 
 from . import client
+from . import config
 from . import cache
 
 
@@ -72,54 +73,42 @@ def register_tools(mcp: FastMCP) -> None:
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
 
-            # Add the module to globals
-            globals()[module_name] = module
-
             # Inspect the module to retreive all of the functions.
             for name, f in inspect.getmembers(module, inspect.isfunction):
                 if not name.startswith("_") and f.__module__ == module_name:
-                    mcp.add_tool(f)
+                    kwargs = {"tags": {name}}
+                    if hasattr(f, "tags"):
+                        tags = kwargs["tags"]
+                        for ele in f.tags:
+                            tags.add(ele)
+                        kwargs["tags"] = tags
+                    mcp.tool(f, **kwargs)
 
 
-async def run(
-    transport: str = "stdio",
-    host: str | None = "localhost",
-    port: int = 8000,
-    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] | int = "INFO",
-) -> int:
+async def run() -> int:
     """
     Run the MCP server
 
-    This function will run the MCP server using the configured transport
-    option.
+    This is the server entry point for running the Itential MCP server using
+    either stdio or sse.  This function will load the configuration, create
+    the MCP server, register all tools and start the server.
 
     Args:
-        args (Sequence | None):
-        transport (str): Server transport to use.  Valid values for this
-            argument are `sse` or `stdio`.  The default value is `stdio`
-
-        host (str | None): The host to run the server on.  The default
-            value for host is "localhost"
-
-        port (int): The port on the host to listen for connections on.  The
-            default value for port is 0.
+        None
 
     Returns:
         int: Returns a int value as the return code from running the server
             A value of 0 is success and any other value is an error
 
     Raises:
-        ValueError: When the value of transport is not a valid value
-        ValueError: When the value of log_level is not a valid value
+        KeyboardInterrupt: When an operator uses a keyboard interrupt,
+            typically CTRL-C to stop the server.  This will cause the
+            server to exit with return code 0
+        Exception: Generic exception caught while running the server and
+            prints the traceback to stdout.  This will cause the server
+            to exit with return code 1
     """
-    if transport not in ("stdio", "sse"):
-        raise ValueError("invalid setting for transport")
-
-    if isinstance(log_level, str):
-        if log_level.upper() not in ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"):
-            raise ValueError("invalid setting for log_level")
-
-
+    cfg = config.get()
 
     # Initialize FastMCP server
     # Available keyword args:
@@ -140,29 +129,32 @@ async def run(
         name="Itential Platform MCP",
         instructions="Itential tools and resources for interacting with Itential Platform",
         lifespan=lifespan,
-        log_level=log_level.upper(),
+        log_level=cfg.server.get("log_level").upper(),
+        include_tags=cfg.server.get("include_tags"),
+        exclude_tags=cfg.server.get("exclude_tags")
     )
 
     try:
         register_tools(mcp)
     except Exception as exc:
-        print(f"ERROR: failed to  import tool: {str(exc)}", file=sys.stderr)
+        print(f"ERROR: failed to import tool: {str(exc)}", file=sys.stderr)
         sys.exit(1)
 
     kwargs = {
-        "transport": transport,
+        "transport": cfg.server.get("transport")
     }
 
-    if transport == "sse":
+    if kwargs["transport"] == "sse":
         kwargs.update({
-            "host": host,
-            "port": port,
+            "host": cfg.server.get("host"),
+            "port": cfg.server.get("port")
         })
 
     try:
         await mcp.run_async(**kwargs)
     except KeyboardInterrupt:
+        print("Shutting down the server")
         sys.exit(0)
     except Exception as exc:
-        print(f"ERROR: failed to  import tool: {str(exc)}", file=sys.stderr)
+        print(f"ERROR: server stopped unexpectedly: {str(exc)}", file=sys.stderr)
         sys.exit(1)
