@@ -144,11 +144,13 @@ async def run() -> int:
         "transport": cfg.server.get("transport")
     }
 
-    if kwargs["transport"] == "sse":
+    if kwargs["transport"] in ("sse", "streamable-http"):
         kwargs.update({
             "host": cfg.server.get("host"),
             "port": cfg.server.get("port")
         })
+        if kwargs["transport"] == "streamable-http":
+            kwargs["path"] = cfg.server.get("path")
 
     try:
         await mcp.run_async(**kwargs)
