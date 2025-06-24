@@ -43,6 +43,34 @@ async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
         }
 
 
+def new(cfg: config.Config) -> FastMCP:
+    """
+    Initialize the FastMCP server
+
+    This function will intialize a new instance of the FastMCP server and
+    return it to the calling function.  This function should only be called
+    once to initialize the server.
+
+    Args:
+        cfg (Config): An instance of `config.Config` that provides the
+            server configuration values
+
+    Returns:
+        FastMCP: An instance of a FastMCP server
+
+    Raises:
+        None
+    """
+    # Initialize FastMCP server
+    return FastMCP(
+        name="Itential Platform MCP",
+        instructions="Itential tools and resources for interacting with Itential Platform",
+        lifespan=lifespan,
+        include_tags=cfg.server.get("include_tags"),
+        exclude_tags=cfg.server.get("exclude_tags")
+    )
+
+
 def register_tools(mcp: FastMCP) -> None:
     """
     Register all functions in the tools folder with mcp
@@ -110,28 +138,7 @@ async def run() -> int:
     """
     cfg = config.get()
 
-    # Initialize FastMCP server
-    # Available keyword args:
-    #   - name
-    #   - instructions
-    #   - lifespan
-    #   - tags
-    #   - host
-    #   - port
-    #   - log_level
-    #   - on_duplicate_tools
-    #   - on_duplicate_resources
-    #   - on_duplicate_prompts
-    #
-    # The server settings can also be passed using env variables prefixed
-    # with FASTMCP_SERVER_
-    mcp = FastMCP(
-        name="Itential Platform MCP",
-        instructions="Itential tools and resources for interacting with Itential Platform",
-        lifespan=lifespan,
-        include_tags=cfg.server.get("include_tags"),
-        exclude_tags=cfg.server.get("exclude_tags")
-    )
+    mcp = new(cfg)
 
     try:
         register_tools(mcp)
