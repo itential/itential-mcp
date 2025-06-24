@@ -19,9 +19,10 @@ from . import env
 @dataclass(frozen=True)
 class Config(object):
 
-    server_transport: Literal["stdio", "sse"] = Field(default="stdio")
-    server_host: str = Field(default="localhost")
+    server_transport: Literal["stdio", "sse", "streamable-http"] = Field(default="stdio")
+    server_host: str = Field(default="127.0.0.1")
     server_port: int = Field(default=0)
+    server_path: str = Field(default="/mcp")
     server_log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(default="INFO")
     server_include_tags: str | None = Field(default=None)
     server_exclude_tags: str | None = Field(default="experimental,beta")
@@ -42,6 +43,7 @@ class Config(object):
             "transport": self.server_transport,
             "host": self.server_host,
             "port": self.server_port,
+            "path": self.server_path,
             "log_level": self.server_log_level,
             "include_tags": self._coerce_to_set(self.server_include_tags) if self.server_include_tags else None,
             "exclude_tags": self._coerce_to_set(self.server_exclude_tags) if self.server_exclude_tags else None

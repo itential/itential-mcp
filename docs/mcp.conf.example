@@ -10,7 +10,8 @@
 [server]
 
 # Configures the transport to use when starting the MCP server.  This
-# configuration option accepts one of two valid values: `sse` or `stdio`.  
+# configuration option accepts one of three valid values: `sse`, `stdio`  
+# or `streamable-http`
 #
 # Default value: stdio
 # Environment variable: ITENTIAL_MCP_SERVER_TRANSPORT
@@ -34,6 +35,15 @@
 # Environment variable: ITENTIAL_MCP_SERVER_PORT
 #
 # port = 8000
+
+# Configure the URL path for the server to listen for client requests on.  This
+# value is appened to the host to create the full URL path for sending requests
+# to.
+#
+# Default value: /mcp
+# Environment variable: ITENTIAL_MCP_SERVER_PATH
+#
+# path = /mcp
 
 # Configures the logging level for output of log messages when running the
 # server.  This configuration option accepts one of the following values:
