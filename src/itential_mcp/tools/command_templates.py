@@ -115,7 +115,7 @@ async def describe_command_template(
         description="The name of the command template to describe"
     )],
     project: Annotated[str | None, Field(
-        descrption="The name of the project to get the command template from",
+        description="The name of the project to get the command template from",
         default=None
     )]
 ) -> dict:
