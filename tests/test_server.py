@@ -64,7 +64,6 @@ async def test_run_stdio_success(mock_config_get, mock_run_async, mock_register_
     assert result is None or result == 0
 
 
-@pytest.mark.asyncio
 @patch("itential_mcp.server.register_tools", side_effect=Exception("tool error"))
 @patch("itential_mcp.server.config.get")
 def test_run_tool_import_error(mock_config_get, mock_register_tools):
