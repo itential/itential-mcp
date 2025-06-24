@@ -129,7 +129,6 @@ async def run() -> int:
         name="Itential Platform MCP",
         instructions="Itential tools and resources for interacting with Itential Platform",
         lifespan=lifespan,
-        log_level=cfg.server.get("log_level").upper(),
         include_tags=cfg.server.get("include_tags"),
         exclude_tags=cfg.server.get("exclude_tags")
     )
@@ -147,7 +146,8 @@ async def run() -> int:
     if kwargs["transport"] == "sse":
         kwargs.update({
             "host": cfg.server.get("host"),
-            "port": cfg.server.get("port")
+            "port": cfg.server.get("port"),
+            "log_level": cfg.server.get("log_level")
         })
 
     try:
