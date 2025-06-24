@@ -49,6 +49,7 @@ def parse_args(args: Sequence) -> None:
 
     server_group.add_argument(
         "--transport",
+        choices=("stdio", "sse", "streamable-http"),
         dest="server_transport",
         help="The MCP server transport to use (default=stdio)"
     )
@@ -56,7 +57,7 @@ def parse_args(args: Sequence) -> None:
     server_group.add_argument(
         "--host",
         dest="server_host",
-        help="Address to listen for connections on (default=localhost)"
+        help="Address to listen for connections on (default=127.0.0.1)"
     )
 
     server_group.add_argument(
@@ -64,6 +65,12 @@ def parse_args(args: Sequence) -> None:
         type=int,
         dest="server_port",
         help="Port to listen for connections on (default=8000)",
+    )
+
+    server_group.add_argument(
+        "--path",
+        dest="server_path",
+        help="The URL used to accept requests from (default=/mcp)"
     )
 
     server_group.add_argument(
