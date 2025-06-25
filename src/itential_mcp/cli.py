@@ -8,8 +8,10 @@ import argparse
 import traceback
 
 from collections.abc import Sequence
+from dataclasses import fields
 
 from . import server
+from . import config
 
 
 LEGACY_ENV_VARS = frozenset((
@@ -45,103 +47,42 @@ def parse_args(args: Sequence) -> None:
     )
 
     # MCP Server arguments
-    server_group = parser.add_argument_group("MCP Server")
-
-    server_group.add_argument(
-        "--transport",
-        choices=("stdio", "sse", "streamable-http"),
-        dest="server_transport",
-        help="The MCP server transport to use (default=stdio)"
-    )
-
-    server_group.add_argument(
-        "--host",
-        dest="server_host",
-        help="Address to listen for connections on (default=127.0.0.1)"
-    )
-
-    server_group.add_argument(
-        "--port",
-        type=int,
-        dest="server_port",
-        help="Port to listen for connections on (default=8000)",
-    )
-
-    server_group.add_argument(
-        "--path",
-        dest="server_path",
-        help="The URL used to accept requests from (default=/mcp)"
-    )
-
-    server_group.add_argument(
-        "--log-level",
-        dest="server_log_level",
-        help="Logging level.  One of DEBUG, INFO, WARNING, ERROR, CRITICAL.  (default=INFO)"
-    )
-
-    server_group.add_argument(
-        "--include-tags",
-        dest="server_include_tags",
-        help="Include tools that match one of these tags"
-    )
-
-    server_group.add_argument(
-        "--exclude-tags",
-        dest="server_exclude_tags",
-        help="Exclude any tool that matches one of these tags"
+    server_group = parser.add_argument_group(
+        "MCP Server",
+        "Configuration options for the MCP Server instance"
     )
 
     # Itential Platform arguments
-    platform_group = parser.add_argument_group("Itential Platform")
-
-    platform_group.add_argument(
-        "--platform-host",
-        help="The host address of Itential Platform to connect to (default=localhost)"
+    platform_group = parser.add_argument_group(
+        "Itential Platform",
+        "Configuration options for connecting to Itential Platform server"
     )
 
-    platform_group.add_argument(
-        "--platform-port",
-        type=int,
-        help="The port to use when connecting to Itential Platform (default=0)"
-    )
+    data = [f for f in fields(config.Config)]
 
-    platform_group.add_argument(
-        "--platform-disable-tls",
-        action="store_true",
-        help="Disable using TLS to connect to the server (default=False)"
-    )
+    for ele in data:
+        attrs = ele.default.json_schema_extra
+        if attrs and attrs.get("x-itential-mcp-cli-enabled"):
+            helpstr = ele.default.description
+            if helpstr is not None:
+                helpstr += f" (default={ele.default.default})"
+            else:
+                helpstr = "NO HELP AVAILABLE!!"
 
-    platform_group.add_argument(
-        "--platform-disable-verify",
-        action="store_true",
-        help="Disable certificate verification (default=False)",
-    )
+            kwargs = {
+                "dest": ele.name,
+                "help": helpstr
+            }
 
-    platform_group.add_argument(
-        "--platform-user",
-        help="Username to use when authenticating to the server (default=admin)"
-    )
+            kwargs.update(attrs.get("x-itential-mcp-options") or {})
+            posargs = attrs.get("x-itential-mcp-arguments")
 
-    platform_group.add_argument(
-        "--platform-password",
-        help="Password to use when authenticating to the server (default=admin)"
-    )
 
-    platform_group.add_argument(
-        "--platform-client-id",
-        help="Client ID to use when authenticating to the server with OAuth",
-    )
+        if ele.name.startswith("server"):
+            server_group.add_argument(*posargs, **kwargs)
+        elif ele.name.startswith("platform"):
+            platform_group.add_argument(*posargs, **kwargs)
 
-    platform_group.add_argument(
-        "--platform-client-secret",
-        help="Client secret to use when authenticating to the server with OAuth",
-    )
-
-    platform_group.add_argument(
-        "--platform-timeout",
-        type=int,
-        help="Configure the connection timeout in seconds (default=30)",
-    )
 
     args = parser.parse_args(args=args)
 
