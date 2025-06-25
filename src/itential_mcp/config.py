@@ -16,26 +16,183 @@ from pydantic.dataclasses import dataclass
 from . import env
 
 
+def options(*args, **kwargs) -> dict:
+    """
+    Utility function to add extra parameters to fields
+
+    This function will add extra parameters to to a Field in the Config
+    class.  Specifically it handles adding the necessary keys to support
+    generating the CLI options from the configuration.  This unifies the
+    parameter descriptions and default values for consistency.
+
+    Args:
+        *args: Positional arguments to be added to the CLI command line option
+        **kwargs: Optional arguments to be added to the CLI command line option
+
+    Returns:
+        dict: A Python dict object to be added to the Field function
+            signature
+
+    Raises:
+        None
+    """
+    return {
+        "x-itential-mcp-cli-enabled": True,
+        "x-itential-mcp-arguments": args,
+        "x-itential-mcp-options": kwargs
+    }
+
 @dataclass(frozen=True)
 class Config(object):
 
-    server_transport: Literal["stdio", "sse", "streamable-http"] = Field(default="stdio")
-    server_host: str = Field(default="127.0.0.1")
-    server_port: int = Field(default=0)
-    server_path: str = Field(default="/mcp")
-    server_log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(default="INFO")
-    server_include_tags: str | None = Field(default=None)
-    server_exclude_tags: str | None = Field(default="experimental,beta")
+    server_transport: Literal["stdio", "sse", "streamable-http"] = Field(
+        description="The MCP server transport to use",
+        default="stdio",
+        json_schema_extra=options(
+            "--transport",
+            choices=("stdio", "sse", "streamable-http"),
+            metavar="<value>"
+        )
+    )
 
-    platform_host: str = Field(default="localhost")
-    platform_port: int = Field(default=0)
-    platform_disable_tls: bool = Field(default=False)
-    platform_disable_verify: bool = Field(default=False)
-    platform_user: str = Field(default="admin")
-    platform_password: str = Field(default="admin")
-    platform_client_id: str | None = Field(default=None)
-    platform_client_secret: str | None = Field(default=None)
-    platform_timeout: int = Field(default=30)
+
+    server_host: str = Field(
+        description="Address to listen for connections on",
+        default="127.0.0.1",
+        json_schema_extra=options(
+            "--host",
+            metavar="<host>"
+        )
+    )
+
+    server_port: int = Field(
+        description="Port to listen for connections on",
+        default=8000,
+        json_schema_extra=options(
+            "--port",
+            metavar="<port>",
+            type=int
+        )
+    )
+
+    server_path: str = Field(
+        description="URI path used to accept requests from",
+        default="/mcp",
+        json_schema_extra=options(
+            "--path",
+            metavar="<path>"
+        )
+    )
+
+    server_log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(
+        description="Logging level for verbose output",
+        default="INFO",
+        json_schema_extra=options(
+            "--log-level",
+            metavar="<level>"
+        )
+    )
+
+    server_include_tags: str | None = Field(
+        description="Include tools that match at least on tag",
+        default=None,
+        json_schema_extra=options(
+            "--include-tags",
+            metavar="<tags>"
+        )
+    )
+
+    server_exclude_tags: str | None = Field(
+        description="Exclude any tool that matches one of these tags",
+        default="experimental,beta",
+        json_schema_extra=options(
+            "--exclude-tags",
+            metavar="<tags>"
+        )
+    )
+
+    platform_host: str = Field(
+        description="The host addres of the Itential Platform server",
+        default="localhost",
+        json_schema_extra=options(
+            "--platform-host",
+            metavar="<host>"
+        )
+    )
+
+    platform_port: int = Field(
+        description="The port to use when connecting to Itential Platform",
+        default=0,
+        json_schema_extra=options(
+            "--platform-port",
+            type=int,
+            metavar="<port",
+        )
+    )
+
+    platform_disable_tls: bool = Field(
+        description="Disable using TLS to connect to the server",
+        default=False,
+        json_schema_extra=options(
+            "--platform-disable-tls",
+            action="store_true"
+        )
+    )
+
+    platform_disable_verify: bool = Field(
+        description="Disable certificate verification",
+        default=False,
+        json_schema_extra=options(
+            "--platform-disable-verify",
+            action="store_true"
+        )
+    )
+
+    platform_user: str = Field(
+        description="Username to use when authenticating to the server",
+        default="admin",
+        json_schema_extra=options(
+            "--platform-user",
+            metavar="<user>"
+        )
+    )
+
+    platform_password: str = Field(
+        description="Password to use when authenticating to the server",
+        default="admin",
+        json_schema_extra=options(
+            "--platform-password",
+            metavar="<password>"
+        )
+    )
+
+    platform_client_id: str | None = Field(
+        description="Client ID to use when authenticating using OAuth",
+        default=None,
+        json_schema_extra=options(
+            "--platform-client-id",
+            metavar="<client_id>"
+        )
+    )
+
+    platform_client_secret: str | None = Field(
+        description="Client secret to use when authenticating using OAuth",
+        default=None,
+        json_schema_extra=options(
+            "--platform-client-secret",
+            metavar="<client_secret>"
+
+        )
+    )
+
+    platform_timeout: int = Field(
+        description="Sets the timeout in seconds when communciating with the server",
+        default=30,
+        json_schema_extra=options(
+            "--platform-timeout",
+            metavar="<secs>"
+        )
+    )
 
     @property
     def server(self):
