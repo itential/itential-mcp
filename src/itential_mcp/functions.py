@@ -194,3 +194,37 @@ async def resource_name_to_id(ctx: Context, name: str) -> str:
     return value
 
 
+async def group_id_to_name(ctx: Context, ident: str) -> str:
+    """
+    Retrieves the group anme for the specified group id
+
+    This function will attempt to get the group name for the specified
+    group ID.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+        ident (str): The group ID to find the group name for
+
+    Returns:
+        str: The name of the group associated with this group ID
+
+    Raises:
+    """
+    cache = ctx.request_context.lifespan_context.get("cache")
+
+    value = cache.get(f"/authorization/groups/{ident}")
+    if value is not None:
+        return value
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    res = await client.get(f"/authorization/groups/{ident}")
+
+    data = res.json()
+
+    value = data["name"]
+
+    cache.put(f"/authorization/groups/{ident}", value)
+
+    return value
