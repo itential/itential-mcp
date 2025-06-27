@@ -172,3 +172,56 @@ async def backup_device_configuration(
     )
 
     return res.json()
+
+
+async def apply_device_configuration(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+        )],
+    device: Annotated[str, Field(
+        description="The name of the device to apply the configuation to"
+    )],
+    config: Annotated[str, Field(
+        description="The configuration to apply to the device"
+    )]
+) -> dict:
+    """
+    Apply a configuration to a device in Itential Platform
+
+    This tool will apply a  configuration to a named device using Itential
+    Platform.  The name argument defines the name of the device to apply
+    the configuration to.  The device name needs to be a valid device name
+    as returned by the get_devices tool.   The config argument specifies
+    the configuation string to send to the device.  The configuration
+    argument needs to be string.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+        name (str): The name of the device to apply the configuration to
+
+        config (str): The actual configuration to send to the device
+
+    Returns:
+        dict: An object that provides the results of the operation
+
+    Raises:
+        None
+    """
+    await ctx.info("inside apply_device_configuration(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    body = {
+        "config": {
+            "device": device,
+            "config": config,
+        }
+    }
+
+    res = await client.post(
+        f"/configuration_manager/devices/{device}/configuration",
+        json=body
+    )
+
+    return res.json()
