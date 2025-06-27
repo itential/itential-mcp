@@ -93,34 +93,100 @@ async def create_resource(
     Create a new Lifecycle Manager resource in Itential Platform
 
     This tool will create a new Lifecycle Manager resource model on the
-    server.  It requires two arguments.  The name argument defines the name
-    of the Lifecycle Manager model to create.  The name must be unqiue
-    otherwise an error will be returned.  The schema argument must be a valid
-    JSON Schema document that defines the resource model.
+    server. The resource model defines the structure and validation rules
+    for resource instances.
 
-    This tool accepts an optional argument description.  The description
-    argument adds a short description of the resource.
-
-    Once created, the tool will return an object with the following fields:
+    IMPORTANT: The schema parameter should contain ONLY the core schema
+    definition (type, properties, required, etc.) WITHOUT JSON Schema
+    metadata fields like $schema, title, description, or examples.
 
     Args:
         ctx (Context): The FastMCP Context object
 
-        name (str): The name of the resource to get from the server
+        name (str):  The name of the resource to create. This should be a
+            simple string identifier for the resource, e.g.,
+            "PE-CE Network Connection" NOT a JSON object or schema document.
 
-        schema (dict): A valid JSON Schema documen that defines the
-            Lifecycle Manager resource
+        schema (dict): The core schema definition object that defines the
+            structure of the resource. This should include:
+            - type: Usually "object"
+            - properties: The properties definition
+            - required: List of required property names
 
-        description (str): A short description assoicated with this resource
-            model
+            DO NOT INCLUDE:
+            - $schema: JSON Schema version reference
+            - title: Schema title (use the 'name' parameter instead)
+            - description: Schema description (use the 'description' parameter)
+            - examples: Example values
+
+            Example of CORRECT schema format:
+            {
+                "type": "object",
+                "required": ["field1", "field2"],
+                "properties": {
+                    "field1": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "field2": {
+                        "type": "number",
+                        "minimum": 0
+                    }
+                }
+            }
+
+        description (str, optional): A human-readable description of what this
+            resource represents. This is stored separately from the schema and
+            used for documentation purposes.
+            Example: "Provider Edge router with CE connections and billing info"
 
     Returns:
-        dict: An object that represents the resource that was created on
-            Itential Platform
+        dict: An object representing the created resource with fields:
+            - _id: The unique identifier assigned by Itential
+            - name: The resource name as provided
+            - description: The description if provided
+            - schema: The schema definition as stored
+            - created: Timestamp of creation
+            - createdBy: User who created the resource
 
     Raises:
-        ValueError: Raised if the specified resource name already exists
-            on Itential Platform.
+        ValueError: Raised if:
+            - The specified resource name already exists on Itential Platform
+            - The schema format is invalid
+            - Required parameters are missing or malformed
+
+    Example Usage:
+        # CORRECT way to create a resource:
+        result = create_resource(
+            ctx,
+            name="Network Device",
+            schema={
+                "type": "object",
+                "required": ["hostname", "ipAddress"],
+                "properties": {
+                    "hostname": {"type": "string"},
+                    "ipAddress": {"type": "string", "format": "ipv4"}
+                }
+            },
+            description="Basic network device configuration"
+        )
+
+        # WRONG - Don't pass the entire JSON Schema document as name:
+        # result = create_resource(ctx, name=full_json_schema_doc, ...)
+
+        # WRONG - Don't include metadata in schema:
+        # result = create_resource(ctx, name="Device", schema={
+        #     "$schema": "http://json-schema.org/draft-07/schema#",
+        #     "title": "Device",  # Don't include this
+        #     "type": "object",
+        #     ...
+        # })
+
+        Notes:
+            - The schema parameter defines the validation rules for resource instances
+            - Once created, the resource can be used to create multiple instances
+            - The schema follows JSON Schema draft-07 specification for validation
+            - Metadata fields should be passed as separate parameters, not in the schema
     """
     await ctx.info("inside create_resource(...)")
 
