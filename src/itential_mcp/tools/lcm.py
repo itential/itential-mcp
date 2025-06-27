@@ -27,10 +27,6 @@ async def get_resources(
         * _id: The unique identifier for this route
         * name: The name of the resource model
         * description: Short description of the model
-        * created: ISO 8601 timestamp of when the model was created
-        * createdBy: Account name that created the model
-        * updated: ISO 8601 timestamp of when the model was last updated
-        * updatedBy: Account name that last updated the model
 
     Args:
         ctx (Context): The FastMCP Context object
@@ -68,10 +64,6 @@ async def get_resources(
                 "_id": item["_id"],
                 "name": item["name"],
                 "description": item["description"],
-                "created": item["created"],
-                "createdBy": await functions.account_id_to_username(ctx, item["createdBy"]),
-                "updated": item["lastUpdated"],
-                "updatedBy": await functions.account_id_to_username(ctx, item["lastUpdatedBy"]),
             })
 
         if len(results) == data["metadata"]["total"]:
@@ -80,6 +72,156 @@ async def get_resources(
         skip += limit
 
     return results
+
+
+async def create_resource(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    name: Annotated[str, Field(
+        description="The name of the resource model to describe"
+    )],
+    schema: Annotated[dict, Field(
+        description="JSON Schema representation of this resource"
+    )],
+    description: Annotated[str | None, Field(
+        description="Short description of this resource",
+        default=None
+    )]
+) -> dict:
+    """
+    Create a new Lifecycle Manager resource in Itential Platform
+
+    This tool will create a new Lifecycle Manager resource model on the
+    server. The resource model defines the structure and validation rules
+    for resource instances.
+
+    IMPORTANT: The schema parameter should contain ONLY the core schema
+    definition (type, properties, required, etc.) WITHOUT JSON Schema
+    metadata fields like $schema, title, description, or examples.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+        name (str):  The name of the resource to create. This should be a
+            simple string identifier for the resource, e.g.,
+            "PE-CE Network Connection" NOT a JSON object or schema document.
+
+        schema (dict): The core schema definition object that defines the
+            structure of the resource. This should include:
+            - type: Usually "object"
+            - properties: The properties definition
+            - required: List of required property names
+
+            DO NOT INCLUDE:
+            - $schema: JSON Schema version reference
+            - title: Schema title (use the 'name' parameter instead)
+            - description: Schema description (use the 'description' parameter)
+            - examples: Example values
+
+            Example of CORRECT schema format:
+            {
+                "type": "object",
+                "required": ["field1", "field2"],
+                "properties": {
+                    "field1": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "field2": {
+                        "type": "number",
+                        "minimum": 0
+                    }
+                }
+            }
+
+        description (str, optional): A human-readable description of what this
+            resource represents. This is stored separately from the schema and
+            used for documentation purposes.
+            Example: "Provider Edge router with CE connections and billing info"
+
+    Returns:
+        dict: An object representing the created resource with fields:
+            - _id: The unique identifier assigned by Itential
+            - name: The resource name as provided
+            - description: The description if provided
+            - schema: The schema definition as stored
+            - created: Timestamp of creation
+            - createdBy: User who created the resource
+
+    Raises:
+        ValueError: Raised if:
+            - The specified resource name already exists on Itential Platform
+            - The schema format is invalid
+            - Required parameters are missing or malformed
+
+    Example Usage:
+        # CORRECT way to create a resource:
+        result = create_resource(
+            ctx,
+            name="Network Device",
+            schema={
+                "type": "object",
+                "required": ["hostname", "ipAddress"],
+                "properties": {
+                    "hostname": {"type": "string"},
+                    "ipAddress": {"type": "string", "format": "ipv4"}
+                }
+            },
+            description="Basic network device configuration"
+        )
+
+        # WRONG - Don't pass the entire JSON Schema document as name:
+        # result = create_resource(ctx, name=full_json_schema_doc, ...)
+
+        # WRONG - Don't include metadata in schema:
+        # result = create_resource(ctx, name="Device", schema={
+        #     "$schema": "http://json-schema.org/draft-07/schema#",
+        #     "title": "Device",  # Don't include this
+        #     "type": "object",
+        #     ...
+        # })
+
+        Notes:
+            - The schema parameter defines the validation rules for resource instances
+            - Once created, the resource can be used to create multiple instances
+            - The schema follows JSON Schema draft-07 specification for validation
+            - Metadata fields should be passed as separate parameters, not in the schema
+    """
+    await ctx.info("inside create_resource(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    existing = None
+    try:
+        existing = await describe_resource(ctx, name)
+    except ValueError:
+        pass
+
+    if existing is not None:
+        raise ValueError(f"resource {name} already exists")
+
+    body = {
+        "name": name,
+        "schema": schema
+    }
+
+    if description is not None:
+        body["description"] = description
+
+    res = await client.post(
+        "/lifecycle-manager/resources",
+        json=body
+    )
+
+    data = res.json()["data"]
+
+    return {
+        "_id": data["_id"],
+        "name": data["name"],
+        "description": data["description"],
+        "schema": data["schema"]
+    }
 
 
 async def describe_resource(
@@ -107,13 +249,10 @@ async def describe_resource(
         * actions: The list of actions assoicated with this resource.  Actions
             can be invoked on instances of the resource to transition from
             one state to another
-        * created: ISO 8601 timestamp of when the model was created
-        * createdBy: Account name that created the model
-        * updated: ISO 8601 timestamp of when the model was last updated
-        * updatedBy: Account name that last updated the model
 
     Args:
         ctx (Context): The FastMCP Context object
+
         name (str): The name of the resource to get from the server
 
     Returns:
@@ -160,10 +299,6 @@ async def describe_resource(
         "description": item["description"],
         "schema": item["schema"],
         "actions": actions,
-        "created": item["created"],
-        "createdBy": await functions.account_id_to_username(ctx, item["createdBy"]),
-        "updated": item["lastUpdated"],
-        "updatedBy": await functions.account_id_to_username(ctx, item["lastUpdatedBy"])
     }
 
 
@@ -189,10 +324,6 @@ async def get_instances(
         * description: Short description of the model
         * instanceData: Data object associated with this instance
         * lastAction: The last action performed on the instance
-        * created: ISO 8601 timestamp of when the model was created
-        * createdBy: Account name that created the model
-        * updated: ISO 8601 timestamp of when the model was last updated
-        * updatedBy: Account name that last updated the model
 
     Args:
         ctx (Context): The FastMCP Context object
@@ -238,10 +369,6 @@ async def get_instances(
                 "description": ele["description"],
                 "instanceData": ele["instanceData"],
                 "lastAction": ele["lastAction"],
-                "created": ele["created"],
-                "createdBy": await functions.account_id_to_username(ctx, ele["createdBy"]),
-                "updated": ele["lastUpdated"],
-                "updatedBy": await functions.account_id_to_username(ctx, ele["lastUpdatedBy"])
             })
 
         if len(results) == data["metadata"]["total"]:
