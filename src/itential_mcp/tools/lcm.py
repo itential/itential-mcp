@@ -27,10 +27,6 @@ async def get_resources(
         * _id: The unique identifier for this route
         * name: The name of the resource model
         * description: Short description of the model
-        * created: ISO 8601 timestamp of when the model was created
-        * createdBy: Account name that created the model
-        * updated: ISO 8601 timestamp of when the model was last updated
-        * updatedBy: Account name that last updated the model
 
     Args:
         ctx (Context): The FastMCP Context object
@@ -68,10 +64,6 @@ async def get_resources(
                 "_id": item["_id"],
                 "name": item["name"],
                 "description": item["description"],
-                "created": item["created"],
-                "createdBy": await functions.account_id_to_username(ctx, item["createdBy"]),
-                "updated": item["lastUpdated"],
-                "updatedBy": await functions.account_id_to_username(ctx, item["lastUpdatedBy"]),
             })
 
         if len(results) == data["metadata"]["total"]:
@@ -80,6 +72,90 @@ async def get_resources(
         skip += limit
 
     return results
+
+
+async def create_resource(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    name: Annotated[str, Field(
+        description="The name of the resource model to describe"
+    )],
+    schema: Annotated[dict, Field(
+        description="JSON Schema representation of this resource"
+    )],
+    description: Annotated[str | None, Field(
+        description="Short description of this resource",
+        default=None
+    )]
+) -> dict:
+    """
+    Create a new Lifecycle Manager resource in Itential Platform
+
+    This tool will create a new Lifecycle Manager resource model on the
+    server.  It requires two arguments.  The name argument defines the name
+    of the Lifecycle Manager model to create.  The name must be unqiue
+    otherwise an error will be returned.  The schema argument must be a valid
+    JSON Schema document that defines the resource model.
+
+    This tool accepts an optional argument description.  The description
+    argument adds a short description of the resource.
+
+    Once created, the tool will return an object with the following fields:
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+        name (str): The name of the resource to get from the server
+
+        schema (dict): A valid JSON Schema documen that defines the
+            Lifecycle Manager resource
+
+        description (str): A short description assoicated with this resource
+            model
+
+    Returns:
+        dict: An object that represents the resource that was created on
+            Itential Platform
+
+    Raises:
+        ValueError: Raised if the specified resource name already exists
+            on Itential Platform.
+    """
+    await ctx.info("inside create_resource(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    existing = None
+    try:
+        existing = await describe_resource(ctx, name)
+    except ValueError:
+        pass
+
+    if existing is not None:
+        raise ValueError(f"resource {name} already exists")
+
+    body = {
+        "name": name,
+        "schema": schema
+    }
+
+    if description is not None:
+        body["description"] = description
+
+    res = await client.post(
+        "/lifecycle-manager/resources",
+        json=body
+    )
+
+    data = res.json()["data"]
+
+    return {
+        "_id": data["_id"],
+        "name": data["name"],
+        "description": data["description"],
+        "schema": data["schema"]
+    }
 
 
 async def describe_resource(
@@ -107,13 +183,10 @@ async def describe_resource(
         * actions: The list of actions assoicated with this resource.  Actions
             can be invoked on instances of the resource to transition from
             one state to another
-        * created: ISO 8601 timestamp of when the model was created
-        * createdBy: Account name that created the model
-        * updated: ISO 8601 timestamp of when the model was last updated
-        * updatedBy: Account name that last updated the model
 
     Args:
         ctx (Context): The FastMCP Context object
+
         name (str): The name of the resource to get from the server
 
     Returns:
@@ -160,10 +233,6 @@ async def describe_resource(
         "description": item["description"],
         "schema": item["schema"],
         "actions": actions,
-        "created": item["created"],
-        "createdBy": await functions.account_id_to_username(ctx, item["createdBy"]),
-        "updated": item["lastUpdated"],
-        "updatedBy": await functions.account_id_to_username(ctx, item["lastUpdatedBy"])
     }
 
 
@@ -189,10 +258,6 @@ async def get_instances(
         * description: Short description of the model
         * instanceData: Data object associated with this instance
         * lastAction: The last action performed on the instance
-        * created: ISO 8601 timestamp of when the model was created
-        * createdBy: Account name that created the model
-        * updated: ISO 8601 timestamp of when the model was last updated
-        * updatedBy: Account name that last updated the model
 
     Args:
         ctx (Context): The FastMCP Context object
@@ -238,10 +303,6 @@ async def get_instances(
                 "description": ele["description"],
                 "instanceData": ele["instanceData"],
                 "lastAction": ele["lastAction"],
-                "created": ele["created"],
-                "createdBy": await functions.account_id_to_username(ctx, ele["createdBy"]),
-                "updated": ele["lastUpdated"],
-                "updatedBy": await functions.account_id_to_username(ctx, ele["lastUpdatedBy"])
             })
 
         if len(results) == data["metadata"]["total"]:
