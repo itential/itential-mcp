@@ -55,10 +55,12 @@ The following tags are available for filtering tools based on their functionalit
 - **render_template** - Render a Jinja2 template with provided variables for configuration generation
 
 ## Device Groups (`device_groups.py`)
-** Group Tags:** `configuration_manager`, `devices`
+** Group Tags:** `configuration_manager`
 
 - **get_device_groups** - Get all device groups from Itential Platform with device lists and descriptions
-- **create_device_group** - Create a new device group on Itential Platform with optional device assignment
+- **create_device_group** - Create a new device group on Itential Platform with optional device assignment and duplicate name validation
+- **add_devices_to_group** - Add one or more devices to an existing device group with device list replacement
+- **remove_devices_from_group** - Remove one or more devices from an existing device group with filtered device list reconstruction
 
 ## Devices Management (`devices.py`)
 ** Group Tags:** `configuration_manager`
