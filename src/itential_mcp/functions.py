@@ -194,7 +194,7 @@ async def resource_name_to_id(ctx: Context, name: str) -> str:
     return value
 
 
-async def group_id_to_name(ctx: Context, ident: str) -> str:
+async def group_id_to_name(ctx: Context, group_id: str) -> str:
     """
     Retrieves the group anme for the specified group id
 
@@ -204,7 +204,7 @@ async def group_id_to_name(ctx: Context, ident: str) -> str:
     Args:
         ctx (Context): The FastMCP Context object
 
-        ident (str): The group ID to find the group name for
+        group_id (str): The group ID to find the group name for
 
     Returns:
         str: The name of the group associated with this group ID
@@ -213,18 +213,61 @@ async def group_id_to_name(ctx: Context, ident: str) -> str:
     """
     cache = ctx.request_context.lifespan_context.get("cache")
 
-    value = cache.get(f"/authorization/groups/{ident}")
+    value = cache.get(f"/authorization/groups/{group_id}")
     if value is not None:
         return value
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    res = await client.get(f"/authorization/groups/{ident}")
+    res = await client.get(f"/authorization/groups/{group_id}")
 
     data = res.json()
 
     value = data["name"]
 
-    cache.put(f"/authorization/groups/{ident}", value)
+    cache.put(f"/authorization/groups/{group_id}", value)
+
+
+async def project_name_to_id(ctx: Context, name: str) -> str:
+    """
+    Retrieves the project ID for the specified project name
+
+    This function will attempt to find the a project on the Itential
+    Server with the name as specified by the name argument.   If the
+    project exists, the project ID will be returned.  If the project
+    does not exist, an exception will be raised
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+        name (str): The project name to return the ID for
+
+    Returns:
+        str: The project ID of the project based on the name
+
+    Raises:
+        ValueError: If the specific project name could not be found on
+            the server
+    """
+    cache = ctx.request_context.lifespan_context.get("cache")
+
+    value = cache.get(f"/projects/{name}")
+    if value is not None:
+        return value
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    res = await client.get(
+        "/automation-studio/projects",
+        params={"equals[name]": name}
+    )
+
+    data = res.json()
+    if data["metadata"]["total"] != 1:
+        raise ValueError(f"error locating project {name}")
+
+    value = data["data"][0]["_id"]
+
+    cache.put(f"/projects/{name}", value)
 
     return value
