@@ -7,13 +7,19 @@ from pydantic import Field
 
 from fastmcp import Context
 
+from itential_mcp import functions
+
 
 async def get_jobs(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
     )],
-    status: Annotated[str | None, Field(
-        description="Job status used to filter the results",
+    name: Annotated[str | None, Field(
+        description="Workflow name used to filter the results",
+        default=None
+    )],
+    project: Annotated[str | None, Field(
+        description="Project name used to filter the results",
         default=None
     )]
 ) -> list[dict]:
@@ -25,21 +31,28 @@ async def get_jobs(
     job id and name, current job status, and the job description if it was
     set.
 
-    This tool accepts an optional `status` argument that can be used to
-    filter the list of returned jobs.  By default all jobs found on the
-    server are returned.  Setting the `status` argument will return only
-    those jobs that match the value for `status`.  Valid values for `status`
-    include `error`, `complete`, `running`, `cancelled`, `incomplete` or
-    `paused`.
+    This tool has two optional arguments that can be uesd to filter the
+    list of returned jobs.  The first optional argument is name which
+    defines the name of the workflow to return jobs for.  This will restrict
+    the returned list to only workflows that match this name.
+
+    The second optional argument is project.  By default, the returned list
+    only considers workflows in the global namespace.  If the workfow is
+    embedded in a project, the project argument must be provided.  This
+    argument accepts the project name that contains the workflow.
+
+    If the project argument is specified and the name argument is not
+    specified, all workflow jobs assoicated with the project are
+    returned.
 
     The following data is returned for each job in the list:
 
         * _id: The unique job identifier
         * created: The timestamp when the job was created
-        * created_by: The id of the user that created the job
+        * createdBy: The id of the user that created the job
         * description: A short description of the job created by the user
         * updated: The timestamp of when the job was last updated
-        * updated_by: The id of user that last updated the job
+        * updatedBy: The id of user that last updated the job
         * name: The name of the job
         * status: The current status of the job.  The job status will be one
             of `error`, `complete`, `running`, `cancelled`, `incomplete`, or
@@ -48,14 +61,14 @@ async def get_jobs(
     Args:
         ctx (Context): The FastMCP Context object
 
-        status (str): Filter the jobs by the current job status.
+        name (str): Only return jobs for workflows that match this value
 
     Returns:
         list[dict]: A list of Python dict objects where each element
             represents the metadata for a single job
 
     Raises:
-        None
+        None:
     """
     await ctx.info("running get_jobs(...)")
 
@@ -65,9 +78,18 @@ async def get_jobs(
 
     limit = 100
     skip = 0
-    cnt = 0
 
     params = {"limit": limit}
+
+    if project is not None:
+        project_id = await functions.project_name_to_id(ctx, project)
+        if name is not None:
+            params["equals[name]"] = f"@{project_id}: {name}"
+        else:
+            params["starts-with[name]"] = f"@{project_id}"
+
+    elif name is not None:
+        params["equals[name]"] = name
 
     while True:
         params["skip"] = skip
@@ -78,21 +100,18 @@ async def get_jobs(
         metadata = data.get("metadata")
 
         for item in data.get("data") or list():
-            if status is None or (status is not None and item["status"] == status):
-                results.append({
-                    "_id": item.get("_id"),
-                    "created": item.get("created"),
-                    "created_by": item.get("created_by"),
-                    "updated": item.get("last_updated"),
-                    "updated_by": item.get("last_updated_by"),
-                    "name": item.get("name"),
-                    "description": item.get("description"),
-                    "status": item.get("status")
-                })
+            results.append({
+                "_id": item.get("_id"),
+                "created": item.get("created"),
+                "created_by": item.get("created_by"),
+                "updated": item.get("last_updated"),
+                "updated_by": item.get("last_updated_by"),
+                "name": item.get("name"),
+                "description": item.get("description"),
+                "status": item.get("status")
+            })
 
-        cnt += len(data)
-
-        if cnt == metadata["total"]:
+        if len(results) == metadata["total"]:
             break
 
         skip += limit
