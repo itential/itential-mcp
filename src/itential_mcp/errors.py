@@ -38,3 +38,13 @@ class InvalidStateError(ItentialMcpError):
     in a state that was either unexpected or invalid.
     """
     pass
+
+
+class AlreadyExistsError(ItentialMcpError):
+    """
+    Error raised when a resource of the same identifier already exists
+
+    This exception is typically used by tools to indicate that a resource
+    with the same identifier already exists on the server and therefore
+    cannot be created.
+    """
