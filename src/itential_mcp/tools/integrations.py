@@ -16,27 +16,21 @@ async def get_integration_models(
     )]
 ) -> dict:
     """
-    Get all integration models available from Itential Platform
+    Get all integration models from Itential Platform.
 
-    This tool will retrieve all of the integration models that have been
-    added to Itential Platform.  It will return a list of objects where
-    each element represents an available integration model.
+    Integration models define API specifications for external systems and services 
+    that can be integrated with Itential Platform. They are based on OpenAPI 
+    specifications and enable automated interaction with third-party systems.
 
     Args:
         ctx (Context): The FastMCP Context object
 
     Returns:
-        list[dict]: A list of objects that present the integrationt models
-            with the following fields defined:
-            - id: The unique identifer assigned by Itential Platform
-            - title: The text title of the model taken from the info block
-                of the OpenAPI spec document
-            - version: The version of the model taken from the info block
-                of the OpenAPI spec document
-            - description: An optional description of the model
-
-    Raises:
-        None
+        list[dict]: List of integration model objects with the following fields:
+            - id: Unique identifier assigned by Itential Platform
+            - title: Model title from the OpenAPI spec info block
+            - version: Model version from the OpenAPI spec info block
+            - description: Optional model description
     """
     await ctx.info("inside get_integration_models(...)")
 
@@ -68,41 +62,27 @@ async def create_integration_model(
     )]
 ) -> dict:
     """
-    Create a new integration model on Itential Platform
+    Create a new integration model on Itential Platform from an OpenAPI specification.
 
-    This tool will create a new integration model on Itential Platform from
-    the provided model schema defined in the model argument.  The schema
-    must be a valid OpenAPI spec document in order to create the
-    integration model.
-
-    This tool will check if the model already exists on the server and raise
-    an error if it does.  The model identifer is a combination of the title
-    and version both found in the info block of the OpenAPI spec.
-
-    If the model already exists, an error will be raised.
-
-    This tool will also attempt to validate the OpenAPI spec document before
-    attempting to create the integration model.  If the OpenAPI spec
-    document is not properly formated, an error will be raised.
+    Integration models enable Itential Platform to interact with external systems 
+    by defining their API structure and capabilities. The model must be a valid 
+    OpenAPI specification document.
 
     Args:
         ctx (Context): The FastMCP Context object
-
-        model (dict): The OpenAPI schema as a dict object
+        model (dict): Valid OpenAPI specification as a dictionary object
 
     Returns:
-        dict: An object that represents the create operation with the
-            following fields:
-            - status: Status of the operation.  Valid values for status
-              are OK, CREATED
-            - model: The OpenAPI specification used to create the
-              integration model
+        dict: Creation operation result with the following fields:
+            - status: Operation status (OK or CREATED)
+            - message: Descriptive message about the operation
 
     Raises:
-        AlreadyExistsError: If the model already exists on the server
+        AlreadyExistsError: If a model with the same title and version already exists
 
     Notes:
-        - Allowed values for status are OK or CREATED
+        - Model identifier is derived from title:version in the OpenAPI spec info block
+        - OpenAPI specification is validated before creation
     """
     await ctx.info("inside create_integration_model(...)")
 
