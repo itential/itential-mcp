@@ -14,30 +14,20 @@ async def get_compliance_plans(
     )],
 ) -> list[dict]:
     """
-    Gets all configured compliance plans from Itential Platform
+    Get all compliance plans from Itential Platform.
 
-    This tool will return a all of the configured compliance plans found
-    on from Itential Platform.  Each element in the returned list represents
-    a configured compliance plan.  If there are no configured compliance
-    plans, the tool will return an empty list.
-
-    Elements in the list have the following fields:
-
-        * id: The unique identifier for the compliance plan
-        * name: The name of the compliance plan
-        * description: Short description about the compliance plan
-        * throttle: The configured number of devices that will be checked
-            in parallel when the compliance plan is run
+    Compliance plans define configuration validation rules and checks that can be 
+    executed against network devices to ensure they meet organizational standards.
 
     Args:
         ctx (Context): The FastMCP Context object
 
     Returns:
-        dict: A Python list of dict objects that reprsesent all of the devices
-            knownn to Itential Platform
-
-    Raises:
-        None
+        list[dict]: List of compliance plan objects with the following fields:
+            - id: Unique identifier for the compliance plan
+            - name: Compliance plan name
+            - description: Plan description
+            - throttle: Number of devices checked in parallel during execution
     """
     await ctx.info("inside get_compliance_plans(...)")
 
@@ -91,34 +81,25 @@ async def run_compliance_plan(
     )]
 ) -> dict:
     """
-    Run a compliance plan from Itential Platform
+    Execute a compliance plan against network devices.
 
-    This tool will start the running of the compliance plan specified
-    by the name argument.  Once started, this tool will return the
-    running instance of the compliance plan.  If the compliance plan
-    does not exist, this tool will return an error.
-
-    The name argument is case sensitive
-
-    The returned object has the following fields:
-
-        * id: The unique identifier for this compliance plan instance
-        * name: The name of the compliance plan that was started
-        * description: Short description of the compliance plan
-        * jobStatus: The current job status of the compliance plan instance
+    Compliance plans validate device configurations against organizational standards 
+    by running predefined checks and rules. This function starts a compliance plan 
+    execution and returns the running instance details.
 
     Args:
         ctx (Context): The FastMCP Context object
-
-        name (str): The name of the compliance plan to run
+        name (str): Case-sensitive name of the compliance plan to run
 
     Returns:
-        dict: an object that represents the running instance of the
-            compliance plan
+        dict: Running compliance plan instance with the following fields:
+            - id: Unique identifier for this compliance plan instance
+            - name: Name of the compliance plan that was started
+            - description: Compliance plan description
+            - jobStatus: Current execution status of the compliance plan instance
 
     Raises:
-        ValueError: Raises when the compliance plan specified by the
-            name argument is not found
+        ValueError: If the specified compliance plan name is not found
     """
     await ctx.info("inside run_compliance_plan(...)")
 
