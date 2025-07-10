@@ -104,7 +104,7 @@ def register_tools(mcp: FastMCP) -> None:
             # Inspect the module to retreive all of the functions.
             for name, f in inspect.getmembers(module, inspect.isfunction):
                 if not name.startswith("_") and f.__module__ == module_name:
-                    kwargs = {"tags": {name}}
+                    kwargs = {"tags": {name, f.__module__}}
                     if hasattr(f, "tags"):
                         tags = kwargs["tags"]
                         for ele in f.tags:
