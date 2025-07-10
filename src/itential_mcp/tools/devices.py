@@ -14,22 +14,17 @@ async def get_devices(
     )],
 ) -> list[dict]:
     """
-    Retrieve all devies known to Itential Platform
+    Get all devices known to Itential Platform.
 
-    Itential Platform will federate device information from multiple
-    sources and make it available to workflows for performing tasks
-    against physical devices. This function will query Itential Platform
-    and return all of the devices known to it.
+    Itential Platform federates device information from multiple sources and makes 
+    it available for network automation workflows. Devices represent physical or 
+    virtual network infrastructure that can be managed, configured, and monitored.
 
     Args:
         ctx (Context): The FastMCP Context object
 
     Returns:
-        dict: A Python list of dict objects that reprsesent all of the devices
-            knownn to Itential Platform
-
-    Raises:
-        None
+        list[dict]: List of device objects containing device information and metadata
     """
     await ctx.info("inside get_devices(...)")
 
@@ -76,23 +71,17 @@ async def get_device_configuration(
     )]
 ) -> str:
     """
-    Get the device current configuration
-
-    This tool will get the current device configuration using Itential
-    Platform.  The device configuration will be returned if the device
-    is a valid device otherwise it will raise an error.
+    Retrieve the current configuration from a network device.
 
     Args:
         ctx (Context): The FastMCP Context object
-
-        name (str): The name of the device to backup.  The device must be
-            available in the list of devices returned from Itential Platform
+        name (str): Name of the device to retrieve configuration from. Use `get_devices` to see available devices.
 
     Returns:
         str: The current device configuration
 
     Raises:
-        ValueError: When there is an exception making the API call
+        ValueError: If there is an error retrieving the configuration or device is not found
     """
     await ctx.info("inside get_device_configuration(...)")
 
@@ -123,36 +112,22 @@ async def backup_device_configuration(
     )]
 ) -> dict:
     """
-    Backup a device configuration to Itential Platform
+    Create a backup of a device configuration in Itential Platform.
 
-    This tool will invoke an operation to backup the configuration of a
-    specific device to Itential Platform.  The deivce's configuration will be
-    backed up and added to the Itential Platform server.
-
-    The returned object includes the following fields:
-
-        * id: The unique identifer for the backup on the server.  This value
-            can be used to retreive the backup later
-        * status: The status of the backup operation job
-        * message: A short descriptive message about the status of the job
+    Configuration backups provide recovery points and change tracking for network 
+    devices, enabling rollback capabilities and configuration management workflows.
 
     Args:
         ctx (Context): The FastMCP Context object
-
-        name (str): The name of the device to backup.  The device must be
-            available in the list of devices returned from Itential Platform
-
-        description (str): Optional short description of the backup
-
-        notes (str): Optional text notes to append to the backup for later
-            reference
+        name (str): Name of the device to backup. Use `get_devices` to see available devices.
+        description (str): Short description of the backup (optional)
+        notes (str): Additional notes for the backup (optional)
 
     Returns:
-        dict: A Python dic object that returns the success or failure of the
-            backup operation
-
-    Raises:
-        None
+        dict: Backup operation result with the following fields:
+            - id: Unique identifier for the backup
+            - status: Status of the backup operation
+            - message: Descriptive message about the operation status
     """
     await ctx.info("inside backup_device_configuration(...)")
 
@@ -179,34 +154,25 @@ async def apply_device_configuration(
         description="The FastMCP Context object"
         )],
     device: Annotated[str, Field(
-        description="The name of the device to apply the configuation to"
+        description="The name of the device to apply the configuration to"
     )],
     config: Annotated[str, Field(
         description="The configuration to apply to the device"
     )]
 ) -> dict:
     """
-    Apply a configuration to a device in Itential Platform
+    Apply configuration commands to a network device through Itential Platform.
 
-    This tool will apply a  configuration to a named device using Itential
-    Platform.  The name argument defines the name of the device to apply
-    the configuration to.  The device name needs to be a valid device name
-    as returned by the get_devices tool.   The config argument specifies
-    the configuation string to send to the device.  The configuration
-    argument needs to be string.
+    Configuration deployment enables automated provisioning and updates of network 
+    device settings, supporting configuration management and infrastructure automation.
 
     Args:
         ctx (Context): The FastMCP Context object
-
-        name (str): The name of the device to apply the configuration to
-
-        config (str): The actual configuration to send to the device
+        device (str): Name of the target device. Use `get_devices` to see available devices.
+        config (str): Configuration string to apply to the device
 
     Returns:
-        dict: An object that provides the results of the operation
-
-    Raises:
-        None
+        dict: Configuration application results and operation status
     """
     await ctx.info("inside apply_device_configuration(...)")
 
