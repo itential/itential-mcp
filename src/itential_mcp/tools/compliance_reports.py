@@ -17,19 +17,20 @@ async def describe_compliance_report(
     )]
 ) -> dict:
     """
-    Retrieve the compliance report from the server
+    Retrieve detailed compliance report results from Itential Platform.
+
+    Compliance reports contain the results of executing compliance plans against 
+    network devices, showing configuration validation outcomes, rule violations, 
+    and compliance status for each checked device.
 
     Args:
         ctx (Context): The FastMCP Context object
-
-        report_id (str): The unique report identifier
+        report_id (str): Unique identifier of the compliance report to retrieve
 
     Returns:
-        dict: A Python dict object that represents the output from running a
-            compliance report (golden config) against devices in the infrastructure
-
-    Raises:
-        None
+        dict: Compliance report details containing validation results, device 
+            compliance status, rule violations, and configuration analysis from 
+            running compliance checks against network infrastructure
     """
     await ctx.info("inside describe_compliance_report(...)")
 
