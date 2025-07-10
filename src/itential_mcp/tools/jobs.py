@@ -24,51 +24,27 @@ async def get_jobs(
     )]
 ) -> list[dict]:
     """
-    Get all jobs from the Itential Platform server
+    Get all jobs from Itential Platform.
 
-    This tool will retrieve all jobs from the Itential Platform server and
-    return the metdata from the jobs as a list.  The metadata includes the
-    job id and name, current job status, and the job description if it was
-    set.
-
-    This tool has two optional arguments that can be uesd to filter the
-    list of returned jobs.  The first optional argument is name which
-    defines the name of the workflow to return jobs for.  This will restrict
-    the returned list to only workflows that match this name.
-
-    The second optional argument is project.  By default, the returned list
-    only considers workflows in the global namespace.  If the workfow is
-    embedded in a project, the project argument must be provided.  This
-    argument accepts the project name that contains the workflow.
-
-    If the project argument is specified and the name argument is not
-    specified, all workflow jobs assoicated with the project are
-    returned.
-
-    The following data is returned for each job in the list:
-
-        * _id: The unique job identifier
-        * created: The timestamp when the job was created
-        * createdBy: The id of the user that created the job
-        * description: A short description of the job created by the user
-        * updated: The timestamp of when the job was last updated
-        * updatedBy: The id of user that last updated the job
-        * name: The name of the job
-        * status: The current status of the job.  The job status will be one
-            of `error`, `complete`, `running`, `cancelled`, `incomplete`, or
-            `paused`
+    Jobs represent workflow execution instances that track the status, progress, 
+    and results of automated tasks. They provide visibility into workflow 
+    execution and enable monitoring of automation operations.
 
     Args:
         ctx (Context): The FastMCP Context object
-
-        name (str): Only return jobs for workflows that match this value
+        name (str | None): Filter jobs by workflow name (optional)
+        project (str | None): Filter jobs by project name (optional)
 
     Returns:
-        list[dict]: A list of Python dict objects where each element
-            represents the metadata for a single job
-
-    Raises:
-        None:
+        list[dict]: List of job objects with the following fields:
+            - _id: Unique job identifier
+            - created: Job creation timestamp
+            - created_by: ID of user who created the job
+            - description: Job description
+            - updated: Last update timestamp
+            - updated_by: ID of user who last updated the job
+            - name: Job name
+            - status: Current job status (error, complete, running, cancelled, incomplete, paused)
     """
     await ctx.info("running get_jobs(...)")
 
@@ -124,47 +100,30 @@ async def describe_job(
         description="The FastMCP Context object"
     )],
     job_id: Annotated[str, Field(
-        description="The ID used to retreive the job"
+        description="The ID used to retrieve the job"
     )]
 ) -> dict:
     """
-    Get details about a job from Itential Platform
+    Get detailed information about a specific job from Itential Platform.
 
-    When a workflow is started a new job is automatically created that
-    contains the status of the job.  All details about the job are stored
-    in the job document.  The job document provides information about
-    the execution of a workflow.
-
-    This function will retrieve the job document from Itential Platform based
-    on the unique `job_id` argument.   The `job_id` is used to uniquely
-    identify the desired job document.
-
-    The job document will return the following:
-        * _id: The unique identifier for this job
-        * name: The name of the API endpoint trigger
-        * description: Short description of the API endpoint trigger
-        * type: Identifies the type of job.  Valid values for type are
-            `automation`, `resource:action`, or `resource:compliance`
-        * tasks: The full set of tasks to be executed
-        * updated: ISO 8601 timestamp of when the trigger was last updated
-        * status: The status of the job.  This will return one of the
-            following values: `error`, `complete`, `running`, `canceled`,
-            `incomplete` or `paused`
-        * metrics: Job metrics that include the job start time, job end
-            time and account
+    Jobs are created automatically when workflows are executed and contain 
+    comprehensive information about the workflow execution including status, 
+    tasks, metrics, and results.
 
     Args:
         ctx (Context): The FastMCP Context object
-
-        job_id (str): The job identifier returned from the job _id returned
-            for any triggered job
+        job_id (str): Unique job identifier to retrieve. Job IDs are returned by `start_workflow` and `get_jobs`.
 
     Returns:
-        dict: A Python dict object that represents the job status from the
-            server
-
-    Raises:
-        None
+        dict: Job details with the following fields:
+            - _id: Unique job identifier
+            - name: Job name
+            - description: Job description
+            - type: Job type (automation, resource:action, resource:compliance)
+            - tasks: Complete set of tasks executed
+            - status: Current job status (error, complete, running, canceled, incomplete, paused)
+            - metrics: Job execution metrics including start time, end time, and account
+            - updated: Last update timestamp
     """
 
     await ctx.info("inside describe_job(...)")
