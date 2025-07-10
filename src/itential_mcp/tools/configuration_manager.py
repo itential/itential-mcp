@@ -13,7 +13,7 @@ async def render_template(
         description="The FastMCP Context object"
     )],
     template: Annotated[str, Field(
-        description="The Jinaj2 template string"
+        description="The Jinja2 template string"
     )],
     variables: Annotated[dict, Field(
         description="Zero or more variables to associate with this template",
@@ -21,27 +21,19 @@ async def render_template(
     )]
 ) -> str:
     """
-    Renders a Jinja2 template
+    Render a Jinja2 template with provided variables.
 
-    This tool will take a Jinja2 template and set of variables and render
-    the string.  The template argument defines the Jinja2 template and
-    the variables argument is a Python dict that defines the values.
-
-    The returned string is the fully rendered Jinaj2 template.
+    Jinja2 templates are commonly used in network automation for generating 
+    device configurations, commands, and other text-based content by combining 
+    template structures with dynamic variable values.
 
     Args:
         ctx (Context): The FastMCP Context object
-
         template (str): The Jinja2 template string to render
-
-        variables (dict): Zero or more key value pairs as a Python dict
-            to add to the configuration template
+        variables (dict): Key-value pairs to substitute in the template (optional)
 
     Returns:
-        str: A Python dict object that represents the rendered template
-
-    Raises:
-        None
+        str: The fully rendered template with variables substituted
     """
     await ctx.info("inside render_template()")
 
