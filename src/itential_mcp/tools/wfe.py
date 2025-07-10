@@ -14,26 +14,19 @@ async def get_job_metrics(
     )]
 ) -> list[dict]:
     """
-    Get the aggregate job metrics from workflow engine
+    Get aggregate job metrics from the Workflow Engine.
 
-    The Itential Platform workflow engine maintains records that aggregate
-    workflow job metrics over the life of automation executions. This
-    function will return the aggregate job metrics for automations that
-    have been executed by Itential Platform.
-
-    It will provide information such as the number of jobs completed in the
-    `jobsComplete` key, the name of the workflow that was executed and the
-    total run time among other key statistics
+    The Workflow Engine maintains comprehensive metrics about workflow execution 
+    performance, providing insights into automation efficiency, success rates, 
+    and resource utilization across all workflow jobs.
 
     Args:
         ctx (Context): The FastMCP Context object
 
     Returns:
-        list[dict]: A Python list object that contains job metric data as
-            a Python dict object
-
-    Raises:
-        None
+        list[dict]: List of job metric objects containing execution statistics 
+            including jobs completed, workflow names, total runtime, and other 
+            performance metrics
     """
     await ctx.debug("inside get_job_metrics(...)")
 
@@ -73,25 +66,18 @@ async def get_task_metrics(
     )]
 ) -> list[dict]:
     """
-    Get the aggregate task metrics from workflow engine
+    Get aggregate task metrics from the Workflow Engine.
 
-    The Itential Platform workflow engine maintains records that aggregate
-    workflow task metrics over the life of automation executions. This
-    function will return the aggregate task metrics for automations that
-    have been executed by Itential Platform.
-
-    It will provide details about tasks from workflows such as the application
-    associated with the task, the task name and type and metrics for the task.
+    The Workflow Engine tracks detailed task-level metrics within workflows, 
+    providing granular insights into individual task performance, application 
+    usage, and execution patterns across automation operations.
 
     Args:
         ctx (Context): The FastMCP Context object
 
     Returns:
-        list[dict]: A Python list object that contains task metric data as
-            a Python dict object
-
-    Raises:
-        None
+        list[dict]: List of task metric objects containing task details including 
+            associated applications, task names and types, and performance metrics
     """
     await ctx.debug("inside get_task_metrics(...)")
 
@@ -114,4 +100,3 @@ async def get_task_metrics(
         skip += limit
 
     return results
-
