@@ -17,37 +17,34 @@ async def get_workflows(
     )]
 ) -> list[dict]:
     """
-    Get all API endpoint triggers from Itential Platform
+    Get all workflow API endpoints from Itential Platform.
 
-    This tool will retrieve all of the API endpoint triggers (routes) that
-    can be called by external services.  The tool will return a list of
-    triggers where each element in the list represents a callable API
-    route. Use the name as the identifier for the workflow. The routeName 
-    is used for job triggering only.
-
-    The fields available for each element include:
-
-        * _id: The unique identifier for this route
-        * name: The name of the workflow as configured in Platform
-        * description: Short description of the triggers function
-        * schema: The input schema for the launching the trigger based
-            on http://json-schema.org/draft-07/schema
-        * routeName: The API route used to start the endpoint
-        * created: ISO 8601 timestamp of when the trigger was created
-        * createdBy: Account name that created the trigger
-        * updated: ISO 8601 timestamp of when the trigger was last updated
-        * updatedBy: Account name that last updated the trigger
-        * lastExecuted: ISO 8601 timestamp this trigger was last executed
+    Workflows are the core automation engine of Itential Platform, defining 
+    executable processes that orchestrate network operations, device management, 
+    and service provisioning. Each workflow exposes an API endpoint that can be 
+    triggered by external systems or other platform components.
 
     Args:
         ctx (Context): The FastMCP Context object
 
     Returns:
-        list[dict]: A Python list of dict objects that represent the available
-            workflows found on the server.
+        list[dict]: List of workflow objects with the following fields:
+            - _id: Unique identifier for the workflow
+            - name: Workflow name (use this as the identifier for workflow operations)
+            - description: Workflow description
+            - schema: Input schema for workflow parameters (JSON Schema draft-07 format)
+            - routeName: API route name for triggering the workflow (use with `start_workflow`)
+            - created: ISO 8601 creation timestamp
+            - createdBy: Account name that created the workflow
+            - updated: ISO 8601 last update timestamp
+            - updatedBy: Account name that last updated the workflow
+            - lastExecuted: ISO 8601 timestamp of last execution (null if never executed)
 
-    Raises:
-        None
+    Notes:
+        - Use the 'name' field as the workflow identifier for most operations
+        - Use the 'routeName' field specifically for `start_workflow` function
+        - The 'schema' field defines required input parameters for workflow execution
+        - Only enabled workflows are returned by this function
     """
     await ctx.info("inside get_workflows(...)")
 
@@ -116,44 +113,36 @@ async def start_workflow(
     )]
 ) -> dict:
     """
-    Start an API endpoint trigger from Itential Platform
+    Execute a workflow by triggering its API endpoint.
 
-    This tool is responsible for calling the API endpoint trigger based
-    on the `route` argument.  The `route` argument provides the name of
-    API endpoint trigger to call.
-
-    Optionally, the `data` argument can be used to provide data in the
-    body of the request when invoking the API endpoint route.
-
-    The tool will return an object that represents the started job
-    in Itential Platform.  It containes the following fields:
-
-        * _id: The unique identifier for this job
-        * name: The name of the API endpoint trigger
-        * description: Short description of the API endpoint trigger
-        * tasks: The full set of tasks to be executed
-        * created: ISO 8601 timestamp of when the trigger was created
-        * createdBy: Account name that created the trigger
-        * updated: ISO 8601 timestamp of when the trigger was last updated
-        * updatedBy: Account name that last updated the trigger
-        * status: The status of the job.  This will return one of the
-            following values: `error`, `complete`, `running`, `canceled`,
-            `incomplete` or `paused`
-        * metrics: Job metrics that include the job start time, job end
-            time and account
+    Workflows are the core automation processes in Itential Platform. This function 
+    initiates workflow execution and returns a job object that can be monitored 
+    for progress and results.
 
     Args:
         ctx (Context): The FastMCP Context object
-        route_name (str): The API endpoint route to start
-        data: (dict): Data to use in the request as input to the API route
+        route_name (str): API route name for the workflow. Use the 'routeName' field from `get_workflows`.
+        data (dict | None): Input data for workflow execution. Structure must match the workflow's 
+            input schema (available in the 'schema' field from `get_workflows`).
 
     Returns:
-        dict: A Python dict object that represents the relevant data from
-            the job document API.
+        dict: Job execution details with the following fields:
+            - _id: Unique job identifier (use with `describe_job` for monitoring)
+            - name: Workflow name that was executed
+            - description: Workflow description
+            - tasks: Complete set of tasks to be executed in the workflow
+            - status: Current job status (error, complete, running, canceled, incomplete, paused)
+            - metrics: Job execution metrics including start_time, end_time, and user
+            - created: Job creation timestamp
+            - created_by: Account that created the job
+            - updated: Last update timestamp
+            - updated_by: Account that last updated the job
 
-    Raises:
-        None
-
+    Notes:
+        - Use the returned '_id' field with `describe_job` to monitor workflow progress
+        - The 'data' parameter must conform to the workflow's input schema
+        - Job status can be monitored using the `get_jobs` or `describe_job` functions
+        - Workflow schemas are available via the `get_workflows` function
     """
     await ctx.info("inside run_workflow(...)")
 
