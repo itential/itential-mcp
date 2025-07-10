@@ -14,34 +14,25 @@ async def get_health(
     )]
 ) -> dict:
     """
-    Get the Itential Platforms server health
+    Get comprehensive health information from Itential Platform.
 
-    The server health response will return data about the overall health of
-    the server. It will return keys that include the current server status
-    including details about memory and CPU utilization, version information
-    for the server and dependencies as well as the system CPU architecture.
+    System health monitoring provides visibility into platform performance, 
+    resource utilization, and component status. This enables proactive 
+    monitoring and troubleshooting of the automation infrastructure.
 
-    The health response includes keys for `status` which provides the overall
-    system status including core dependent service status for mongo and redis.
-    It also includes a key for `system` the provides the server architecture,
-    total memory and CPU core details.  The `server` key provides details about
-    the server software including running versions, memory and CPU usage details
-    and dependent library versions.
-
-    The health response also includes details about running applications and
-    adapters. The `applications` key provides details about applications and
-    the `adapters` key provides detailsa about adapters. This includes the
-    current running state of the application or adatper as well as the
-    memory and CPU usage statistics and uptime.
+    Note: This function also provides a complete list of all applications 
+    and adapters running on the platform as part of the health data.
 
     Args:
         ctx (Context): The FastMCP Context object
 
     Returns:
-        dict: A Python dict object with the response
-
-    Raises:
-        None
+        dict: Comprehensive health data with the following sections:
+            - status: Overall system status including core services (mongo, redis)
+            - system: Server architecture, total memory, and CPU core details
+            - server: Software versions, memory/CPU usage, and library dependencies
+            - applications: Complete list of applications with status, resource usage, and uptime
+            - adapters: Complete list of adapters with status, resource usage, and uptime
     """
     await ctx.info("inside get_health(...)")
 
