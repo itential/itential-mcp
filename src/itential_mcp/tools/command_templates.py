@@ -11,25 +11,17 @@ from itential_mcp import timeutils
 
 async def _get_project_id_from_name(ctx: Context, name: str) -> str:
     """
-    Gets the project ID for the specified project name
-
-    This function will attempt to get the project id based on the name
-    of the project.  It will query the server to get the project by name
-    and return the project id.  If the project name doesn't not match
-    on the server, a ValueError will be raised.
-
-    Note the project name is case sensitive
+    Get the project ID for a specified project name.
 
     Args:
         ctx (Context): The FastMCP Context object
-        name (str): The name of the project to locate
+        name (str): Case-sensitive project name to locate
 
     Returns:
-        str: The project ID associdated with the project name
+        str: The project ID associated with the project name
 
     Raises:
-        ValueError: Exception raised when the project name could not be
-            deinitively located on the server
+        ValueError: If the project name cannot be definitively located
     """
     client = ctx.request_context.lifespan_context.get("client")
 
@@ -52,37 +44,26 @@ async def get_command_templates(
     )]
 ) -> list[dict]:
     """
-    Get a list of command templates from Itential Platform
+    Get all command templates from Itential Platform.
 
-    This tool will get the list of command templates from Itential
-    Platform.  It will retreive command templates defined in global
-    space and in projects and return them as a list of Python dict
-    elements.
-
-    The elements contain the following fields:
-
-        *_id: The unique identifier for this element
-        * name: The name of the command template
-        * description: Short description of the command template
-        * namespace: Defines the project the template is part of.  If this
-            field is null, the command template is in the global namespace
-        * passRule: Configures the rules for passing.  When this value is
-            set to True, all commands must pass and when this value is
-            set to False, only one of the define commands must pass
-        * created: ISO 8601 timestamp of when the trigger was created
-        * createdBy: Account name that created the trigger
-        * updated: ISO 8601 timestamp of when the trigger was last updated
-        * updatedBy: Account name that last updated the trigger
+    Command Templates are run-time templates that actively pass commands to devices 
+    and evaluate responses against defined rules. Retrieves templates from both 
+    global space and projects.
 
     Args:
         ctx (Context): The FastMCP Context object
 
     Returns:
-        list[dict]: A Python list of dict objects that represent the available
-            workflows found on the server.
-
-    Raises:
-        None
+        list[dict]: List of command template objects with the following fields:
+            - _id: Unique identifier
+            - name: Template name
+            - description: Template description
+            - namespace: Project namespace (null for global templates)
+            - passRule: Pass rule configuration (True=all must pass, False=one must pass)
+            - created: ISO 8601 creation timestamp
+            - createdBy: Creator account name
+            - updated: ISO 8601 last update timestamp
+            - updatedBy: Last updater account name
     """
     await ctx.info("inside get_command_templates(...)")
 
@@ -120,45 +101,24 @@ async def describe_command_template(
     )]
 ) -> dict:
     """
-    Get details about a specific command template
-
-    This tool will retrieve a specific command template defined by the
-    `name` argument and return its details.  If the command template is
-    in a project, the project name must also be provided using the optional
-    `project` argument.  If the `project` argument is None, only command
-    templates defined in global space will be considered.
-
-    The tool will return a dict object that represents the command template
-    with the following structure:
-
-        * _id: The unique identifier for this command template
-        * name: The name of the command template
-        * commands: The list of commands and rules associatedw this command
-            template
-        * namespace: Defines the project the template is part of.  If this
-            field is null, the command template is in the global namespace
-        * passRule: Configures the rules for passing.  When this value is
-            set to True, all commands must pass and when this value is
-            set to False, only one of the define commands must pass
-        * created: ISO 8601 timestamp of when the trigger was created
-        * createdBy: Account name that created the trigger
-        * updated: ISO 8601 timestamp of when the trigger was last updated
-        * updatedBy: Account name that last updated the trigger
+    Get detailed information about a specific command template.
 
     Args:
         ctx (Context): The FastMCP Context object
-        name (str): The name of the command template to run
-        devices (list): A list of devices to run the command template
-            against.  The devices in this list must be known to Itential
-            Platform.  To see the list of devices, use the `get_devices(...)`
-            tool.
+        name (str): Name of the command template to describe
+        project (str | None): Project name containing the template (None for global templates)
 
     Returns:
-        list[dict]: A Python list of dict objects that represent the available
-            workflows found on the server.
-
-    Raises:
-        None
+        dict: Command template details with the following fields:
+            - _id: Unique identifier
+            - name: Template name
+            - commands: List of commands and associated rules
+            - namespace: Project namespace (null for global templates)
+            - passRule: Pass rule configuration (True=all must pass, False=one must pass)
+            - created: ISO 8601 creation timestamp
+            - createdBy: Creator account name
+            - updated: ISO 8601 last update timestamp
+            - updatedBy: Last updater account name
     """
     await ctx.info("inside describe_command_template(...)")
 
@@ -201,62 +161,34 @@ async def run_command_template(
     )]
 ) -> dict:
     """
-    Runs the command template against the list of devices
+    Execute a command template against specified devices with rule evaluation.
 
-    This tool will run the named command template against one or more
-    devices defined in the `devices` argument and return the results.  The
-    response is an array that includes an element for each device response
-    for each command run.
-
-    Command Results
-    The command results return the following keys:
-
-        * raw: The command executed on the remote device
-        * all_pass_flag: Boolean that indicates whether or not all rules
-            must pass
-        * evaluated: The command sent to the device
-        * parameters: ???
-        * rules: One or more rules to be evaluated when the command
-            template is run.  See Rules for details on the returned
-            object
-        * device: The name of the device associated with this result
-        * response: The response from the device used to run rules against
-        * result: ???
-
-    Rules:
-    A command template can define one or more rules to validate the response
-    against.  Rules are defined using the following structure:
-
-        * eval: Type of rule evaluation to be performed
-        * rule: The data to use for performing the rule check
-        * severity: The severity of the error if the rule matches
-        * raw: The raw data used when performing the rule check
-        * result: The result from the rule check
-
-    Once all commands have been executed against all devices and all rules
-    have been processed, this function will return the final results
-
-        * name: The name of the command template that was executed
-        * all_pass_flag: Boolean that indicates whether or not all rules
-            must pass
-        * command_results: A list of elements one for each command executed
-            on a device.  See `Command Results` for details about the return
-            fields.
+    Command Templates are run-time templates that actively pass commands to a list 
+    of specified devices during their runtime. After all responses are collected, 
+    the output set is evaluated against a set of defined rules. These executed 
+    templates are typically used as Pre and Post steps, which are usually separated 
+    by a procedure (router upgrade, service migration, etc.).
 
     Args:
         ctx (Context): The FastMCP Context object
-        name (str): The name of the command template to run
-        devices (list): A list of devices to run the command template
-            against.  The devices in this list must be known to Itential
-            Platform.  To see the list of devices, use the `get_devices(...)`
-            tool.
+        name (str): Name of the command template to run
+        devices (list): List of device names to run the template against. Use `get_devices` to see available devices.
+        project (str | None): Project containing the template (None for global templates)
 
     Returns:
-        list[dict]: A Python list of dict objects that represent the available
-            workflows found on the server.
-
-    Raises:
-        None
+        dict: Execution results with the following structure:
+            - name: Command template name that was executed
+            - all_pass_flag: Whether all rules must pass for success
+            - command_results: List of results for each command/device combination:
+                - raw: Original command executed on the remote device
+                - evaluated: Command sent to the device
+                - device: Target device name
+                - response: Device response used for rule evaluation
+                - rules: Rule evaluation results with fields:
+                    - eval: Type of rule evaluation performed
+                    - rule: Data used for performing the rule check
+                    - severity: Severity of error if rule matches
+                    - result: Result from the rule check
     """
     await ctx.info("inside run_command_templates(...)")
 
@@ -288,35 +220,18 @@ async def run_command(
     )]
 ) -> list[dict]:
     """
-    Run a command against one or more devices
-
-    This tool will run a command defined in the `cmd` argument against a
-    list of devices from Itential Platform.  The command responses are
-    returned.   The devices list must be the name of the device as known
-    to Itential Platform.  To get a list of all devices using the
-    `get_devices(...)` tool.
-
-    The response is a list of dict elements with the following defined
-    fields:
-
-        * device: The name of the device the command was run against
-        * command: The command sent to the device
-        * response: The output from running the command on the device
+    Run a single command against multiple devices.
 
     Args:
         ctx (Context): The FastMCP Context object
-        name (str): The name of the command template to run
-        devices (list): A list of devices to run the command template
-            against.  The devices in this list must be known to Itential
-            Platform.  To see the list of devices, use the `get_devices(...)`
-            tool.
+        cmd (str): Command to execute on the devices
+        devices (list[str]): List of device names. Use `get_devices` to see available devices.
 
     Returns:
-        list[dict]: A list of dict objects that represent the results from
-            running the command on a device
-
-    Raises:
-        None
+        list[dict]: List of command execution results with the following fields:
+            - device: Target device name
+            - command: Command sent to the device
+            - response: Output from running the command
     """
     await ctx.info("inside run_command(...)")
 
