@@ -16,27 +16,20 @@ async def get_resources(
     )]
 ) -> list[dict]:
     """
-    Get all Lifecycle Manager resource models from the server
+    Get all Lifecycle Manager resource models from Itential Platform.
 
-    This tool will get all of the configured Lifecycle Manager resource models
-    and return them as elements in a list.   The tool will return a list where
-    each element represents a configured Lifecycle Model.
-
-    The fields available for each element include:
-
-        * _id: The unique identifier for this route
-        * name: The name of the resource model
-        * description: Short description of the model
+    Lifecycle Manager resources define data models and workflows for managing 
+    network services and infrastructure components throughout their lifecycle. 
+    They provide structured templates for creating and managing resource instances.
 
     Args:
         ctx (Context): The FastMCP Context object
 
     Returns:
-        list[dict]: A Python list of dict objects that represent the available
-            resources found on the server.
-
-    Raises:
-        None
+        list[dict]: List of resource model objects with the following fields:
+            - _id: Unique identifier for the resource
+            - name: Resource model name
+            - description: Resource model description
     """
     await ctx.info("inside get_resources(...)")
 
@@ -90,103 +83,33 @@ async def create_resource(
     )]
 ) -> dict:
     """
-    Create a new Lifecycle Manager resource in Itential Platform
+    Create a new Lifecycle Manager resource model on Itential Platform.
 
-    This tool will create a new Lifecycle Manager resource model on the
-    server. The resource model defines the structure and validation rules
-    for resource instances.
-
-    IMPORTANT: The schema parameter should contain ONLY the core schema
-    definition (type, properties, required, etc.) WITHOUT JSON Schema
-    metadata fields like $schema, title, description, or examples.
+    Resource models define the structure, validation rules, and lifecycle workflows 
+    for network services and infrastructure components. They serve as templates 
+    for creating and managing resource instances.
 
     Args:
         ctx (Context): The FastMCP Context object
-
-        name (str):  The name of the resource to create. This should be a
-            simple string identifier for the resource, e.g.,
-            "PE-CE Network Connection" NOT a JSON object or schema document.
-
-        schema (dict): The core schema definition object that defines the
-            structure of the resource. This should include:
-            - type: Usually "object"
-            - properties: The properties definition
-            - required: List of required property names
-
-            DO NOT INCLUDE:
-            - $schema: JSON Schema version reference
-            - title: Schema title (use the 'name' parameter instead)
-            - description: Schema description (use the 'description' parameter)
-            - examples: Example values
-
-            Example of CORRECT schema format:
-            {
-                "type": "object",
-                "required": ["field1", "field2"],
-                "properties": {
-                    "field1": {
-                        "type": "string",
-                        "minLength": 1
-                    },
-                    "field2": {
-                        "type": "number",
-                        "minimum": 0
-                    }
-                }
-            }
-
-        description (str, optional): A human-readable description of what this
-            resource represents. This is stored separately from the schema and
-            used for documentation purposes.
-            Example: "Provider Edge router with CE connections and billing info"
+        name (str): Name of the resource model to create
+        schema (dict): JSON Schema definition for resource structure and validation. 
+            Should include type, properties, and required fields without metadata.
+        description (str | None): Human-readable description of the resource (optional)
 
     Returns:
-        dict: An object representing the created resource with fields:
-            - _id: The unique identifier assigned by Itential
-            - name: The resource name as provided
-            - description: The description if provided
-            - schema: The schema definition as stored
-            - created: Timestamp of creation
-            - createdBy: User who created the resource
+        dict: Created resource model with the following fields:
+            - _id: Unique identifier assigned by Itential
+            - name: Resource model name
+            - description: Resource description
+            - schema: JSON Schema definition
 
     Raises:
-        ValueError: Raised if:
-            - The specified resource name already exists on Itential Platform
-            - The schema format is invalid
-            - Required parameters are missing or malformed
+        ValueError: If resource name already exists or schema format is invalid
 
-    Example Usage:
-        # CORRECT way to create a resource:
-        result = create_resource(
-            ctx,
-            name="Network Device",
-            schema={
-                "type": "object",
-                "required": ["hostname", "ipAddress"],
-                "properties": {
-                    "hostname": {"type": "string"},
-                    "ipAddress": {"type": "string", "format": "ipv4"}
-                }
-            },
-            description="Basic network device configuration"
-        )
-
-        # WRONG - Don't pass the entire JSON Schema document as name:
-        # result = create_resource(ctx, name=full_json_schema_doc, ...)
-
-        # WRONG - Don't include metadata in schema:
-        # result = create_resource(ctx, name="Device", schema={
-        #     "$schema": "http://json-schema.org/draft-07/schema#",
-        #     "title": "Device",  # Don't include this
-        #     "type": "object",
-        #     ...
-        # })
-
-        Notes:
-            - The schema parameter defines the validation rules for resource instances
-            - Once created, the resource can be used to create multiple instances
-            - The schema follows JSON Schema draft-07 specification for validation
-            - Metadata fields should be passed as separate parameters, not in the schema
+    Notes:
+        - Schema should contain core definition (type, properties, required) only
+        - Metadata fields like $schema, title should be passed as separate parameters
+        - Resource models enable structured lifecycle management of network services
     """
     await ctx.info("inside create_resource(...)")
 
@@ -233,35 +156,22 @@ async def describe_resource(
     )]
 ) -> dict:
     """
-    Describe a Lifecycle Manager resource identified by name
-
-    This tool will retrieve the Lifecycle Manager resource using the specified
-    `name` argument and return it.   The returned value will be a Python
-    dict object that represents the Lifecycle Manager resource.
-
-    The returned object includes the following fields:
-
-        * _id: The resource unique identifier
-        * name: The name of the resource
-        * description: Short description of the model
-        * schema: The JSON schema that defines the resource which can be used
-            to create a new instance of the resource
-        * actions: The list of actions assoicated with this resource.  Actions
-            can be invoked on instances of the resource to transition from
-            one state to another
+    Get detailed information about a Lifecycle Manager resource model.
 
     Args:
         ctx (Context): The FastMCP Context object
-
-        name (str): The name of the resource to get from the server
+        name (str): Name of the resource model to retrieve
 
     Returns:
-        dict: A Python dict object that represents the Lifecycle
-            Manager resource
+        dict: Resource model details with the following fields:
+            - _id: Unique resource identifier
+            - name: Resource model name
+            - description: Resource description
+            - schema: JSON Schema defining resource structure
+            - actions: List of lifecycle actions associated with this resource
 
     Raises:
-        ValueError: Raised if the specified Lifecycle Manager could not
-            be uniquely identified on the server
+        ValueError: If the specified resource cannot be found
     """
     await ctx.info("inside describe_resource(...)")
 
@@ -311,33 +221,26 @@ async def get_instances(
     )]
 ) -> list[dict]:
     """
-    Get all instances for the resource from Itential Platform
+    Get all instances of a Lifecycle Manager resource from Itential Platform.
 
-    This tool will take the name of a Lifecycle Manager resource name and
-    retrieve all configured instances of that resource.  The set of instances
-    will be returned as a list.
-
-    Each element in the list returns the following fields:
-
-        * _id: The unique identifier for this route
-        * name: The name of the resource model
-        * description: Short description of the model
-        * instanceData: Data object associated with this instance
-        * lastAction: The last action performed on the instance
+    Resource instances represent actual network services or infrastructure 
+    components created from resource models. They contain the specific data 
+    and state information for managed resources.
 
     Args:
         ctx (Context): The FastMCP Context object
-
-        resource (str): The name of the resource to get instances for
+        resource (str): Name of the resource model to get instances for
 
     Returns:
-        list[dict]: A list of Python dict objects where each element
-            represents an instance of the resource
+        list[dict]: List of resource instance objects with the following fields:
+            - _id: Unique instance identifier
+            - name: Instance name
+            - description: Instance description
+            - instanceData: Data object associated with this instance
+            - lastAction: Last lifecycle action performed on the instance
 
     Raises:
-        ValueError: Raised if the specified resource could not be uniquely
-            identified on the server
-
+        ValueError: If the specified resource model cannot be found
     """
     await ctx.info("inside get_instances(...)")
 
