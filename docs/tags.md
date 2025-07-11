@@ -15,7 +15,14 @@ appropriate configuration option or command line option.
 There are standard tags that are also recognized in the Itential MCP server.
 by default, all tools with the tag `experimental` or `beta` are excluded from
 being registered by default.   This behavior can be changed by modifying the
-exludde tags configuration option.
+exclude tags configuration option.
+
+# Tag Groups
+
+The server now supports tag groups.  Tag groups will apply a tag to a group
+of tools so they can all be excluded or included with a single tag.  See the
+[tools](tools.md) file for a list of all avaiable groups and which tools
+are assoicated with those groups.
 
 To add tags to function there is a new decorator available.   For instance,
 this below example will add the tags "public", "released" to the tool call
@@ -53,3 +60,5 @@ async def my_new_tool(ctx: Context) -> dict:
 Using the `tags` decorator will attach the tags `public` and `released` to the
 tool and those tags can now be used in include and/or exclude tags
 configuration options to control tool registration with the server.
+
+

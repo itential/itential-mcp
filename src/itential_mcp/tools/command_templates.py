@@ -9,6 +9,9 @@ from fastmcp import Context
 from itential_mcp import timeutils
 
 
+__tags__ = ("automation_studio",)
+
+
 async def _get_project_id_from_name(ctx: Context, name: str) -> str:
     """
     Get the project ID for a specified project name.
@@ -46,8 +49,8 @@ async def get_command_templates(
     """
     Get all command templates from Itential Platform.
 
-    Command Templates are run-time templates that actively pass commands to devices 
-    and evaluate responses against defined rules. Retrieves templates from both 
+    Command Templates are run-time templates that actively pass commands to devices
+    and evaluate responses against defined rules. Retrieves templates from both
     global space and projects.
 
     Args:
@@ -163,10 +166,10 @@ async def run_command_template(
     """
     Execute a command template against specified devices with rule evaluation.
 
-    Command Templates are run-time templates that actively pass commands to a list 
-    of specified devices during their runtime. After all responses are collected, 
-    the output set is evaluated against a set of defined rules. These executed 
-    templates are typically used as Pre and Post steps, which are usually separated 
+    Command Templates are run-time templates that actively pass commands to a list
+    of specified devices during their runtime. After all responses are collected,
+    the output set is evaluated against a set of defined rules. These executed
+    templates are typically used as Pre and Post steps, which are usually separated
     by a procedure (router upgrade, service migration, etc.).
 
     Args:

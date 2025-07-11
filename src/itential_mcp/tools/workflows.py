@@ -11,6 +11,9 @@ from itential_mcp import timeutils
 from itential_mcp import functions
 
 
+__tags__ = ("operations_manager",)
+
+
 async def get_workflows(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
@@ -19,9 +22,9 @@ async def get_workflows(
     """
     Get all workflow API endpoints from Itential Platform.
 
-    Workflows are the core automation engine of Itential Platform, defining 
-    executable processes that orchestrate network operations, device management, 
-    and service provisioning. Each workflow exposes an API endpoint that can be 
+    Workflows are the core automation engine of Itential Platform, defining
+    executable processes that orchestrate network operations, device management,
+    and service provisioning. Each workflow exposes an API endpoint that can be
     triggered by external systems or other platform components.
 
     Args:
@@ -115,14 +118,14 @@ async def start_workflow(
     """
     Execute a workflow by triggering its API endpoint.
 
-    Workflows are the core automation processes in Itential Platform. This function 
-    initiates workflow execution and returns a job object that can be monitored 
+    Workflows are the core automation processes in Itential Platform. This function
+    initiates workflow execution and returns a job object that can be monitored
     for progress and results.
 
     Args:
         ctx (Context): The FastMCP Context object
         route_name (str): API route name for the workflow. Use the 'routeName' field from `get_workflows`.
-        data (dict | None): Input data for workflow execution. Structure must match the workflow's 
+        data (dict | None): Input data for workflow execution. Structure must match the workflow's
             input schema (available in the 'schema' field from `get_workflows`).
 
     Returns:

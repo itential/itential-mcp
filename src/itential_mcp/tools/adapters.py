@@ -12,6 +12,9 @@ from fastmcp import Context
 from itential_mcp import errors
 
 
+__tags__ = ("adapters",)
+
+
 async def _get_adapter_health(
     ctx: Context,
     name: str
@@ -21,7 +24,7 @@ async def _get_adapter_health(
 
     Args:
         ctx (Context): The FastMCP Context object
-        name (str): The case-sensitive name of the adapter. Use `get_adapters` 
+        name (str): The case-sensitive name of the adapter. Use `get_adapters`
             to see available adapters.
 
     Returns:
