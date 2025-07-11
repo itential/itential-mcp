@@ -104,13 +104,24 @@ def register_tools(mcp: FastMCP) -> None:
             # Inspect the module to retreive all of the functions.
             for name, f in inspect.getmembers(module, inspect.isfunction):
                 if not name.startswith("_") and f.__module__ == module_name:
-                    kwargs = {"tags": {name, f.__module__}}
+                    # create a new tags set for the module and add any tags
+                    # that have been configured using the `__tags__` variable
+                    tags = set()
+                    if hasattr(f, "__tags__"):
+                        tags.union(f.__tags__)
+
+                    # add the function name to the set of tags
+                    tags.add(name)
+
+                    # add any custom tags that have been attached to the
+                    # function using the tags decorator
                     if hasattr(f, "tags"):
-                        tags = kwargs["tags"]
                         for ele in f.tags:
                             tags.add(ele)
-                        kwargs["tags"] = tags
-                    mcp.tool(f, **kwargs)
+
+                    # add the function as a new mcp tool along with the set of
+                    # tags associated with the function.
+                    mcp.tool(f, tags=list(tags))
 
 
 async def run() -> int:
