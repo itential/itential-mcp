@@ -16,16 +16,16 @@ async def get_job_metrics(
     """
     Get aggregate job metrics from the Workflow Engine.
 
-    The Workflow Engine maintains comprehensive metrics about workflow execution 
-    performance, providing insights into automation efficiency, success rates, 
+    The Workflow Engine maintains comprehensive metrics about workflow execution
+    performance, providing insights into automation efficiency, success rates,
     and resource utilization across all workflow jobs.
 
     Args:
         ctx (Context): The FastMCP Context object
 
     Returns:
-        list[dict]: List of job metric objects containing execution statistics 
-            including jobs completed, workflow names, total runtime, and other 
+        list[dict]: List of job metric objects containing execution statistics
+            including jobs completed, workflow names, total runtime, and other
             performance metrics
     """
     await ctx.debug("inside get_job_metrics(...)")
@@ -60,23 +60,22 @@ async def get_job_metrics(
     return results
 
 
-async def get_task_metrics(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )]
+async def _get_task_metrics(
+    ctx: Context,
+    params: dict | None = None
 ) -> list[dict]:
     """
     Get aggregate task metrics from the Workflow Engine.
 
-    The Workflow Engine tracks detailed task-level metrics within workflows, 
-    providing granular insights into individual task performance, application 
+    The Workflow Engine tracks detailed task-level metrics within workflows,
+    providing granular insights into individual task performance, application
     usage, and execution patterns across automation operations.
 
     Args:
         ctx (Context): The FastMCP Context object
 
     Returns:
-        list[dict]: List of task metric objects containing task details including 
+        list[dict]: List of task metric objects containing task details including
             associated applications, task names and types, and performance metrics
     """
     await ctx.debug("inside get_task_metrics(...)")
@@ -85,18 +84,172 @@ async def get_task_metrics(
 
     limit = 100
     skip = 0
+    cnt = 0
 
     results = list()
 
     while True:
-        res = await client.get("/workflow_engine/tasks/metrics")
+        res = await client.get(
+            "/workflow_engine/tasks/metrics",
+            params=params,
+        )
+
+        await ctx.info(res.text)
 
         data = res.json()
-        results.extend(data["results"])
 
-        if len(results) == data["total"]:
+        fields = frozenset(
+            ("taskId", "taskType", "name", "metrics", "app", "workflow")
+        )
+
+        results = list()
+
+        for ele in data["results"]:
+            if ele.get("workflow") is not None:
+                results.append(dict([(k, ele.get(k)) for k in fields]))
+
+        cnt += len(data["results"])
+        if cnt == data["total"]:
             break
 
         skip += limit
 
     return results
+
+
+async def get_task_metrics(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )]
+) -> list[dict]:
+    """
+    Get all aggregate task metrics from the Workflow Engine
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+    Returns:
+        list[dict]: List of task metrics with the following fields:
+            - taskId: The task identifier in the workflow
+            - taskType: Task type (automatic, manual)
+            - name: The name of the task
+            - metrics: The task metrics
+            - app: The application that runs the task
+            - workflow: The name of the workflow the task is part of
+    """
+    return await _get_task_metrics(ctx)
+
+
+async def get_task_metrics_for_workflow(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    name: Annotated[str, Field(
+        description="The name of the workflow to retrieve task metrics for"
+    )]
+) -> list[dict]:
+
+    """
+    Get all task metrics for the specified workflow from Workflow Engine
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+        name (str): The name of the workflow to retrieve task metrics for
+
+    Returns:
+        list[dict]: List of task metrics with the following fields:
+            - taskId: The task identifier in the workflow
+            - taskType: Task type (automatic, manual)
+            - name: The name of the task
+            - metrics: The task metrics
+            - app: The application that runs the task
+            - workflow: The name of the workflow the task is part of
+
+    Notes:
+        - The name argument is case sensitive
+    """
+    return await _get_task_metrics(
+        ctx,
+        params={
+            "equalsField": "workflow.name",
+            "equals": name
+        }
+    )
+
+
+async def get_task_metrics_for_app(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    name: Annotated[str, Field(
+        description="The name of the application to retrieve task metrics for"
+    )]
+) -> list[dict]:
+    """
+    Get all task metrics for the specified application from Workflow Engine
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+        name (str): The name of the application to retrieve task metrics for.
+            Application names can be obtained using the get_applications tool.
+
+    Returns:
+        list[dict]: List of task metrics with the following fields:
+            - taskId: The task identifier in the workflow
+            - taskType: Task type (automatic, manual)
+            - name: The name of the task
+            - metrics: The task metrics
+            - app: The application that runs the task
+            - workflow: The name of the workflow the task is part of
+
+    Notes:
+        - The name argument is case sensitive
+        - Use get_applications tool to retrieve available application names
+    """
+    return await _get_task_metrics(
+        ctx,
+        params={
+            "equalsField": "app",
+            "equals": name
+        }
+    )
+
+async def get_task_metrics_for_task(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    name: Annotated[str, Field(
+        description="The name of the application to retrieve task metrics for"
+    )]
+) -> list[dict]:
+    """
+    Get all task metrics for the named task from Workflow Engine
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+        name (str): The name of the task to retrieve task metrics for
+
+    Returns:
+        list[dict]: List of task metrics with the following fields:
+            - taskId: The task identifier in the workflow
+            - taskType: Task type (automatic, manual)
+            - name: The name of the task
+            - metrics: The task metrics
+            - app: The application that runs the task
+            - workflow: The name of the workflow the task is part of
+
+    Notes:
+        - The name argument is case sensitive
+    """
+    return await _get_task_metrics(
+        ctx,
+        params={
+            "equalsField": "name",
+            "equals": name
+        }
+    )
+
+
