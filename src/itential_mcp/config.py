@@ -45,12 +45,12 @@ def options(*args, **kwargs) -> dict:
 @dataclass(frozen=True)
 class Config(object):
 
-    server_transport: Literal["stdio", "sse", "streamable-http"] = Field(
+    server_transport: Literal["stdio", "sse", "http"] = Field(
         description="The MCP server transport to use",
         default="stdio",
         json_schema_extra=options(
             "--transport",
-            choices=("stdio", "sse", "streamable-http"),
+            choices=("stdio", "sse", "http"),
             metavar="<value>"
         )
     )
@@ -126,7 +126,7 @@ class Config(object):
         json_schema_extra=options(
             "--platform-port",
             type=int,
-            metavar="<port",
+            metavar="<port>",
         )
     )
 
