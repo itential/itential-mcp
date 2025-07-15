@@ -141,35 +141,8 @@ to lowest:
 
 
 ## 💡 Available Tools
-The MCP server provides the following tools for interaction with Itential Platform:
-
-### System Tools
-- `get_health`: Retrieve platform health status including memory, CPU usage, and service status
-
-### Workflow Engine Tools
-- `get_job_metrics`: Get aggregated workflow job metrics
-- `get_task_metrics`: Get aggregated workflow task metrics
-
-### Workflow Management Tools
-- `get_workflows`: List available workflows
-- `start_workflow`: Start a workflow with provided variables and permissions
-
-### Job Tools
-- `get_jobs`: List all jobs (with optional filtering)
-- `describe_job`: Get details about a specific job (based on job_id)
-
-### Command Template Tools
-- `get_command_templates`: List all configured command templates
-- `describe_command_template`: Get details about a specific command template
-- `run_command_template`: Run a command template against a set of devices
-
-### Device Tools
-- `get_devices`: Get a list of devices from Itential Platform
-- `run_command`: Run a command against one or more devices
-
-
-Note: See [here](docs/exposing-workflows.md) for information about how to
-properly expose workflows to the MCP server
+The entire list of availablle tools can be found in the [tools](docs/tools.md)
+file along with the tag groups assoicated with those tools.
 
 ## 🛠️ Adding new Tools
 Adding a new tool is simple:

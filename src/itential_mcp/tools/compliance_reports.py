@@ -8,6 +8,9 @@ from pydantic import Field
 from fastmcp import Context
 
 
+__tags__ = ("configuration_manager",)
+
+
 async def describe_compliance_report(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
@@ -19,8 +22,8 @@ async def describe_compliance_report(
     """
     Retrieve detailed compliance report results from Itential Platform.
 
-    Compliance reports contain the results of executing compliance plans against 
-    network devices, showing configuration validation outcomes, rule violations, 
+    Compliance reports contain the results of executing compliance plans against
+    network devices, showing configuration validation outcomes, rule violations,
     and compliance status for each checked device.
 
     Args:
@@ -28,8 +31,8 @@ async def describe_compliance_report(
         report_id (str): Unique identifier of the compliance report to retrieve
 
     Returns:
-        dict: Compliance report details containing validation results, device 
-            compliance status, rule violations, and configuration analysis from 
+        dict: Compliance report details containing validation results, device
+            compliance status, rule violations, and configuration analysis from
             running compliance checks against network infrastructure
     """
     await ctx.info("inside describe_compliance_report(...)")

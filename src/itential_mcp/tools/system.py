@@ -8,6 +8,9 @@ from pydantic import Field
 from fastmcp import Context
 
 
+__tags__ = ("system",)
+
+
 async def get_health(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
@@ -16,11 +19,11 @@ async def get_health(
     """
     Get comprehensive health information from Itential Platform.
 
-    System health monitoring provides visibility into platform performance, 
-    resource utilization, and component status. This enables proactive 
+    System health monitoring provides visibility into platform performance,
+    resource utilization, and component status. This enables proactive
     monitoring and troubleshooting of the automation infrastructure.
 
-    Note: This function also provides a complete list of all applications 
+    Note: This function also provides a complete list of all applications
     and adapters running on the platform as part of the health data.
 
     Args:

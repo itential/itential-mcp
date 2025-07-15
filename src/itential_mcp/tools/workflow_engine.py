@@ -8,6 +8,9 @@ from pydantic import Field
 from fastmcp import Context
 
 
+__tags__ = ("workflow_engine",)
+
+
 async def get_job_metrics(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"

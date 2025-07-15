@@ -10,6 +10,9 @@ from fastmcp import Context
 from itential_mcp import functions
 
 
+__tags__ = ("operations_manager",)
+
+
 async def get_jobs(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
@@ -26,8 +29,8 @@ async def get_jobs(
     """
     Get all jobs from Itential Platform.
 
-    Jobs represent workflow execution instances that track the status, progress, 
-    and results of automated tasks. They provide visibility into workflow 
+    Jobs represent workflow execution instances that track the status, progress,
+    and results of automated tasks. They provide visibility into workflow
     execution and enable monitoring of automation operations.
 
     Args:
@@ -106,8 +109,8 @@ async def describe_job(
     """
     Get detailed information about a specific job from Itential Platform.
 
-    Jobs are created automatically when workflows are executed and contain 
-    comprehensive information about the workflow execution including status, 
+    Jobs are created automatically when workflows are executed and contain
+    comprehensive information about the workflow execution including status,
     tasks, metrics, and results.
 
     Args:

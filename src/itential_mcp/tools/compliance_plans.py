@@ -8,6 +8,9 @@ from pydantic import Field
 from fastmcp import Context
 
 
+__tags__ = ("configuration_manager",)
+
+
 async def get_compliance_plans(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
@@ -16,7 +19,7 @@ async def get_compliance_plans(
     """
     Get all compliance plans from Itential Platform.
 
-    Compliance plans define configuration validation rules and checks that can be 
+    Compliance plans define configuration validation rules and checks that can be
     executed against network devices to ensure they meet organizational standards.
 
     Args:
@@ -83,8 +86,8 @@ async def run_compliance_plan(
     """
     Execute a compliance plan against network devices.
 
-    Compliance plans validate device configurations against organizational standards 
-    by running predefined checks and rules. This function starts a compliance plan 
+    Compliance plans validate device configurations against organizational standards
+    by running predefined checks and rules. This function starts a compliance plan
     execution and returns the running instance details.
 
     Args:

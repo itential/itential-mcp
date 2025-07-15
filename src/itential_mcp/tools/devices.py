@@ -8,6 +8,9 @@ from pydantic import Field
 from fastmcp import Context
 
 
+__tags__ = ("configuration_manager",)
+
+
 async def get_devices(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
@@ -16,8 +19,8 @@ async def get_devices(
     """
     Get all devices known to Itential Platform.
 
-    Itential Platform federates device information from multiple sources and makes 
-    it available for network automation workflows. Devices represent physical or 
+    Itential Platform federates device information from multiple sources and makes
+    it available for network automation workflows. Devices represent physical or
     virtual network infrastructure that can be managed, configured, and monitored.
 
     Args:
@@ -114,7 +117,7 @@ async def backup_device_configuration(
     """
     Create a backup of a device configuration in Itential Platform.
 
-    Configuration backups provide recovery points and change tracking for network 
+    Configuration backups provide recovery points and change tracking for network
     devices, enabling rollback capabilities and configuration management workflows.
 
     Args:
@@ -163,7 +166,7 @@ async def apply_device_configuration(
     """
     Apply configuration commands to a network device through Itential Platform.
 
-    Configuration deployment enables automated provisioning and updates of network 
+    Configuration deployment enables automated provisioning and updates of network
     device settings, supporting configuration management and infrastructure automation.
 
     Args:

@@ -10,6 +10,9 @@ from fastmcp import Context
 from itential_mcp import functions
 
 
+__tags__ = ("lifecycle_manager",)
+
+
 async def get_resources(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
@@ -18,8 +21,8 @@ async def get_resources(
     """
     Get all Lifecycle Manager resource models from Itential Platform.
 
-    Lifecycle Manager resources define data models and workflows for managing 
-    network services and infrastructure components throughout their lifecycle. 
+    Lifecycle Manager resources define data models and workflows for managing
+    network services and infrastructure components throughout their lifecycle.
     They provide structured templates for creating and managing resource instances.
 
     Args:
@@ -85,14 +88,14 @@ async def create_resource(
     """
     Create a new Lifecycle Manager resource model on Itential Platform.
 
-    Resource models define the structure, validation rules, and lifecycle workflows 
-    for network services and infrastructure components. They serve as templates 
+    Resource models define the structure, validation rules, and lifecycle workflows
+    for network services and infrastructure components. They serve as templates
     for creating and managing resource instances.
 
     Args:
         ctx (Context): The FastMCP Context object
         name (str): Name of the resource model to create
-        schema (dict): JSON Schema definition for resource structure and validation. 
+        schema (dict): JSON Schema definition for resource structure and validation.
             Should include type, properties, and required fields without metadata.
         description (str | None): Human-readable description of the resource (optional)
 
@@ -223,8 +226,8 @@ async def get_instances(
     """
     Get all instances of a Lifecycle Manager resource from Itential Platform.
 
-    Resource instances represent actual network services or infrastructure 
-    components created from resource models. They contain the specific data 
+    Resource instances represent actual network services or infrastructure
+    components created from resource models. They contain the specific data
     and state information for managed resources.
 
     Args:
