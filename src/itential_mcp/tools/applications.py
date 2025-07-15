@@ -12,6 +12,9 @@ from fastmcp import Context
 from itential_mcp import errors
 
 
+__tags__ = ("applications",)
+
+
 async def _get_application_health(
     ctx: Context,
     name: str
@@ -21,7 +24,7 @@ async def _get_application_health(
 
     Args:
         ctx (Context): The FastMCP Context object
-        name (str): The case-sensitive name of the application. Use `get_applications` 
+        name (str): The case-sensitive name of the application. Use `get_applications`
             to see available applications.
 
     Returns:

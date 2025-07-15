@@ -8,6 +8,9 @@ from pydantic import Field
 from fastmcp import Context
 
 
+__tags__ = ("configuration_manager", "devices")
+
+
 async def get_device_groups(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
@@ -16,8 +19,8 @@ async def get_device_groups(
     """
     Get all device groups from Itential Platform.
 
-    Device groups are logical collections of network devices that can be managed 
-    together for configuration, compliance, and automation tasks. They provide 
+    Device groups are logical collections of network devices that can be managed
+    together for configuration, compliance, and automation tasks. They provide
     an organizational structure for grouping devices by function, location, or type.
 
     Args:
@@ -78,7 +81,7 @@ async def create_device_group(
     """
     Create a new device group on Itential Platform.
 
-    Device groups enable logical organization of network devices for streamlined 
+    Device groups enable logical organization of network devices for streamlined
     management, configuration deployment, and automation workflows.
 
     Args:
