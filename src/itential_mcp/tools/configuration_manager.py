@@ -8,6 +8,9 @@ from pydantic import Field
 from fastmcp import Context
 
 
+__tags__ = ("configuration_manager",)
+
+
 async def render_template(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
@@ -23,8 +26,8 @@ async def render_template(
     """
     Render a Jinja2 template with provided variables.
 
-    Jinja2 templates are commonly used in network automation for generating 
-    device configurations, commands, and other text-based content by combining 
+    Jinja2 templates are commonly used in network automation for generating
+    device configurations, commands, and other text-based content by combining
     template structures with dynamic variable values.
 
     Args:

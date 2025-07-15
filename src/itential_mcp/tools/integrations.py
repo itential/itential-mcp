@@ -10,6 +10,9 @@ from fastmcp import Context
 from itential_mcp import errors
 
 
+__tags__ = ("integrations",)
+
+
 async def get_integration_models(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
@@ -18,8 +21,8 @@ async def get_integration_models(
     """
     Get all integration models from Itential Platform.
 
-    Integration models define API specifications for external systems and services 
-    that can be integrated with Itential Platform. They are based on OpenAPI 
+    Integration models define API specifications for external systems and services
+    that can be integrated with Itential Platform. They are based on OpenAPI
     specifications and enable automated interaction with third-party systems.
 
     Args:
@@ -64,8 +67,8 @@ async def create_integration_model(
     """
     Create a new integration model on Itential Platform from an OpenAPI specification.
 
-    Integration models enable Itential Platform to interact with external systems 
-    by defining their API structure and capabilities. The model must be a valid 
+    Integration models enable Itential Platform to interact with external systems
+    by defining their API structure and capabilities. The model must be a valid
     OpenAPI specification document.
 
     Args:

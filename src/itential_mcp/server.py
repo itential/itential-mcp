@@ -107,8 +107,8 @@ def register_tools(mcp: FastMCP) -> None:
                     # create a new tags set for the module and add any tags
                     # that have been configured using the `__tags__` variable
                     tags = set()
-                    if hasattr(f, "__tags__"):
-                        tags.union(f.__tags__)
+                    if hasattr(module, "__tags__"):
+                        tags = tags.union(set(module.__tags__))
 
                     # add the function name to the set of tags
                     tags.add(name)
@@ -121,7 +121,7 @@ def register_tools(mcp: FastMCP) -> None:
 
                     # add the function as a new mcp tool along with the set of
                     # tags associated with the function.
-                    mcp.tool(f, tags=list(tags))
+                    mcp.tool(f, tags=tags)
 
 
 async def run() -> int:
