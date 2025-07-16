@@ -48,3 +48,4 @@ class AlreadyExistsError(ItentialMcpError):
     with the same identifier already exists on the server and therefore
     cannot be created.
     """
+    pass
