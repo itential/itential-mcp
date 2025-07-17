@@ -37,10 +37,6 @@ async def get_workflows(
             - description: Workflow description
             - schema: Input schema for workflow parameters (JSON Schema draft-07 format)
             - routeName: API route name for triggering the workflow (use with `start_workflow`)
-            - created: ISO 8601 creation timestamp
-            - createdBy: Account name that created the workflow
-            - updated: ISO 8601 last update timestamp
-            - updatedBy: Account name that last updated the workflow
             - lastExecuted: ISO 8601 timestamp of last execution (null if never executed)
 
     Notes:
@@ -88,10 +84,6 @@ async def get_workflows(
                 "description": item.get("description"),
                 "schema": item.get("schema"),
                 "routeName": item.get("routeName"),
-                "created": item.get("created"),
-                "createdBy": item.get("createdBy"),
-                "updated": item.get("lastUpdated"),
-                "updatedBy": item.get("lastUpdatedBy"),
                 "lastExecuted": lastExecuted,
             })
 
@@ -136,10 +128,6 @@ async def start_workflow(
             - tasks: Complete set of tasks to be executed in the workflow
             - status: Current job status (error, complete, running, canceled, incomplete, paused)
             - metrics: Job execution metrics including start_time, end_time, and user
-            - created: Job creation timestamp
-            - created_by: Account that created the job
-            - updated: Last update timestamp
-            - updated_by: Account that last updated the job
 
     Notes:
         - Use the returned '_id' field with `describe_job` to monitor workflow progress
@@ -147,7 +135,7 @@ async def start_workflow(
         - Job status can be monitored using the `get_jobs` or `describe_job` functions
         - Workflow schemas are available via the `get_workflows` function
     """
-    await ctx.info("inside run_workflow(...)")
+    await ctx.info("inside start_workflow(...)")
 
     client = ctx.request_context.lifespan_context.get("client")
 
@@ -178,8 +166,4 @@ async def start_workflow(
         "tasks": data["tasks"],
         "status": data["status"],
         "metrics": metrics,
-        "updated": data["last_updated"],
-        "updated_by": data["last_updated_by"],
-        "created": data["created"],
-        "created_by": data["created_by"],
     }
