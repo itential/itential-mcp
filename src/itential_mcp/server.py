@@ -101,15 +101,15 @@ def register_tools(mcp: FastMCP) -> None:
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
 
+            # create a new tags set for the module and add any tags
+            # that have been configured using the `__tags__` variable
+            tags = set()
+            if hasattr(module, "__tags__"):
+                tags = tags.union(module.__tags__)
+
             # Inspect the module to retreive all of the functions.
             for name, f in inspect.getmembers(module, inspect.isfunction):
                 if not name.startswith("_") and f.__module__ == module_name:
-                    # create a new tags set for the module and add any tags
-                    # that have been configured using the `__tags__` variable
-                    tags = set()
-                    if hasattr(module, "__tags__"):
-                        tags = tags.union(set(module.__tags__))
-
                     # add the function name to the set of tags
                     tags.add(name)
 
