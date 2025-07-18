@@ -6,8 +6,6 @@ from pydantic import Field
 
 from fastmcp import Context
 
-from itential_mcp import timeutils
-
 
 __tags__ = ("automation_studio",)
 
@@ -63,10 +61,6 @@ async def get_command_templates(
             - description: Template description
             - namespace: Project namespace (null for global templates)
             - passRule: Pass rule configuration (True=all must pass, False=one must pass)
-            - created: ISO 8601 creation timestamp
-            - createdBy: Creator account name
-            - updated: ISO 8601 last update timestamp
-            - updatedBy: Last updater account name
     """
     await ctx.info("inside get_command_templates(...)")
 
@@ -83,10 +77,6 @@ async def get_command_templates(
             "description": item["description"],
             "namespace": item["namespace"],
             "passRule": item["passRule"],
-            "created": timeutils.epoch_to_timestamp(item["created"]),
-            "createdBy": item["createdBy"],
-            "updated": timeutils.epoch_to_timestamp(item["lastUpdated"]),
-            "updatedBy": item["lastUpdatedBy"],
         })
 
     return results
@@ -118,10 +108,6 @@ async def describe_command_template(
             - commands: List of commands and associated rules
             - namespace: Project namespace (null for global templates)
             - passRule: Pass rule configuration (True=all must pass, False=one must pass)
-            - created: ISO 8601 creation timestamp
-            - createdBy: Creator account name
-            - updated: ISO 8601 last update timestamp
-            - updatedBy: Last updater account name
     """
     await ctx.info("inside describe_command_template(...)")
 
@@ -140,10 +126,6 @@ async def describe_command_template(
         "name": data["name"],
         "passRule": data["passRule"],
         "commands": data["commands"],
-        "created": timeutils.epoch_to_timestamp(data["created"]),
-        "createdBy": data["createdBy"],
-        "updated": timeutils.epoch_to_timestamp(data["lastUpdated"]),
-        "updatedBy": data["lastUpdatedBy"],
         "namespace": data["namespace"]
     }
 
