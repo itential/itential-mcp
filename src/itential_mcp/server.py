@@ -1,10 +1,7 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-import os
 import sys
-import inspect
-import importlib.util
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, AsyncExitStack
@@ -16,6 +13,7 @@ from fastmcp import FastMCP
 from . import client
 from . import config
 from . import cache
+from . import toolutils
 
 
 @asynccontextmanager
@@ -71,59 +69,6 @@ def new(cfg: config.Config) -> FastMCP:
     )
 
 
-def register_tools(mcp: FastMCP) -> None:
-    """
-    Register all functions in the tools folder with mcp
-
-    This function will recursively load all modules found in the `tools`
-    folder as long as they module name does not start with underscore (_).  It
-    will then inspect the module to find all public functions and attach
-    them to the instance of mcp as a tool.
-
-    Args:
-        mcp (FastMCP): An instance of FastMCP to attach tools to
-
-    Returns:
-        None
-
-    Raises:
-        None
-    """
-    path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tools")
-
-    # Get a list of all files in the directory
-    module_files = [f[:-3] for f in os.listdir(path) if f.endswith(".py") and f != "__init__.py"]
-
-    # Import the modules, add them to globals and mcp
-    for module_name in module_files:
-        if not module_name.startswith("_"):
-            spec = importlib.util.spec_from_file_location(module_name, os.path.join(path, f"{module_name}.py"))
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-
-            # create a new tags set for the module and add any tags
-            # that have been configured using the `__tags__` variable
-            tags = set()
-            if hasattr(module, "__tags__"):
-                tags = tags.union(module.__tags__)
-
-            # Inspect the module to retreive all of the functions.
-            for name, f in inspect.getmembers(module, inspect.isfunction):
-                if not name.startswith("_") and f.__module__ == module_name:
-                    # add the function name to the set of tags
-                    tags.add(name)
-
-                    # add any custom tags that have been attached to the
-                    # function using the tags decorator
-                    if hasattr(f, "tags"):
-                        for ele in f.tags:
-                            tags.add(ele)
-
-                    # add the function as a new mcp tool along with the set of
-                    # tags associated with the function.
-                    mcp.tool(f, tags=tags)
-
-
 async def run() -> int:
     """
     Run the MCP server
@@ -152,7 +97,9 @@ async def run() -> int:
     mcp = new(cfg)
 
     try:
-        register_tools(mcp)
+        for f, tags in toolutils.itertools():
+            mcp.tool(f, tags=tags)
+
     except Exception as exc:
         print(f"ERROR: failed to import tool: {str(exc)}", file=sys.stderr)
         sys.exit(1)
@@ -172,9 +119,11 @@ async def run() -> int:
 
     try:
         await mcp.run_async(**kwargs)
+
     except KeyboardInterrupt:
         print("Shutting down the server")
         sys.exit(0)
+
     except Exception as exc:
         print(f"ERROR: server stopped unexpectedly: {str(exc)}", file=sys.stderr)
         sys.exit(1)
