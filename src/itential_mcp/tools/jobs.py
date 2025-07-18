@@ -41,11 +41,7 @@ async def get_jobs(
     Returns:
         list[dict]: List of job objects with the following fields:
             - _id: Unique job identifier
-            - created: Job creation timestamp
-            - created_by: ID of user who created the job
             - description: Job description
-            - updated: Last update timestamp
-            - updated_by: ID of user who last updated the job
             - name: Job name
             - status: Current job status (error, complete, running, cancelled, incomplete, paused)
     """
@@ -81,10 +77,6 @@ async def get_jobs(
         for item in data.get("data") or list():
             results.append({
                 "_id": item.get("_id"),
-                "created": item.get("created"),
-                "created_by": item.get("created_by"),
-                "updated": item.get("last_updated"),
-                "updated_by": item.get("last_updated_by"),
                 "name": item.get("name"),
                 "description": item.get("description"),
                 "status": item.get("status")
