@@ -11,6 +11,67 @@ from fastmcp import Context
 __tags__ = ("workflow_engine",)
 
 
+async def _get_job_metrics(
+    ctx: Context,
+    params: dict | None = None
+) -> list[dict]:
+    """
+    Get aggregate job metrics from the Workflow Engine.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+        params (dict): Additional paramets to filter the returned jobs
+
+    Returns:
+        list[dict]: List of job metrics with the following fields:
+            - _id: The id assinged by Itential Platform
+            - workflow: The name of the workflow
+            - metrics: The job metrics
+            - jobsComplete: Number of completed jobs
+            - totalRunTime: Cumulative run time in seconds
+    """
+    await ctx.debug("inside _get_job_metrics(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    limit = 100
+    skip = 0
+
+    if params is None:
+        params = {"limit": limit}
+    else:
+        params["limit"] = limit
+
+    results = list()
+
+    while True:
+        params["skip"] = skip
+
+        res = await client.get(
+            "/workflow_engine/jobs/metrics",
+            params=params,
+        )
+
+        data = res.json()
+        elements = data.get("results") or list()
+
+        for ele in elements:
+            results.append({
+                "_id": ele.get("_id"),
+                "workflow": ele.get("workflow"),
+                "metrics": ele.get("metrics"),
+                "jobsComplete": ele.get("jobsComplete"),
+                "totalRunTime": ele.get("totalRunTime")
+            })
+
+        if len(elements) == data["total"]:
+            break
+
+        skip += limit
+
+    return results
+
+
 async def get_job_metrics(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
@@ -27,40 +88,50 @@ async def get_job_metrics(
         ctx (Context): The FastMCP Context object
 
     Returns:
-        list[dict]: List of job metric objects containing execution statistics
-            including jobs completed, workflow names, total runtime, and other
-            performance metrics
+        list[dict]: List of job metrics with the following fields:
+            - _id: The id assinged by Itential Platform
+            - workflow: The name of the workflow
+            - metrics: The job metrics
+            - jobsComplete: Number of completed jobs
+            - totalRunTime: Cumulative run time in seconds
     """
-    await ctx.debug("inside get_job_metrics(...)")
+    return await _get_job_metrics(ctx)
 
-    client = ctx.request_context.lifespan_context.get("client")
 
-    limit = 100
-    skip = 0
+async def get_job_metrics_for_workflow(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    name: Annotated[str, Field(
+        description="The name of the workflow to get the job metrics for"
+    )]
+) -> list[dict]:
+    """
+    Get the job metrics for the specified workflow from Workflow Engine
 
-    params = {"limit": limit}
+    Args:
+        ctx (Context): The FastMCP Context object
 
-    results = list()
+        name (str): the name of the workflow to retrieve the job metrics for
 
-    while True:
-        params["skip"] = skip
+    Returns:
+        list[dict]: List of job metrics with the following fields:
+            - _id: The id assinged by Itential Platform
+            - workflow: The name of the workflow
+            - metrics: The job metrics
+            - jobsComplete: Number of completed jobs
+            - totalRunTime: Cumulative run time in seconds
 
-        res = await client.get(
-            "/workflow_engine/jobs/metrics",
-            params=params,
-        )
-
-        data = res.json()
-        elements = data.get("results") or list()
-
-        results.extend(elements)
-
-        if len(elements) == data["total"]:
-            break
-
-        skip += limit
-
-    return results
+    Notes:
+        - The name argument is case sensitive
+    """
+    return await _get_job_metrics(
+        ctx,
+        params={
+            "containsField": "workflow.name",
+            "contains": name
+        }
+    )
 
 
 async def _get_task_metrics(
@@ -88,6 +159,12 @@ async def _get_task_metrics(
     limit = 100
     skip = 0
     cnt = 0
+
+    if params is None:
+        params = {"limit": limit}
+    else:
+        params["limit"] = limit
+
 
     results = list()
 
@@ -151,7 +228,6 @@ async def get_task_metrics_for_workflow(
         description="The name of the workflow to retrieve task metrics for"
     )]
 ) -> list[dict]:
-
     """
     Get all task metrics for the specified workflow from Workflow Engine
 
