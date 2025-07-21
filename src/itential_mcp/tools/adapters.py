@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-import time
+import asyncio
 
 from typing import Annotated
 
@@ -147,7 +147,7 @@ async def start_adapter(
             if state == "RUNNING":
                 break
 
-            time.sleep(1)
+            await asyncio.sleep(1)
             timeout -= 1
 
     elif state in ("DEAD", "DELETED"):
@@ -218,7 +218,7 @@ async def stop_adapter(
             if state == "STOPPED":
                 break
 
-            time.sleep(1)
+            await asyncio.sleep(1)
             timeout -= 1
 
     elif state in ("DEAD", "DELETED"):
@@ -290,7 +290,7 @@ async def restart_adapter(
             if state == "RUNNING":
                 break
 
-            time.sleep(1)
+            await asyncio.sleep(1)
             timeout -= 1
 
     elif state in ("DEAD", "DELETED", "STOPPED"):
