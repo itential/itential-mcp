@@ -161,13 +161,13 @@ async def run() -> int:
         "transport": cfg.server.get("transport")
     }
 
-    if kwargs["transport"] in ("sse", "streamable-http"):
+    if kwargs["transport"] in ("sse", "http"):
         kwargs.update({
             "host": cfg.server.get("host"),
             "port": cfg.server.get("port"),
             "log_level": cfg.server.get("log_level")
         })
-        if kwargs["transport"] == "streamable-http":
+        if kwargs["transport"] == "http":
             kwargs["path"] = cfg.server.get("path")
 
     try:
