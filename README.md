@@ -86,15 +86,15 @@ itential-mcp --transport sse --host 0.0.0.0 --port 8000
 
 ### Server Options
 
-| Option           | Description                                       | Default           |
-|------------------|---------------------------------------------------|-------------------|
-| `--transport`    | Transport protocol (stdio, sse, streamable-http)  | stdio             |
-| `--host`         | Host address to listen on                         | localhost         |
-| `--port`         | Port to listen on                                 | 8000              |
-| `--path`         | The streamable HTTP path to use                   | /mcp              |
-| `--log-level`    | Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL) | INFO              |
-| `--include-tags` | Tags to include registered tools                  | none              |
-| `--exclude-tags` | Tags to exclude registered tools                  | experimental,beta |
+ | Option           | Description                                       | Default           |
+ |------------------|---------------------------------------------------|-------------------|
+ | `--transport`    | Transport protocol (stdio, sse, http)             | stdio             |
+ | `--host`         | Host address to listen on                         | localhost         |
+ | `--port`         | Port to listen on                                 | 8000              |
+ | `--path`         | The streamable HTTP path to use                   | /mcp              |
+ | `--log-level`    | Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL) | INFO              |
+ | `--include-tags` | Tags to include registered tools                  | none              |
+ | `--exclude-tags` | Tags to exclude registered tools                  | experimental,beta |
 
 ### Platform Configuration
 
