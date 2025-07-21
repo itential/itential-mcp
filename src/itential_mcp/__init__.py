@@ -3,7 +3,7 @@
 
 from importlib.metadata import version
 
-from .cli import run
+from .app import run
 
 __version__ = version("itential_mcp")
 

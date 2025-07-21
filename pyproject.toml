@@ -43,7 +43,7 @@ Repository = "https://github.com/itential/itential-mcp"
 Documentation = "https://github.com/itential/itential-mcp"
 
 [project.scripts]
-itential-mcp = "itential_mcp.cli:run"
+itential-mcp = "itential_mcp.app:run"
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning>=0.7.0"]
