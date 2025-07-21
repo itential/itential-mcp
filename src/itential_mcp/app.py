@@ -4,16 +4,13 @@
 import os
 import sys
 import asyncio
-import argparse
 import traceback
 import inspect
 
 from collections.abc import Sequence
-from dataclasses import fields
 
-from . import config
-from . import terminal
 from . import commands
+from . import cli
 
 
 LEGACY_ENV_VARS = frozenset((
@@ -24,126 +21,9 @@ LEGACY_ENV_VARS = frozenset((
 ))
 
 
-
-class Cli(argparse.ArgumentParser):
-
-    def print_app_help(self, file=None):
-        """
-        """
-        print(self.description)
-        print(f"\nUsage:\n  {self.prog} <command> [options]")
-
-        print("\nCommands:")
-        commands = dict(sorted(self._subparsers._group_actions[0].choices.items()))
-        for key, value in commands.items():
-            print(f"  {key:<20}{value.description}")
-
-        print("\nOptions:")
-
-        actions = {}
-
-        for index, action in enumerate(self._actions):
-            if not isinstance(action, argparse._SubParsersAction):
-                actions[action.option_strings[0]] = action
-
-
-        for key, value in dict(sorted(actions.items())).items():
-            helpstr = value.help or "NO HELP AVAILABLE!!"
-            if len(value.option_strings) == 1:
-                print(f"      {value.option_strings[0]:<16}{helpstr}")
-            else:
-                print(f"  {', '.join(value.option_strings):<20}{helpstr}")
-
-        print("\nUse \"itential-mcp <command> --help\" for more information about a command.\n")
-
-
-    def print_help(self, file=None):
-        """
-        """
-        print(self.description)
-        print(f"\nUsage:\n  {self.prog} [options]\n")
-
-        actions = {}
-
-        for index, action in enumerate(self._actions):
-            if not isinstance(action, argparse._SubParsersAction):
-                if action.container.title not in actions:
-                    actions[action.container.title] = {}
-                actions[action.container.title][action.option_strings[0]] = action
-
-        options = actions.pop("options")
-
-        for key, value in dict(sorted(actions.items())).items():
-            print(f"{key}")
-
-            for k, v in value.items():
-                helpstr = v.help or "NO HELP AVAILABLE!!"
-
-                if len(v.option_strings) == 1:
-                    if v.metavar is not None:
-                        option = f"{v.option_strings[0]} {v.metavar}"
-                    else:
-                        option = v.option_strings[0]
-
-                    if len(option) > 21:
-                        n = terminal.getcols()
-                        helpstr = [helpstr[i:i+n] for i in range(0, len(helpstr), n)]
-                        print(f"{' ':6}{option:<22}")
-                        for s in helpstr:
-                            print(f"{' ':28}{s}")
-                    else:
-                        print(f"{' ':6}{option:<22}{helpstr}")
-
-                else:
-                    option = f"{', '.join(value.option_strings)} {value.metavar}"
-                    if len(option) > 15:
-                        n = terminal.getcols()
-                        helpstr = [helpstr[i:i+n] for i in range(0, len(helpstr), n)]
-                        print(f"      {option:<22}")
-                        for s in helpstr:
-                            print(f"{' ':28}{s}")
-                    else:
-                        print(f"      {option:<22}{helpstr}")
-
-
-
-        print("\nGlobal Options")
-
-        for key, value in dict(sorted(options.items())).items():
-            helpstr = value.help or "NO HELP AVAILABLE!!"
-
-            if len(value.option_strings) == 1:
-                if value.metavar is not None:
-                    option = f"{value.option_strings[0]} {value.metavar}"
-                else:
-                    option = value.option_strings[0]
-
-                if len(option) > 15:
-                    n = terminal.getcols()
-                    helpstr = [helpstr[i:i+n] for i in range(0, len(helpstr), n)]
-                    print(f"{' ':6}{option:<22}")
-                    for s in helpstr:
-                        print(f"{' ':28}{s}")
-                else:
-                    print(f"{' ':10}{option:<18}{helpstr}")
-
-            else:
-                option = f"{', '.join(value.option_strings)} {value.metavar}"
-                if len(option) > 15:
-                    n = terminal.getcols()
-                    helpstr = [helpstr[i:i+n] for i in range(0, len(helpstr), n)]
-                    print(f"{' ':6}{option:<22}")
-                    for s in helpstr:
-                        print(f"{' ':28}{s}")
-                else:
-                    print(f"{' ':6}{option:<22}{helpstr}")
-
-        print("\nUse \"itential-mcp <command> --help\" for more information about a command.\n")
-
-
 def parse_args(args: Sequence) -> None:
     """
-    Parses any arguments
+    Parses command line arguments
 
     This function will parse the arguments identified by the `args` argument
     and return a Namespace object with the values. Typically this is used
@@ -158,7 +38,7 @@ def parse_args(args: Sequence) -> None:
     Raises:
         None
     """
-    parser = Cli(
+    parser = cli.Parser(
         prog="itential-mcp",
         add_help=False,
         description="Itential MCP\n\n  Find more information at: https://github.com/itential/itential-mcp"
@@ -182,6 +62,27 @@ def parse_args(args: Sequence) -> None:
         description="Run the MCP server"
     )
 
+    cli.add_server_group(run_cmd)
+    cli.add_platform_group(run_cmd)
+
+    call_cmd = subparsers.add_parser(
+        "call",
+        description="Call a tool and return the results"
+    )
+
+    call_cmd.add_argument(
+        "tool",
+        help="Name of the tool call"
+    )
+
+    call_cmd.add_argument(
+        "--params",
+        metavar="<object>",
+        help="Parameters to pass to the tool"
+    )
+
+    cli.add_platform_group(call_cmd)
+
     subparsers.add_parser(
         "tools",
         description="Get list of available tools"
@@ -201,44 +102,6 @@ def parse_args(args: Sequence) -> None:
         "--config",
         help="The Itential MCP configuration file"
     )
-
-    # MCP Server arguments
-    server_group = run_cmd.add_argument_group(
-        "MCP Server Options",
-        "Configuration options for the MCP Server instance"
-    )
-
-    # Itential Platform arguments
-    platform_group = run_cmd.add_argument_group(
-        "Itential Platform Options",
-        "Configuration options for connecting to Itential Platform API"
-    )
-
-    data = [f for f in fields(config.Config)]
-
-    for ele in data:
-        attrs = ele.default.json_schema_extra
-        if attrs and attrs.get("x-itential-mcp-cli-enabled"):
-            helpstr = ele.default.description
-            if helpstr is not None:
-                helpstr += f" (default={ele.default.default})"
-            else:
-                helpstr = "NO HELP AVAILABLE!!"
-
-            kwargs = {
-                "dest": ele.name,
-                "help": helpstr
-            }
-
-            kwargs.update(attrs.get("x-itential-mcp-options") or {})
-            posargs = attrs.get("x-itential-mcp-arguments")
-
-
-        if ele.name.startswith("server"):
-            server_group.add_argument(*posargs, **kwargs)
-        elif ele.name.startswith("platform"):
-            platform_group.add_argument(*posargs, **kwargs)
-
 
     args = parser.parse_args(args=args)
 

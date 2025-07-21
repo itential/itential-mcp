@@ -6,10 +6,12 @@ from typing import Any, Coroutine, Sequence, Mapping, Tuple
 from . import server
 from . import metadata
 from . import toolutils
+from . import runner
+
 
 def run(args: Any) -> Tuple[Coroutine, Sequence, Mapping]:
     """
-    Implements the `itential-mcp run` command
+    Implement the `itential-mcp run` command
 
     This function implements the run command and returns the `run` function
     from the `server` module.
@@ -30,7 +32,7 @@ def run(args: Any) -> Tuple[Coroutine, Sequence, Mapping]:
 
 def version(args: Any) -> Tuple[Coroutine, Sequence, Mapping]:
     """
-    Implements the `itential-mcp run` command
+    Implement the `itential-mcp run` command
 
     This function implements the run command and returns the `run` function
     from the `server` module.
@@ -51,7 +53,7 @@ def version(args: Any) -> Tuple[Coroutine, Sequence, Mapping]:
 
 def tools(args: Any) -> Tuple[Coroutine, Sequence, Mapping]:
     """
-    Implements the `itential-mcp tools` command
+    Implement the `itential-mcp tools` command
 
     This function is the implementat of the `tools` command that
     will display the list of all avaiable tools to stdout.
@@ -71,7 +73,7 @@ def tools(args: Any) -> Tuple[Coroutine, Sequence, Mapping]:
 
 def tags(args: Any) -> Tuple[Coroutine, Sequence, Mapping]:
     """
-    Implements the `itential-mcp tags` command
+    Implement the `itential-mcp tags` command
 
     This function is the implementat of the `tags` command that
     will display the list of all avaiable tags to stdout.
@@ -90,4 +92,23 @@ def tags(args: Any) -> Tuple[Coroutine, Sequence, Mapping]:
     return toolutils.display_tags, None, None
 
 
+def call(args: Any) -> Tuple[Coroutine, Sequence, Mapping]:
+    """
+    Implement the `itential-mcp call` command
 
+    This function provides the implementation of the `call` command that
+    will invoke a tool with (or without) parameters.  The tool function
+    executes and returns the result.
+
+    Args:
+        args (Any): The argparse Namespace instance
+
+    Returns:
+        tuple: Returns a tuple that consistes of a coroutine function, a
+            sequence that represents the input args for the function and
+            a mapping that represents the keyword arguments for the function
+
+    Raises:
+        None
+    """
+    return runner.run, (args.tool, args.params), None

@@ -140,7 +140,7 @@ async def display_tools():
 
 async def display_tags():
     """
-    Print the last of available tags to stdout
+    Print the last of available tags to stdout.
 
     This function will display the list of all availalbe tags to
     stdout
@@ -153,6 +153,7 @@ async def display_tags():
 
     Raises:
         None
+
     """
     print("TAGS")
 
