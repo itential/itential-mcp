@@ -60,7 +60,7 @@ def new(cfg: config.Config) -> FastMCP:
     # Initialize FastMCP server
     return FastMCP(
         name="Itential Platform MCP",
-        instructions="Comprehensive network automation assistant for Itential Platform. Provides 40+ tools across: WORKFLOWS (get, start, monitor jobs), DEVICES (get, configure, backup, group management), COMPLIANCE (plans, reports, execution), PLATFORM HEALTH (system health, adapters, applications lifecycle), LIFECYCLE MANAGER (resources, instances), INTEGRATIONS (models from OpenAPI), METRICS (job/task performance by workflow/app), TEMPLATES (command templates, Jinja2 rendering), and COMMANDS (direct execution on devices). Enables enterprise network automation and orchestration through workflows, device configuration management, compliance validation, and infrastructure integration.",
+        instructions="Tools for Itential - a network and infrastructure automation and orchestration platform. First, examine your available tools to understand your assigned persona: Platform SRE (platform administration, adapter/integration management, health monitoring), Platform Builder (asset development and promotion with full resource creation), Automation Developer (focused code asset development), Platform Operator (execute jobs, run compliance, consume data) or a Custom set of tools. Based on your tool access, adapt your approach - whether monitoring platform health, building automation assets, developing code resources, or operating established workflows. Key tools like get_health, get_workflows, run_command or create_resource will indicate your operational scope.",
         lifespan=lifespan,
         include_tags=cfg.server.get("include_tags"),
         exclude_tags=cfg.server.get("exclude_tags")
