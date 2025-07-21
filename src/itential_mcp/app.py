@@ -183,6 +183,16 @@ def parse_args(args: Sequence) -> None:
     )
 
     subparsers.add_parser(
+        "tools",
+        description="Get list of available tools"
+    )
+
+    subparsers.add_parser(
+        "tags",
+        description="Get list of available tags"
+    )
+
+    subparsers.add_parser(
         "version",
         description="Print the version information"
     )
