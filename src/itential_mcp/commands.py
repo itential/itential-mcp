@@ -5,7 +5,7 @@ from typing import Any, Coroutine, Sequence, Mapping, Tuple
 
 from . import server
 from . import metadata
-
+from . import toolutils
 
 def run(args: Any) -> Tuple[Coroutine, Sequence, Mapping]:
     """
@@ -47,3 +47,47 @@ def version(args: Any) -> Tuple[Coroutine, Sequence, Mapping]:
         None
     """
     return metadata.display_version, None, None
+
+
+def tools(args: Any) -> Tuple[Coroutine, Sequence, Mapping]:
+    """
+    Implements the `itential-mcp tools` command
+
+    This function is the implementat of the `tools` command that
+    will display the list of all avaiable tools to stdout.
+
+    Args:
+        args (Any): The argparse Namespace instance
+
+    Returns:
+        tuple: Returns a tuple that consistes of a coroutine function, a
+            sequence that represents the input args for the function and
+            a mapping that represents the keyword arguments for the function
+
+    Raises:
+        None
+    """
+    return toolutils.display_tools, None, None
+
+def tags(args: Any) -> Tuple[Coroutine, Sequence, Mapping]:
+    """
+    Implements the `itential-mcp tags` command
+
+    This function is the implementat of the `tags` command that
+    will display the list of all avaiable tags to stdout.
+
+    Args:
+        args (Any): The argparse Namespace instance
+
+    Returns:
+        tuple: Returns a tuple that consistes of a coroutine function, a
+            sequence that represents the input args for the function and
+            a mapping that represents the keyword arguments for the function
+
+    Raises:
+        None
+    """
+    return toolutils.display_tags, None, None
+
+
+
