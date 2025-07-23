@@ -19,20 +19,18 @@ from . import toolutils
 @asynccontextmanager
 async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
     """
-    Manage the lifespan of Itential Platform servers
+    Manage the lifespan of Itential Platform connections.
 
-    This function is responsible for creating the client connection to
-    Itential Platform and yielding it to FastMCP to be included in the
-    context.
+    Creates and manages the client connection to Itential Platform and cache
+    instance, yielding them to FastMCP for inclusion in the request context.
 
     Args:
-        mcp (FastMCP): An instance of FastMCP
+        mcp (FastMCP): The FastMCP server instance
 
-    Returns:
-        AsyncGenerator: Yields an AsyncGenerator with a dict object
-
-    Raises:
-        None
+    Yields:
+        dict: Context containing:
+            - client: PlatformClient instance for Itential API calls
+            - cache: Cache instance for performance optimization
     """
     async with AsyncExitStack():
         yield {
@@ -43,26 +41,26 @@ async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
 
 def new(cfg: config.Config) -> FastMCP:
     """
-    Initialize the FastMCP server
+    Initialize a new FastMCP server instance.
 
-    This function will intialize a new instance of the FastMCP server and
-    return it to the calling function.  This function should only be called
-    once to initialize the server.
+    Creates and configures a FastMCP server with Itential Platform integration,
+    including tool filtering based on tags.
 
     Args:
-        cfg (Config): An instance of `config.Config` that provides the
-            server configuration values
+        cfg (Config): Server configuration containing:
+            - include_tags: Optional tags to include specific tools
+            - exclude_tags: Optional tags to exclude tools (default: experimental,beta)
 
     Returns:
-        FastMCP: An instance of a FastMCP server
+        FastMCP: Configured server instance ready for tool registration
 
-    Raises:
-        None
+    Note:
+        This function should only be called once during server initialization.
     """
     # Initialize FastMCP server
     return FastMCP(
         name="Itential Platform MCP",
-        instructions="Itential tools and resources for interacting with Itential Platform",
+        instructions="Tools for Itential - a network and infrastructure automation and orchestration platform. First, examine your available tools to understand your assigned persona: Platform SRE (platform administration, adapter/integration management, health monitoring), Platform Builder (asset development and promotion with full resource creation), Automation Developer (focused code asset development), Platform Operator (execute jobs, run compliance, consume data) or a Custom set of tools. Based on your tool access, adapt your approach - whether monitoring platform health, building automation assets, developing code resources, or operating established workflows. Key tools like get_health, get_workflows, run_command or create_resource will indicate your operational scope.",
         lifespan=lifespan,
         include_tags=cfg.server.get("include_tags"),
         exclude_tags=cfg.server.get("exclude_tags")
@@ -71,26 +69,37 @@ def new(cfg: config.Config) -> FastMCP:
 
 async def run() -> int:
     """
-    Run the MCP server
+    Run the MCP server with the configured transport.
 
-    This is the server entry point for running the Itential MCP server using
-    either stdio or sse.  This function will load the configuration, create
-    the MCP server, register all tools and start the server.
+    Entry point for the Itential MCP server supporting multiple transport protocols:
+    - stdio: Standard input/output for direct process communication
+    - sse: Server-Sent Events for web-based real-time communication
+    - http: Streamable HTTP for request/response patterns
 
-    Args:
-        None
+    The function loads configuration, creates the MCP server, registers all tools,
+    and starts the server with the appropriate transport settings.
+
+    Transport-specific configurations:
+    - stdio: No additional configuration needed
+    - sse/http: Requires host, port, and log_level
+    - http: Additionally requires path configuration
 
     Returns:
-        int: Returns a int value as the return code from running the server
-            A value of 0 is success and any other value is an error
+        int: Exit code (0 for success, 1 for error)
 
     Raises:
-        KeyboardInterrupt: When an operator uses a keyboard interrupt,
-            typically CTRL-C to stop the server.  This will cause the
-            server to exit with return code 0
-        Exception: Generic exception caught while running the server and
-            prints the traceback to stdout.  This will cause the server
-            to exit with return code 1
+        KeyboardInterrupt: Graceful shutdown on CTRL-C (returns 0)
+        Exception: Any other error during startup or runtime (returns 1)
+
+    Examples:
+        # Default stdio transport
+        $ itential-mcp
+
+        # SSE transport for web integration
+        $ itential-mcp --transport sse --host 0.0.0.0 --port 8000
+
+        # Streamable HTTP transport
+        $ itential-mcp --transport http --host 0.0.0.0 --port 8000 --path /mcp
     """
     cfg = config.get()
 
