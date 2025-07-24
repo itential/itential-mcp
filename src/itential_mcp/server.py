@@ -58,13 +58,18 @@ def new(cfg: config.Config) -> FastMCP:
         This function should only be called once during server initialization.
     """
     # Initialize FastMCP server
-    return FastMCP(
+    srv = FastMCP(
         name="Itential Platform MCP",
         instructions="Tools for Itential - a network and infrastructure automation and orchestration platform. First, examine your available tools to understand your assigned persona: Platform SRE (platform administration, adapter/integration management, health monitoring), Platform Builder (asset development and promotion with full resource creation), Automation Developer (focused code asset development), Platform Operator (execute jobs, run compliance, consume data) or a Custom set of tools. Based on your tool access, adapt your approach - whether monitoring platform health, building automation assets, developing code resources, or operating established workflows. Key tools like get_health, get_workflows, run_command or create_resource will indicate your operational scope.",
         lifespan=lifespan,
         include_tags=cfg.server.get("include_tags"),
         exclude_tags=cfg.server.get("exclude_tags")
     )
+
+    for f, tags in toolutils.itertools():
+        srv.tool(f, tags=tags)
+
+    return srv
 
 
 async def run() -> int:
@@ -101,32 +106,24 @@ async def run() -> int:
         # Streamable HTTP transport
         $ itential-mcp --transport http --host 0.0.0.0 --port 8000 --path /mcp
     """
-    cfg = config.get()
-
-    mcp = new(cfg)
-
     try:
-        for f, tags in toolutils.itertools():
-            mcp.tool(f, tags=tags)
+        cfg = config.get()
 
-    except Exception as exc:
-        print(f"ERROR: failed to import tool: {str(exc)}", file=sys.stderr)
-        sys.exit(1)
+        mcp = new(cfg)
 
-    kwargs = {
-        "transport": cfg.server.get("transport")
-    }
+        kwargs = {
+            "transport": cfg.server.get("transport")
+        }
 
-    if kwargs["transport"] in ("sse", "http"):
-        kwargs.update({
-            "host": cfg.server.get("host"),
-            "port": cfg.server.get("port"),
-            "log_level": cfg.server.get("log_level")
-        })
-        if kwargs["transport"] == "http":
-            kwargs["path"] = cfg.server.get("path")
+        if kwargs["transport"] in ("sse", "http"):
+            kwargs.update({
+                "host": cfg.server.get("host"),
+                "port": cfg.server.get("port"),
+                "log_level": cfg.server.get("log_level")
+            })
+            if kwargs["transport"] == "http":
+                kwargs["path"] = cfg.server.get("path")
 
-    try:
         await mcp.run_async(**kwargs)
 
     except KeyboardInterrupt:

@@ -3,7 +3,7 @@
 
 import sys
 import pytest
-from unittest.mock import patch, MagicMock, AsyncMock, call
+from unittest.mock import patch, MagicMock, AsyncMock
 
 from itential_mcp import server
 from itential_mcp.config import Config
@@ -103,10 +103,9 @@ class TestRun:
     """Test the run() function for server execution"""
 
     @pytest.mark.asyncio
-    @patch('itential_mcp.server.toolutils.itertools')
     @patch('itential_mcp.server.new')
     @patch('itential_mcp.server.config.get')
-    async def test_run_stdio_transport_success(self, mock_config_get, mock_new, mock_itertools):
+    async def test_run_stdio_transport_success(self, mock_config_get, mock_new):
         """Test successful server run with stdio transport"""
         # Setup mocks
         mock_config = MagicMock()
@@ -117,27 +116,12 @@ class TestRun:
         mock_mcp.run_async = AsyncMock()
         mock_new.return_value = mock_mcp
 
-        mock_func1 = MagicMock()
-        mock_func2 = MagicMock()
-        mock_itertools.return_value = [
-            (mock_func1, ["tag1", "tag2"]),
-            (mock_func2, ["tag3"])
-        ]
-
         # Execute
         await server.run()
 
         # Verify
         mock_config_get.assert_called_once()
         mock_new.assert_called_once_with(mock_config)
-        mock_itertools.assert_called_once()
-
-        # Check that tools were registered
-        expected_calls = [
-            call(mock_func1, tags=["tag1", "tag2"]),
-            call(mock_func2, tags=["tag3"])
-        ]
-        mock_mcp.tool.assert_has_calls(expected_calls)
 
         # Check server was run with correct parameters
         mock_mcp.run_async.assert_called_once_with(transport="stdio")
@@ -205,21 +189,16 @@ class TestRun:
         )
 
     @pytest.mark.asyncio
-    @patch('itential_mcp.server.toolutils.itertools')
     @patch('itential_mcp.server.new')
     @patch('itential_mcp.server.config.get')
-    async def test_run_tool_registration_failure(self, mock_config_get, mock_new, mock_itertools):
-        """Test server exits when tool registration fails"""
+    async def test_run_tool_registration_failure(self, mock_config_get, mock_new):
+        """Test server exits when tool registration fails in new()"""
         mock_config = MagicMock()
         mock_config.server = {"transport": "stdio"}
         mock_config_get.return_value = mock_config
 
-        mock_mcp = MagicMock()
-        mock_mcp.run_async = AsyncMock()  # Properly mock the async method
-        mock_new.return_value = mock_mcp
-
-        # Make itertools raise an exception
-        mock_itertools.side_effect = Exception("Tool import failed")
+        # Make new() raise an exception (simulates tool registration failure)
+        mock_new.side_effect = Exception("Tool import failed")
 
         with patch('builtins.print') as mock_print, \
              patch('sys.exit') as mock_exit:
@@ -227,7 +206,7 @@ class TestRun:
             await server.run()
 
             mock_print.assert_called_with(
-                "ERROR: failed to import tool: Tool import failed",
+                "ERROR: server stopped unexpectedly: Tool import failed",
                 file=sys.stderr
             )
             mock_exit.assert_called_with(1)
@@ -307,11 +286,10 @@ class TestRun:
         mock_mcp.run_async.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch('itential_mcp.server.toolutils.itertools')
     @patch('itential_mcp.server.new')
     @patch('itential_mcp.server.config.get')
-    async def test_run_multiple_tools_registration(self, mock_config_get, mock_new, mock_itertools):
-        """Test multiple tools are registered correctly"""
+    async def test_run_multiple_tools_registration(self, mock_config_get, mock_new):
+        """Test server properly uses the configured MCP instance from new()"""
         mock_config = MagicMock()
         mock_config.server = {"transport": "stdio"}
         mock_config_get.return_value = mock_config
@@ -320,49 +298,23 @@ class TestRun:
         mock_mcp.run_async = AsyncMock()
         mock_new.return_value = mock_mcp
 
-        # Multiple tools with different tag configurations
-        mock_func1 = MagicMock()
-        mock_func2 = MagicMock()
-        mock_func3 = MagicMock()
-
-        mock_itertools.return_value = [
-            (mock_func1, ["system", "admin"]),
-            (mock_func2, ["user"]),
-            (mock_func3, [])  # No tags
-        ]
-
         await server.run()
 
-        # Verify all tools were registered with their respective tags
-        expected_calls = [
-            call(mock_func1, tags=["system", "admin"]),
-            call(mock_func2, tags=["user"]),
-            call(mock_func3, tags=[])
-        ]
-        mock_mcp.tool.assert_has_calls(expected_calls)
-        assert mock_mcp.tool.call_count == 3
+        # Verify new() was called with the config and the MCP instance was used
+        mock_new.assert_called_once_with(mock_config)
+        mock_mcp.run_async.assert_called_once_with(transport="stdio")
 
     @pytest.mark.asyncio
-    @patch('itential_mcp.server.toolutils.itertools')
     @patch('itential_mcp.server.new')
     @patch('itential_mcp.server.config.get')
-    async def test_run_partial_tool_failure(self, mock_config_get, mock_new, mock_itertools):
-        """Test that server fails if tool iteration fails partway through"""
+    async def test_run_partial_tool_failure(self, mock_config_get, mock_new):
+        """Test that server fails if new() fails due to tool registration issues"""
         mock_config = MagicMock()
         mock_config.server = {"transport": "stdio"}
         mock_config_get.return_value = mock_config
 
-        mock_mcp = MagicMock()
-        mock_mcp.run_async = AsyncMock()  # Properly mock the async method
-        mock_new.return_value = mock_mcp
-
-        # Iterator that yields some tools then fails
-        def failing_iterator():
-            yield (MagicMock(), ["tag1"])
-            yield (MagicMock(), ["tag2"])
-            raise ImportError("Failed to import third tool")
-
-        mock_itertools.return_value = failing_iterator()
+        # Make new() fail with an ImportError (simulating tool import failure)
+        mock_new.side_effect = ImportError("Failed to import third tool")
 
         with patch('builtins.print') as mock_print, \
              patch('sys.exit') as mock_exit:
@@ -370,7 +322,7 @@ class TestRun:
             await server.run()
 
             mock_print.assert_called_with(
-                "ERROR: failed to import tool: Failed to import third tool",
+                "ERROR: server stopped unexpectedly: Failed to import third tool",
                 file=sys.stderr
             )
             mock_exit.assert_called_with(1)
