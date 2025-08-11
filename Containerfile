@@ -37,4 +37,4 @@ COPY --from=builder /app/.venv /app/.venv
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
 
-ENTRYPOINT ["itential-mcp"]
+ENTRYPOINT ["itential-mcp", "run"]
