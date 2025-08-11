@@ -20,8 +20,8 @@ INSTRUCTIONS = """
 Tools for Itential - a network and infrastructure automation and orchestration
 platform. First, examine your available tools to understand your assigned
 persona: Platform SRE (platform administration, adapter/integration management,
-health monitoring), Platform Builder (asset development and promotion with
-full resource creation), Automation Developer (focused code asset development),
+health monitoring), Platform Builder (asset development and promotion with full
+resource creation), Automation Developer (focused code asset development),
 Platform Operator (execute jobs, run compliance, consume data) or a Custom set
 of tools. Based on your tool access, adapt your approach - whether monitoring
 platform health, building automation assets, developing code resources, or
