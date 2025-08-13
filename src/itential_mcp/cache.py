@@ -2,15 +2,15 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 import time
-import threading
+import asyncio
 
-from typing import Any
+from typing import Any, Optional
 
 
 class Cache(object):
     """
-    The Cache class implements a basic, thread safe implementation of a
-    key/value store that can be used to cache values.  One instantiated,
+    The Cache class implements a basic, async-safe implementation of a
+    key/value store that can be used to cache values.  Once instantiated,
     any value can be inserted into the store for later retrieval.
     """
 
@@ -24,13 +24,13 @@ class Cache(object):
         serialization for the value.
 
         This object supports a time-to-live value for all entries in the
-        store.   It will start a background thread that is responsible
+        store.   It will start a background asyncio task that is responsible
         for iterating over values in the store and expiring them.   The
         clean up interval can be specified using the `cleanup_interval`
         argument.
 
         Args:
-            cleanup_interval (int): The internal specified in seconds to run
+            cleanup_interval (int): The interval specified in seconds to run
                 the key expiration process.  The default is 10 seconds.
 
         Returns:
@@ -40,25 +40,45 @@ class Cache(object):
             None
         """
         self._store = {}
-        self._lock = threading.Lock()
         self._cleanup_interval = cleanup_interval
-        self._stop_event = threading.Event()
-        self._thread = threading.Thread(target=self._cleanup_expired_keys, daemon=True)
-        self._thread.start()
+        self._stop_event = asyncio.Event()
+        self._cleanup_task: Optional[asyncio.Task] = None
+        self._started = False
+
+    async def start(self):
+        """
+        Start the background cleanup task
+
+        This method must be called to start the background cleanup task.
+        It should be called after the cache is instantiated and an event
+        loop is available.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        Raises:
+            None
+        """
+        if not self._started:
+            self._cleanup_task = asyncio.create_task(self._cleanup_expired_keys())
+            self._started = True
 
     def put(self, key: str, value: Any, ttl: int | None = None):
         """
         Put a new key into the store
 
         This method will put a new key into the store.  The value can be
-        any Python object.  It is the calling functions responsibity to
+        any Python object.  It is the calling functions responsibility to
         handle any data serialization.
 
         Args:
-            key (str): The key used to store and retreive the value
+            key (str): The key used to store and retrieve the value
             value (Any): The value to store with the key
             ttl (int): Time-to-live for the key.  When the TTL expires the
-                key is pruged from the store
+                key is purged from the store
 
         Returns:
             None
@@ -67,14 +87,13 @@ class Cache(object):
             None
         """
         expiry = time.time() + ttl if ttl else None
-        with self._lock:
-            self._store[key] = (value, expiry)
+        self._store[key] = (value, expiry)
 
     def get(self, key: str) -> Any:
         """
         Get the value of `key` from the store
 
-        This method will retreive the value from the store based on the
+        This method will retrieve the value from the store based on the
         specified `key` argument.   If the key does not exist in the
         store or has expired, this method will return None.
 
@@ -88,17 +107,16 @@ class Cache(object):
         Raises:
             None
         """
-        with self._lock:
-            item = self._store.get(key)
-            if not item:
-                return None
+        item = self._store.get(key)
+        if not item:
+            return None
 
-            value, expiry = item
-            if expiry and time.time() > expiry:
-                del self._store[key]
-                return None
+        value, expiry = item
+        if expiry and time.time() > expiry:
+            del self._store[key]
+            return None
 
-            return value
+        return value
 
     def delete(self, key: str):
         """
@@ -106,7 +124,7 @@ class Cache(object):
 
         This method will delete a previously inserted key from the store.
         If the specified key does not exist in the store, this method
-        simply performs a nooop
+        simply performs a noop
 
         Args:
             key (str): The key to delete from the store
@@ -117,8 +135,7 @@ class Cache(object):
         Raises:
             None
         """
-        with self._lock:
-            return self._store.pop(key, None)
+        return self._store.pop(key, None)
 
     def keys(self) -> list[str]:
         """
@@ -137,11 +154,10 @@ class Cache(object):
             None
         """
         now = time.time()
-        with self._lock:
-            return [
-                k for k, (v, expiry) in self._store.items()
-                if not expiry or now <= expiry
-            ]
+        return [
+            k for k, (v, expiry) in self._store.items()
+            if not expiry or now <= expiry
+        ]
 
     def clear(self):
         """
@@ -161,31 +177,41 @@ class Cache(object):
         Raises:
             None
         """
-        with self._lock:
-            self._store.clear()
+        self._store.clear()
 
-    def _cleanup_expired_keys(self):
+    async def _cleanup_expired_keys(self):
         """
-        Internal method that handles cleaning up expired keys
+        Internal method that handles cleaning up expired keys using asyncio
         """
-        while not self._stop_event.is_set():
-            time.sleep(self._cleanup_interval)
-            now = time.time()
-            with self._lock:
-                expired_keys = [k for k, (v, expiry) in self._store.items() if expiry and now > expiry]
+        while True:
+            try:
+                # Wait for stop event or timeout
+                await asyncio.wait_for(
+                    self._stop_event.wait(),
+                    timeout=self._cleanup_interval
+                )
+                # If we get here, stop event was set
+                break
+            except asyncio.TimeoutError:
+                # Timeout occurred, time to cleanup expired keys
+                now = time.time()
+                expired_keys = [
+                    k for k, (v, expiry) in self._store.items()
+                    if expiry and now > expiry
+                ]
                 for k in expired_keys:
                     del self._store[k]
 
-    def stop(self):
+    async def stop(self):
         """
-        Stop the background cleanup thread
+        Stop the background cleanup task
 
-        This method will gracefully stop the store service.  It will
-        connect to the background thread that handles content
-        expiration and stops the thread from running.  It will also
-        clear out all entries from the store
+        This method will gracefully stop the cache service.  It will
+        signal the background task that handles content expiration to
+        stop and waits for it to complete.  It will also clear out all
+        entries from the store.
 
-        Calling this method is optional and not required for shutting
+        Calling this method is required for proper cleanup when shutting
         down the service.
 
         Args:
@@ -197,6 +223,12 @@ class Cache(object):
         Raises:
             None
         """
-        self._stop_event.set()
-        self._thread.join()
+        if self._started and self._cleanup_task:
+            self._stop_event.set()
+            try:
+                await self._cleanup_task
+            except asyncio.CancelledError:
+                pass
+            self._cleanup_task = None
+            self._started = False
         self.clear()
