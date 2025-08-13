@@ -78,5 +78,5 @@ async def run(tool: str, params: Mapping[str, Any] | None=None) -> None:
         # Execute operations
         result = await client.call_tool(tool, **kwargs)
 
-        data = json.loads(result[0].text)
+        data = json.loads(result.content[0].text)
         print(f"\n{json.dumps(data, indent=4)}")
