@@ -68,5 +68,62 @@ dev = [
     "pytest-asyncio",
     "q",
     "ruff",
-    "build"
+    "build",
+    "bandit[toml]>=1.7.0"
 ]
+
+[tool.bandit]
+# Bandit security linter configuration
+exclude_dirs = [
+    "tests",
+    ".venv",
+    "build",
+    "dist"
+]
+
+# Skip specific tests that are not relevant or cause false positives
+skips = [
+    "B101",  # Test for use of assert - common in tests
+    "B105",  # Test for hardcoded passwords - false positive on empty string checks
+    "B601",  # Test for shell injection - we control all shell usage  
+]
+
+# Security issues to always check for (remove the ones that are in skips)
+tests = [
+    "B102",  # Test for exec usage
+    "B103",  # Test for set_bad_file_permissions  
+    "B104",  # Test for hardcoded_bind_all_interfaces
+    "B106",  # Test for hardcoded_password_funcarg
+    "B107",  # Test for hardcoded_password_default
+    "B108",  # Test for hardcoded_tmp_directory
+    "B110",  # Test for try_except_pass
+    "B112",  # Test for try_except_continue
+    "B201",  # Test for flask_debug_true
+    "B301",  # Test for pickle usage
+    "B302",  # Test for marshal usage
+    "B303",  # Test for MD5 usage
+    "B304",  # Test for insecure ciphers
+    "B305",  # Test for cipher modes
+    "B306",  # Test for mktemp usage
+    "B307",  # Test for eval usage
+    "B308",  # Test for mark_safe usage
+    "B310",  # Test for urllib_urlopen usage
+    "B311",  # Test for random usage for cryptographic purposes
+    "B312",  # Test for telnetlib usage
+    "B313",  # Test for xml bad defaults
+    "B314",  # Test for xml bad XMLParser defaults
+    "B315",  # Test for xml bad XMLParse defaults  
+    "B316",  # Test for xml bad XMLTreeBuilder defaults
+    "B317",  # Test for xml bad defaults in xml.sax
+    "B318",  # Test for xml bad defaults in xml.dom
+    "B319",  # Test for xml bad defaults in xml.etree
+    "B321",  # Test for ftp_lib usage
+    "B323",  # Test for unverified context
+    "B324",  # Test for hashlib usage
+]
+
+# Confidence levels: HIGH, MEDIUM, LOW
+confidence = "HIGH"
+
+# Report format: json, txt, csv, xml
+format = "txt"

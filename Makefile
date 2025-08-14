@@ -8,7 +8,7 @@ CONTAINER_TAG ?= itential-mcp:devel
 
 .DEFAULT_GOAL := help
 
-.PHONY: test coverage clean lint premerge container
+.PHONY: test coverage clean lint security premerge container
 
 # The help target displays a help message that includes the avialable targets
 # in this `Makefile`.  It is the default target if `make` is run without any
@@ -20,6 +20,7 @@ help:
 	@echo "  container  - Builds the the application as a container"
 	@echo "  coverage   - Run test coverage report"
 	@echo "  lint       - Run analysis on source files"
+	@echo "  security   - Run security analysis with bandit"
 	@echo "  premerge   - Run the permerge tests locallly"
 	@echo "  test       - Run test suite"
 	@echo ""
@@ -47,6 +48,11 @@ lint:
 	uv run ruff check src
 	uv run ruff check tests
 
+# The security target runs bandit security analysis on the source code.
+# This target is invoked in the premerge pipeline to catch security issues.
+security:
+	uv run bandit -c pyproject.toml -r src/
+
 # The clean target will remove build and dev artififacts that are not 
 # part of the application and get created by other targets.
 clean:
@@ -54,7 +60,7 @@ clean:
 
 # The premerge target will run the permerge tests locally.  This is
 # the same target that is invoked in the permerge pipeline.
-premerge: clean lint test
+premerge: clean lint security test
 
 # Build a container image that include the MCP server.  The server will start
 # when the container is run and can be configured using environment variables
