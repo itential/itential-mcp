@@ -5,14 +5,19 @@ import json
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from io import StringIO
+from dataclasses import dataclass
+from typing import Any
 
 from itential_mcp import runner
 
 
+@dataclass
 class MockCallToolResult:
-    """Mock class to simulate FastMCP CallToolResult structure"""
-    def __init__(self, content):
-        self.content = content
+    """Mock version of CallToolResult for testing"""
+    content: list[Any]
+    structured_content: dict[str, Any] | None = None
+    data: Any = None
+    is_error: bool = False
 
 
 class TestRun:

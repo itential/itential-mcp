@@ -8,6 +8,9 @@ from pydantic import Field
 from fastmcp import Context
 
 from itential_mcp import functions
+from itential_mcp import exceptions
+
+from itential_mcp.toolutils import tags
 
 
 __tags__ = ("lifecycle_manager",)
@@ -150,6 +153,38 @@ async def create_resource(
     }
 
 
+async def _describe_resource(
+    ctx: Context,
+    name: str
+) -> dict:
+    """
+    Get detailed information about a Lifecycle Manager resource model.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+        name (str): Name of the resource model to retrieve
+
+    Returns:
+        dict: The resource model as a Python dict
+
+    Raises:
+        ValueError: If the specified resource cannot be found
+    """
+    client = ctx.request_context.lifespan_context.get("client")
+
+    res = await client.get(
+        "/lifecycle-manager/resources",
+        params={"equals[name]": name},
+    )
+
+    data = res.json()
+
+    if data["metadata"]["total"] != 1:
+        raise ValueError(f"error attempting to find resource {name}")
+
+    return data["data"][0]
+
+
 async def describe_resource(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
@@ -174,23 +209,11 @@ async def describe_resource(
             - actions: List of lifecycle actions associated with this resource
 
     Raises:
-        ValueError: If the specified resource cannot be found
+        None
     """
     await ctx.info("inside describe_resource(...)")
 
-    client = ctx.request_context.lifespan_context.get("client")
-
-    res = await client.get(
-        "/lifecycle-manager/resources",
-        params={"equals[name]": name},
-    )
-
-    data = res.json()
-
-    if data["metadata"]["total"] != 1:
-        raise ValueError(f"error attempting to find resource {name}")
-
-    item = data["data"][0]
+    item = await _describe_resource(ctx, name)
 
     actions = list()
 
@@ -205,6 +228,7 @@ async def describe_resource(
                ele["postWorkflowJst"] = await functions.transformation_id_to_name(ctx, ele["postWorkflowJst"])
 
         actions.append(ele)
+
 
     return {
         "_id": item["_id"],
@@ -283,3 +307,100 @@ async def get_instances(
         skip += limit
 
     return results
+
+
+@tags("experimental",)
+async def run_action(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    resource_name: Annotated[str, Field(
+        description="The Lifecycle Manager resource name"
+    )],
+    action_name: Annotated[str, Field(
+        description="The action to run"
+    )],
+    instance_name: Annotated[str, Field(
+        description="The instance name",
+        default=None
+    )],
+    instance_description: Annotated[str, Field(
+        description="The instance description",
+        default=None
+    )],
+    input_params: Annotated[dict, Field(
+        description="The input parameters for the action",
+        default=None
+    )]
+) -> dict:
+    """
+    Run an action on an instance of a Lifecycle Manager resource
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+        resource_name (str): The name of the Lifecycle Manager resource model
+
+        instance_name (str): The name of the instance associated with the
+            Lifecycle Manager resource
+
+        instance_description (str): A short description of the instance
+
+        action_name (str): The name of the action to trigger on the instance of
+            the Lifecycle Mmanager model
+
+        input_params (dict): An optional object to use as the input parameters
+            when running the action
+
+    Returns:
+        dict:
+
+    Raises:
+    """
+    await ctx.info("inside run_action(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    res = await client.get(
+        "/lifecycle-manager/resources",
+        params={"equals[name]": resource_name}
+    )
+
+    data = res.json()
+    if data["metadata"]["total"] != 1:
+        raise exceptions.NotFoundError(f"unable to find resource {resource_name}")
+
+    resource_id = data["data"][0]["_id"]
+
+    action_id = None
+
+    for ele in data["data"][0]["actions"]:
+        if ele["name"] == action_name:
+            action_id = ele["_id"]
+            break
+    else:
+        raise exceptions.NotFoundError(
+            f"unable to find action {action_name} for resource {resource_name}",
+        )
+
+    instance_id = await functions.instance_name_to_id(ctx, instance_name, resource_name)
+
+    body = {"actionId": action_id}
+
+    if input_params:
+        body["inputs"] = input_params
+
+    if instance_name:
+        body["instance"] = instance_id
+
+    if instance_description:
+        body["instanceDescription"] = instance_description
+
+    res = await client.post(
+        f"/lifecycle-manager/resources/{resource_id}/run-action",
+        json=body
+    )
+
+    await ctx.info(res.text)
+
+    return res.json()
