@@ -3,6 +3,8 @@
 
 from fastmcp import Context
 
+from . import exceptions
+
 async def workflow_id_to_name(ctx: Context, workflow_id: str) -> str:
     """
     Retrieves the workflow name for the specified workflow id
@@ -168,12 +170,12 @@ async def resource_name_to_id(ctx: Context, name: str) -> str:
         str: The resource ID of the resource based on the resource name
 
     Raises:
-        ValueError: If the specific resource name could not be found on
+        NotFoundError: If the specific resource name could not be found on
             the server
     """
     cache = ctx.request_context.lifespan_context.get("cache")
 
-    value = cache.get(f"/resources/{name}")
+    value = cache.get(f"/lifecycle-manager/resources/{name}")
     if value is not None:
         return value
 
@@ -185,11 +187,19 @@ async def resource_name_to_id(ctx: Context, name: str) -> str:
 
     data = res.json()
     if data["metadata"]["total"] != 1:
-        raise ValueError(f"error locating resouce {name}")
+        raise exceptions.NotFoundError(f"could not find resouce {name}")
 
     value = data["data"][0]["_id"]
 
-    cache.put(f"/resources/{name}", value)
+    cache.put(f"/lifecycle-manager/resources/{name}", value)
+
+    # this will also cache all of the actions by action name to speed up
+    # lookups for converting action names to action ids
+    for item in data["data"][0]["actions"]:
+        cache.put(
+            f"/lifecycle-manager/resources/{name}/actions/{item['name']}",
+            item["_id"]
+        )
 
     return value
 
@@ -269,5 +279,122 @@ async def project_name_to_id(ctx: Context, name: str) -> str:
     value = data["data"][0]["_id"]
 
     cache.put(f"/projects/{name}", value)
+
+    return value
+
+
+async def instance_name_to_id(
+    ctx: Context,
+    instance: str,
+    resource: str
+) -> str:
+    """
+    Retrieves the instance id for the specified instance name
+
+    This function will attempt to get the instance id for a Lifecycle
+    Manager resource and return the instance id.  The function will cache
+    the instance id to avoid uncessary lookups.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+        instance (str): The instance name to find the instance ID for
+
+        resource (str): The name of the resource the instance is
+            associated with.
+
+    Returns:
+        str: The instance ID of the instance based on the name
+
+    Raises:
+        ValueError: If the specific instance name could not be found on
+            the server
+    """
+    cache = ctx.request_context.lifespan_context.get("cache")
+
+    resource_id = await resource_name_to_id(ctx, resource)
+    await ctx.info(f"resource {resource} (id: {resource_id}")
+
+    value = cache.get(
+        f"/lifecycle-manager/resources/{resource_id}/instances/{instance}"
+    )
+    if value is not None:
+        await ctx.debug("found instance in cache and returning it")
+        return value
+
+    client = ctx.request_context.lifespan_context.get("client")
+    res = await client.get(
+        f"/lifecycle-manager/resources/{resource_id}/instances",
+        params={"equals[name]": instance}
+    )
+
+    data = res.json()
+    if data["metadata"]["total"] != 1:
+        raise exceptions.NotFoundError(f"could not find resource instance {instance}")
+
+    value = data["data"][0]["_id"]
+
+    cache.put(
+        f"/lifecycle-manager/resources/{resource_id}/instances/{instance}",
+        data
+    )
+
+    return value
+
+
+async def action_name_to_id(
+    ctx: Context,
+    action: str,
+    resource: str
+) -> str:
+    """
+    Retrieves the actin id for the specified action name
+
+    This function will attempt to get the id of a action based on the
+    specified resource name and action name.   The function will cache
+    the actioni id to avoid uncessary lookups.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+        action (str): The name of the action to retrieve the ID for
+
+        resource (str): The name of the resource to retrieve actions for
+
+    Returns:
+        str: The action id for the named action
+
+    Raises:
+        NotFoundError: If the specific resource action could not be found on
+            the server
+    """
+    cache = ctx.request_context.lifespan_context.get("cache")
+
+    value = cache.get(f"/lifecycle-manager/resources/{resource}/actions/{action}")
+    if value is not None:
+        await ctx.debug("found resource action in cache and returning it")
+        return value
+
+    client = ctx.request_context.lifespan_context.get("client")
+    res = await client.get(
+        "/lifecycle-manager/resources",
+        params={"equals[name]": resource}
+    )
+
+    data = res.json()
+    if data["metadata"]["total"] != 1:
+        raise exceptions.NotFoundError(f"could not find resource {resource}")
+
+    value = data["data"][0]["_id"]
+
+    cache.put(f"/lifecycle-manager/resources/{resource}", value)
+
+    # this will also cache all of the actions by action name to speed up
+    # lookups for converting action names to action ids
+    for item in data["data"][0]["actions"]:
+        cache.put(
+            f"/lifecycle-manager/resources/{resource}/actions/{item['name']}",
+            item["_id"]
+        )
 
     return value
