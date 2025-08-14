@@ -9,7 +9,7 @@ from pydantic import Field
 
 from fastmcp import Context
 
-from itential_mcp import errors
+from itential_mcp import exceptions
 
 
 __tags__ = ("adapters",)
@@ -46,7 +46,7 @@ async def _get_adapter_health(
     data = res.json()
 
     if data["total"] != 1:
-        raise errors.NotFoundError(f"unable to find adapter {name}")
+        raise exceptions.NotFoundError(f"unable to find adapter {name}")
 
     return data
 
@@ -151,10 +151,10 @@ async def start_adapter(
             timeout -= 1
 
     elif state in ("DEAD", "DELETED"):
-        raise errors.InvalidStateError(f"adapter `{name}` is `{state}`")
+        raise exceptions.InvalidStateError(f"adapter `{name}` is `{state}`")
 
     if timeout == 0:
-        raise errors.TimeoutExceededError()
+        raise exceptions.TimeoutExceededError()
 
     return {
         "name": name,
@@ -222,10 +222,10 @@ async def stop_adapter(
             timeout -= 1
 
     elif state in ("DEAD", "DELETED"):
-        raise errors.InvalidStateError(f"adapter `{name}` is `{state}`")
+        raise exceptions.InvalidStateError(f"adapter `{name}` is `{state}`")
 
     if timeout == 0:
-        raise errors.TimeoutExceededError()
+        raise exceptions.TimeoutExceededError()
 
     return {
         "name": name,
@@ -294,10 +294,10 @@ async def restart_adapter(
             timeout -= 1
 
     elif state in ("DEAD", "DELETED", "STOPPED"):
-        raise errors.InvalidStateError(f"adapter `{name}` is `{state}`")
+        raise exceptions.InvalidStateError(f"adapter `{name}` is `{state}`")
 
     if timeout == 0:
-        raise errors.TimeoutExceededError()
+        raise exceptions.TimeoutExceededError()
 
     return {
         "name": name,
