@@ -7,7 +7,7 @@ from pydantic import Field
 
 from fastmcp import Context
 
-from itential_mcp import errors
+from itential_mcp import exceptions
 
 
 __tags__ = ("integrations",)
@@ -93,7 +93,7 @@ async def create_integration_model(
 
     for ele in await get_integration_models(ctx):
         if ele["id"] == model_id:
-            raise errors.AlreadyExistsError(f"model {model_id} already exists")
+            raise exceptions.AlreadyExistsError(f"model {model_id} already exists")
 
     client = ctx.request_context.lifespan_context.get("client")
 
