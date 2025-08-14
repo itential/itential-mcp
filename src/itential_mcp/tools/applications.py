@@ -9,7 +9,7 @@ from pydantic import Field
 
 from fastmcp import Context
 
-from itential_mcp import errors
+from itential_mcp import exceptions
 
 
 __tags__ = ("applications",)
@@ -46,7 +46,7 @@ async def _get_application_health(
     data = res.json()
 
     if data["total"] != 1:
-        raise errors.NotFoundError(f"unable to find application {name}")
+        raise exceptions.NotFoundError(f"unable to find application {name}")
 
     return data
 
@@ -151,10 +151,10 @@ async def start_application(
             timeout -= 1
 
     elif state in ("DEAD", "DELETED"):
-        raise errors.InvalidStateError(f"application `{name}` is `{state}`")
+        raise exceptions.InvalidStateError(f"application `{name}` is `{state}`")
 
     if timeout == 0:
-        raise errors.TimeoutExceededError()
+        raise exceptions.TimeoutExceededError()
 
     return {
         "name": name,
@@ -222,10 +222,10 @@ async def stop_application(
             timeout -= 1
 
     elif state in ("DEAD", "DELETED"):
-        raise errors.InvalidStateError(f"application `{name}` is `{state}`")
+        raise exceptions.InvalidStateError(f"application `{name}` is `{state}`")
 
     if timeout == 0:
-        raise errors.TimeoutExceededError()
+        raise exceptions.TimeoutExceededError()
 
     return {
         "name": name,
@@ -294,10 +294,10 @@ async def restart_application(
             timeout -= 1
 
     elif state in ("DEAD", "DELETED", "STOPPED"):
-        raise errors.InvalidStateError(f"application `{name}` is `{state}`")
+        raise exceptions.InvalidStateError(f"application `{name}` is `{state}`")
 
     if timeout == 0:
-        raise errors.TimeoutExceededError()
+        raise exceptions.TimeoutExceededError()
 
     return {
         "name": name,
