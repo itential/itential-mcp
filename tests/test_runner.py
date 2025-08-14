@@ -9,6 +9,12 @@ from io import StringIO
 from itential_mcp import runner
 
 
+class MockCallToolResult:
+    """Mock class to simulate FastMCP CallToolResult structure"""
+    def __init__(self, content):
+        self.content = content
+
+
 class TestRun:
     """Test cases for the run function"""
 
@@ -44,7 +50,8 @@ class TestRun:
         # Mock tool execution response
         mock_result_content = MagicMock()
         mock_result_content.text = json.dumps({"result": "success"})
-        mock_client.call_tool.return_value = [mock_result_content]
+        mock_result = MockCallToolResult(content=[mock_result_content])
+        mock_client.call_tool.return_value = mock_result
         
         mock_client_class.return_value.__aenter__.return_value = mock_client
         mock_client_class.return_value.__aexit__.return_value = None
@@ -98,7 +105,8 @@ class TestRun:
         # Mock tool execution response
         mock_result_content = MagicMock()
         mock_result_content.text = json.dumps({"result": "success", "param1_value": "test"})
-        mock_client.call_tool.return_value = [mock_result_content]
+        mock_result = MockCallToolResult(content=[mock_result_content])
+        mock_client.call_tool.return_value = mock_result
         
         mock_client_class.return_value.__aenter__.return_value = mock_client
         mock_client_class.return_value.__aexit__.return_value = None
@@ -298,7 +306,8 @@ class TestRun:
         # Mock tool execution response
         mock_result_content = MagicMock()
         mock_result_content.text = json.dumps({"result": "success"})
-        mock_client.call_tool.return_value = [mock_result_content]
+        mock_result = MockCallToolResult(content=[mock_result_content])
+        mock_client.call_tool.return_value = mock_result
         
         mock_client_class.return_value.__aenter__.return_value = mock_client
         mock_client_class.return_value.__aexit__.return_value = None
@@ -346,7 +355,8 @@ class TestRun:
         # Mock tool execution response
         mock_result_content = MagicMock()
         mock_result_content.text = json.dumps({"tool": "tool2", "result": "executed"})
-        mock_client.call_tool.return_value = [mock_result_content]
+        mock_result = MockCallToolResult(content=[mock_result_content])
+        mock_client.call_tool.return_value = mock_result
         
         mock_client_class.return_value.__aenter__.return_value = mock_client
         mock_client_class.return_value.__aexit__.return_value = None
@@ -433,7 +443,8 @@ class TestRun:
         }
         mock_result_content = MagicMock()
         mock_result_content.text = json.dumps(complex_result)
-        mock_client.call_tool.return_value = [mock_result_content]
+        mock_result = MockCallToolResult(content=[mock_result_content])
+        mock_client.call_tool.return_value = mock_result
         
         mock_client_class.return_value.__aenter__.return_value = mock_client
         mock_client_class.return_value.__aexit__.return_value = None
@@ -510,7 +521,8 @@ class TestRunEdgeCases:
         # Mock tool execution response
         mock_result_content = MagicMock()
         mock_result_content.text = json.dumps({"result": "success"})
-        mock_client.call_tool.return_value = [mock_result_content]
+        mock_result = MockCallToolResult(content=[mock_result_content])
+        mock_client.call_tool.return_value = mock_result
         
         mock_client_class.return_value.__aenter__.return_value = mock_client
         mock_client_class.return_value.__aexit__.return_value = None
@@ -572,7 +584,8 @@ class TestRunIntegration:
             "status": "success"
         }
         mock_result_content.text = json.dumps(result_data)
-        mock_client.call_tool.return_value = [mock_result_content]
+        mock_result = MockCallToolResult(content=[mock_result_content])
+        mock_client.call_tool.return_value = mock_result
         
         mock_client_class.return_value.__aenter__.return_value = mock_client
         mock_client_class.return_value.__aexit__.return_value = None
