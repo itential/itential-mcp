@@ -4,7 +4,7 @@
 import sys
 
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager, AsyncExitStack
+from contextlib import asynccontextmanager
 
 from typing import Any
 
@@ -46,11 +46,22 @@ async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
             - client: PlatformClient instance for Itential API calls
             - cache: Cache instance for performance optimization
     """
-    async with AsyncExitStack():
+    # Create cache and client instances
+    cache_instance = cache.Cache()
+    client_instance = client.PlatformClient()
+
+    try:
+        # Start the cache background cleanup task
+        await cache_instance.start()
+
         yield {
-            "client": client.PlatformClient(),
-            "cache": cache.Cache()
+            "client": client_instance,
+            "cache": cache_instance
         }
+
+    finally:
+        # Ensure cache is properly stopped on shutdown
+        await cache_instance.stop()
 
 
 def new(cfg: config.Config) -> FastMCP:
