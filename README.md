@@ -23,6 +23,13 @@ A Model Context Protocol _(MCP)_ server that provides tools for connecting LLMs 
 - Access to an [Itential Platform Instance](https://www.itential.com/)
 - For _development_ - `uv` and `make`
 
+### Tested Python Versions
+This project is automatically tested against the following Python versions:
+- Python 3.10
+- Python 3.11  
+- Python 3.12
+- Python 3.13
+
 ## 🔧 Installation
 The `itential-mcp` application can be installed using either PyPI or it can be
 run directly from source.
