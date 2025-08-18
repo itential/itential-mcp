@@ -2,7 +2,7 @@
 # This workflow will push a new container into the Github Container Registry
 # whenever a new tag is merged into the repository.
 ---
-nname: Build and Push Container
+name: Build and Push Container
 
 on:
   push:
