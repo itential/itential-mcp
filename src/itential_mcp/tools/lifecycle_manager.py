@@ -334,7 +334,7 @@ async def run_action(
     )]
 ) -> dict:
     """
-    Run an action on an instance of a Lifecycle Manager resource
+    Run an action that is associated with a Lifecycle Manager resource
 
     Args:
         ctx (Context): The FastMCP Context object
@@ -353,9 +353,16 @@ async def run_action(
             when running the action
 
     Returns:
-        dict:
+        dict: Action details with the following fields:
+            - jobId: Id used to get status updates using describe_job tool
+            - startTime: The time the action was started on the server
+            - status: The current status of the action
+            - message: Status message about the action
+
 
     Raises:
+        NotFoundError: If a resource, instance or action could not be found on
+            the server
     """
     await ctx.info("inside run_action(...)")
 
@@ -373,25 +380,31 @@ async def run_action(
     resource_id = data["data"][0]["_id"]
 
     action_id = None
+    action_type = None
 
     for ele in data["data"][0]["actions"]:
         if ele["name"] == action_name:
             action_id = ele["_id"]
+            action_type = ele["type"]
             break
     else:
         raise exceptions.NotFoundError(
             f"unable to find action {action_name} for resource {resource_name}",
         )
 
-    instance_id = await functions.instance_name_to_id(ctx, instance_name, resource_name)
-
     body = {"actionId": action_id}
+
+    if instance_name is not None:
+        if action_type == "create":
+            body["instanceName"] = instance_name
+        else:
+            instance = await functions.get_instance(ctx, instance_name, resource_name)
+            body["instance"] = instance["_id"]
+            if action_type == "delete" and input_params is None:
+                input_params = instance["instanceData"]
 
     if input_params:
         body["inputs"] = input_params
-
-    if instance_name:
-        body["instance"] = instance_id
 
     if instance_description:
         body["instanceDescription"] = instance_description
@@ -403,4 +416,12 @@ async def run_action(
 
     await ctx.info(res.text)
 
-    return res.json()
+    json_data = res.json()
+    data = json_data["data"]
+
+    return {
+        "message": json_data.get("message"),
+        "startTime": data["startTime"],
+        "jobId": data["jobId"],
+        "status": data["status"],
+    }
