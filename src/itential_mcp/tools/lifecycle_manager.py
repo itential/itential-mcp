@@ -309,6 +309,72 @@ async def get_instances(
     return results
 
 
+async def describe_instance(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    resource_name: Annotated[str, Field(
+        description="The Lifecycle Manager resource name"
+    )],
+    instance_name: Annotated[str, Field(
+        description="The instance name",
+        default=None
+    )]
+) -> dict:
+    """
+    Get details about an instance of a Lifecycle Manager resource
+
+    Gets the resource instance that is specified in the instance_name
+    argument and returns the instance details.  This function will return
+    an error if the instance does not exist
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+        resource_name (str): Name of the resource to get the instance for
+
+        instance_name (str): Name of the instance to return
+
+    Returns:
+        dict: An object that represents the instance with the following fields:
+            - description: Short description of the instance
+            - instanceData: Data about the instance
+            - lastAction: The name of the last action performed on the instance
+            - lastActionType: The type of action last performed.  This will be
+                one of create, update or delete
+            - lastActionStatus: Status of the last action perform.  This will
+                be one of running, error, complete, canceled or paused
+
+    Raises:
+        NotFoundError: If the named instance cannot be found on the server
+    """
+    await ctx.info("inside describe_instance(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    resource_id = await functions.resource_name_to_id(ctx, resource_name)
+
+    res = await client.get(
+        f"/lifecycle-manager/resources/{resource_id}/instances",
+        params={"equals[name]": instance_name}
+    )
+
+    json_data = res.json()
+
+    if json_data["metadata"]["total"] != 1:
+        raise exceptions.NotFoundError(f"unable to find instance {instance_name}")
+
+    data = json_data["data"][0]
+
+    return {
+        "description": data["description"],
+        "instanceData": data["instanceData"],
+        "lastAction": data["lastAction"]["name"],
+        "lastActionType": data["lastAction"]["type"],
+        "lastActionStatus": data["lastAction"]["status"]
+    }
+
+
 @tags("experimental",)
 async def run_action(
     ctx: Annotated[Context, Field(
