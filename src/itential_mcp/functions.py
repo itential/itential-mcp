@@ -283,6 +283,67 @@ async def project_name_to_id(ctx: Context, name: str) -> str:
     return value
 
 
+async def get_instance(
+    ctx: Context,
+    instance_id: str,
+    resource_name: str
+) -> dict:
+    """
+    Retrieves the instance for the specified instance ID
+
+    This function will query the server to get the instance object
+    from the server based on the unique instance ID.  If the specified
+    instance ID does not exist, this function will raise an exception.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+        instance_id (str): The instance name to find the instance ID for
+
+        resource_name (str): The name of the resource the instance is
+            associated with.
+
+    Returns:
+        dict: An object that represents the instance from the server
+
+    Raises:
+        NotFoundError: If the specified instance does not exist on the
+            server
+    """
+    cache = ctx.request_context.lifespan_context.get("cache")
+
+    resource_id = await resource_name_to_id(ctx, resource_name)
+    await ctx.info(f"resource {resource_name} (id: {resource_id}")
+
+    value = cache.get(
+        f"/lifecycle-manager/resources/{resource_id}/instances/{instance_id}"
+    )
+    if value is not None:
+        await ctx.debug("found instance in cache and returning it")
+        return value
+
+    client = ctx.request_context.lifespan_context.get("client")
+    res = await client.get(
+        f"/lifecycle-manager/resources/{resource_id}/instances",
+        params={"equals[name]": instance_id}
+    )
+
+    data = res.json()
+    if data["metadata"]["total"] != 1:
+        raise exceptions.NotFoundError(
+            f"could not find resource instance with id {instance_id}"
+        )
+
+    value = data["data"][0]
+
+    cache.put(
+        f"/lifecycle-manager/resources/{resource_id}/instances/{instance_id}",
+        data
+    )
+
+    return value
+
+
 async def instance_name_to_id(
     ctx: Context,
     instance: str,
@@ -310,36 +371,8 @@ async def instance_name_to_id(
         ValueError: If the specific instance name could not be found on
             the server
     """
-    cache = ctx.request_context.lifespan_context.get("cache")
-
-    resource_id = await resource_name_to_id(ctx, resource)
-    await ctx.info(f"resource {resource} (id: {resource_id}")
-
-    value = cache.get(
-        f"/lifecycle-manager/resources/{resource_id}/instances/{instance}"
-    )
-    if value is not None:
-        await ctx.debug("found instance in cache and returning it")
-        return value
-
-    client = ctx.request_context.lifespan_context.get("client")
-    res = await client.get(
-        f"/lifecycle-manager/resources/{resource_id}/instances",
-        params={"equals[name]": instance}
-    )
-
-    data = res.json()
-    if data["metadata"]["total"] != 1:
-        raise exceptions.NotFoundError(f"could not find resource instance {instance}")
-
-    value = data["data"][0]["_id"]
-
-    cache.put(
-        f"/lifecycle-manager/resources/{resource_id}/instances/{instance}",
-        data
-    )
-
-    return value
+    instance = await get_instance(ctx, instance, resource)
+    return instance["_id"]
 
 
 async def action_name_to_id(
