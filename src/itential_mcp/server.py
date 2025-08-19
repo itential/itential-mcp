@@ -2,6 +2,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 import sys
+import inspect
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -85,7 +86,7 @@ def new(cfg: config.Config) -> FastMCP:
     # Initialize FastMCP server
     srv = FastMCP(
         name="Itential Platform MCP",
-        instructions=INSTRUCTIONS.strip(),
+        instructions=inspect.cleandoc(INSTRUCTIONS),
         lifespan=lifespan,
         include_tags=cfg.server.get("include_tags"),
         exclude_tags=cfg.server.get("exclude_tags")
