@@ -9,6 +9,7 @@ from fastmcp import Context
 
 from itential_mcp import functions
 from itential_mcp import exceptions
+from itential_mcp import errors
 
 from itential_mcp.toolutils import tags
 
@@ -153,38 +154,6 @@ async def create_resource(
     }
 
 
-async def _describe_resource(
-    ctx: Context,
-    name: str
-) -> dict:
-    """
-    Get detailed information about a Lifecycle Manager resource model.
-
-    Args:
-        ctx (Context): The FastMCP Context object
-        name (str): Name of the resource model to retrieve
-
-    Returns:
-        dict: The resource model as a Python dict
-
-    Raises:
-        ValueError: If the specified resource cannot be found
-    """
-    client = ctx.request_context.lifespan_context.get("client")
-
-    res = await client.get(
-        "/lifecycle-manager/resources",
-        params={"equals[name]": name},
-    )
-
-    data = res.json()
-
-    if data["metadata"]["total"] != 1:
-        raise ValueError(f"error attempting to find resource {name}")
-
-    return data["data"][0]
-
-
 async def describe_resource(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
@@ -205,36 +174,58 @@ async def describe_resource(
             - _id: Unique resource identifier
             - name: Resource model name
             - description: Resource description
-            - schema: JSON Schema defining resource structure
             - actions: List of lifecycle actions associated with this resource
 
-    Raises:
-        None
+    Notes:
+        - Resource names are case sensitive
+        - For each action the following fields will be returned:
+            - name: The name of the action
+            - type: The type of action (CREATE, UPDATE, DELETE)
+            - schema: The input schema required to execute the action
     """
     await ctx.info("inside describe_resource(...)")
 
-    item = await _describe_resource(ctx, name)
+    client = ctx.request_context.lifespan_context.get("client")
+
+    item = await client.resources.describe(name)
 
     actions = list()
 
     for ele in item["actions"]:
-        if ele["workflow"] is not None:
-            ele["workflow"] = await functions.workflow_id_to_name(ctx, ele["workflow"])
+        action_element = {
+            "name": ele["name"],
+            "type": ele["type"],
+            "schema": item["schema"]
+        }
 
         if ele["preWorkflowJst"] is not None:
-               ele["preWorkflowJst"] = await functions.transformation_id_to_name(ctx, ele["preWorkflowJst"])
+            try:
+                jst = await client.transformations.describe(ele["preWorkflowJst"])
+                action_element["schema"] = jst["incoming"]
+            except exceptions.NotFoundError:
+                return errors.resource_not_found(
+                    f"The transformation for the {ele['name']} action could "
+                     "not be found, please verify it exists and you have "
+                     "permissions to access it"
+                )
 
-        if ele["postWorkflowJst"] is not None:
-               ele["postWorkflowJst"] = await functions.transformation_id_to_name(ctx, ele["postWorkflowJst"])
+        elif ele["workflow"] is not None:
+            try:
+                wf = await client.workflows.describe(ele["workflow"])
+                action_element["schema"] = wf["inputSchema"]
+            except exceptions.NotFoundError:
+                return errors.resource_not_found(
+                    f"The workflow for the {ele['name']} action could not be "
+                     "found,  please verify it exists and you have "
+                     "permissions to access it"
+                )
 
-        actions.append(ele)
-
+        actions.append(action_element)
 
     return {
         "_id": item["_id"],
         "name": item["name"],
         "description": item["description"],
-        "schema": item["schema"],
         "actions": actions,
     }
 
