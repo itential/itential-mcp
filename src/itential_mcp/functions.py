@@ -37,6 +37,7 @@ async def workflow_id_to_name(ctx: Context, workflow_id: str) -> str:
         params={
             "equals[_id]": workflow_id,
             "include": "_id,name",
+            "exclude-project-members": False
         }
     )
 
