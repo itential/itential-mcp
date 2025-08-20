@@ -1,20 +1,22 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+import pathlib
+import importlib
+import importlib.util
+
 import ipsdk
 
 from ipsdk.platform import AsyncPlatform
 
-import httpx
-
 from . import config
-from . import response
 
 
 class PlatformClient(object):
 
     def __init__(self):
         self.client = self._init_client()
+        self._init_plugins()
 
     def _init_client(self) -> AsyncPlatform:
         """
@@ -32,152 +34,55 @@ class PlatformClient(object):
         cfg = config.get()
         return ipsdk.platform_factory(want_async=True, **cfg.platform)
 
-    async def _make_response(self, res: httpx.Response) -> response.Response:
+    def _init_plugins(self):
         """
-        Creates a response object and returns it
+        Dynamically loads service plugins from the services directory.
+
+        Discovers and imports Python modules from the services directory,
+        instantiates their Service classes, and registers them as attributes
+        on the client instance.
 
         Args:
-            res (httpx.Response): The response object returned from the HTTP API
-                request
+            None
 
         Returns:
-            Response: A HTTP Response object
+            None
 
         Raises:
-            None
+            ImportError: If a service module cannot be loaded
+            AttributeError: If a service module lacks a Service class
         """
-        return response.Response(res)
+        services_path = pathlib.Path(__file__).resolve().parent / "services"
 
-    async def send_request(
-        self,
-        method: str,
-        path: str,
-        params: dict = None,
-        json: str | bytes | dict | list | None = None
-    ) -> response.Response:
-        """
-        Send the request to the server and return the response
+        # Early return if services directory doesn't exist
+        if not services_path.exists():
+            return
 
-        Args:
-            method (str): The HTTP method to invoke. This should be one of
-                "GET", "POST", "PUT", "DELETE"
+        # Get Python files, excluding private modules and __pycache__
+        python_files = [
+            f for f in services_path.iterdir()
+            if f.is_file() and f.suffix == ".py" and not f.name.startswith("_")
+        ]
 
-            path (str): The full URL path to send the reques to
+        # Import and register services
+        for module_file in python_files:
+            module_name = module_file.stem
+            try:
+                spec = importlib.util.spec_from_file_location(module_name, module_file)
+                if spec is None or spec.loader is None:
+                    continue
 
-            params (dict): A Python dict objec to be converted into a query
-                string and appeneded to the URL
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
 
-            json (str|bytes|dict|list): A Python object that can be serialized
-                into a JSON object.
+                # Check if module has Service class
+                if not hasattr(module, "Service"):
+                    continue
 
-        Returns:
-            Response: The HTTP response from the server
+                service_instance = module.Service(self.client)
+                setattr(self, service_instance.name, service_instance)
 
-        Raises:
-            None
-        """
-        res = await self.client._send_request(method, path, params, json)
-        return await self._make_response(res)
-
-    async def get(
-        self,
-        path: str,
-        params: dict | None = None
-    ) -> response.Response:
-        """
-        Send a HTTP GET request to the server
-
-        Args:
-            path (str): The full path to send the HTTP request to
-
-            params (dict): A Python dict object to be converted to a query
-                string and appended to the path
-
-        Returns:
-            Response: An HTTP Response object from the server
-
-        Raises:
-            None
-        """
-        return await self.send_request(
-            method="GET", path=path, params=params
-        )
-
-    async def post(
-        self,
-        path: str,
-        params: dict | None = None,
-        json: str | dict | list | None = None,
-    ) -> response.Response:
-        """
-        Send a HTTP POST request to the server
-
-        Args:
-            path (str): The full path to send the HTTP request to
-
-            params (dict): A Python dict object to be converted to a query
-                string and appended to the path
-
-            json (str | dict | list): A Python object that can be serialized
-                to a JSON string and sent as the body of the request
-
-        Returns:
-            Response: An HTTP Response object from the server
-
-        Raises:
-            None
-        """
-        return await self.send_request(
-            method="POST", path=path, params=params, json=json
-        )
-
-    async def put(
-        self,
-        path: str,
-        params: dict | None = None,
-        json: str | dict | list | None = None,
-    ) -> response.Response:
-        """
-        Send a HTTP PUT request to the server
-        Args:
-            path (str): The full path to send the HTTP request to
-
-            params (dict): A Python dict object to be converted to a query
-                string and appended to the path
-
-            json (str | dict | list): A Python object that can be serialized
-                to a JSON string and sent as the body of the request
-        Returns:
-            Response: An HTTP Response object from the server
-
-        Raises:
-            None
-        """
-        return await self.send_request(
-            method="PUT", path=path, params=params, json=json
-        )
-
-    async def delete(
-        self,
-        path: str,
-        params: dict | None = None,
-    ) -> response.Response:
-        """
-        Send a HTTP DELETE request to the server
-        Args:
-            path (str): The full path to send the HTTP request to
-
-            params (dict): A Python dict object to be converted to a query
-                string and appended to the path
-
-            json (str | dict | list): A Python object that can be serialized
-                to a JSON string and sent as the body of the request
-        Returns:
-            Response: An HTTP Response object from the server
-
-        Raises:
-            None
-        """
-        return await self.send_request(
-            method="DELETE", path=path, params=params
-        )
+            except (ImportError, AttributeError, Exception):
+                # Log error but continue loading other services
+                # Consider adding proper logging here in the future
+                continue
