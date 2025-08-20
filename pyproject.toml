@@ -3,8 +3,8 @@ name = "itential-mcp"
 description = "Itential MCP Server"
 
 dependencies = [
-    "fastmcp>=2.8.0",
-    "ipsdk>=0.2.0",
+    "fastmcp",
+    "ipsdk",
 ]
 
 dynamic = [ "version" ]
