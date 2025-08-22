@@ -2,6 +2,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 import pathlib
+import warnings
 import importlib
 import importlib.util
 
@@ -12,6 +13,7 @@ from ipsdk.connection import Response
 
 from . import config
 from . import response
+from . import exceptions
 
 
 class PlatformClient(object):
@@ -84,9 +86,10 @@ class PlatformClient(object):
                 service_instance = module.Service(self.client)
                 setattr(self, service_instance.name, service_instance)
 
-            except (ImportError, AttributeError, Exception):
+            except (ImportError, AttributeError, Exception) as exc:
                 # Log error but continue loading other services
                 # Consider adding proper logging here in the future
+                warnings.warn(str(exc))
                 continue
 
     async def _make_response(self, res: Response) -> response.Response:
@@ -133,7 +136,10 @@ class PlatformClient(object):
         Raises:
             None
         """
-        res = await self.client._send_request(method, path, params, json)
+        try:
+            res = await self.client._send_request(method, path, params, json)
+        except Exception as exc:
+            raise exceptions.ItentialMcpException(exc.response.text)
         return await self._make_response(res)
 
     async def get(

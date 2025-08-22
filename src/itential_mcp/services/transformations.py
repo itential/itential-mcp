@@ -39,7 +39,7 @@ class Service(ServiceBase):
 
     name: str = "transformations"
 
-    async def describe(self, transformation_id: str) -> Mapping[str, Any]:
+    async def describe_transformation(self, transformation_id: str) -> Mapping[str, Any]:
         """
         Describe an Automation Studio transformation
 

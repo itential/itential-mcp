@@ -1,17 +1,16 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+import json
+
 from typing import Annotated
 
 from pydantic import Field
 
 from fastmcp import Context
 
-from itential_mcp import functions
 from itential_mcp import exceptions
 from itential_mcp import errors
-
-from itential_mcp.toolutils import tags
 
 
 __tags__ = ("lifecycle_manager",)
@@ -42,34 +41,16 @@ async def get_resources(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    limit = 100
-    skip = 0
-
-    params = {"limit": limit}
+    res = await client.lifecycle_manager.get_resources()
 
     results = list()
 
-    while True:
-        params["skip"] = skip
-
-        res = await client.get(
-            "/lifecycle-manager/resources",
-            params=params,
-        )
-
-        data = res.json()
-
-        for item in data.get("data") or list():
-            results.append({
-                "_id": item["_id"],
-                "name": item["name"],
-                "description": item["description"],
-            })
-
-        if len(results) == data["metadata"]["total"]:
-            break
-
-        skip += limit
+    for ele in res:
+        results.append({
+            "_id": ele["_id"],
+            "name": ele["name"],
+            "description": ele["description"],
+        })
 
     return results
 
@@ -108,7 +89,6 @@ async def create_resource(
             - _id: Unique identifier assigned by Itential
             - name: Resource model name
             - description: Resource description
-            - schema: JSON Schema definition
 
     Raises:
         ValueError: If resource name already exists or schema format is invalid
@@ -122,35 +102,19 @@ async def create_resource(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    existing = None
-    try:
-        existing = await describe_resource(ctx, name)
-    except ValueError:
-        pass
+    existing = await client.lifecycle_manager.describe_resource(ctx, name)
 
     if existing is not None:
-        raise ValueError(f"resource {name} already exists")
+        return errors.resource_already_exists(
+            f"resource {name} already exists"
+        )
 
-    body = {
-        "name": name,
-        "schema": schema
-    }
-
-    if description is not None:
-        body["description"] = description
-
-    res = await client.post(
-        "/lifecycle-manager/resources",
-        json=body
-    )
-
-    data = res.json()["data"]
+    data = await client.lifecycle_manager.create_resource(name, schema, description)
 
     return {
         "_id": data["_id"],
         "name": data["name"],
         "description": data["description"],
-        "schema": data["schema"]
     }
 
 
@@ -187,7 +151,10 @@ async def describe_resource(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    item = await client.resources.describe(name)
+    try:
+        item = await client.lifecycle_manager.describe_resource(name)
+    except exceptions.NotFoundError:
+        return errors.resource_not_found(f"resource {name} not found on the server")
 
     actions = list()
 
@@ -200,7 +167,7 @@ async def describe_resource(
 
         if ele["preWorkflowJst"] is not None:
             try:
-                jst = await client.transformations.describe(ele["preWorkflowJst"])
+                jst = await client.transformations.describe_transformation(ele["preWorkflowJst"])
                 action_element["schema"] = jst["incoming"]
             except exceptions.NotFoundError:
                 return errors.resource_not_found(
@@ -211,7 +178,7 @@ async def describe_resource(
 
         elif ele["workflow"] is not None:
             try:
-                wf = await client.workflows.describe(ele["workflow"])
+                wf = await client.automation_studio.describe_workflow(ele["workflow"])
                 action_element["schema"] = wf["inputSchema"]
             except exceptions.NotFoundError:
                 return errors.resource_not_found(
@@ -234,7 +201,7 @@ async def get_instances(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
     )],
-    resource: Annotated[str, Field(
+    resource_name: Annotated[str, Field(
         description="The Lifecycle Manager resource name to retrieve instances for"
     )]
 ) -> list[dict]:
@@ -247,7 +214,7 @@ async def get_instances(
 
     Args:
         ctx (Context): The FastMCP Context object
-        resource (str): Name of the resource model to get instances for
+        resource_name (str): Name of the resource model to get instances for
 
     Returns:
         list[dict]: List of resource instance objects with the following fields:
@@ -256,46 +223,26 @@ async def get_instances(
             - description: Instance description
             - instanceData: Data object associated with this instance
             - lastAction: Last lifecycle action performed on the instance
-
-    Raises:
-        ValueError: If the specified resource model cannot be found
     """
     await ctx.info("inside get_instances(...)")
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    model_id = await functions.resource_name_to_id(ctx, resource)
+    data = await client.lifecycle_manager.get_instances(resource_name)
 
-    limit = 100
-    skip = 0
+    results = []
 
-    params = {"limit": limit}
-
-    results = list()
-
-    while True:
-        params["skip"] = skip
-
-        res = await client.get(
-            f"/lifecycle-manager/resources/{model_id}/instances",
-            params=params
-        )
-
-        data = res.json()
-
-        for ele in data.get("data") or {}:
-            results.append({
-                "_id": ele["_id"],
-                "name": ele["name"],
-                "description": ele["description"],
-                "instanceData": ele["instanceData"],
-                "lastAction": ele["lastAction"],
-            })
-
-        if len(results) == data["metadata"]["total"]:
-            break
-
-        skip += limit
+    for ele in data:
+        results.append({
+            "name": ele["name"],
+            "description": ele["description"],
+            "instance_data": ele["instanceData"],
+            "last_action": {
+                "name": ele["lastAction"]["name"],
+                "type": ele["lastAction"]["type"],
+                "status": ele["lastAction"]["status"]
+            }
+        })
 
     return results
 
@@ -343,30 +290,21 @@ async def describe_instance(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    resource_id = await functions.resource_name_to_id(ctx, resource_name)
-
-    res = await client.get(
-        f"/lifecycle-manager/resources/{resource_id}/instances",
-        params={"equals[name]": instance_name}
+    data = await client.lifecycle_manager.describe_instance(
+        resource_name, instance_name
     )
-
-    json_data = res.json()
-
-    if json_data["metadata"]["total"] != 1:
-        raise exceptions.NotFoundError(f"unable to find instance {instance_name}")
-
-    data = json_data["data"][0]
 
     return {
         "description": data["description"],
-        "instanceData": data["instanceData"],
-        "lastAction": data["lastAction"]["name"],
-        "lastActionType": data["lastAction"]["type"],
-        "lastActionStatus": data["lastAction"]["status"]
+        "instance_data": data["instanceData"],
+        "last_action": {
+            "name": data["lastAction"]["name"],
+            "type": data["lastAction"]["type"],
+            "status": data["lastAction"]["status"]
+        }
     }
 
 
-@tags("experimental",)
 async def run_action(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
@@ -425,60 +363,24 @@ async def run_action(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    res = await client.get(
-        "/lifecycle-manager/resources",
-        params={"equals[name]": resource_name}
-    )
-
-    data = res.json()
-    if data["metadata"]["total"] != 1:
-        raise exceptions.NotFoundError(f"unable to find resource {resource_name}")
-
-    resource_id = data["data"][0]["_id"]
-
-    action_id = None
-    action_type = None
-
-    for ele in data["data"][0]["actions"]:
-        if ele["name"] == action_name:
-            action_id = ele["_id"]
-            action_type = ele["type"]
-            break
-    else:
-        raise exceptions.NotFoundError(
-            f"unable to find action {action_name} for resource {resource_name}",
+    try:
+        json_data = await client.lifecycle_manager.run_action(
+            resource_name, action_name, instance_name, instance_description,
+            input_params
         )
-
-    body = {"actionId": action_id}
-
-    if instance_name is not None:
-        if action_type == "create":
-            body["instanceName"] = instance_name
-        else:
-            instance = await functions.get_instance(ctx, instance_name, resource_name)
-            body["instance"] = instance["_id"]
-            if action_type == "delete" and input_params is None:
-                input_params = instance["instanceData"]
-
-    if input_params:
-        body["inputs"] = input_params
-
-    if instance_description:
-        body["instanceDescription"] = instance_description
-
-    res = await client.post(
-        f"/lifecycle-manager/resources/{resource_id}/run-action",
-        json=body
-    )
-
-    await ctx.info(res.text)
-
-    json_data = res.json()
-    data = json_data["data"]
+    except exceptions.NotFoundError:
+        return errors.resource_not_found(
+            f"Could not find a resource named {resource_name}"
+        )
+    except exceptions.ClientException as exc:
+        return errors.bad_request(exc.message)
+    except exceptions.ItentialMcpException as exc:
+        json_data = json.loads(exc.message)
+        return errors.bad_request(json_data["message"])
 
     return {
         "message": json_data.get("message"),
-        "startTime": data["startTime"],
-        "jobId": data["jobId"],
-        "status": data["status"],
+        "startTime": json_data["data"]["startTime"],
+        "jobId": json_data["data"]["jobId"],
+        "status": json_data["data"]["status"],
     }
