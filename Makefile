@@ -57,6 +57,7 @@ security:
 # part of the application and get created by other targets.
 clean:
 	@rm -rf .pytest_cache coverage.* htmlcov dist build *.egg-info
+	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
 # The premerge target will run the permerge tests locally.  This is
 # the same target that is invoked in the permerge pipeline.
