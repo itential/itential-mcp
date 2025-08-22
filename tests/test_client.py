@@ -76,8 +76,8 @@ def test_init_plugins_loads_valid_services(patched_platform_factory, patched_con
         test_service_file.write_text(textwrap.dedent("""
             class Service:
                 def __init__(self, client):
-                    self.name = "test_service"
                     self.client = client
+                    self.name = "test_service"
         """))
         
         # Create an invalid service module (no Service class)

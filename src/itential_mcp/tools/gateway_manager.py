@@ -36,9 +36,7 @@ async def get_services(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    res = await client.get("/gateway_manager/v1/services")
-
-    data = res.json()
+    data = await client.gateway_manager.get_services()
 
     results = list()
 
@@ -77,9 +75,7 @@ async def get_gateways(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    res = await client.get("/gateway_manager/v1/gateways")
-
-    data = res.json()
+    data = await client.get_gateways()
 
     results = list()
 
@@ -136,19 +132,6 @@ async def run_service(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    body = {
-        "serviceName": name,
-        "clusterId": cluster,
-    }
-
-    if input_params:
-        body["params"] = input_params
-
-    res = await client.post(
-        "/gateway_manager/v1/services/run",
-        json=body
-    )
-
-    data = res.json()
+    data = await client.run_service(name, cluster, input_params)
 
     return data["result"]
