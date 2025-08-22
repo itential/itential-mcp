@@ -16,4 +16,6 @@ htmlcov/
 # dotenv 
 .env
 
+# local development 
+.devel
 
