@@ -33,9 +33,9 @@ class Service(ServiceBase):
         name (str): Service identifier for logging and identification
     """
 
-    name: str = "workflows"
+    name: str = "automation_studio"
 
-    async def describe(self, workflow_id: str) -> Mapping[str, Any]:
+    async def describe_workflow(self, workflow_id: str) -> Mapping[str, Any]:
         """
         Describe an Automation Studio workflow
 
