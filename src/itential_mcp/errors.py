@@ -50,3 +50,9 @@ def bad_request(msg: str | None = None) -> dict:
         dict: An object that provides the error message.
     """
     return {"message": msg or "Bad Request"}
+
+
+def internal_server_error(msg: str | None = None) -> dict:
+    """
+    """
+    return {"message": msg or "Internal server error"}
