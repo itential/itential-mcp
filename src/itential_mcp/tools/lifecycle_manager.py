@@ -11,6 +11,18 @@ from fastmcp import Context
 
 from itential_mcp import exceptions
 from itential_mcp import errors
+from itential_mcp.models.lifecycle_manager import (
+    GetResourcesResponse,
+    GetResourcesElement,
+    CreateResourceResponse,
+    DescribeResourceResponse,
+    GetInstancesResponse,
+    GetInstancesElement,
+    DescribeInstanceResponse,
+    RunActionResponse,
+    LastAction,
+    Action
+)
 
 
 __tags__ = ("lifecycle_manager",)
@@ -20,7 +32,7 @@ async def get_resources(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
     )]
-) -> list[dict]:
+) -> GetResourcesResponse:
     """
     Get all Lifecycle Manager resource models from Itential Platform.
 
@@ -32,8 +44,7 @@ async def get_resources(
         ctx (Context): The FastMCP Context object
 
     Returns:
-        list[dict]: List of resource model objects with the following fields:
-            - _id: Unique identifier for the resource
+        GetResourcesResponse: List of resource model objects with the following fields:
             - name: Resource model name
             - description: Resource model description
     """
@@ -43,16 +54,15 @@ async def get_resources(
 
     res = await client.lifecycle_manager.get_resources()
 
-    results = list()
+    results = []
 
     for ele in res:
-        results.append({
-            "_id": ele["_id"],
-            "name": ele["name"],
-            "description": ele["description"],
-        })
+        results.append(GetResourcesElement(
+            name=ele["name"],
+            description=ele.get("description"),
+        ))
 
-    return results
+    return GetResourcesResponse(root=results)
 
 
 async def create_resource(
@@ -69,7 +79,7 @@ async def create_resource(
         description="Short description of this resource",
         default=None
     )]
-) -> dict:
+) -> CreateResourceResponse:
     """
     Create a new Lifecycle Manager resource model on Itential Platform.
 
@@ -85,10 +95,7 @@ async def create_resource(
         description (str | None): Human-readable description of the resource (optional)
 
     Returns:
-        dict: Created resource model with the following fields:
-            - _id: Unique identifier assigned by Itential
-            - name: Resource model name
-            - description: Resource description
+        CreateResourceResponse: Created resource model response
 
     Raises:
         ValueError: If resource name already exists or schema format is invalid
@@ -102,20 +109,18 @@ async def create_resource(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    existing = await client.lifecycle_manager.describe_resource(ctx, name)
-
-    if existing is not None:
+    try:
+        await client.lifecycle_manager.describe_resource(name)
         return errors.resource_already_exists(
             f"resource {name} already exists"
         )
+    except exceptions.NotFoundError:
+        # Resource doesn't exist, we can create it
+        pass
 
-    data = await client.lifecycle_manager.create_resource(name, schema, description)
+    await client.lifecycle_manager.create_resource(name, schema, description)
 
-    return {
-        "_id": data["_id"],
-        "name": data["name"],
-        "description": data["description"],
-    }
+    return CreateResourceResponse()
 
 
 async def describe_resource(
@@ -125,7 +130,7 @@ async def describe_resource(
     name: Annotated[str, Field(
         description="The name of the resource model to describe"
     )]
-) -> dict:
+) -> DescribeResourceResponse:
     """
     Get detailed information about a Lifecycle Manager resource model.
 
@@ -134,8 +139,7 @@ async def describe_resource(
         name (str): Name of the resource model to retrieve
 
     Returns:
-        dict: Resource model details with the following fields:
-            - _id: Unique resource identifier
+        DescribeResourceResponse: Resource model details with the following fields:
             - name: Resource model name
             - description: Resource description
             - actions: List of lifecycle actions associated with this resource
@@ -156,19 +160,15 @@ async def describe_resource(
     except exceptions.NotFoundError:
         return errors.resource_not_found(f"resource {name} not found on the server")
 
-    actions = list()
+    actions = []
 
     for ele in item["actions"]:
-        action_element = {
-            "name": ele["name"],
-            "type": ele["type"],
-            "schema": item["schema"]
-        }
+        action_schema = item["schema"]
 
         if ele["preWorkflowJst"] is not None:
             try:
                 jst = await client.transformations.describe_transformation(ele["preWorkflowJst"])
-                action_element["schema"] = jst["incoming"]
+                action_schema = jst["incoming"]
             except exceptions.NotFoundError:
                 return errors.resource_not_found(
                     f"The transformation for the {ele['name']} action could "
@@ -179,7 +179,7 @@ async def describe_resource(
         elif ele["workflow"] is not None:
             try:
                 wf = await client.automation_studio.describe_workflow(ele["workflow"])
-                action_element["schema"] = wf["inputSchema"]
+                action_schema = wf["inputSchema"]
             except exceptions.NotFoundError:
                 return errors.resource_not_found(
                     f"The workflow for the {ele['name']} action could not be "
@@ -187,14 +187,17 @@ async def describe_resource(
                      "permissions to access it"
                 )
 
-        actions.append(action_element)
+        actions.append(Action(
+            name=ele["name"],
+            type=ele["type"],
+            schema=action_schema
+        ))
 
-    return {
-        "_id": item["_id"],
-        "name": item["name"],
-        "description": item["description"],
-        "actions": actions,
-    }
+    return DescribeResourceResponse(
+        name=item["name"],
+        description=item.get("description"),
+        actions=actions
+    )
 
 
 async def get_instances(
@@ -204,7 +207,7 @@ async def get_instances(
     resource_name: Annotated[str, Field(
         description="The Lifecycle Manager resource name to retrieve instances for"
     )]
-) -> list[dict]:
+) -> GetInstancesResponse:
     """
     Get all instances of a Lifecycle Manager resource from Itential Platform.
 
@@ -217,12 +220,11 @@ async def get_instances(
         resource_name (str): Name of the resource model to get instances for
 
     Returns:
-        list[dict]: List of resource instance objects with the following fields:
-            - _id: Unique instance identifier
+        GetInstancesResponse: List of resource instance objects with the following fields:
             - name: Instance name
             - description: Instance description
-            - instanceData: Data object associated with this instance
-            - lastAction: Last lifecycle action performed on the instance
+            - instance_data: Data object associated with this instance
+            - last_action: Last lifecycle action performed on the instance
     """
     await ctx.info("inside get_instances(...)")
 
@@ -233,18 +235,18 @@ async def get_instances(
     results = []
 
     for ele in data:
-        results.append({
-            "name": ele["name"],
-            "description": ele["description"],
-            "instance_data": ele["instanceData"],
-            "last_action": {
-                "name": ele["lastAction"]["name"],
-                "type": ele["lastAction"]["type"],
-                "status": ele["lastAction"]["status"]
-            }
-        })
+        results.append(GetInstancesElement(
+            name=ele["name"],
+            description=ele.get("description"),
+            instance_data=ele["instanceData"],
+            last_action=LastAction(
+                name=ele["lastAction"]["name"],
+                type=ele["lastAction"]["type"],
+                status=ele["lastAction"]["status"]
+            )
+        ))
 
-    return results
+    return GetInstancesResponse(root=results)
 
 
 async def describe_instance(
@@ -258,7 +260,7 @@ async def describe_instance(
         description="The instance name",
         default=None
     )]
-) -> dict:
+) -> DescribeInstanceResponse:
     """
     Get details about an instance of a Lifecycle Manager resource
 
@@ -274,14 +276,10 @@ async def describe_instance(
         instance_name (str): Name of the instance to return
 
     Returns:
-        dict: An object that represents the instance with the following fields:
+        DescribeInstanceResponse: An object that represents the instance with the following fields:
             - description: Short description of the instance
-            - instanceData: Data about the instance
-            - lastAction: The name of the last action performed on the instance
-            - lastActionType: The type of action last performed.  This will be
-                one of create, update or delete
-            - lastActionStatus: Status of the last action perform.  This will
-                be one of running, error, complete, canceled or paused
+            - instance_data: Data about the instance
+            - last_action: The last action performed on the instance
 
     Raises:
         NotFoundError: If the named instance cannot be found on the server
@@ -294,15 +292,15 @@ async def describe_instance(
         resource_name, instance_name
     )
 
-    return {
-        "description": data["description"],
-        "instance_data": data["instanceData"],
-        "last_action": {
-            "name": data["lastAction"]["name"],
-            "type": data["lastAction"]["type"],
-            "status": data["lastAction"]["status"]
-        }
-    }
+    return DescribeInstanceResponse(
+        description=data.get("description"),
+        instance_data=data["instanceData"],
+        last_action=LastAction(
+            name=data["lastAction"]["name"],
+            type=data["lastAction"]["type"],
+            status=data["lastAction"]["status"]
+        )
+    )
 
 
 async def run_action(
@@ -327,7 +325,7 @@ async def run_action(
         description="The input parameters for the action",
         default=None
     )]
-) -> dict:
+) -> RunActionResponse:
     """
     Run an action that is associated with a Lifecycle Manager resource
 
@@ -348,9 +346,9 @@ async def run_action(
             when running the action
 
     Returns:
-        dict: Action details with the following fields:
-            - jobId: Id used to get status updates using describe_job tool
-            - startTime: The time the action was started on the server
+        RunActionResponse: Action details with the following fields:
+            - job_id: Id used to get status updates using describe_job tool
+            - start_time: The time the action was started on the server
             - status: The current status of the action
             - message: Status message about the action
 
@@ -378,9 +376,9 @@ async def run_action(
         json_data = json.loads(exc.message)
         return errors.bad_request(json_data["message"])
 
-    return {
-        "message": json_data.get("message"),
-        "startTime": json_data["data"]["startTime"],
-        "jobId": json_data["data"]["jobId"],
-        "status": json_data["data"]["status"],
-    }
+    return RunActionResponse(
+        message=json_data.get("message"),
+        start_time=json_data["data"]["startTime"],
+        job_id=json_data["data"]["jobId"],
+        status=json_data["data"]["status"]
+    )
