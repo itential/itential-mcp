@@ -92,8 +92,19 @@ def new(cfg: config.Config) -> FastMCP:
         exclude_tags=cfg.server.get("exclude_tags")
     )
 
+
     for f, tags in toolutils.itertools():
-        srv.tool(f, tags=tags)
+        kwargs = {"tags": tags}
+
+        try:
+            schema = toolutils.get_json_schema(f)
+            if schema["type"] == "object":
+                kwargs["output_schema"] = toolutils.get_json_schema(f)
+        except ValueError:
+            # tool does not have an output_schema defined
+            pass
+
+        srv.tool(f, **kwargs)
 
     return srv
 
