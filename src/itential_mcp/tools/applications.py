@@ -10,52 +10,17 @@ from pydantic import Field
 from fastmcp import Context
 
 from itential_mcp import exceptions
+from itential_mcp.models import applications as models
 
 
 __tags__ = ("applications",)
-
-
-async def _get_application_health(
-    ctx: Context,
-    name: str
-) -> dict:
-    """
-    Get the health status of a specific application.
-
-    Args:
-        ctx (Context): The FastMCP Context object
-        name (str): The case-sensitive name of the application. Use `get_applications`
-            to see available applications.
-
-    Returns:
-        dict: Application health data containing status and configuration information
-
-    Raises:
-        NotFoundError: If the specified application cannot be found
-    """
-    client = ctx.request_context.lifespan_context.get("client")
-
-    res = await client.get(
-        "/health/applications",
-        params={
-            "equals": name,
-            "equalsField": "id"
-        }
-    )
-
-    data = res.json()
-
-    if data["total"] != 1:
-        raise exceptions.NotFoundError(f"unable to find application {name}")
-
-    return data
 
 
 async def get_applications(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
     )]
-) -> dict:
+) -> models.GetApplicationsResponse:
     """
     Get all applications configured on the Itential Platform instance.
 
@@ -63,12 +28,8 @@ async def get_applications(
         ctx (Context): The FastMCP Context object
 
     Returns:
-        list[dict]: List of application objects with the following fields:
-            - name: The application name
-            - package: The NodeJS package comprising the application
-            - version: The application version
-            - description: The application description
-            - state: Operational state (DEAD, STOPPED, RUNNING, DELETED)
+        GetApplicationResponse: List of objects wher each element represents
+            a configured application from the server
     """
     await ctx.info("inside get_applications(...)")
 
@@ -78,18 +39,18 @@ async def get_applications(
 
     data = res.json()
 
-    results = list()
+    elements = list()
 
     for ele in data["results"]:
-        results.append({
-            "name": ele["id"],
-            "package": ele.get("package_id"),
-            "version": ele["version"],
-            "description": ele.get("description"),
-            "state": ele["state"],
-        })
+        elements.append(models.GetApplicationsElement(
+            name=ele["id"],
+            package=ele.get("package_id"),
+            version=ele.get("version"),
+            description=ele.get("description"),
+            state=ele["state"]
+        ))
 
-    return results
+    return models.GetApplicationsResponse(root=elements)
 
 
 async def start_application(
@@ -103,7 +64,7 @@ async def start_application(
         description="Timeout waiting for application to start",
         default=10
     )]
-) -> dict:
+) -> models.StartApplicationResponse:
     """
     Start an application on Itential Platform.
 
@@ -118,9 +79,8 @@ async def start_application(
         timeout (int): Seconds to wait for application to reach RUNNING state
 
     Returns:
-        dict: Start operation result
-            - name: The application name
-            - state: Final application state (RUNNING, DEAD, DELETED, STOPPED)
+        StartApplicationResponse: An object that represents the start
+            application response
 
     Raises:
         TimeoutExceededError: If application doesn't reach RUNNING state within timeout
@@ -134,14 +94,14 @@ async def start_application(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    data = await _get_application_health(ctx, name)
+    data = await client.get_application_health(ctx, name)
     state = data["results"][0]["state"]
 
     if state == "STOPPED":
         await client.put(f"/applications/{name}/start")
 
         while timeout:
-            data = await _get_application_health(ctx, name)
+            data = await client.get_application_health(ctx, name)
             state = data["results"][0]["state"]
 
             if state == "RUNNING":
@@ -156,10 +116,7 @@ async def start_application(
     if timeout == 0:
         raise exceptions.TimeoutExceededError()
 
-    return {
-        "name": name,
-        "state": state
-    }
+    return models.StartApplicationResponse(name=name, state=state)
 
 
 async def stop_application(
@@ -173,7 +130,7 @@ async def stop_application(
         description="Timeout waiting for application to stop",
         default=10
     )]
-) -> dict:
+) -> models.StopApplicationResponse:
     """
     Stop an application on Itential Platform.
 
@@ -188,9 +145,8 @@ async def stop_application(
         timeout (int): Seconds to wait for application to reach STOPPED state
 
     Returns:
-        dict: Stop operation result
-            - name: The application name
-            - state: Final application state (RUNNING, DEAD, DELETED, STOPPED)
+        StopApplicationResponse: An object that represents the stop
+            operation for the application
 
     Raises:
         TimeoutExceededError: If application doesn't reach STOPPED state within timeout
@@ -204,14 +160,14 @@ async def stop_application(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    data = await _get_application_health(ctx, name)
+    data = await client.get_application_health(ctx, name)
     state = data["results"][0]["state"]
 
     if state == "RUNNING":
         await client.put(f"/applications/{name}/stop")
 
         while timeout:
-            data = await _get_application_health(ctx, name)
+            data = await client.get_application_health(ctx, name)
 
             state = data["results"][0]["state"]
 
@@ -227,10 +183,7 @@ async def stop_application(
     if timeout == 0:
         raise exceptions.TimeoutExceededError()
 
-    return {
-        "name": name,
-        "state": state
-    }
+    return models.StopApplicationResponse(name=name, state=state)
 
 
 async def restart_application(
@@ -244,7 +197,7 @@ async def restart_application(
         description="Timeout waiting for application to restart",
         default=10
     )]
-) -> dict:
+) -> models.RestartApplicationResponse:
     """
     Restart an application on Itential Platform.
 
@@ -258,9 +211,8 @@ async def restart_application(
         timeout (int): Seconds to wait for application to return to RUNNING state
 
     Returns:
-        dict: Restart operation result
-            - name: The application name
-            - state: Final application state (RUNNING, DEAD, DELETED, STOPPED)
+        RestartApplicationResponse: An object that provides the operational
+            status of the restart application action
 
     Raises:
         TimeoutExceededError: If application doesn't return to RUNNING state within timeout
@@ -276,14 +228,14 @@ async def restart_application(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    data = await _get_application_health(ctx, name)
+    data = await client.get_application_health(ctx, name)
     state = data["results"][0]["state"]
 
     if state == "RUNNING":
         await client.put(f"/applications/{name}/restart")
 
         while timeout:
-            data = await _get_application_health(ctx, name)
+            data = await client.get_application_health(ctx, name)
 
             state = data["results"][0]["state"]
 
@@ -299,7 +251,4 @@ async def restart_application(
     if timeout == 0:
         raise exceptions.TimeoutExceededError()
 
-    return {
-        "name": name,
-        "state": state
-    }
+    return models.RestartApplicationResponse(name=name, state=state)
