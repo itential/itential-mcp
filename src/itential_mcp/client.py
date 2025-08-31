@@ -2,7 +2,6 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 import pathlib
-import warnings
 import importlib
 import importlib.util
 
@@ -89,7 +88,7 @@ class PlatformClient(object):
             except (ImportError, AttributeError, Exception) as exc:
                 # Log error but continue loading other services
                 # Consider adding proper logging here in the future
-                warnings.warn(str(exc))
+                print(exc)
                 continue
 
     async def _make_response(self, res: Response) -> response.Response:
