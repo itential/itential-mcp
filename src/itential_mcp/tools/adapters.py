@@ -10,28 +10,25 @@ from pydantic import Field
 from fastmcp import Context
 
 from itential_mcp import exceptions
+from itential_mcp.models import adapters as models
 
 
 __tags__ = ("adapters",)
 
 
-async def _get_adapter_health(
-    ctx: Context,
-    name: str
-) -> dict:
+async def _get_adapter_health(ctx: Context, name: str) -> dict:
     """
-    Get the health status of a specific adapter.
+    Get health information for a specific adapter.
 
     Args:
         ctx (Context): The FastMCP Context object
-        name (str): The case-sensitive name of the adapter. Use `get_adapters`
-            to see available adapters.
+        name (str): Adapter name to get health for
 
     Returns:
-        dict: Adapter health data containing status and configuration information
+        dict: Adapter health data from the platform
 
     Raises:
-        NotFoundError: If the specified adapter cannot be found
+        NotFoundError: If the adapter is not found
     """
     client = ctx.request_context.lifespan_context.get("client")
 
@@ -55,7 +52,7 @@ async def get_adapters(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
     )]
-) -> dict:
+) -> models.GetAdaptersResponse:
     """
     Get all adapters configured on the Itential Platform instance.
 
@@ -63,12 +60,8 @@ async def get_adapters(
         ctx (Context): The FastMCP Context object
 
     Returns:
-        list[dict]: List of adapter objects with the following fields:
-            - name: The adapter name
-            - package: The NodeJS package comprising the adapter
-            - version: The adapter version
-            - description: The adapter description
-            - state: Operational state (DEAD, STOPPED, RUNNING, DELETED)
+        GetAdaptersResponse: Response object that provides the list of
+            configured adapters from the server
     """
     await ctx.info("inside get_adapters(...)")
 
@@ -78,18 +71,18 @@ async def get_adapters(
 
     data = res.json()
 
-    results = list()
+    elements = list()
 
     for ele in data["results"]:
-        results.append({
-            "name": ele["id"],
-            "package": ele.get("package_id"),
-            "version": ele["version"],
-            "description": ele.get("description"),
-            "state": ele["state"],
-        })
+        elements.append(models.GetAdaptersElement(
+            name=ele["id"],
+            package=ele.get("package_id"),
+            version=ele["version"],
+            description=ele.get("description"),
+            state=ele["state"]
+        ))
 
-    return results
+    return models.GetAdaptersResponse(elements)
 
 
 async def start_adapter(
@@ -103,7 +96,7 @@ async def start_adapter(
         description="Timeout waiting for adapter to start",
         default=10
     )]
-) -> dict:
+) -> models.StartAdapterResponse:
     """
     Start an adapter on Itential Platform.
 
@@ -118,9 +111,8 @@ async def start_adapter(
         timeout (int): Seconds to wait for adapter to reach RUNNING state
 
     Returns:
-        dict: Start operation result
-            - name: The adapter name
-            - state: Final adapter state (RUNNING, DEAD, DELETED, STOPPED)
+        StartAdapterResponse: Response object that indicates the status of
+            the start adapter operation
 
     Raises:
         TimeoutExceededError: If adapter doesn't reach RUNNING state within timeout
@@ -156,10 +148,7 @@ async def start_adapter(
     if timeout == 0:
         raise exceptions.TimeoutExceededError()
 
-    return {
-        "name": name,
-        "state": state
-    }
+    return models.StartAdapterResponse(name=name, state=state)
 
 
 async def stop_adapter(
@@ -173,7 +162,7 @@ async def stop_adapter(
         description="Timeout waiting for adapter to stop",
         default=10
     )]
-) -> dict:
+) -> models.StopAdapterResponse:
     """
     Stop an adapter on Itential Platform.
 
@@ -188,9 +177,8 @@ async def stop_adapter(
         timeout (int): Seconds to wait for adapter to reach STOPPED state
 
     Returns:
-        dict: Stop operation result
-            - name: The adapter name
-            - state: Final adapter state (RUNNING, DEAD, DELETED, STOPPED)
+        StopAdapterResponse: Response object that indicates the status of
+            the stop adapter operation
 
     Raises:
         TimeoutExceededError: If adapter doesn't reach STOPPED state within timeout
@@ -227,10 +215,7 @@ async def stop_adapter(
     if timeout == 0:
         raise exceptions.TimeoutExceededError()
 
-    return {
-        "name": name,
-        "state": state
-    }
+    return models.StopAdapterResponse(name=name, state=state)
 
 
 async def restart_adapter(
@@ -244,7 +229,7 @@ async def restart_adapter(
         description="Timeout waiting for adapter to restart",
         default=10
     )]
-) -> dict:
+) -> models.RestartAdapterResponse:
     """
     Restart an adapter on Itential Platform.
 
@@ -258,9 +243,8 @@ async def restart_adapter(
         timeout (int): Seconds to wait for adapter to return to RUNNING state
 
     Returns:
-        dict: Restart operation result
-            - name: The adapter name
-            - state: Final adapter state (RUNNING, DEAD, DELETED, STOPPED)
+        ResartAdapterResponse: Response object that indicates the status of
+            the ressart adapter operation
 
     Raises:
         TimeoutExceededError: If adapter doesn't return to RUNNING state within timeout
@@ -299,7 +283,4 @@ async def restart_adapter(
     if timeout == 0:
         raise exceptions.TimeoutExceededError()
 
-    return {
-        "name": name,
-        "state": state
-    }
+    return models.RestartAdapterResponse(name=name, state=state)
