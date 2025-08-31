@@ -5,7 +5,10 @@ import os
 import inspect
 import importlib.util
 
-from typing import Callable, Iterator, Tuple, Sequence
+from typing import Any, Callable, Iterator, Tuple, Sequence
+from typing import get_type_hints
+
+from pydantic import BaseModel
 
 from . import terminal
 
@@ -42,6 +45,33 @@ def tags(*tag_list) -> Callable:
         setattr(func, "tags", list(tag_list))
         return func
     return decorator
+
+
+def get_json_schema(fn: Callable) -> str:
+    """
+    Extract JSON schema from a function's return type annotation.
+
+    This function analyzes a function's type hints to extract the JSON schema
+    from the return type. The return type must be a Pydantic BaseModel subclass
+    for schema generation to work properly.
+
+    Args:
+        fn (Callable): The function to extract the JSON schema from
+
+    Returns:
+        str: The JSON schema as a string representation
+
+    Raises:
+        ValueError: If the function's return type is not a BaseModel subclass
+    """
+    hints = get_type_hints(fn)
+
+    ret = hints.get("return", Any)
+
+    if not issubclass(ret, BaseModel):
+        raise ValueError("tool functions must subclass BaseModel")
+
+    return ret.model_json_schema()
 
 
 def itertools(path: str=None) -> Iterator[Tuple[Callable, Sequence]]:

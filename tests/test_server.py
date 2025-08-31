@@ -403,8 +403,10 @@ class TestIntegration:
         }
         mock_config_get.return_value = mock_config
 
-        # Setup tools
-        mock_func = MagicMock()
+        # Setup tools - need a real function for get_json_schema to work
+        def mock_func():
+            """Test tool function"""
+            pass
         mock_func.__name__ = "test_tool"
         mock_itertools.return_value = [(mock_func, ["system", "test"])]
 
