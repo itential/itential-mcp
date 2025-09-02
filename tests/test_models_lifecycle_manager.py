@@ -167,12 +167,12 @@ class TestAction:
         action = Action(
             name="create_vlan",
             type="create",
-            schema={"type": "object", "properties": {"vlan_id": {"type": "integer"}}}
+            input_schema={"type": "object", "properties": {"vlan_id": {"type": "integer"}}}
         )
         
         assert action.name == "create_vlan"
         assert action.type == "create"
-        assert action.schema == {"type": "object", "properties": {"vlan_id": {"type": "integer"}}}
+        assert action.input_schema == {"type": "object", "properties": {"vlan_id": {"type": "integer"}}}
 
     def test_action_all_types(self):
         """Test Action with all valid types"""
@@ -180,7 +180,7 @@ class TestAction:
             action = Action(
                 name=f"{action_type}_action",
                 type=action_type,
-                schema={"type": "object"}
+                input_schema={"type": "object"}
             )
             assert action.type == action_type
 
@@ -190,7 +190,7 @@ class TestAction:
             Action(
                 name="invalid_action",
                 type="invalid_type",
-                schema={"type": "object"}
+                input_schema={"type": "object"}
             )
         
         assert "invalid_type" in str(exc_info.value)
@@ -215,29 +215,33 @@ class TestAction:
         action = Action(
             name="complex_action",
             type="create",
-            schema=complex_schema
+            input_schema=complex_schema
         )
         
-        assert action.schema == complex_schema
+        assert action.input_schema == complex_schema
 
     def test_action_required_fields(self):
         """Test Action with missing required fields"""
         # Test missing name
         try:
-            Action(type="create", schema={"type": "object"})  # Missing name
+            Action(type="create", input_schema={"type": "object"})  # Missing name
             assert False, "Should have raised ValidationError"
         except ValidationError as e:
             assert "name" in str(e)
         
         # Test missing type  
         try:
-            Action(name="test", schema={"type": "object"})  # Missing type
+            Action(name="test", input_schema={"type": "object"})  # Missing type
             assert False, "Should have raised ValidationError"
         except ValidationError as e:
             assert "type" in str(e)
         
-        # Note: schema field shadows BaseModel.schema method and gets a default,
-        # so we can't test missing schema validation easily
+        # Test missing input_schema
+        try:
+            Action(name="test", type="create")  # Missing input_schema
+            assert False, "Should have raised ValidationError"
+        except ValidationError as e:
+            assert "input_schema" in str(e)
 
 
 class TestDescribeResourceResponse:
@@ -246,8 +250,8 @@ class TestDescribeResourceResponse:
     def test_describe_resource_response_basic(self):
         """Test basic DescribeResourceResponse creation"""
         actions = [
-            Action(name="create", type="create", schema={"type": "object"}),
-            Action(name="delete", type="delete", schema={"type": "object"}),
+            Action(name="create", type="create", input_schema={"type": "object"}),
+            Action(name="delete", type="delete", input_schema={"type": "object"}),
         ]
         
         response = DescribeResourceResponse(
@@ -560,7 +564,7 @@ class TestModelIntegration:
         create_action = Action(
             name="provision",
             type="create",
-            schema={"type": "object", "properties": {"vlan_id": {"type": "integer"}}}
+            input_schema={"type": "object", "properties": {"vlan_id": {"type": "integer"}}}
         )
         
         # Create a describe resource response

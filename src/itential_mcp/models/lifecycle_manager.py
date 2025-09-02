@@ -92,7 +92,7 @@ class Action(BaseModel):
     Attributes:
         name: The configured name identifier for this action.
         type: The type of operation this action performs (create, update, delete).
-        schema: A JSON Schema object defining the required input structure
+        input_schema: A JSON Schema object defining the required input structure
             for successfully executing this action.
     """
 
@@ -118,7 +118,7 @@ class Action(BaseModel):
         )
     ]
 
-    schema: Annotated[
+    input_schema: Annotated[
         Mapping[str, Any],
         Field(
             description = inspect.cleandoc(
