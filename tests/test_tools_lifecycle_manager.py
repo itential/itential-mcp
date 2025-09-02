@@ -286,7 +286,7 @@ class TestDescribeResource:
         assert len(result.actions) == 1
         assert result.actions[0].name == "create"
         assert result.actions[0].type == "create"
-        assert result.actions[0].schema == {"type": "object"}
+        assert result.actions[0].input_schema == {"type": "object"}
 
     @pytest.mark.asyncio
     async def test_describe_resource_not_found(self, mock_context):
@@ -332,7 +332,7 @@ class TestDescribeResource:
         result = await lifecycle_manager.describe_resource(mock_context, "test-resource")
 
         assert isinstance(result, DescribeResourceResponse)
-        assert result.actions[0].schema == mock_transformation_data["incoming"]
+        assert result.actions[0].input_schema == mock_transformation_data["incoming"]
         mock_client.transformations.describe_transformation.assert_called_once_with("transformation123")
 
     @pytest.mark.asyncio
@@ -365,7 +365,7 @@ class TestDescribeResource:
         result = await lifecycle_manager.describe_resource(mock_context, "test-resource")
 
         assert isinstance(result, DescribeResourceResponse)
-        assert result.actions[0].schema == mock_workflow_data["inputSchema"]
+        assert result.actions[0].input_schema == mock_workflow_data["inputSchema"]
         mock_client.automation_studio.describe_workflow.assert_called_once_with("workflow123")
 
     @pytest.mark.asyncio

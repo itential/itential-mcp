@@ -149,7 +149,7 @@ async def describe_resource(
         - For each action the following fields will be returned:
             - name: The name of the action
             - type: The type of action (CREATE, UPDATE, DELETE)
-            - schema: The input schema required to execute the action
+            - input_schema: The input schema required to execute the action
     """
     await ctx.info("inside describe_resource(...)")
 
@@ -190,7 +190,7 @@ async def describe_resource(
         actions.append(Action(
             name=ele["name"],
             type=ele["type"],
-            schema=action_schema
+            input_schema=action_schema
         ))
 
     return DescribeResourceResponse(
