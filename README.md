@@ -249,20 +249,43 @@ itential-mcp --exclude-tags "experimental,beta,lifecycle_manager"
 
 ### **Role-Based Configurations**
 
-**Platform Administrator:**
+The following role-based configurations provide tailored tool access based on specific job functions and responsibilities:
+
+**Platform SRE:**
+*Use Cases: Platform & application administration, Adapter management, Integration management, Troubleshooting, Platform overall health and functionality*
+
 ```bash
-itential-mcp --include-tags "system,adapters,applications"
+itential-mcp --include-tags "system,adapters,applications,integrations"
 ```
 
-**Network Operations:**
+*Available Tools: get_health, restart_application, start_application, stop_application, create_integration_model, get_job_metrics, get_task_metrics, restart_adapter, start_adapter, stop_adapter, get_task_metrics_for_app, get_task_metrics_for_task, get_task_metrics_for_workflow*
+
+**Platform Builder:**
+*Use Cases: Asset development, Asset promotion*
+
 ```bash
-itential-mcp --include-tags "devices,configuration_manager,automation_studio" --exclude-tags "lifecycle_manager"
+itential-mcp --include-tags "operations_manager,automation_studio,configuration_manager"
 ```
+
+*Available Tools: create_resource, get_workflows, describe_command_template, run_command_template, run_command, render_template, create_device_group, get_resources, describe_resource, get_instances, backup_device_configuration, apply_device_configuration, get_compliance_plans, run_compliance_plan, get_adapters, get_applications, get_integration_models*
 
 **Automation Developer:**
+*Use Cases: Asset development, Asset promotion*
+
 ```bash
-itential-mcp --include-tags "operations_manager,workflow_engine,integrations"
+itential-mcp --include-tags "operations_manager,automation_studio"
 ```
+
+*Available Tools: create_resource, render_template, run_command*
+
+**Platform Operator:**
+*Use Cases: Execute jobs, Run compliance, Consume data*
+
+```bash
+itential-mcp --include-tags "operations_manager,devices,configuration_manager,automation_studio"
+```
+
+*Available Tools: get_workflows, start_workflow, get_jobs, describe_job, get_devices, get_device_configuration, get_device_groups, get_command_templates, run_command_template, describe_compliance_report*
 
 ## 📚 Documentation & Integration
 
