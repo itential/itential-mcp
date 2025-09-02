@@ -85,13 +85,13 @@ For development, you can run the server directly using `uv`:
 
 ```bash
 # Run with stdio transport (default)
-uv run itential-mcp
+uv run itential-mcp run
 
 # Run with SSE transport
-uv run itential-mcp --transport sse --host 0.0.0.0 --port 8000
+uv run itential-mcp run --transport sse --host 0.0.0.0 --port 8000
 
 # Run with specific configuration
-uv run itential-mcp --include-tags "system,devices" --exclude-tags "experimental"
+uv run itential-mcp run --include-tags "system,devices" --exclude-tags "experimental"
 ```
 
 ### Build Container Image
@@ -131,10 +131,10 @@ export ITENTIAL_MCP_PLATFORM_PASSWORD="your-password"
 ### **3. Start the Server**
 ```bash
 # Basic stdio transport (default)
-itential-mcp
+itential-mcp run
 
 # Or with SSE transport for web clients
-itential-mcp --transport sse --host 0.0.0.0 --port 8000
+itential-mcp run --transport sse --host 0.0.0.0 --port 8000
 ```
 
 ### **4. Configure Your MCP Client**
@@ -144,13 +144,13 @@ Follow the [integration guide](docs/integration.md) to connect Claude, Continue.
 Start the MCP server with default settings _(stdio transport)_:
 
 ```bash
-itential-mcp --transport --host 0.0.0.0 --port 8000
+itential-mcp run
 ```
 
 Start with SSE transport:
 
 ```bash
-itential-mcp --transport sse --host 0.0.0.0 --port 8000
+itential-mcp run --transport sse --host 0.0.0.0 --port 8000
 ```
 
 ### General Options
@@ -192,7 +192,7 @@ All command line options can also be set using environment variables prefixed wi
 ```bash
 export ITENTIAL_MCP_SERVER_TRANSPORT=sse
 export ITENTIAL_MCP_PLATFORM_HOST=platform.example.com
-itential-mcp  # Will use the environment variables
+itential-mcp run  # Will use the environment variables
 ```
 
 ### Configuration file
@@ -225,10 +225,10 @@ Control tool availability using include and exclude tags:
 
 ```bash
 # Include only system and device management tools
-itential-mcp --include-tags "system,configuration_manager,devices"
+itential-mcp run --include-tags "system,configuration_manager,devices"
 
 # Exclude experimental and beta tools (default behavior)
-itential-mcp --exclude-tags "experimental,beta,lifecycle_manager"
+itential-mcp run --exclude-tags "experimental,beta,lifecycle_manager"
 ```
 
 ### **Available Tag Groups**
@@ -255,7 +255,7 @@ The following role-based configurations provide tailored tool access based on sp
 *Use Cases: Platform & application administration, Adapter management, Integration management, Troubleshooting, Platform overall health and functionality*
 
 ```bash
-itential-mcp --include-tags "system,adapters,applications,integrations"
+itential-mcp run --include-tags "system,adapters,applications,integrations"
 ```
 
 *Available Tools: get_health, restart_application, start_application, stop_application, create_integration_model, get_job_metrics, get_task_metrics, restart_adapter, start_adapter, stop_adapter, get_task_metrics_for_app, get_task_metrics_for_task, get_task_metrics_for_workflow*
@@ -264,7 +264,7 @@ itential-mcp --include-tags "system,adapters,applications,integrations"
 *Use Cases: Asset development, Asset promotion, Workflow metrics analysis, Resource lifecycle management*
 
 ```bash
-itential-mcp --include-tags "operations_manager,automation_studio,configuration_manager,workflow_engine,lifecycle_manager"
+itential-mcp run --include-tags "operations_manager,automation_studio,configuration_manager,workflow_engine,lifecycle_manager"
 ```
 
 *Available Tools: create_resource, get_workflows, describe_command_template, run_command_template, run_command, render_template, create_device_group, get_resources, describe_resource, get_instances, backup_device_configuration, apply_device_configuration, get_compliance_plans, run_compliance_plan, get_adapters, get_applications, get_integration_models, get_job_metrics, get_job_metrics_for_workflow, get_task_metrics, get_task_metrics_for_workflow, get_task_metrics_for_app, get_task_metrics_for_task, describe_instance, run_action*
@@ -273,7 +273,7 @@ itential-mcp --include-tags "operations_manager,automation_studio,configuration_
 *Use Cases: Asset development, Asset promotion, External service management*
 
 ```bash
-itential-mcp --include-tags "operations_manager,gateway_manager"
+itential-mcp run --include-tags "operations_manager,gateway_manager"
 ```
 
 *Available Tools: create_resource, get_services, get_gateways, run_service*
@@ -282,7 +282,7 @@ itential-mcp --include-tags "operations_manager,gateway_manager"
 *Use Cases: Execute jobs, Run compliance, Consume data*
 
 ```bash
-itential-mcp --include-tags "operations_manager,devices,configuration_manager,automation_studio"
+itential-mcp run --include-tags "operations_manager,devices,configuration_manager,automation_studio"
 ```
 
 *Available Tools: get_workflows, start_workflow, get_jobs, describe_job, get_devices, get_device_configuration, get_device_groups, get_command_templates, run_command_template, describe_compliance_report*
