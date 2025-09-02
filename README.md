@@ -37,6 +37,7 @@ Build automation workflows, integrate with external systems, manage application 
 ### **Workflow & Orchestration**
 - **Workflow Execution**: Trigger and monitor automation workflows
 - **Operations Management**: Job tracking and lifecycle management
+- **Lifecycle Manager**: CRUD operations for stateful products with state tracking
 - **Service Integration**: Connect with external systems and APIs
 
 ### **Platform Operations**
@@ -230,7 +231,7 @@ itential-mcp --exclude-tags "experimental,beta,lifecycle_manager"
 | `automation_studio` | Command templates and automation | Network operators |
 | `gateway_manager` | External service management | System integrators |
 | `integrations` | External system integrations | API developers |
-| `lifecycle_manager` | Resource lifecycle management | Infrastructure teams |
+| `lifecycle_manager` | Stateful product CRUD operations and state tracking | Product managers |
 | `workflow_engine` | Workflow execution metrics | Performance analysts |
 
 ### **Role-Based Configurations**
