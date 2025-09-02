@@ -8,15 +8,41 @@
 </div>
 
 # 🔌 Itential - MCP Server
-A Model Context Protocol _(MCP)_ server that provides tools for connecting LLMs to Itential Platform. Enable AI assistants to manage network automations, orchestrate workflows, and monitor platform health.
 
-## 📒 Features
-- **Multiple Transport Methods**: Choose between stdio (default) or SSE transport for MCP server
-- **Dynamic Tool Loading**: Automatically discovers and registers tools without modifying core code
-- **Flexible Authentication**: Supports both basic authentication and OAuth for Itential Platform
-- **Configurable**: Set options via command line parameters or environment variables
-- **Containerized**: Run as a Docker container with configurable environment
-- **Extensible**: Easy to add new tools without deep knowledge of the code base
+A Model Context Protocol _(MCP)_ server that provides comprehensive tools for connecting LLMs to Itential Platform. Enable AI assistants to manage network automations, orchestrate workflows, monitor platform health, and perform advanced network operations.
+
+## 🎯 Who This Is For
+
+### **Platform Engineers**
+Manage infrastructure, monitor system health, configure devices, and orchestrate network operations through AI-powered automation.
+
+### **Developers**
+Build automation workflows, integrate with external systems, manage application lifecycles, and extend platform capabilities.
+
+## 📒 Key Features
+
+### **Core Capabilities**
+- **Advanced Tool Selection**: Filter and control available tools using flexible tagging system
+- **Multiple Transport Methods**: stdio, SSE, and HTTP transports for different deployment scenarios
+- **Dynamic Tool Discovery**: Automatically discovers and registers tools without code modifications
+- **Flexible Authentication**: Supports both basic authentication and OAuth 2.0 for Itential Platform
+- **Comprehensive Configuration**: CLI parameters, environment variables, or configuration files
+
+### **Network Automation**
+- **Device Management**: Configure, backup, and monitor network devices
+- **Command Execution**: Run commands and templates across device groups
+- **Compliance Management**: Automated compliance checking and reporting
+- **Golden Configuration**: Template-based configuration management
+
+### **Workflow & Orchestration**
+- **Workflow Execution**: Trigger and monitor automation workflows
+- **Operations Management**: Job tracking and lifecycle management
+- **Service Integration**: Connect with external systems and APIs
+
+### **Platform Operations**
+- **Health Monitoring**: Real-time platform and component health metrics
+- **Resource Management**: Adapter and application lifecycle control
+- **Gateway Services**: External service management and orchestration
 
 ## 🔍 Requirements
 - Python _3.10_ or higher
@@ -71,6 +97,34 @@ docker run -p 8000:8000 \
   --env ITENTIAL_MCP_PLATFORM_CLIENT_SECRET=CLIENT_SECRET \
   itential-mcp:devel
 ```
+
+## 🚀 Quick Start
+
+### **1. Install the Server**
+```bash
+pip install itential-mcp
+```
+
+### **2. Configure Platform Connection**
+Set your Itential Platform credentials:
+
+```bash
+export ITENTIAL_MCP_PLATFORM_HOST="your-platform.example.com"
+export ITENTIAL_MCP_PLATFORM_USER="your-username"
+export ITENTIAL_MCP_PLATFORM_PASSWORD="your-password"
+```
+
+### **3. Start the Server**
+```bash
+# Basic stdio transport (default)
+itential-mcp
+
+# Or with SSE transport for web clients
+itential-mcp --transport sse --host 0.0.0.0 --port 8000
+```
+
+### **4. Configure Your MCP Client**
+Follow the [integration guide](docs/integration.md) to connect Claude, Continue.dev, or other MCP clients.
 
 ## 📝 Basic Usage
 Start the MCP server with default settings _(stdio transport)_:
@@ -147,9 +201,73 @@ to lowest:
 4. Default value
 
 
+## 🎛️ Tool Selection & Tagging
+
+The Itential MCP server provides powerful tool filtering capabilities through a comprehensive tagging system. This allows you to customize which tools are available based on your specific needs and security requirements.
+
+### **Tag-Based Filtering**
+
+Control tool availability using include and exclude tags:
+
+```bash
+# Include only system and device management tools
+itential-mcp --include-tags "system,configuration_manager,devices"
+
+# Exclude experimental and beta tools (default behavior)
+itential-mcp --exclude-tags "experimental,beta,lifecycle_manager"
+```
+
+### **Available Tag Groups**
+
+| Tag Group | Description | Use Case |
+|-----------|-------------|----------|
+| `system` | Platform health and monitoring | Platform administrators |
+| `configuration_manager` | Device and compliance management | Network engineers |
+| `devices` | Device-specific operations | NOC teams |
+| `operations_manager` | Workflow and job management | Automation developers |
+| `adapters` | Adapter lifecycle management | Integration specialists |
+| `applications` | Application lifecycle management | Application owners |
+| `automation_studio` | Command templates and automation | Network operators |
+| `gateway_manager` | External service management | System integrators |
+| `integrations` | External system integrations | API developers |
+| `lifecycle_manager` | Resource lifecycle management | Infrastructure teams |
+| `workflow_engine` | Workflow execution metrics | Performance analysts |
+
+### **Role-Based Configurations**
+
+**Platform Administrator:**
+```bash
+itential-mcp --include-tags "system,adapters,applications"
+```
+
+**Network Operations:**
+```bash
+itential-mcp --include-tags "devices,configuration_manager,automation_studio" --exclude-tags "lifecycle_manager"
+```
+
+**Automation Developer:**
+```bash
+itential-mcp --include-tags "operations_manager,workflow_engine,integrations"
+```
+
+## 📚 Documentation & Integration
+
+### **Complete Tool Reference**
+The entire list of available tools can be found in the [tools documentation](docs/tools.md) along with detailed tag associations.
+
+### **Client Integration Guides**
+- [MCP Client Integration](docs/integration.md) - Configure Claude, Continue.dev, and other MCP clients
+- [Configuration Examples](docs/mcp.conf.example) - Complete configuration file reference
+- [Tagging System](docs/tags.md) - Advanced tagging and filtering guide
+- [Workflow Execution](docs/exposing-workflows.md) - Running automation workflows
+
+### **Example Prompts**
+- [Claude Desktop Prompt](docs/claude-example.prompt) - Optimized prompt for Claude integration
+- [GPT Integration Prompt](docs/gpt-example.prompt) - Optimized prompt for GPT integration
+
 ## 💡 Available Tools
-The entire list of availablle tools can be found in the [tools](docs/tools.md)
-file along with the tag groups assoicated with those tools.
+The entire list of available tools can be found in the [tools](docs/tools.md)
+file along with the tag groups associated with those tools.
 
 ## 🛠️ Adding new Tools
 Adding a new tool is simple:
