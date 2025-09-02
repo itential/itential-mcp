@@ -5,7 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.0] - 2025-09-02
+
+### Added
+- Comprehensive Google-style docstrings across codebase (#145)
+- Comprehensive test coverage for missing services modules (#143)
+- MCP server documentation (#141)
+- Project documentation and build improvements (#140)
+- Operations Manager functionality with Pydantic models and comprehensive test coverage (#139)
+- Integration models with Pydantic type safety and comprehensive test coverage (#138)
+- Comprehensive test coverage for errors module (#137)
+- Golden Configuration management functionality (#132)
+- Lifecycle manager tools with Pydantic models and comprehensive test coverage (#135)
+- Application models and services with type-safe response handling (#134)
+- Comprehensive adapter management system (#133)
+- Gateway Manager tools for service automation (#124)
+- Describe instance tool for Lifecycle Manager resources (#116)
+- Lifecycle Manager instance action execution tool (#111)
+- CI testing coverage for Python 3.10-3.13 matrix (#112)
+- Bandit security scanning integration (#110)
+- Tools reference documentation (#103)
+- New command for calling tools (#101)
+- Unit test cases for the errors module (#99)
+- Two new commands to the application (#98)
+- CLI module with comprehensive test coverage (#91)
+- New tool `get_job_metrics_for_workflow` (#92)
+
+### Changed
+- Operations manager test to match actual implementation behavior (#144)
+- Action.schema field to input_schema in lifecycle manager models (#142)
+- Project dependencies (#131)
+- Services architecture and enhance client error handling (#128)
+- Client architecture and add comprehensive test coverage (#125)
+- Workflow lookup to include project members (#123)
+- Removed version pins from pyproject.toml dependencies (#122)
+- Use inspect cleandoc (#120)
+- Run_action tool (#115)
+- Cache module refactoring (#106)
+- Server instructions as a global variable (#105)
+- Server.py docstrings and instructions (#100)
+- Adapters and applications to use async sleep (#96)
+- License identifier in `pyproject.toml` (#95)
+
+### Fixed
+- Operations manager test to match actual implementation behavior (#144)
+- Indents in client module (#127)
+- Typo in workflow name (#114)
+- Bug in the runner (#107)
+- Issue loading module tags (#94)
+- Issue with AlreadyExistsError (#90)
+
+### Removed
+- Unused utility functions from functions.py (#136)
+- Created and update metadata from tools results (#93)
+
+### Security
+- Bandit security scanning integration (#110)
+- Refactor exception hierarchy and remove legacy error module (#109)
 
 ## [0.3.0] - 2025-07-15
 
