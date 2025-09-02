@@ -5,24 +5,23 @@ from fastmcp import Context
 
 
 async def account_id_to_username(ctx: Context, account_id: str) -> str:
-    """
-    Retrieves the username for an account id
-
-    This function will take an account id and use it to look up the username
-    associated with it.  The function will cache the username value to
+    """Retrieve the username for an account ID.
+    
+    This function will take an account ID and use it to look up the username
+    associated with it. The function will cache the username value to
     avoid making duplicate calls to the server.
-
+    
     Args:
-        ctx (Context): The FastMCP Context object
-
-        acccount_id (str): The ID of the account to lookup and return the
-            username for
-
+        ctx (Context): The FastMCP Context object.
+        account_id (str): The ID of the account to lookup and return the
+            username for.
+            
     Returns:
-        str: The username assoicated with the account id
-
+        str: The username associated with the account ID.
+        
     Raises:
-        None
+        ValueError: If the account ID cannot be found on the server.
+        Exception: If there is an error communicating with the authorization API.
     """
     cache = ctx.request_context.lifespan_context.get("cache")
 
@@ -70,21 +69,22 @@ async def account_id_to_username(ctx: Context, account_id: str) -> str:
 
 
 async def group_id_to_name(ctx: Context, group_id: str) -> str:
-    """
-    Retrieves the group anme for the specified group id
-
+    """Retrieve the group name for the specified group ID.
+    
     This function will attempt to get the group name for the specified
-    group ID.
-
+    group ID from the authorization system, using caching to avoid
+    duplicate API calls.
+    
     Args:
-        ctx (Context): The FastMCP Context object
-
-        group_id (str): The group ID to find the group name for
-
+        ctx (Context): The FastMCP Context object.
+        group_id (str): The group ID to find the group name for.
+        
     Returns:
-        str: The name of the group associated with this group ID
-
+        str: The name of the group associated with this group ID.
+        
     Raises:
+        KeyError: If the response does not contain the expected 'name' field.
+        Exception: If there is an error communicating with the authorization API.
     """
     cache = ctx.request_context.lifespan_context.get("cache")
 
@@ -101,3 +101,5 @@ async def group_id_to_name(ctx: Context, group_id: str) -> str:
     value = data["name"]
 
     cache.put(f"/authorization/groups/{group_id}", value)
+
+    return value

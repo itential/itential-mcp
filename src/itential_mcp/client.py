@@ -16,44 +16,66 @@ from . import exceptions
 
 
 class PlatformClient(object):
+    """Client for connecting to and interacting with Itential Platform.
+    
+    This client wraps the ipsdk AsyncPlatform client to provide standardized
+    HTTP methods for API communication and automatic service discovery.
+    It handles authentication, connection management, and returns Response objects.
+    """
 
     def __init__(self):
+        """Initialize the PlatformClient with connection and service plugins.
+        
+        Creates an AsyncPlatform client connection and dynamically loads
+        all service plugins from the services directory.
+        
+        Args:
+            None
+            
+        Returns:
+            None
+            
+        Raises:
+            Exception: If client initialization or plugin loading fails.
+        """
         self.client = self._init_client()
         self._init_plugins()
 
     def _init_client(self) -> AsyncPlatform:
-        """
-        Initializes the client connection to Itential Platform
-
+        """Initialize the client connection to Itential Platform.
+        
+        Creates an AsyncPlatform client using configuration settings
+        from the platform configuration.
+        
         Args:
             None
-
+            
         Returns:
-            AsyncPlatform: An instance of AsyncPlatform
-
+            AsyncPlatform: An instance of AsyncPlatform configured for async operations.
+            
         Raises:
-            None
+            Exception: If platform client initialization fails.
         """
         cfg = config.get()
         return ipsdk.platform_factory(want_async=True, **cfg.platform)
 
     def _init_plugins(self):
-        """
-        Dynamically loads service plugins from the services directory.
-
+        """Dynamically load service plugins from the services directory.
+        
         Discovers and imports Python modules from the services directory,
         instantiates their Service classes, and registers them as attributes
         on the client instance.
-
+        
         Args:
             None
-
+            
         Returns:
             None
-
+            
         Raises:
-            ImportError: If a service module cannot be loaded
-            AttributeError: If a service module lacks a Service class
+            ImportError: If a service module cannot be loaded.
+            AttributeError: If a service module lacks a Service class.
+            Exception: If service instantiation fails.
         """
         services_path = pathlib.Path(__file__).resolve().parent / "services"
 
@@ -92,16 +114,17 @@ class PlatformClient(object):
                 continue
 
     async def _make_response(self, res: Response) -> response.Response:
-        """
-        Creates a response object and returns it
-
+        """Create a response object and return it.
+        
+        Wraps the ipsdk Response object in our custom Response class
+        to provide consistent interface for handling API responses.
+        
         Args:
-            res (httpx.Response): The response object returned from the HTTP API
-                request
-
+            res (Response): The response object returned from the HTTP API request.
+            
         Returns:
-            Response: A HTTP Response object
-
+            response.Response: A wrapped HTTP Response object.
+            
         Raises:
             None
         """
@@ -199,21 +222,20 @@ class PlatformClient(object):
         params: dict | None = None,
         json: str | dict | list | None = None,
     ) -> response.Response:
-        """
-        Send a HTTP PUT request to the server
+        """Send a HTTP PUT request to the server.
+        
         Args:
-            path (str): The full path to send the HTTP request to
-
-            params (dict): A Python dict object to be converted to a query
-                string and appended to the path
-
-            json (str | dict | list): A Python object that can be serialized
-                to a JSON string and sent as the body of the request
+            path (str): The full path to send the HTTP request to.
+            params (dict | None): A Python dict object to be converted to a query
+                string and appended to the path. Defaults to None.
+            json (str | dict | list | None): A Python object that can be serialized
+                to a JSON string and sent as the body of the request. Defaults to None.
+                
         Returns:
-            Response: An HTTP Response object from the server
-
+            response.Response: An HTTP Response object from the server.
+            
         Raises:
-            None
+            exceptions.ItentialMcpException: If the HTTP request fails.
         """
         return await self.send_request(
             method="PUT", path=path, params=params, json=json
@@ -224,21 +246,18 @@ class PlatformClient(object):
         path: str,
         params: dict | None = None,
     ) -> response.Response:
-        """
-        Send a HTTP DELETE request to the server
+        """Send a HTTP DELETE request to the server.
+        
         Args:
-            path (str): The full path to send the HTTP request to
-
-            params (dict): A Python dict object to be converted to a query
-                string and appended to the path
-
-            json (str | dict | list): A Python object that can be serialized
-                to a JSON string and sent as the body of the request
+            path (str): The full path to send the HTTP request to.
+            params (dict | None): A Python dict object to be converted to a query
+                string and appended to the path. Defaults to None.
+                
         Returns:
-            Response: An HTTP Response object from the server
-
+            response.Response: An HTTP Response object from the server.
+            
         Raises:
-            None
+            exceptions.ItentialMcpException: If the HTTP request fails.
         """
         return await self.send_request(
             method="DELETE", path=path, params=params

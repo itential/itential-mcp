@@ -53,6 +53,16 @@ def bad_request(msg: str | None = None) -> dict:
 
 
 def internal_server_error(msg: str | None = None) -> dict:
-    """
+    """Return an error message object for an internal server error.
+    
+    This function will return a JSON serializable message for an internal
+    server error. The optional msg argument can be used to provide a custom
+    message in the response otherwise a generic message will be returned.
+    
+    Args:
+        msg (str | None): Custom error message to return. Defaults to None.
+        
+    Returns:
+        dict: An object that provides the error message.
     """
     return {"message": msg or "Internal server error"}
