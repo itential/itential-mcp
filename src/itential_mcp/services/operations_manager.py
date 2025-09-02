@@ -2,6 +2,8 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 
+from itential_mcp import exceptions
+
 from itential_mcp.services import ServiceBase
 
 
@@ -170,13 +172,22 @@ class Service(ServiceBase):
         params = {"limit": limit}
 
         if project is not None:
-            # TODO: Implement project handling when ctx is available
-            # project_id = await functions.project_name_to_id(ctx, project)
-            # if name is not None:
-            #     params["equals[name]"] = f"@{project_id}: {name}"
-            # else:
-            #     params["starts-with[name]"] = f"@{project_id}"
-            raise NotImplementedError("Project filtering not yet implemented in service layer")
+            res = await self.client.get(
+                "/automation-studio/projects",
+                params={"equals[name]": name}
+            )
+
+            data = res.json()
+
+            if data["metadata"]["total"] == 0:
+                raise exceptions.NotFoundError(f"project {project} could not be found")
+
+            project_id = data["data"][0]["_id"]
+
+            if name is not None:
+                params["equals[name]"] = f"@{project_id}: {name}"
+            else:
+                params["starts-with[name]"] = f"@{project_id}"
 
         elif name is not None:
             params["equals[name]"] = name
