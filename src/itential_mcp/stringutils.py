@@ -3,15 +3,14 @@
 
 
 def tostr(s: str | None) -> str:
-    """
-    Convert a string to a string
-
+    """Convert a value to a string representation.
+    
     Args:
-        o (Any): The object to attempt to convert to to a string
-
+        s (str | None): The value to attempt to convert to a string.
+        
     Returns:
-        str: The string representation of the object
-
+        str: The string representation of the value, or None if input is None.
+        
     Raises:
         None
     """
@@ -21,50 +20,50 @@ def tostr(s: str | None) -> str:
 
 
 def tobytes(s: str | None, encoding: str = "utf-8") -> bytes:
-    """
-    Convert a string into bytes using the specified encoding.
-
+    """Convert a string into bytes using the specified encoding.
+    
     Args:
-        s (str): The input string to convert.
+        s (str | None): The input string to convert.
         encoding (str): The character encoding to use (default is 'utf-8').
-
+        
     Returns:
         bytes: The encoded byte representation of the string.
-
+        
     Raises:
-        None
+        AttributeError: If s is None and encode() is called on None.
+        UnicodeEncodeError: If the string cannot be encoded with the specified encoding.
     """
     return s.encode(encoding)
 
 
 def toint(value: str | None) -> int:
-    """
-    Convert a string representation of an integer to an int type.
-
+    """Convert a string representation of an integer to an int type.
+    
     Args:
-        value (str): A string to convert
-
+        value (str | None): A string to convert to integer.
+        
     Returns:
-        int: The integer value
-
+        int: The integer value.
+        
     Raises:
-        None
+        ValueError: If the string cannot be converted to an integer.
+        TypeError: If value is None.
     """
     return int(value)
 
 
 def tobool(value: str | None) -> bool:
-    """
-    Convert a string representation of a boolean to a bool type.
-
+    """Convert a string representation of a boolean to a bool type.
+    
     Args:
-        value (Optional[str]): A string like "true", "false", "1", "0", etc.
-
+        value (str | None): A string like "true", "false", "1", "0", etc.
+        
     Returns:
-        bool: The boolean value corresponding to the input.
-
+        bool: The boolean value corresponding to the input. Returns False if
+            value is None or not a recognized boolean string.
+            
     Raises:
-        None
+        AttributeError: If value is not None or a string and strip() is called.
     """
     if value is None:
         return False

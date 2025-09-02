@@ -195,7 +195,13 @@ class Config(object):
     )
 
     @property
-    def server(self):
+    def server(self) -> dict:
+        """Get server configuration as a dictionary.
+        
+        Returns:
+            dict: Server configuration parameters including transport, host, port,
+                path, log level, and tag filtering settings.
+        """
         return {
             "transport": self.server_transport,
             "host": self.server_host,
@@ -207,7 +213,13 @@ class Config(object):
         }
 
     @property
-    def platform(self):
+    def platform(self) -> dict:
+        """Get platform configuration as a dictionary.
+        
+        Returns:
+            dict: Platform configuration parameters including connection settings,
+                authentication credentials, and timeout values.
+        """
         return {
             "host": self.platform_host,
             "port": self.platform_port,
@@ -220,7 +232,18 @@ class Config(object):
             "timeout": self.platform_timeout
         }
 
-    def _coerce_to_set(self, value) -> list:
+    def _coerce_to_set(self, value: str) -> set:
+        """Convert a comma-separated string to a set of trimmed values.
+        
+        Args:
+            value (str): A comma-separated string to convert to a set.
+            
+        Returns:
+            set: A set containing the trimmed individual values.
+            
+        Raises:
+            AttributeError: If value is None or not a string.
+        """
         items = set()
         for ele in value.split(","):
             items.add(ele.strip())
