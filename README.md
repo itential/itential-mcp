@@ -261,22 +261,22 @@ itential-mcp --include-tags "system,adapters,applications,integrations"
 *Available Tools: get_health, restart_application, start_application, stop_application, create_integration_model, get_job_metrics, get_task_metrics, restart_adapter, start_adapter, stop_adapter, get_task_metrics_for_app, get_task_metrics_for_task, get_task_metrics_for_workflow*
 
 **Platform Builder:**
-*Use Cases: Asset development, Asset promotion*
+*Use Cases: Asset development, Asset promotion, Workflow metrics analysis, Resource lifecycle management*
 
 ```bash
-itential-mcp --include-tags "operations_manager,automation_studio,configuration_manager"
+itential-mcp --include-tags "operations_manager,automation_studio,configuration_manager,workflow_engine,lifecycle_manager"
 ```
 
-*Available Tools: create_resource, get_workflows, describe_command_template, run_command_template, run_command, render_template, create_device_group, get_resources, describe_resource, get_instances, backup_device_configuration, apply_device_configuration, get_compliance_plans, run_compliance_plan, get_adapters, get_applications, get_integration_models*
+*Available Tools: create_resource, get_workflows, describe_command_template, run_command_template, run_command, render_template, create_device_group, get_resources, describe_resource, get_instances, backup_device_configuration, apply_device_configuration, get_compliance_plans, run_compliance_plan, get_adapters, get_applications, get_integration_models, get_job_metrics, get_job_metrics_for_workflow, get_task_metrics, get_task_metrics_for_workflow, get_task_metrics_for_app, get_task_metrics_for_task, describe_instance, run_action*
 
 **Automation Developer:**
-*Use Cases: Asset development, Asset promotion*
+*Use Cases: Asset development, Asset promotion, External service management*
 
 ```bash
-itential-mcp --include-tags "operations_manager,automation_studio"
+itential-mcp --include-tags "operations_manager,gateway_manager"
 ```
 
-*Available Tools: create_resource, render_template, run_command*
+*Available Tools: create_resource, get_services, get_gateways, run_service*
 
 **Platform Operator:**
 *Use Cases: Execute jobs, Run compliance, Consume data*
