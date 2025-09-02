@@ -8,7 +8,7 @@ CONTAINER_TAG ?= itential-mcp:devel
 
 .DEFAULT_GOAL := help
 
-.PHONY: test coverage clean lint security premerge container
+.PHONY: build clean container coverage lint security permerge test
 
 # The help target displays a help message that includes the avialable targets
 # in this `Makefile`.  It is the default target if `make` is run without any
