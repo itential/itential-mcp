@@ -81,6 +81,19 @@ cd itential-mcp
 make build
 ```
 
+For development, you can run the server directly using `uv`:
+
+```bash
+# Run with stdio transport (default)
+uv run itential-mcp
+
+# Run with SSE transport
+uv run itential-mcp --transport sse --host 0.0.0.0 --port 8000
+
+# Run with specific configuration
+uv run itential-mcp --include-tags "system,devices" --exclude-tags "experimental"
+```
+
 ### Build Container Image
 Build and run as a container:
 
