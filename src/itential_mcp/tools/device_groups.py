@@ -7,15 +7,17 @@ from pydantic import Field
 
 from fastmcp import Context
 
+from itential_mcp.models import device_groups as models
 
-__tags__ = ("configuration_manager", "devices")
+
+__tags__ = ("configuration_manager",)
 
 
 async def get_device_groups(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
     )],
-) -> list[dict]:
+) -> models.GetDeviceGroupsResponse:
     """
     Get all device groups from Itential Platform.
 
@@ -27,7 +29,7 @@ async def get_device_groups(
         ctx (Context): The FastMCP Context object
 
     Returns:
-        list[dict]: List of device group objects with the following fields:
+        GetDeviceGroupsResponse: List of device group objects with the following fields:
             - id: Unique identifier for the group
             - name: Device group name
             - devices: List of device names in this group
@@ -37,29 +39,16 @@ async def get_device_groups(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    results = list()
+    data = await client.configuration_manager.get_device_groups()
 
-    res = await client.get("/configuration_manager/deviceGroups")
-
-    data = res.json()
-
+    results = []
     for ele in data:
-        results.append({
-            "id": ele["id"],
-            "name": ele["name"],
-            "devices": ele["devices"],
-            "description": ele["description"],
-        })
+        device_group = models.DeviceGroupElement(
+            **ele
+        )
+        results.append(device_group)
 
-    #for ele in data:
-    #    for gbac in ("read", "write"):
-    #        items = list()
-    #        for item in ele["gbac"][gbac]:
-    #            items.append(await functions.group_id_to_name(ctx, item))
-    #        ele["gbac"][gbac] = items
-    #    results.append(ele)
-
-    return results
+    return models.GetDeviceGroupsResponse(results)
 
 
 async def create_device_group(
@@ -72,12 +61,12 @@ async def create_device_group(
     description: Annotated[str | None, Field(
         description="Short description of the device group",
         default=None
-    )],
+    )] = None,
     devices: Annotated[list | None, Field(
         description="List of devices to add to the group",
         default=None
-    )]
-) -> dict:
+    )] = None
+) -> models.CreateDeviceGroupResponse:
     """
     Create a new device group on Itential Platform.
 
@@ -91,7 +80,7 @@ async def create_device_group(
         devices (list | None): List of device names to include in the group. Use `get_devices` to see available devices. (optional)
 
     Returns:
-        dict: Creation operation result with the following fields:
+        CreateDeviceGroupResponse: Creation operation result with the following fields:
             - id: Unique identifier for the created device group
             - name: Name of the device group
             - message: Status message describing the create operation
@@ -104,10 +93,10 @@ async def create_device_group(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    groups = await get_device_groups(ctx)
+    groups_response = await get_device_groups(ctx)
 
-    for ele in groups:
-        if ele["name"] == name:
+    for ele in groups_response.root:
+        if ele.name == name:
             raise ValueError(f"device group {name} already exists")
 
     body = {
@@ -117,10 +106,119 @@ async def create_device_group(
 
     if devices:
         body["deviceNames"] = ",".join(devices)
+    else:
+        body["deviceNames"] = ""
 
     res = await client.post(
         "/configuration_manager/devicegroup",
         json=body
     )
 
-    return res.json()
+    data = res.json()
+    return models.CreateDeviceGroupResponse(
+        **data
+    )
+
+
+async def add_devices_to_group(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    name: Annotated[str, Field(
+        description="The name of the device group to add devices to"
+    )],
+    devices: Annotated[list | None, Field(
+        description="List of devices to add to the group",
+        default=None
+    )] = None
+) -> models.AddDevicesToGroupResponse:
+    """
+    Add one or more devices to a device group
+
+    This tool will add one or more devices to a named device group defined
+    in Itential Platform.  The name argument specifies the name of the device
+    group to add the list of devices to.  The name must be a valid device
+    group.  The list of named device groups can be found using the
+    get_device_groups tool.
+
+    The devices argument provides the list of devices to be added to the
+    named device group.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+        name (str): The name of the device group to add devices too
+
+        devices (list[str]): The list of device names to add to the
+            device group
+
+    Returns:
+        dict: An object representing the status of the operation with the
+            following fields:
+
+            - status: Message the provides the status of the operation
+            - message: Short description of the status of the operation
+
+    Raises:
+        None
+
+    """
+    await ctx.info("inside add_devices_to_group(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    data = await client.configuration_manager.add_devices_to_group(name, devices)
+
+    return models.AddDevicesToGroupResponse(
+        status=data["status"],
+        message=data.get("message", "Devices added successfully")
+    )
+
+async def remove_devices_from_group(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    name: Annotated[str, Field(
+        description="The name of the device group to remove devices from"
+    )],
+    devices: Annotated[list[str] | None, Field(
+        description="List of devices to remove from the group"
+    )]
+) -> models.RemoveDevicesFromGroupResponse:
+    """
+    Remove one or more devices from a device group
+
+    This tool will remove one or more devices from a named device group.
+    The name argument specifies the name of the device group to remove the
+    list of devices from.  The name must be a valid device group.  The
+    list of device groups can be found using the get_device_groups
+    tool.
+
+    The devices argument provides the list of devices to be removed from
+    the device group.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+        name (str): The name of the device group to remove devices from
+
+        devices (list[str]): The list of device names to remove from the
+            device group
+
+    Returns:
+        RemoveDevicesFromGroupResponse: An object representing the status of the operation with the
+            following fields:
+
+    Raises:
+        None
+    """
+    await ctx.info("inside remove_devices_from_group(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    data = await client.configuration_manager.remove_devices_from_group(name, devices)
+
+    return models.RemoveDevicesFromGroupResponse(
+        status=data["status"],
+        message=data.get("message", "Devices removed successfully")
+    )
