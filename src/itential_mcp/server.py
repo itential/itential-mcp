@@ -11,6 +11,12 @@ from typing import Any
 
 from fastmcp import FastMCP
 
+from fastmcp.utilities import logging
+
+from fastmcp.server.middleware.logging import LoggingMiddleware
+from fastmcp.server.middleware.timing import DetailedTimingMiddleware
+from fastmcp.server.middleware.error_handling import ErrorHandlingMiddleware
+
 from . import client
 from . import config
 from . import cache
@@ -92,6 +98,11 @@ def new(cfg: config.Config) -> FastMCP:
         exclude_tags=cfg.server.get("exclude_tags")
     )
 
+    logger = logging.get_logger(__name__)
+
+    srv.add_middleware(ErrorHandlingMiddleware(logger=logger))
+    srv.add_middleware(DetailedTimingMiddleware(logger=logger))
+    srv.add_middleware(LoggingMiddleware(logger=logger))
 
     for f, tags in toolutils.itertools():
         kwargs = {"tags": tags}
@@ -100,6 +111,7 @@ def new(cfg: config.Config) -> FastMCP:
             schema = toolutils.get_json_schema(f)
             if schema["type"] == "object":
                 kwargs["output_schema"] = toolutils.get_json_schema(f)
+
         except ValueError:
             # tool does not have an output_schema defined
             pass
@@ -158,8 +170,14 @@ async def run() -> int:
                 "port": cfg.server.get("port"),
                 "log_level": cfg.server.get("log_level")
             })
+
             if kwargs["transport"] == "http":
                 kwargs["path"] = cfg.server.get("path")
+
+        if cfg.server.get("log_level"):
+            logging.configure_logging(
+                level=cfg.server.get("log_level"),
+            )
 
         await mcp.run_async(**kwargs)
 
