@@ -10,10 +10,10 @@ from pydantic import BaseModel, RootModel, Field
 
 class GetResourcesElement(BaseModel):
     """Represents a single resource model configuration from the lifecycle manager.
-    
+
     This model defines the structure for resource model information returned
     from the platform's lifecycle manager API endpoints.
-    
+
     Attributes:
         name: The unique identifier name of the resource model.
         description: Optional human-readable description of the resource model's
@@ -46,11 +46,11 @@ class GetResourcesElement(BaseModel):
 
 class GetResourcesResponse(RootModel):
     """Response model for resource collection endpoints.
-    
+
     This root model wraps a list of resource elements, providing a
     standardized response format for API endpoints that return multiple
     resource models from the lifecycle manager.
-    
+
     Attributes:
         root: A list of GetResourcesElement objects representing all
             available resource models on the platform.
@@ -72,10 +72,10 @@ class GetResourcesResponse(RootModel):
 
 class CreateResourceResponse(BaseModel):
     """Response model for resource creation operations.
-    
+
     This model represents the response returned when creating a new resource
     instance through the lifecycle manager API.
-    
+
     Note:
         Currently a placeholder model that can be extended with specific
         response fields as needed by the API implementation.
@@ -85,10 +85,10 @@ class CreateResourceResponse(BaseModel):
 
 class Action(BaseModel):
     """Represents an action that can be performed on a resource model.
-    
+
     This model defines the structure for actions available within a resource
     model, including the action metadata and input schema requirements.
-    
+
     Attributes:
         name: The configured name identifier for this action.
         type: The type of operation this action performs (create, update, delete).
@@ -133,10 +133,10 @@ class Action(BaseModel):
 
 class DescribeResourceResponse(BaseModel):
     """Response model for detailed resource description endpoints.
-    
+
     This model provides comprehensive information about a specific resource
     model, including its metadata and available actions.
-    
+
     Attributes:
         name: The unique identifier name of the resource model.
         description: Human-readable description of the resource model's
@@ -184,10 +184,10 @@ class DescribeResourceResponse(BaseModel):
 
 class LastAction(BaseModel):
     """Represents the last action performed on a resource instance.
-    
+
     This model captures information about the most recent lifecycle action
     that was executed on a resource instance.
-    
+
     Attributes:
         name: The name of the action that was performed.
         type: The type of action (create, update, delete).
@@ -230,10 +230,10 @@ class LastAction(BaseModel):
 
 class GetInstancesElement(BaseModel):
     """Represents a single resource instance from the lifecycle manager.
-    
-    This model defines the structure for resource instance information 
+
+    This model defines the structure for resource instance information
     returned from the platform's lifecycle manager API endpoints.
-    
+
     Attributes:
         name: The unique identifier name of the resource instance.
         description: Optional human-readable description of the instance.
@@ -265,7 +265,7 @@ class GetInstancesElement(BaseModel):
     ]
 
     instance_data: Annotated[
-        Mapping[str, Any],
+        Mapping[str, Any] | None,
         Field(
             description = inspect.cleandoc(
                 """
@@ -289,11 +289,11 @@ class GetInstancesElement(BaseModel):
 
 class GetInstancesResponse(RootModel):
     """Response model for instance collection endpoints.
-    
+
     This root model wraps a list of instance elements, providing a
     standardized response format for API endpoints that return multiple
     resource instances from the lifecycle manager.
-    
+
     Attributes:
         root: A list of GetInstancesElement objects representing all
             instances of a specific resource model.
@@ -315,10 +315,10 @@ class GetInstancesResponse(RootModel):
 
 class DescribeInstanceResponse(BaseModel):
     """Response model for detailed instance description endpoints.
-    
+
     This model provides comprehensive information about a specific resource
     instance, including its data and action history.
-    
+
     Attributes:
         description: Human-readable description of the instance.
         instance_data: Data object associated with this instance.
@@ -344,7 +344,8 @@ class DescribeInstanceResponse(BaseModel):
                 """
                 Data about the instance
                 """
-            )
+            ),
+            default = None
         )
     ]
 
@@ -362,10 +363,10 @@ class DescribeInstanceResponse(BaseModel):
 
 class RunActionResponse(BaseModel):
     """Response model for action execution endpoints.
-    
+
     This model represents the response returned when executing an action
     on a resource instance through the lifecycle manager API.
-    
+
     Attributes:
         message: Status message about the action execution.
         start_time: The time when the action was started on the server.
