@@ -43,7 +43,7 @@ async def get_workflows(
     Notes:
         - Use the 'name' field as the workflow identifier for most operations
         - Use the 'route_name' field specifically for `start_workflow` function
-        - The 'schema' field defines required input parameters for workflow execution
+        - The 'input_schema' field defines required input parameters for workflow execution
         - Only enabled workflows are returned by this function
     """
     await ctx.info("inside get_workflows(...)")
@@ -54,7 +54,7 @@ async def get_workflows(
 
     workflow_elements = []
 
-    for item in data.get("data") or list():
+    for item in data:
         if item.get("lastExecuted") is not None:
             lastExecuted = timeutils.epoch_to_timestamp(item["lastExecuted"])
         else:
@@ -64,7 +64,7 @@ async def get_workflows(
             **{
                 "name": item.get("name"),
                 "description": item.get("description"),
-                "schema": item.get("schema"),
+                "input_schema": item.get("schema"),
                 "route_name": item.get("routeName"),
                 "last_executed": lastExecuted,
             }

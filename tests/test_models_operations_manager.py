@@ -21,15 +21,13 @@ class TestWorkflowElement:
     def test_workflow_element_basic(self):
         """Test basic WorkflowElement creation"""
         element = WorkflowElement(
-            _id="workflow-123",
             name="test-workflow",
             description="A test workflow",
-            schema={"type": "object", "properties": {"input": {"type": "string"}}},
+            input_schema={"type": "object", "properties": {"input": {"type": "string"}}},
             route_name="test-route",
             last_executed="2025-01-01T00:00:00Z"
         )
         
-        assert element.object_id == "workflow-123"
         assert element.name == "test-workflow"
         assert element.description == "A test workflow"
         assert element.input_schema == {"type": "object", "properties": {"input": {"type": "string"}}}
@@ -39,11 +37,9 @@ class TestWorkflowElement:
     def test_workflow_element_required_only(self):
         """Test WorkflowElement with required fields only"""
         element = WorkflowElement(
-            _id="workflow-123",
             name="test-workflow"
         )
         
-        assert element.object_id == "workflow-123"
         assert element.name == "test-workflow"
         assert element.description is None
         assert element.input_schema is None
@@ -53,52 +49,39 @@ class TestWorkflowElement:
     def test_workflow_element_none_fields(self):
         """Test WorkflowElement with explicit None for optional fields"""
         element = WorkflowElement(
-            _id="workflow-123",
             name="test-workflow",
             description=None,
-            schema=None,
+            input_schema=None,
             route_name=None,
             last_executed=None
         )
         
-        assert element.object_id == "workflow-123"
         assert element.name == "test-workflow"
         assert element.description is None
         assert element.input_schema is None
         assert element.route_name is None
         assert element.last_executed is None
 
-    def test_workflow_element_missing_required_id(self):
-        """Test WorkflowElement validation fails with missing _id"""
-        with pytest.raises(ValidationError) as exc_info:
-            WorkflowElement(name="test-workflow")
-        
-        errors = exc_info.value.errors()
-        assert len(errors) == 1
-        assert errors[0]["type"] == "missing"
-        assert errors[0]["loc"] == ("_id",)
-
     def test_workflow_element_missing_required_name(self):
         """Test WorkflowElement validation fails with missing name"""
         with pytest.raises(ValidationError) as exc_info:
-            WorkflowElement(_id="workflow-123")
+            WorkflowElement()
         
         errors = exc_info.value.errors()
         assert len(errors) == 1
         assert errors[0]["type"] == "missing"
         assert errors[0]["loc"] == ("name",)
 
+
     def test_workflow_element_empty_string_values(self):
         """Test WorkflowElement with empty string values"""
         element = WorkflowElement(
-            _id="",
             name="",
             description="",
             route_name="",
             last_executed=""
         )
         
-        assert element.object_id == ""
         assert element.name == ""
         assert element.description == ""
         assert element.route_name == ""
@@ -118,18 +101,16 @@ class TestGetWorkflowsResponse:
     def test_get_workflows_response_with_elements(self):
         """Test GetWorkflowsResponse with workflow elements"""
         element1 = WorkflowElement(
-            _id="workflow-1", name="workflow-one"
+            name="workflow-one"
         )
         element2 = WorkflowElement(
-            _id="workflow-2", name="workflow-two", description="Second workflow"
+            name="workflow-two", description="Second workflow"
         )
         
         response = GetWorkflowsResponse(root=[element1, element2])
         
         assert len(response.root) == 2
-        assert response.root[0].object_id == "workflow-1"
         assert response.root[0].name == "workflow-one"
-        assert response.root[1].object_id == "workflow-2"
         assert response.root[1].name == "workflow-two"
         assert response.root[1].description == "Second workflow"
 
