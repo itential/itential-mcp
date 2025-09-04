@@ -25,18 +25,6 @@ class WorkflowElement(BaseModel):
         last_executed: ISO 8601 timestamp of last execution (null if never executed).
     """
 
-    object_id: Annotated[
-        str,
-        Field(
-            alias="_id",
-            description = inspect.cleandoc(
-                """
-                Unique identifier for the workflow assiged by Itential Platform
-                """
-            )
-        )
-    ]
-
     name: Annotated[
         str,
         Field(
@@ -63,7 +51,6 @@ class WorkflowElement(BaseModel):
     input_schema: Annotated[
         Mapping[str, Any] | None,
         Field(
-            alias="schema",
             description = inspect.cleandoc(
                 """
                 Input schema for workflow parameters (JSON Schema draft-07 format)
