@@ -10,6 +10,8 @@ import ipsdk
 from ipsdk.platform import AsyncPlatform
 from ipsdk.connection import Response
 
+from fastmcp.utilities import logging
+
 from . import config
 from . import response
 from . import exceptions
@@ -17,7 +19,7 @@ from . import exceptions
 
 class PlatformClient(object):
     """Client for connecting to and interacting with Itential Platform.
-    
+
     This client wraps the ipsdk AsyncPlatform client to provide standardized
     HTTP methods for API communication and automatic service discovery.
     It handles authentication, connection management, and returns Response objects.
@@ -25,16 +27,16 @@ class PlatformClient(object):
 
     def __init__(self):
         """Initialize the PlatformClient with connection and service plugins.
-        
+
         Creates an AsyncPlatform client connection and dynamically loads
         all service plugins from the services directory.
-        
+
         Args:
             None
-            
+
         Returns:
             None
-            
+
         Raises:
             Exception: If client initialization or plugin loading fails.
         """
@@ -43,16 +45,16 @@ class PlatformClient(object):
 
     def _init_client(self) -> AsyncPlatform:
         """Initialize the client connection to Itential Platform.
-        
+
         Creates an AsyncPlatform client using configuration settings
         from the platform configuration.
-        
+
         Args:
             None
-            
+
         Returns:
             AsyncPlatform: An instance of AsyncPlatform configured for async operations.
-            
+
         Raises:
             Exception: If platform client initialization fails.
         """
@@ -61,22 +63,24 @@ class PlatformClient(object):
 
     def _init_plugins(self):
         """Dynamically load service plugins from the services directory.
-        
+
         Discovers and imports Python modules from the services directory,
         instantiates their Service classes, and registers them as attributes
         on the client instance.
-        
+
         Args:
             None
-            
+
         Returns:
             None
-            
+
         Raises:
             ImportError: If a service module cannot be loaded.
             AttributeError: If a service module lacks a Service class.
             Exception: If service instantiation fails.
         """
+        logger = logging.get_logger(__name__)
+
         services_path = pathlib.Path(__file__).resolve().parent / "services"
 
         # Early return if services directory doesn't exist
@@ -85,7 +89,8 @@ class PlatformClient(object):
 
         # Get Python files, excluding private modules and __pycache__
         python_files = [
-            f for f in services_path.iterdir()
+            f
+            for f in services_path.iterdir()
             if f.is_file() and f.suffix == ".py" and not f.name.startswith("_")
         ]
 
@@ -107,24 +112,22 @@ class PlatformClient(object):
                 service_instance = module.Service(self.client)
                 setattr(self, service_instance.name, service_instance)
 
-            except (ImportError, AttributeError, Exception) as exc:
-                # Log error but continue loading other services
-                # Consider adding proper logging here in the future
-                print(exc)
+            except (ImportError, AttributeError, Exception):
+                logger.warning(f"error loading client service: {module_name}")
                 continue
 
     async def _make_response(self, res: Response) -> response.Response:
         """Create a response object and return it.
-        
+
         Wraps the ipsdk Response object in our custom Response class
         to provide consistent interface for handling API responses.
-        
+
         Args:
             res (Response): The response object returned from the HTTP API request.
-            
+
         Returns:
             response.Response: A wrapped HTTP Response object.
-            
+
         Raises:
             None
         """
@@ -135,28 +138,29 @@ class PlatformClient(object):
         method: str,
         path: str,
         params: dict = None,
-        json: str | bytes | dict | list | None = None
+        json: str | bytes | dict | list | None = None,
     ) -> response.Response:
-        """
-        Send the request to the server and return the response
+        """Send an HTTP request to the server and return the response.
+
+        Executes an HTTP request using the specified method and parameters,
+        handling errors and wrapping the response in a standardized format.
 
         Args:
             method (str): The HTTP method to invoke. This should be one of
-                "GET", "POST", "PUT", "DELETE"
-
-            path (str): The full URL path to send the reques to
-
-            params (dict): A Python dict objec to be converted into a query
-                string and appeneded to the URL
-
-            json (str|bytes|dict|list): A Python object that can be serialized
-                into a JSON object.
+                "GET", "POST", "PUT", "DELETE".
+            path (str): The full URL path to send the request to.
+            params (dict | None): A Python dict object to be converted into a query
+                string and appended to the URL. Defaults to None.
+            json (str | bytes | dict | list | None): A Python object that can be serialized
+                into a JSON object and sent as the request body. Defaults to None.
 
         Returns:
-            Response: The HTTP response from the server
+            response.Response: The HTTP response from the server wrapped in our
+                custom Response class.
 
         Raises:
-            None
+            exceptions.ItentialMcpException: If there is an error communicating with
+                the server or if the API returns an error response.
         """
         try:
             res = await self.client._send_request(method, path, params, json)
@@ -164,29 +168,25 @@ class PlatformClient(object):
             raise exceptions.ItentialMcpException(exc.response.text)
         return await self._make_response(res)
 
-    async def get(
-        self,
-        path: str,
-        params: dict | None = None
-    ) -> response.Response:
-        """
-        Send a HTTP GET request to the server
+    async def get(self, path: str, params: dict | None = None) -> response.Response:
+        """Send an HTTP GET request to the server.
+
+        Performs an HTTP GET request to the specified path with optional
+        query parameters.
 
         Args:
-            path (str): The full path to send the HTTP request to
-
-            params (dict): A Python dict object to be converted to a query
-                string and appended to the path
+            path (str): The full path to send the HTTP request to.
+            params (dict | None): A Python dict object to be converted to a query
+                string and appended to the path. Defaults to None.
 
         Returns:
-            Response: An HTTP Response object from the server
+            response.Response: An HTTP Response object from the server.
 
         Raises:
-            None
+            exceptions.ItentialMcpException: If there is an error communicating with
+                the server or if the API returns an error response.
         """
-        return await self.send_request(
-            method="GET", path=path, params=params
-        )
+        return await self.send_request(method="GET", path=path, params=params)
 
     async def post(
         self,
@@ -194,23 +194,24 @@ class PlatformClient(object):
         params: dict | None = None,
         json: str | dict | list | None = None,
     ) -> response.Response:
-        """
-        Send a HTTP POST request to the server
+        """Send an HTTP POST request to the server.
+
+        Performs an HTTP POST request to the specified path with optional
+        query parameters and JSON body data.
 
         Args:
-            path (str): The full path to send the HTTP request to
-
-            params (dict): A Python dict object to be converted to a query
-                string and appended to the path
-
-            json (str | dict | list): A Python object that can be serialized
-                to a JSON string and sent as the body of the request
+            path (str): The full path to send the HTTP request to.
+            params (dict | None): A Python dict object to be converted to a query
+                string and appended to the path. Defaults to None.
+            json (str | dict | list | None): A Python object that can be serialized
+                to a JSON string and sent as the body of the request. Defaults to None.
 
         Returns:
-            Response: An HTTP Response object from the server
+            response.Response: An HTTP Response object from the server.
 
         Raises:
-            None
+            exceptions.ItentialMcpException: If there is an error communicating with
+                the server or if the API returns an error response.
         """
         return await self.send_request(
             method="POST", path=path, params=params, json=json
@@ -223,17 +224,17 @@ class PlatformClient(object):
         json: str | dict | list | None = None,
     ) -> response.Response:
         """Send a HTTP PUT request to the server.
-        
+
         Args:
             path (str): The full path to send the HTTP request to.
             params (dict | None): A Python dict object to be converted to a query
                 string and appended to the path. Defaults to None.
             json (str | dict | list | None): A Python object that can be serialized
                 to a JSON string and sent as the body of the request. Defaults to None.
-                
+
         Returns:
             response.Response: An HTTP Response object from the server.
-            
+
         Raises:
             exceptions.ItentialMcpException: If the HTTP request fails.
         """
@@ -247,18 +248,16 @@ class PlatformClient(object):
         params: dict | None = None,
     ) -> response.Response:
         """Send a HTTP DELETE request to the server.
-        
+
         Args:
             path (str): The full path to send the HTTP request to.
             params (dict | None): A Python dict object to be converted to a query
                 string and appended to the path. Defaults to None.
-                
+
         Returns:
             response.Response: An HTTP Response object from the server.
-            
+
         Raises:
             exceptions.ItentialMcpException: If the HTTP request fails.
         """
-        return await self.send_request(
-            method="DELETE", path=path, params=params
-        )
+        return await self.send_request(method="DELETE", path=path, params=params)

@@ -3,14 +3,15 @@
 
 import os
 import configparser
+import re
 
 from functools import lru_cache
 from pathlib import Path
 
-from typing import Literal
+from typing import Literal, List
 from dataclasses import fields
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic.dataclasses import dataclass
 
 from . import env
@@ -41,6 +42,88 @@ def options(*args, **kwargs) -> dict:
         "x-itential-mcp-arguments": args,
         "x-itential-mcp-options": kwargs
     }
+
+
+def validate_tool_name(tool_name: str) -> str:
+    """
+    Validate that a tool name follows the required naming convention.
+
+    Tool names must start with a letter and only contain letters, numbers,
+    and underscores. This ensures compatibility with Python function naming
+    and prevents injection attacks.
+
+    Args:
+        tool_name (str): The tool name to validate
+
+    Returns:
+        str: The validated tool name
+
+    Raises:
+        ValueError: If the tool name does not match the required pattern
+    """
+    if not tool_name:
+        raise ValueError("Tool name cannot be empty")
+    
+    pattern = r'^[a-zA-Z][a-zA-Z0-9_]*$'
+    if not re.match(pattern, tool_name):
+        raise ValueError(
+            f"Tool name '{tool_name}' is invalid. Tool names must start with a letter "
+            "and only contain letters, numbers, and underscores."
+        )
+    
+    return tool_name
+
+
+@dataclass(frozen=True)
+class Tool(object):
+
+    name: str = Field(
+        description = "The name of the asset in Itential Platform",
+    )
+
+    tool_name: str = Field(
+        description = "The tool name that is exposed"
+    )
+
+    type: Literal["endpoint"] = Field(
+        description = "The tool type"
+    )
+
+    description: str = Field(
+        description = "Description of this tool",
+        default = None
+    )
+
+    tags: str = Field(
+        description = "List of comma separated tags applied to this tool",
+        default = None
+    )
+
+    @field_validator('tool_name')
+    @classmethod
+    def validate_tool_name_field(cls, v: str) -> str:
+        """
+        Validate tool_name field using the validate_tool_name function.
+
+        Args:
+            v (str): The tool_name value to validate
+
+        Returns:
+            str: The validated tool_name
+
+        Raises:
+            ValueError: If the tool_name is invalid
+        """
+        return validate_tool_name(v)
+
+
+@dataclass(frozen=True)
+class EndpointTool(Tool):
+
+    automation: str = Field(
+        description = "The name of the automation the trigger is associated with"
+    )
+
 
 @dataclass(frozen=True)
 class Config(object):
@@ -194,10 +277,15 @@ class Config(object):
         )
     )
 
+    tools: List[Tool] = Field(
+        description = "List of Itential Platform assets to be exposed as tools",
+        default_factory = list
+    )
+
     @property
     def server(self) -> dict:
         """Get server configuration as a dictionary.
-        
+
         Returns:
             dict: Server configuration parameters including transport, host, port,
                 path, log level, and tag filtering settings.
@@ -215,7 +303,7 @@ class Config(object):
     @property
     def platform(self) -> dict:
         """Get platform configuration as a dictionary.
-        
+
         Returns:
             dict: Platform configuration parameters including connection settings,
                 authentication credentials, and timeout values.
@@ -232,18 +320,7 @@ class Config(object):
             "timeout": self.platform_timeout
         }
 
-    def _coerce_to_set(self, value: str) -> set:
-        """Convert a comma-separated string to a set of trimmed values.
-        
-        Args:
-            value (str): A comma-separated string to convert to a set.
-            
-        Returns:
-            set: A set containing the trimmed individual values.
-            
-        Raises:
-            AttributeError: If value is None or not a string.
-        """
+    def _coerce_to_set(self, value) -> list:
         items = set()
         for ele in value.split(","):
             items.add(ele.strip())
@@ -283,15 +360,34 @@ def get() -> Config:
         cf = configparser.ConfigParser()
         cf.read(conf_file)
 
+        tools = []
+
         for item in cf.sections():
-            for key, value in cf.items(item):
-                key = f"{item}_{key}"
-                data[key] = value
+            if item.startswith("tool:"):
+                _, tool_name = item.split(":")
+
+                t = {"tool_name": tool_name}
+
+                for key, value in cf.items(item):
+                    t[key] = value
+
+                if t["type"] == "endpoint":
+                    tools.append(EndpointTool(**t))
+                else:
+                    tools.append(Tool(**t))
+
+            else:
+                for key, value in cf.items(item):
+                    key = f"{item}_{key}"
+                    data[key] = value
+
+        data["tools"] = tools
 
     for item in fields(Config):
         envkey = f"ITENTIAL_MCP_{item.name}".upper()
         if envkey in os.environ:
             value = ", ".join(os.environ[envkey].split(","))
             data[item.name] = value
+
 
     return Config(**data)

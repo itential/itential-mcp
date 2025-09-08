@@ -165,3 +165,38 @@
 # Environment variable: ITENTIAL_MCP_PLATFORM_TIMEOUT
 #
 # timeout = 30
+
+
+# Dynamic Tool Configuration
+# ===========================
+# 
+# The following sections define dynamic tools that expose Itential Platform
+# workflow triggers as MCP tools. Each tool section must start with "tool:"
+# followed by a unique identifier. These tools are automatically registered
+# with the MCP server at startup.
+
+# The value for tool_name must be unique in the configuration 
+[tool:<tool_name>]
+
+# The tool type - currently only "endpoint" is supported for workflow triggers
+# This is a required value
+# type = endpoint
+
+# The name of the trigger in Itential Platform (must match exactly).  This is a
+# required value
+#
+# name = Provision Network Device
+
+# The name of the automation containing the trigger  (must match exactly).
+# This is a required value when the type is set to `endpoint`
+# 
+# automation = Device Management
+
+# Optional description of what this tool does
+#
+# description = null
+
+# Optional comma-separated list of tags for tool filtering
+# Tools automatically get "dynamic" and the trigger name as tags
+#
+# tags = null
