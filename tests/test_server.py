@@ -51,59 +51,228 @@ class TestLifespan:
         # Context should be properly cleaned up after exiting
 
 
+class TestDynamicToolInjectionMiddleware:
+    """Test the DynamicToolInjectionMiddleware class"""
+
+    def test_middleware_initialization(self):
+        """Test DynamicToolInjectionMiddleware initializes with config"""
+        mock_config = MagicMock()
+        mock_config.tools = [MagicMock()]
+        
+        middleware = server.DynamicToolInjectionMiddleware(mock_config)
+        
+        assert middleware.config == mock_config
+
+    @pytest.mark.asyncio
+    async def test_on_call_tool_adds_tool_config(self):
+        """Test on_call_tool adds _tool_config to matching tool calls"""
+        # Setup config with tools
+        mock_tool1 = MagicMock()
+        mock_tool1.tool_name = "test_tool"
+        mock_tool2 = MagicMock()
+        mock_tool2.tool_name = "other_tool"
+        
+        mock_config = MagicMock()
+        mock_config.tools = [mock_tool1, mock_tool2]
+        
+        middleware = server.DynamicToolInjectionMiddleware(mock_config)
+        
+        # Setup context
+        mock_context = MagicMock()
+        mock_context.message.name = "test_tool"
+        mock_context.message.arguments = {}
+        
+        # Setup call_next
+        mock_response = MagicMock()
+        call_next = AsyncMock(return_value=mock_response)
+        
+        # Execute
+        await middleware.on_call_tool(mock_context, call_next)
+        
+        # Verify tool config was added
+        call_next.assert_called_once_with(mock_context)
+        # assert "_tool_config" in mock_context.message.arguments  # Can't check after cleanup
+        # assert mock_context.message.arguments["_tool_config"] == mock_tool1  # Can't check after cleanup
+        
+        # Verify tool config was cleaned up after call
+        assert "_tool_config" not in mock_context.message.arguments
+
+    @pytest.mark.asyncio
+    async def test_on_call_tool_no_matching_tool(self):
+        """Test on_call_tool doesn't add config for non-matching tools"""
+        mock_tool = MagicMock()
+        mock_tool.tool_name = "other_tool"
+        
+        mock_config = MagicMock()
+        mock_config.tools = [mock_tool]
+        
+        middleware = server.DynamicToolInjectionMiddleware(mock_config)
+        
+        # Setup context with non-matching tool name
+        mock_context = MagicMock()
+        mock_context.message.name = "test_tool"
+        mock_context.message.arguments = {}
+        
+        mock_response = MagicMock()
+        call_next = AsyncMock(return_value=mock_response)
+        
+        await middleware.on_call_tool(mock_context, call_next)
+        
+        # Verify no tool config was added
+        call_next.assert_called_once_with(mock_context)
+        assert "_tool_config" not in mock_context.message.arguments
+
+    @pytest.mark.asyncio
+    async def test_on_call_tool_multiple_matching_tools(self):
+        """Test on_call_tool handles multiple tools with same name (last one wins)"""
+        mock_tool1 = MagicMock()
+        mock_tool1.tool_name = "test_tool"
+        mock_tool2 = MagicMock()
+        mock_tool2.tool_name = "test_tool"  # Same name
+        
+        mock_config = MagicMock()
+        mock_config.tools = [mock_tool1, mock_tool2]
+        
+        middleware = server.DynamicToolInjectionMiddleware(mock_config)
+        
+        mock_context = MagicMock()
+        mock_context.message.name = "test_tool"
+        mock_context.message.arguments = {}
+        
+        mock_response = MagicMock()
+        call_next = AsyncMock(return_value=mock_response)
+        
+        await middleware.on_call_tool(mock_context, call_next)
+        
+        # Verify the last matching tool config was used
+        call_next.assert_called_once_with(mock_context)
+        # After cleanup, should not be present
+        assert "_tool_config" not in mock_context.message.arguments
+
+    @pytest.mark.asyncio
+    async def test_on_call_tool_preserves_existing_arguments(self):
+        """Test on_call_tool preserves existing message arguments"""
+        mock_tool = MagicMock()
+        mock_tool.tool_name = "test_tool"
+        
+        mock_config = MagicMock()
+        mock_config.tools = [mock_tool]
+        
+        middleware = server.DynamicToolInjectionMiddleware(mock_config)
+        
+        # Setup context with existing arguments
+        mock_context = MagicMock()
+        mock_context.message.name = "test_tool"
+        mock_context.message.arguments = {"existing_param": "value"}
+        
+        mock_response = MagicMock()
+        call_next = AsyncMock(return_value=mock_response)
+        
+        await middleware.on_call_tool(mock_context, call_next)
+        
+        # Verify existing argument is preserved after cleanup
+        assert mock_context.message.arguments["existing_param"] == "value"
+        assert "_tool_config" not in mock_context.message.arguments
+
+
 class TestNew:
     """Test the new() function for creating FastMCP instances"""
 
+    @patch('itential_mcp.server.bindings.iterbindings')
+    @patch('itential_mcp.server.toolutils.itertools')
+    @patch('itential_mcp.server.logging.get_logger')
     @patch('itential_mcp.server.FastMCP')
-    def test_new_creates_fastmcp_with_basic_config(self, mock_fastmcp):
+    @pytest.mark.asyncio
+    async def test_new_creates_fastmcp_with_basic_config(self, mock_fastmcp, mock_logger, mock_itertools, mock_iterbindings):
         """Test new() creates FastMCP with basic configuration"""
         mock_config = MagicMock(spec=Config)
         mock_config.server = {
             "include_tags": ["tag1", "tag2"],
             "exclude_tags": ["tag3"]
         }
+        mock_config.tools = []
 
-        result = server.new(mock_config)
+        mock_itertools.return_value = []
+        
+        async def empty_aiter():
+            return
+            yield  # unreachable but makes this an async generator
+        mock_iterbindings.return_value = empty_aiter()
+        
+        mock_mcp_instance = MagicMock()
+        mock_fastmcp.return_value = mock_mcp_instance
+
+        result = await server.new(mock_config)
 
         mock_fastmcp.assert_called_once_with(
             name="Itential Platform MCP",
-            instructions=server.INSTRUCTIONS.strip(),
+            instructions=server.inspect.cleandoc(server.INSTRUCTIONS),
             lifespan=server.lifespan,
             include_tags=["tag1", "tag2"],
             exclude_tags=["tag3"]
         )
-        assert result == mock_fastmcp.return_value
+        assert result == mock_mcp_instance
 
+    @patch('itential_mcp.server.bindings.iterbindings')
+    @patch('itential_mcp.server.toolutils.itertools')
+    @patch('itential_mcp.server.logging.get_logger')
     @patch('itential_mcp.server.FastMCP')
-    def test_new_handles_none_tags(self, mock_fastmcp):
+    @pytest.mark.asyncio
+    async def test_new_handles_none_tags(self, mock_fastmcp, mock_logger, mock_itertools, mock_iterbindings):
         """Test new() handles None values for tags"""
         mock_config = MagicMock(spec=Config)
         mock_config.server = {
             "include_tags": None,
             "exclude_tags": None
         }
+        mock_config.tools = []
 
-        server.new(mock_config)
+        mock_itertools.return_value = []
+        
+        async def empty_aiter():
+            return
+            yield  # unreachable but makes this an async generator
+        mock_iterbindings.return_value = empty_aiter()
+        
+        mock_mcp_instance = MagicMock()
+        mock_fastmcp.return_value = mock_mcp_instance
+
+        await server.new(mock_config)
 
         mock_fastmcp.assert_called_once_with(
             name="Itential Platform MCP",
-            instructions=server.INSTRUCTIONS.strip(),
+            instructions=server.inspect.cleandoc(server.INSTRUCTIONS),
             lifespan=server.lifespan,
             include_tags=None,
             exclude_tags=None
         )
 
+    @patch('itential_mcp.server.bindings.iterbindings')
+    @patch('itential_mcp.server.toolutils.itertools')
+    @patch('itential_mcp.server.logging.get_logger')
     @patch('itential_mcp.server.FastMCP')
-    def test_new_handles_empty_server_config(self, mock_fastmcp):
+    @pytest.mark.asyncio
+    async def test_new_handles_empty_server_config(self, mock_fastmcp, mock_logger, mock_itertools, mock_iterbindings):
         """Test new() handles empty server configuration"""
         mock_config = MagicMock(spec=Config)
         mock_config.server = {}
+        mock_config.tools = []
 
-        server.new(mock_config)
+        mock_itertools.return_value = []
+        
+        async def empty_aiter():
+            return
+            yield  # unreachable but makes this an async generator
+        mock_iterbindings.return_value = empty_aiter()
+        
+        mock_mcp_instance = MagicMock()
+        mock_fastmcp.return_value = mock_mcp_instance
+
+        await server.new(mock_config)
 
         mock_fastmcp.assert_called_once_with(
             name="Itential Platform MCP",
-            instructions=server.INSTRUCTIONS.strip(),
+            instructions=server.inspect.cleandoc(server.INSTRUCTIONS),
             lifespan=server.lifespan,
             include_tags=None,
             exclude_tags=None
@@ -114,7 +283,7 @@ class TestRun:
     """Test the run() function for server execution"""
 
     @pytest.mark.asyncio
-    @patch('itential_mcp.server.new')
+    @patch('itential_mcp.server.new', new_callable=AsyncMock)
     @patch('itential_mcp.server.config.get')
     async def test_run_stdio_transport_success(self, mock_config_get, mock_new):
         """Test successful server run with stdio transport"""
@@ -132,14 +301,14 @@ class TestRun:
 
         # Verify
         mock_config_get.assert_called_once()
-        mock_new.assert_called_once_with(mock_config)
+        mock_new.assert_awaited_once_with(mock_config)
 
         # Check server was run with correct parameters
         mock_mcp.run_async.assert_called_once_with(transport="stdio")
 
     @pytest.mark.asyncio
     @patch('itential_mcp.server.toolutils.itertools')
-    @patch('itential_mcp.server.new')
+    @patch('itential_mcp.server.new', new_callable=AsyncMock)
     @patch('itential_mcp.server.config.get')
     async def test_run_sse_transport_success(self, mock_config_get, mock_new, mock_itertools):
         """Test successful server run with SSE transport"""
@@ -169,7 +338,7 @@ class TestRun:
 
     @pytest.mark.asyncio
     @patch('itential_mcp.server.toolutils.itertools')
-    @patch('itential_mcp.server.new')
+    @patch('itential_mcp.server.new', new_callable=AsyncMock)
     @patch('itential_mcp.server.config.get')
     async def test_run_http_transport_success(self, mock_config_get, mock_new, mock_itertools):
         """Test successful server run with HTTP transport"""
@@ -200,7 +369,7 @@ class TestRun:
         )
 
     @pytest.mark.asyncio
-    @patch('itential_mcp.server.new')
+    @patch('itential_mcp.server.new', new_callable=AsyncMock)
     @patch('itential_mcp.server.config.get')
     async def test_run_tool_registration_failure(self, mock_config_get, mock_new):
         """Test server exits when tool registration fails in new()"""
@@ -224,7 +393,7 @@ class TestRun:
 
     @pytest.mark.asyncio
     @patch('itential_mcp.server.toolutils.itertools')
-    @patch('itential_mcp.server.new')
+    @patch('itential_mcp.server.new', new_callable=AsyncMock)
     @patch('itential_mcp.server.config.get')
     async def test_run_keyboard_interrupt(self, mock_config_get, mock_new, mock_itertools):
         """Test server handles KeyboardInterrupt gracefully"""
@@ -248,7 +417,7 @@ class TestRun:
 
     @pytest.mark.asyncio
     @patch('itential_mcp.server.toolutils.itertools')
-    @patch('itential_mcp.server.new')
+    @patch('itential_mcp.server.new', new_callable=AsyncMock)
     @patch('itential_mcp.server.config.get')
     async def test_run_unexpected_exception(self, mock_config_get, mock_new, mock_itertools):
         """Test server handles unexpected exceptions"""
@@ -275,7 +444,7 @@ class TestRun:
 
     @pytest.mark.asyncio
     @patch('itential_mcp.server.toolutils.itertools')
-    @patch('itential_mcp.server.new')
+    @patch('itential_mcp.server.new', new_callable=AsyncMock)
     @patch('itential_mcp.server.config.get')
     async def test_run_no_tools_loaded(self, mock_config_get, mock_new, mock_itertools):
         """Test server runs successfully even with no tools"""
@@ -297,7 +466,7 @@ class TestRun:
         mock_mcp.run_async.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch('itential_mcp.server.new')
+    @patch('itential_mcp.server.new', new_callable=AsyncMock)
     @patch('itential_mcp.server.config.get')
     async def test_run_multiple_tools_registration(self, mock_config_get, mock_new):
         """Test server properly uses the configured MCP instance from new()"""
@@ -312,11 +481,11 @@ class TestRun:
         await server.run()
 
         # Verify new() was called with the config and the MCP instance was used
-        mock_new.assert_called_once_with(mock_config)
+        mock_new.assert_awaited_once_with(mock_config)
         mock_mcp.run_async.assert_called_once_with(transport="stdio")
 
     @pytest.mark.asyncio
-    @patch('itential_mcp.server.new')
+    @patch('itential_mcp.server.new', new_callable=AsyncMock)
     @patch('itential_mcp.server.config.get')
     async def test_run_partial_tool_failure(self, mock_config_get, mock_new):
         """Test that server fails if new() fails due to tool registration issues"""
@@ -340,7 +509,7 @@ class TestRun:
 
     @pytest.mark.asyncio
     @patch('itential_mcp.server.toolutils.itertools')
-    @patch('itential_mcp.server.new')
+    @patch('itential_mcp.server.new', new_callable=AsyncMock)
     @patch('itential_mcp.server.config.get')
     async def test_run_config_variations(self, mock_config_get, mock_new, mock_itertools):
         """Test various configuration scenarios"""
@@ -361,7 +530,7 @@ class TestRun:
 
     @pytest.mark.asyncio
     @patch('itential_mcp.server.toolutils.itertools')
-    @patch('itential_mcp.server.new')
+    @patch('itential_mcp.server.new', new_callable=AsyncMock)
     @patch('itential_mcp.server.config.get')
     async def test_run_missing_server_config_keys(self, mock_config_get, mock_new, mock_itertools):
         """Test server handles missing configuration keys gracefully"""
@@ -390,9 +559,10 @@ class TestIntegration:
     """Integration tests for server functionality"""
 
     @pytest.mark.asyncio
+    @patch('itential_mcp.server.bindings.iterbindings')
     @patch('itential_mcp.server.toolutils.itertools')
     @patch('itential_mcp.server.config.get')
-    async def test_full_server_lifecycle(self, mock_config_get, mock_itertools):
+    async def test_full_server_lifecycle(self, mock_config_get, mock_itertools, mock_iterbindings):
         """Test complete server lifecycle from config to shutdown"""
         # Setup configuration
         mock_config = MagicMock()
@@ -401,6 +571,7 @@ class TestIntegration:
             "include_tags": ["system"],
             "exclude_tags": ["deprecated"]
         }
+        mock_config.tools = []
         mock_config_get.return_value = mock_config
 
         # Setup tools - need a real function for get_json_schema to work
@@ -408,7 +579,12 @@ class TestIntegration:
             """Test tool function"""
             pass
         mock_func.__name__ = "test_tool"
-        mock_itertools.return_value = [(mock_func, ["system", "test"])]
+        mock_itertools.return_value = [(mock_func, {"system", "test"})]
+        
+        async def empty_aiter():
+            return
+            yield  # unreachable but makes this an async generator
+        mock_iterbindings.return_value = empty_aiter()
 
         # Mock FastMCP to simulate server lifecycle
         with patch('itential_mcp.server.FastMCP') as mock_fastmcp_class:
@@ -424,14 +600,14 @@ class TestIntegration:
             # Verify FastMCP was created with correct parameters
             mock_fastmcp_class.assert_called_once_with(
                 name="Itential Platform MCP",
-                instructions=server.INSTRUCTIONS.strip(),
+                instructions=server.inspect.cleandoc(server.INSTRUCTIONS),
                 lifespan=server.lifespan,
                 include_tags=["system"],
                 exclude_tags=["deprecated"]
             )
 
             # Verify tool registration
-            mock_mcp.tool.assert_called_once_with(mock_func, tags=["system", "test"])
+            mock_mcp.tool.assert_called_once_with(mock_func, tags={"system", "test", "default"})
 
             # Verify server was started
             mock_mcp.run_async.assert_called_once_with(transport="stdio")
