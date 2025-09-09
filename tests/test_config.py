@@ -7,6 +7,7 @@ import configparser
 import pytest
 
 from itential_mcp import config as config_module
+from itential_mcp.config import validate_tool_name, Tool, EndpointTool
 
 
 @pytest.fixture(autouse=True)
@@ -82,4 +83,159 @@ def test_config_platform_and_server_properties(monkeypatch):
     assert cfg.server["exclude_tags"] == {"experimental", "beta"}
     assert isinstance(cfg.platform, dict)
     assert "host" in cfg.platform
+
+
+class TestValidateToolName:
+    """Test cases for validate_tool_name function."""
+
+    def test_validate_tool_name_valid_names(self):
+        """Test validate_tool_name with valid tool names."""
+        valid_names = [
+            "tool",
+            "tool_name",
+            "tool123",
+            "myTool",
+            "my_tool_123",
+            "Tool",
+            "TOOL",
+            "a",
+            "A",
+            "tool_",
+            "tool__name",
+            "camelCase",
+            "PascalCase",
+            "snake_case",
+            "mixed123_Case",
+        ]
+        
+        for name in valid_names:
+            result = validate_tool_name(name)
+            assert result == name
+
+    def test_validate_tool_name_invalid_names(self):
+        """Test validate_tool_name with invalid tool names."""
+        invalid_names = [
+            "",  # empty string
+            "123tool",  # starts with number
+            "_tool",  # starts with underscore
+            "tool-name",  # contains hyphen
+            "tool.name",  # contains dot
+            "tool name",  # contains space
+            "tool@name",  # contains special character
+            "tool#name",  # contains special character
+            "tool$name",  # contains special character
+            "tool%name",  # contains special character
+            "tool&name",  # contains special character
+            "tool*name",  # contains special character
+            "tool+name",  # contains special character
+            "tool=name",  # contains equal sign
+            "tool/name",  # contains slash
+            "tool\\name",  # contains backslash
+            "tool|name",  # contains pipe
+            "tool<name",  # contains less than
+            "tool>name",  # contains greater than
+            "tool?name",  # contains question mark
+            "tool:name",  # contains colon
+            "tool;name",  # contains semicolon
+            "tool,name",  # contains comma
+            "tool[name",  # contains bracket
+            "tool]name",  # contains bracket
+            "tool{name",  # contains brace
+            "tool}name",  # contains brace
+            "tool(name",  # contains parenthesis
+            "tool)name",  # contains parenthesis
+            "tool'name",  # contains quote
+            'tool"name',  # contains double quote
+            "tool`name",  # contains backtick
+            "tool~name",  # contains tilde
+            "tool!name",  # contains exclamation
+        ]
+        
+        for name in invalid_names:
+            with pytest.raises(ValueError) as exc_info:
+                validate_tool_name(name)
+            
+            if name == "":
+                assert "cannot be empty" in str(exc_info.value)
+            else:
+                assert "is invalid" in str(exc_info.value)
+                assert "must start with a letter" in str(exc_info.value)
+                assert "only contain letters, numbers, and underscores" in str(exc_info.value)
+
+    def test_validate_tool_name_edge_cases(self):
+        """Test validate_tool_name with edge cases."""
+        # Single character valid names
+        assert validate_tool_name("a") == "a"
+        assert validate_tool_name("Z") == "Z"
+        
+        # Very long valid name
+        long_name = "a" + "b" * 100 + "_123"
+        assert validate_tool_name(long_name) == long_name
+
+
+class TestToolDataclass:
+    """Test cases for Tool dataclass validation."""
+
+    def test_tool_valid_tool_name(self):
+        """Test Tool creation with valid tool_name."""
+        tool = Tool(
+            name="test-asset",
+            tool_name="valid_tool_name",
+            type="endpoint",
+            description="Test tool",
+            tags="test"
+        )
+        assert tool.tool_name == "valid_tool_name"
+
+    def test_tool_invalid_tool_name(self):
+        """Test Tool creation with invalid tool_name raises ValidationError."""
+        with pytest.raises(ValueError) as exc_info:
+            Tool(
+                name="test-asset",
+                tool_name="123invalid",
+                type="endpoint",
+                description="Test tool",
+                tags="test"
+            )
+        
+        assert "is invalid" in str(exc_info.value)
+
+    def test_tool_empty_tool_name(self):
+        """Test Tool creation with empty tool_name raises ValidationError."""
+        with pytest.raises(ValueError) as exc_info:
+            Tool(
+                name="test-asset",
+                tool_name="",
+                type="endpoint",
+                description="Test tool",
+                tags="test"
+            )
+        
+        assert "cannot be empty" in str(exc_info.value)
+
+    def test_endpoint_tool_valid_tool_name(self):
+        """Test EndpointTool creation with valid tool_name."""
+        tool = EndpointTool(
+            name="test-asset",
+            tool_name="valid_endpoint_tool",
+            type="endpoint",
+            automation="test-automation",
+            description="Test endpoint tool",
+            tags="test"
+        )
+        assert tool.tool_name == "valid_endpoint_tool"
+
+    def test_endpoint_tool_invalid_tool_name(self):
+        """Test EndpointTool creation with invalid tool_name raises ValidationError."""
+        with pytest.raises(ValueError) as exc_info:
+            EndpointTool(
+                name="test-asset",
+                tool_name="invalid-tool-name",
+                type="endpoint",
+                automation="test-automation",
+                description="Test endpoint tool",
+                tags="test"
+            )
+        
+        assert "is invalid" in str(exc_info.value)
 
