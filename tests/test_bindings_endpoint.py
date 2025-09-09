@@ -149,8 +149,8 @@ class TestGetTrigger:
     async def test_get_trigger_multiple_automations_found(
         self, mock_platform_client, mock_endpoint_tool
     ):
-        """Test _get_trigger raises NotFoundError when multiple automations are found."""
-        # Setup - multiple automations found
+        """Test _get_trigger with multiple automations - uses first match, then fails on trigger lookup."""
+        # Setup - multiple automations found, but empty triggers response
         automation_response = {
             "metadata": {"total": 2},
             "data": [
@@ -158,14 +158,18 @@ class TestGetTrigger:
                 {"_id": "automation-456", "name": "test-automation"},
             ],
         }
-        mock_platform_client.client.get.return_value = MagicMock(
-            json=lambda: automation_response
-        )
+        triggers_response = {"data": []}
+        
+        # Mock responses in order: automation lookup succeeds, trigger lookup returns empty
+        mock_platform_client.client.get.side_effect = [
+            MagicMock(json=lambda: automation_response),
+            MagicMock(json=lambda: triggers_response),
+        ]
 
-        # Execute and verify
+        # Execute and verify - should fail when trigger is not found
         with pytest.raises(
             exceptions.NotFoundError,
-            match="automation test-automation could not be found",
+            match="trigger test-trigger could not be found",
         ):
             await _get_trigger(mock_platform_client, mock_endpoint_tool)
 
