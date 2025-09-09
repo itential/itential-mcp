@@ -5,6 +5,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from itential_mcp.services.operations_manager import Service
+from itential_mcp import exceptions
 from ipsdk.platform import AsyncPlatform
 
 
@@ -562,10 +563,90 @@ class TestGetJobs:
         assert "starts-with[name]" not in params
 
     @pytest.mark.asyncio
-    async def test_get_jobs_project_not_implemented(self, service):
-        """Test get_jobs raises TypeError when project parameter is provided due to implementation bug"""
-        with pytest.raises(TypeError, match="'coroutine' object is not subscriptable"):
-            await service.get_jobs("Test Workflow", "test-project")
+    async def test_get_jobs_with_project_parameter(self, service):
+        """Test get_jobs with project parameter (project filtering functionality)"""
+        # Mock project lookup response
+        mock_project_response = MagicMock()
+        mock_project_response.json.return_value = {
+            "metadata": {"total": 1},
+            "data": [{"_id": "project-123", "name": "test-project"}]
+        }
+        
+        # Mock jobs response  
+        mock_jobs_response = MagicMock()
+        mock_jobs_response.json.return_value = {
+            "data": [
+                {
+                    "_id": "job-1",
+                    "name": "@project-123: Test Workflow",
+                    "description": "Project workflow job", 
+                    "status": "complete"
+                }
+            ],
+            "metadata": {"total": 1}
+        }
+        
+        service.client.get = AsyncMock(side_effect=[mock_project_response, mock_jobs_response])
+        
+        result = await service.get_jobs("Test Workflow", "test-project")
+        
+        assert len(result) == 1
+        assert result[0]["_id"] == "job-1"
+        assert result[0]["name"] == "@project-123: Test Workflow"
+        
+        # Verify both API calls were made
+        assert service.client.get.call_count == 2
+        
+        # Check project lookup call
+        first_call = service.client.get.call_args_list[0]
+        assert first_call[0] == ("/automation-studio/projects",)
+        assert first_call[1]["params"]["equals[name]"] == "Test Workflow"
+        
+        # Check jobs call with project filtering
+        second_call = service.client.get.call_args_list[1]
+        assert second_call[0] == ("/operations-manager/jobs",)
+        assert second_call[1]["params"]["equals[name]"] == "@project-123: Test Workflow"
+
+    @pytest.mark.asyncio
+    async def test_get_jobs_project_not_found(self, service):
+        """Test get_jobs raises NotFoundError when project is not found"""
+        # Mock empty project response
+        mock_project_response = MagicMock()
+        mock_project_response.json.return_value = {
+            "metadata": {"total": 0},
+            "data": []
+        }
+        
+        service.client.get = AsyncMock(return_value=mock_project_response)
+        
+        with pytest.raises(exceptions.NotFoundError, match="project nonexistent-project could not be found"):
+            await service.get_jobs("Test Workflow", "nonexistent-project")
+
+    @pytest.mark.asyncio
+    async def test_get_jobs_with_project_no_workflow_name(self, service):
+        """Test get_jobs with project parameter but no specific workflow name"""
+        # Mock project lookup response
+        mock_project_response = MagicMock()
+        mock_project_response.json.return_value = {
+            "metadata": {"total": 1},
+            "data": [{"_id": "project-456", "name": "test-project"}]
+        }
+        
+        # Mock jobs response  
+        mock_jobs_response = MagicMock()
+        mock_jobs_response.json.return_value = {
+            "data": [],
+            "metadata": {"total": 0}
+        }
+        
+        service.client.get = AsyncMock(side_effect=[mock_project_response, mock_jobs_response])
+        
+        await service.get_jobs(None, "test-project")
+        
+        # Check jobs call uses starts-with filter for all project workflows
+        second_call = service.client.get.call_args_list[1]
+        assert second_call[1]["params"]["starts-with[name]"] == "@project-456"
+        assert "equals[name]" not in second_call[1]["params"]
 
     @pytest.mark.asyncio
     async def test_get_jobs_client_error(self, service):
@@ -831,3 +912,231 @@ class TestDescribeJob:
         assert result["tasks"]["init"]["status"] == "complete"
         assert result["tasks"]["process"]["status"] == "running"
         assert result["tasks"]["finalize"]["status"] == "pending"
+
+
+class TestStartJob:
+    """Test the start_job method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock AsyncPlatform client"""
+        return AsyncMock(spec=AsyncPlatform)
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mock client"""
+        return Service(mock_client)
+
+    @pytest.fixture
+    def mock_start_job_response(self):
+        """Mock response for start_job"""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "_id": "job-789",
+            "name": "Direct Job Execution",
+            "description": "Job started directly via workflow name",
+            "status": "running",
+            "type": "automation",
+            "workflow": "test-workflow",
+            "variables": {"param1": "value1", "param2": "value2"},
+            "created": "2025-01-01T12:00:00Z"
+        }
+        return mock_response
+
+    @pytest.mark.asyncio
+    async def test_start_job_success(self, service, mock_start_job_response):
+        """Test start_job with complete parameters"""
+        service.client.post = AsyncMock(return_value=mock_start_job_response)
+        
+        workflow_name = "test-workflow"
+        description = "Test job description"
+        variables = {"param1": "value1", "param2": "value2"}
+        
+        result = await service.start_job(workflow_name, description, variables)
+        
+        expected_result = {
+            "_id": "job-789",
+            "name": "Direct Job Execution",
+            "description": "Job started directly via workflow name", 
+            "status": "running",
+            "type": "automation",
+            "workflow": "test-workflow",
+            "variables": {"param1": "value1", "param2": "value2"},
+            "created": "2025-01-01T12:00:00Z"
+        }
+        
+        assert result == expected_result
+        
+        # Verify API call
+        service.client.post.assert_called_once_with(
+            "/operations_manager/jobs/start",
+            json={
+                "workflow": workflow_name,
+                "options": {
+                    "type": "automation",
+                    "groups": [],
+                    "description": description,
+                    "variables": variables
+                }
+            }
+        )
+
+    @pytest.mark.asyncio
+    async def test_start_job_empty_description(self, service, mock_start_job_response):
+        """Test start_job with empty description"""
+        service.client.post = AsyncMock(return_value=mock_start_job_response)
+        
+        await service.start_job("test-workflow", "", {"key": "value"})
+        
+        call_args = service.client.post.call_args
+        request_body = call_args[1]["json"]
+        
+        assert request_body["options"]["description"] == ""
+
+    @pytest.mark.asyncio
+    async def test_start_job_none_description(self, service, mock_start_job_response):
+        """Test start_job with None description (should convert to empty string)"""
+        service.client.post = AsyncMock(return_value=mock_start_job_response)
+        
+        await service.start_job("test-workflow", None, {"key": "value"})
+        
+        call_args = service.client.post.call_args
+        request_body = call_args[1]["json"]
+        
+        assert request_body["options"]["description"] == ""
+
+    @pytest.mark.asyncio
+    async def test_start_job_empty_variables(self, service, mock_start_job_response):
+        """Test start_job with empty variables dict"""
+        service.client.post = AsyncMock(return_value=mock_start_job_response)
+        
+        await service.start_job("test-workflow", "description", {})
+        
+        call_args = service.client.post.call_args
+        request_body = call_args[1]["json"]
+        
+        assert request_body["options"]["variables"] == {}
+
+    @pytest.mark.asyncio
+    async def test_start_job_none_variables(self, service, mock_start_job_response):
+        """Test start_job with None variables (should convert to empty dict)"""
+        service.client.post = AsyncMock(return_value=mock_start_job_response)
+        
+        await service.start_job("test-workflow", "description", None)
+        
+        call_args = service.client.post.call_args
+        request_body = call_args[1]["json"]
+        
+        assert request_body["options"]["variables"] == {}
+
+    @pytest.mark.asyncio
+    async def test_start_job_complex_variables(self, service, mock_start_job_response):
+        """Test start_job with complex variables structure"""
+        service.client.post = AsyncMock(return_value=mock_start_job_response)
+        
+        complex_variables = {
+            "nested": {
+                "key": "value",
+                "list": [1, 2, 3]
+            },
+            "boolean": True,
+            "number": 42,
+            "string": "test"
+        }
+        
+        await service.start_job("complex-workflow", "Complex test", complex_variables)
+        
+        call_args = service.client.post.call_args
+        request_body = call_args[1]["json"]
+        
+        assert request_body["workflow"] == "complex-workflow"
+        assert request_body["options"]["variables"] == complex_variables
+        assert request_body["options"]["type"] == "automation"
+        assert request_body["options"]["groups"] == []
+
+    @pytest.mark.asyncio
+    async def test_start_job_endpoint_path(self, service, mock_start_job_response):
+        """Test start_job uses correct API endpoint"""
+        service.client.post = AsyncMock(return_value=mock_start_job_response)
+        
+        await service.start_job("test-workflow", "description", {})
+        
+        call_args = service.client.post.call_args
+        endpoint_path = call_args[0][0]
+        
+        assert endpoint_path == "/operations_manager/jobs/start"
+
+    @pytest.mark.asyncio
+    async def test_start_job_request_structure(self, service, mock_start_job_response):
+        """Test start_job creates correct request body structure"""
+        service.client.post = AsyncMock(return_value=mock_start_job_response)
+        
+        workflow = "structure-test-workflow"
+        description = "Structure test description"
+        variables = {"test": "variable"}
+        
+        await service.start_job(workflow, description, variables)
+        
+        call_args = service.client.post.call_args
+        request_body = call_args[1]["json"]
+        
+        # Verify top-level structure
+        assert "workflow" in request_body
+        assert "options" in request_body
+        assert len(request_body) == 2
+        
+        # Verify options structure
+        options = request_body["options"]
+        assert "type" in options
+        assert "groups" in options
+        assert "description" in options  
+        assert "variables" in options
+        assert len(options) == 4
+        
+        # Verify values
+        assert request_body["workflow"] == workflow
+        assert options["type"] == "automation"
+        assert options["groups"] == []
+        assert options["description"] == description
+        assert options["variables"] == variables
+
+    @pytest.mark.asyncio
+    async def test_start_job_client_error(self, service):
+        """Test start_job handles client errors"""
+        service.client.post = AsyncMock(side_effect=Exception("Workflow not found"))
+        
+        with pytest.raises(Exception, match="Workflow not found"):
+            await service.start_job("nonexistent-workflow", "description", {})
+
+    @pytest.mark.asyncio
+    async def test_start_job_minimal_response(self, service):
+        """Test start_job with minimal API response"""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"_id": "job-minimal", "status": "queued"}
+        service.client.post = AsyncMock(return_value=mock_response)
+        
+        result = await service.start_job("test-workflow", "description", {})
+        
+        expected_result = {"_id": "job-minimal", "status": "queued"}
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_start_job_workflow_name_types(self, service, mock_start_job_response):
+        """Test start_job with different workflow name formats"""
+        service.client.post = AsyncMock(return_value=mock_start_job_response)
+        
+        workflow_names = [
+            "simple-workflow",
+            "workflow_with_underscores", 
+            "workflow-with-dashes",
+            "workflowCamelCase",
+            "Workflow With Spaces",
+            "123-numeric-workflow"
+        ]
+        
+        for workflow_name in workflow_names:
+            await service.start_job(workflow_name, "test", {})
+            
+            call_args = service.client.post.call_args
+            request_body = call_args[1]["json"]
+            assert request_body["workflow"] == workflow_name
