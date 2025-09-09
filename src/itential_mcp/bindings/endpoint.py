@@ -41,10 +41,12 @@ async def _get_trigger(platform_client: client.PlatformClient, t: config.Endpoin
 
     json_data = res.json()
 
-    if json_data["metadata"]["total"] != 1:
+    for ele in json_data["data"]:
+        if ele["name"] == t.automation:
+            automation_id = ele["_id"]
+            break
+    else:
         raise exceptions.NotFoundError(f"automation {t.automation} could not be found")
-
-    automation_id = json_data["data"][0]["_id"]
 
     res = await platform_client.client.get(
         "/operations-manager/triggers",
