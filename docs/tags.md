@@ -61,4 +61,131 @@ Using the `tags` decorator will attach the tags `public` and `released` to the
 tool and those tags can now be used in include and/or exclude tags
 configuration options to control tool registration with the server.
 
+# Available Tags Reference
 
+## Tag Groups
+
+The following table lists all available tag groups and the number of tools they contain:
+
+| Tag Group | File(s) | Tools Count | Description |
+|-----------|---------|-------------|-------------|
+| `adapters` | adapters.py | 4 | Adapter lifecycle management (get, start, stop, restart) |
+| `applications` | applications.py | 4 | Application lifecycle management (get, start, stop, restart) |
+| `automation_studio` | command_templates.py | 4 | Command templates and device command execution |
+| `configuration_manager` | compliance_plans.py, compliance_reports.py, configuration_manager.py, device_groups.py, devices.py, golden_config.py | 15 | Configuration management, compliance, devices, and golden configs |
+| `gateway_manager` | gateway_manager.py | 3 | Gateway and service management |
+| `health` | health.py | 1 | Platform health monitoring |
+| `integrations` | integrations.py | 2 | Integration model management |
+| `lifecycle_manager` | lifecycle_manager.py | 6 | Resource lifecycle and instance management |
+| `operations_manager` | operations_manager.py | 4 | Workflow execution and job management |
+| `workflow_engine` | workflow_engine.py | 6 | Job and task metrics |
+
+## Standard Tags
+
+| Tag | Default Behavior | Description |
+|-----|-----------------|-------------|
+| `experimental` | Excluded | Tools under development or testing |
+| `beta` | Excluded | Tools in beta phase |
+
+## Individual Tool Tags
+
+Every tool function automatically receives a tag matching its function name. This enables fine-grained control over individual tools. The complete list includes 48 tool-specific tags:
+
+### Adapters Tools
+- `get_adapters`
+- `start_adapter`
+- `stop_adapter`
+- `restart_adapter`
+
+### Applications Tools
+- `get_applications`
+- `start_application`
+- `stop_application`
+- `restart_application`
+
+### Automation Studio Tools
+- `get_command_templates`
+- `describe_command_template`
+- `run_command_template`
+- `run_command`
+
+### Configuration Manager Tools
+- `get_compliance_plans`
+- `run_compliance_plan`
+- `describe_compliance_report`
+- `render_template`
+- `get_device_groups`
+- `create_device_group`
+- `add_devices_to_group`
+- `remove_devices_from_group`
+- `get_devices`
+- `get_device_configuration`
+- `backup_device_configuration`
+- `apply_device_configuration`
+- `get_golden_config_trees`
+- `create_golden_config_tree`
+- `add_golden_config_node`
+
+### Gateway Manager Tools
+- `get_services`
+- `get_gateways`
+- `run_service`
+
+### Health Tools
+- `get_health`
+
+### Integrations Tools
+- `get_integration_models`
+- `create_integration_model`
+
+### Lifecycle Manager Tools
+- `get_resources`
+- `create_resource`
+- `describe_resource`
+- `get_instances`
+- `describe_instance`
+- `run_action`
+
+### Operations Manager Tools
+- `get_workflows`
+- `start_workflow`
+- `get_jobs`
+- `describe_job`
+
+### Workflow Engine Tools
+- `get_job_metrics`
+- `get_job_metrics_for_workflow`
+- `get_task_metrics`
+- `get_task_metrics_for_workflow`
+- `get_task_metrics_for_app`
+- `get_task_metrics_for_task`
+
+## Usage Examples
+
+### Including specific tag groups:
+```bash
+--include-tags adapters,health
+```
+
+### Excluding beta and experimental features:
+```bash
+--exclude-tags beta,experimental
+```
+
+### Including only specific tools:
+```bash
+--include-tags get_devices,get_device_configuration
+```
+
+### Combining group and individual tags:
+```bash
+--include-tags configuration_manager,get_health
+```
+
+## Notes
+
+- Tags are case-sensitive
+- Multiple tags can be applied to a single tool using the `@tags` decorator
+- Tag groups provide efficient management of related tools
+- The `configuration_manager` tag group is the most extensive, covering 6 different files and 15 tools
+- Total of 48 tool functions are available across 14 tool files
