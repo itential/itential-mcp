@@ -29,7 +29,7 @@ class GoldenConfigTree(BaseModel):
                 The name of the Golden Configuration tree
                 """
             )
-        )
+        ),
     ]
 
     device_type: Annotated[
@@ -40,7 +40,7 @@ class GoldenConfigTree(BaseModel):
                 The device type this tree is designed for
                 """
             )
-        )
+        ),
     ]
 
     versions: Annotated[
@@ -51,7 +51,7 @@ class GoldenConfigTree(BaseModel):
                 List of available versions for this tree
                 """
             )
-        )
+        ),
     ]
 
 
@@ -85,7 +85,7 @@ class CreateGoldenConfigTreeResponse(BaseModel):
                 Name of the created Golden Configuration tree
                 """
             )
-        )
+        ),
     ]
 
     device_type: Annotated[
@@ -96,7 +96,7 @@ class CreateGoldenConfigTreeResponse(BaseModel):
                 The device type this tree is designed for
                 """
             )
-        )
+        ),
     ]
 
 
@@ -118,5 +118,30 @@ class AddGoldenConfigNodeResponse(BaseModel):
                 Success message confirming node addition
                 """
             )
-        )
+        ),
+    ]
+
+
+class RenderTemplateResponse(BaseModel):
+    """Response model for render_template function.
+
+    This model defines the structure for the response returned when rendering
+    a Jinja2 template with provided variables through the Configuration Manager.
+
+    The response contains the fully rendered template with all variable
+    substitutions completed using the Jinja2 templating engine.
+
+    Attributes:
+        result: The fully rendered template string with variables substituted.
+    """
+
+    result: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
+                The fully rendered template with variables substituted
+                """
+            )
+        ),
     ]

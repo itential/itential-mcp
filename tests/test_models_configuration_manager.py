@@ -9,6 +9,7 @@ from itential_mcp.models.configuration_manager import (
     GetGoldenConfigTreesResponse,
     CreateGoldenConfigTreeResponse,
     AddGoldenConfigNodeResponse,
+    RenderTemplateResponse,
 )
 
 
@@ -488,3 +489,134 @@ class TestAddGoldenConfigNodeResponse:
             response = AddGoldenConfigNodeResponse(**response_data)
 
             assert response.message == message
+
+
+class TestRenderTemplateResponse:
+    """Test cases for RenderTemplateResponse model."""
+
+    def test_create_valid_response(self):
+        """Test creating a valid RenderTemplateResponse."""
+        response_data = {
+            "result": "interface GigabitEthernet0/0\n ip address 192.168.1.1 255.255.255.0"
+        }
+
+        response = RenderTemplateResponse(**response_data)
+
+        assert (
+            response.result
+            == "interface GigabitEthernet0/0\n ip address 192.168.1.1 255.255.255.0"
+        )
+
+    def test_create_response_with_various_results(self):
+        """Test creating response with various rendered template results."""
+        results = [
+            "hostname {{ hostname }}",
+            "interface Loopback0\n description Management Interface",
+            "<configuration><interface name='ge-0/0/0'><unit name='0'></unit></interface></configuration>",
+            "router ospf 1\n network 0.0.0.0 255.255.255.255 area 0",
+            "",
+        ]
+
+        for result in results:
+            response_data = {"result": result}
+            response = RenderTemplateResponse(**response_data)
+
+            assert response.result == result
+
+    def test_response_missing_result(self):
+        """Test RenderTemplateResponse validation with missing result."""
+        response_data = {}
+
+        with pytest.raises(ValidationError) as exc_info:
+            RenderTemplateResponse(**response_data)
+
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert errors[0]["type"] == "missing"
+        assert errors[0]["loc"] == ("result",)
+
+    def test_response_invalid_result_type(self):
+        """Test RenderTemplateResponse validation with invalid result type."""
+        response_data = {"result": 12345}
+
+        with pytest.raises(ValidationError) as exc_info:
+            RenderTemplateResponse(**response_data)
+
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert errors[0]["type"] == "string_type"
+        assert errors[0]["loc"] == ("result",)
+
+    def test_response_none_result(self):
+        """Test RenderTemplateResponse validation with None result."""
+        response_data = {"result": None}
+
+        with pytest.raises(ValidationError) as exc_info:
+            RenderTemplateResponse(**response_data)
+
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert errors[0]["type"] == "string_type"
+        assert errors[0]["loc"] == ("result",)
+
+    def test_response_empty_result(self):
+        """Test RenderTemplateResponse with empty result string."""
+        response_data = {"result": ""}
+
+        response = RenderTemplateResponse(**response_data)
+
+        assert response.result == ""
+
+    def test_response_serialization(self):
+        """Test RenderTemplateResponse serialization."""
+        response_data = {"result": "vlan 10\n name Production\n exit"}
+
+        response = RenderTemplateResponse(**response_data)
+        serialized = response.model_dump()
+
+        assert serialized == response_data
+
+    def test_response_json_serialization(self):
+        """Test RenderTemplateResponse JSON serialization."""
+        response_data = {"result": "access-list 100 permit tcp any any eq 80"}
+
+        response = RenderTemplateResponse(**response_data)
+        json_str = response.model_dump_json()
+
+        assert '"result":"access-list 100 permit tcp any any eq 80"' in json_str
+
+    def test_response_with_multiline_template(self):
+        """Test RenderTemplateResponse with multiline template results."""
+        multiline_result = """hostname Router1
+!
+interface GigabitEthernet0/0
+ ip address 10.1.1.1 255.255.255.0
+ no shutdown
+!
+router bgp 65001
+ neighbor 10.1.1.2 remote-as 65002
+ address-family ipv4
+  network 10.1.1.0 mask 255.255.255.0
+ exit-address-family"""
+
+        response_data = {"result": multiline_result}
+        response = RenderTemplateResponse(**response_data)
+
+        assert response.result == multiline_result
+        assert "hostname Router1" in response.result
+        assert "router bgp 65001" in response.result
+
+    def test_response_with_special_characters(self):
+        """Test RenderTemplateResponse with special characters in result."""
+        special_results = [
+            "password $1$abcd$efghijklmnop",
+            "description 'Main uplink to provider (100% redundant)'",
+            "match ip address prefix-list PRIVATE-NETS",
+            "crypto isakmp key Th!s1sMyK3y address 192.168.1.1",
+        ]
+
+        for result in special_results:
+            response_data = {"result": result}
+            response = RenderTemplateResponse(**response_data)
+
+            assert response.result == result
