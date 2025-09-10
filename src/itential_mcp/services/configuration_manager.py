@@ -11,6 +11,54 @@ from itential_mcp.services import ServiceBase
 
 
 class Service(ServiceBase):
+    """
+    Configuration Manager service for managing network device configurations and templates.
+
+    This service provides comprehensive functionality for managing Golden Configuration trees,
+    device groups, and template rendering through the Itential Configuration Manager. It enables
+    network operators to create, modify, and deploy configuration templates across network
+    devices with version control, variable substitution, and hierarchical organization.
+
+    The service supports the following key capabilities:
+    - Golden Configuration tree management (create, modify, version control)
+    - Configuration node management within hierarchical structures
+    - Device group creation and management for bulk operations
+    - Jinja2 template rendering with variable substitution
+    - Template and variable assignment to configuration nodes
+
+    All operations are performed asynchronously through the Itential Platform API,
+    providing scalable configuration management for large network infrastructures.
+
+    Attributes:
+        name (str): Service identifier used for registration and routing ("configuration_manager").
+        client: AsyncPlatform client instance for API communication with the platform.
+
+    Example:
+        Basic usage through the service:
+
+        ```python
+        service = Service(client)
+
+        # Create a new Golden Configuration tree
+        tree = await service.create_golden_config_tree(
+            name="cisco-router-template",
+            device_type="cisco_ios"
+        )
+
+        # Render a configuration template
+        config = await service.render_template(
+            template="hostname {{ hostname }}\\nip domain-name {{ domain }}",
+            variables={"hostname": "router1", "domain": "example.com"}
+        )
+
+        # Create and manage device groups
+        group = await service.create_device_group(
+            name="production-routers",
+            devices=["router1", "router2"],
+            description="Production network routers"
+        )
+        ```
+    """
 
     name: str = "configuration_manager"
 
@@ -25,10 +73,16 @@ class Service(ServiceBase):
 
         Returns:
             list[dict]: List of Golden Configuration tree objects containing
-                tree metadata including IDs, names, device types, and versions
+                tree metadata including IDs, names, device types, and versions.
+                Each tree object includes:
+                - id: Unique identifier for the tree
+                - name: Human-readable name of the tree
+                - deviceType: Target device type (e.g., 'cisco_ios', 'juniper_junos')
+                - versions: List of available versions for the tree
 
         Raises:
-            None: This method does not raise any specific exceptions
+            Exception: If there are API communication failures or server errors
+                during the retrieval process.
         """
         res = await self.client.get("/configuration_manager/configs")
         return res.json()
@@ -99,10 +153,17 @@ class Service(ServiceBase):
 
         Returns:
             dict: Detailed tree version information including root node structure,
-                variables, and configuration metadata
+                variables, and configuration metadata. The response includes:
+                - id: Version identifier
+                - name: Tree name
+                - root: Root node structure with attributes and children
+                - variables: Dictionary of template variables for this version
+                - created: Creation timestamp
+                - modified: Last modification timestamp
 
         Raises:
-            None: This method does not raise any specific exceptions
+            Exception: If the tree ID or version is invalid, or if there are
+                API communication failures during the retrieval process.
         """
         res = await self.client.get(
             f"/configuration_manager/configs/{tree_id}/{version}"
@@ -127,10 +188,15 @@ class Service(ServiceBase):
 
         Returns:
             dict: Updated configuration specification object containing the
-                template and variables information
+                template and variables information. The response includes:
+                - id: Configuration specification ID
+                - template: The updated template content
+                - variables: Associated variables for the template
+                - updated: Timestamp of the update operation
 
         Raises:
-            None: This method does not raise any specific exceptions
+            Exception: If the tree ID or version is invalid, or if there are
+                API communication failures during the template update process.
         """
         tree_version = await self.describe_golden_config_tree_version(
             tree_id=tree_id,
@@ -208,7 +274,14 @@ class Service(ServiceBase):
             name (str): Name of the device group to retrieve details for
 
         Returns:
-            dict: Device group details containing ID, name, devices list, and description
+            dict: Device group details containing ID, name, devices list, and description.
+                The response includes:
+                - id: Unique identifier for the device group
+                - name: Human-readable name of the group
+                - devices: List of device names that are members of this group
+                - description: Optional description text for the group
+                - created: Creation timestamp
+                - modified: Last modification timestamp
 
         Raises:
             NotFoundError: If the specified device group name cannot be found
@@ -230,7 +303,15 @@ class Service(ServiceBase):
 
         Returns:
             list[dict]: List of device group objects containing group metadata
-                including IDs, names, device lists, and descriptions
+                including IDs, names, device lists, and descriptions. Each group
+                object includes:
+                - id: Unique identifier for the device group
+                - name: Human-readable name of the group
+                - devices: List of device names that are members of this group
+                - description: Optional description text for the group
+                - deviceCount: Number of devices in the group
+                - created: Creation timestamp
+                - modified: Last modification timestamp
 
         Raises:
             ServerException: If there is an error communicating with the server
@@ -346,3 +427,75 @@ class Service(ServiceBase):
         )
 
         return res.json()
+
+    async def render_template(
+        self, template: str, variables: dict | None = None
+    ) -> str:
+        """
+        Render a Jinja2 template with provided variables using Configuration Manager.
+
+        This method processes a Jinja2 template string by substituting variables and
+        executing template logic (loops, conditionals, etc.) through the Configuration
+        Manager's template rendering engine. The rendered output is commonly used for
+        generating network device configurations, commands, and other text-based content
+        in network automation workflows.
+
+        The template engine supports full Jinja2 syntax including:
+        - Variable substitution: {{ variable_name }}
+        - Control structures: {% if %}, {% for %}, {% endfor %}
+        - Filters and functions: {{ variable | filter }}
+        - Template inheritance and includes
+        - Complex data structures (nested dicts, lists)
+
+        Args:
+            template (str): Jinja2 template string containing the template content
+                with variable placeholders and control structures. The template should
+                use standard Jinja2 syntax for variable substitution and logic.
+            variables (dict | None): Dictionary containing key-value pairs for variable
+                substitution in the template. Keys should match variable names used in
+                the template. If None, defaults to an empty dictionary.
+
+        Returns:
+            str: The fully rendered template string with all variables substituted
+                and template logic executed. The output is ready for use as
+                configuration content or command sequences.
+
+        Raises:
+            Exception: If there are template syntax errors, variable resolution issues,
+                or API communication failures during template rendering.
+
+        Example:
+            Basic template rendering with variables:
+
+            ```python
+            template = '''
+            hostname {{ hostname }}
+            !
+            {% for interface in interfaces %}
+            interface {{ interface.name }}
+             description {{ interface.description }}
+             ip address {{ interface.ip }} {{ interface.mask }}
+            {% endfor %}
+            '''
+
+            variables = {
+                "hostname": "router1",
+                "interfaces": [
+                    {
+                        "name": "GigabitEthernet0/0",
+                        "description": "WAN Interface",
+                        "ip": "192.168.1.1",
+                        "mask": "255.255.255.0"
+                    }
+                ]
+            }
+
+            rendered_config = await service.render_template(template, variables)
+            ```
+        """
+        res = await self.client.post(
+            "/configuration_manager/jinja2",
+            json={"template": template, "variables": variables or {}},
+        )
+        data = res.json()
+        return data
