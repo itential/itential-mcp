@@ -40,7 +40,7 @@ def options(*args, **kwargs) -> dict:
     return {
         "x-itential-mcp-cli-enabled": True,
         "x-itential-mcp-arguments": args,
-        "x-itential-mcp-options": kwargs
+        "x-itential-mcp-options": kwargs,
     }
 
 
@@ -63,43 +63,34 @@ def validate_tool_name(tool_name: str) -> str:
     """
     if not tool_name:
         raise ValueError("Tool name cannot be empty")
-    
-    pattern = r'^[a-zA-Z][a-zA-Z0-9_]*$'
+
+    pattern = r"^[a-zA-Z][a-zA-Z0-9_]*$"
     if not re.match(pattern, tool_name):
         raise ValueError(
             f"Tool name '{tool_name}' is invalid. Tool names must start with a letter "
             "and only contain letters, numbers, and underscores."
         )
-    
+
     return tool_name
 
 
 @dataclass(frozen=True)
 class Tool(object):
-
     name: str = Field(
-        description = "The name of the asset in Itential Platform",
+        description="The name of the asset in Itential Platform",
     )
 
-    tool_name: str = Field(
-        description = "The tool name that is exposed"
-    )
+    tool_name: str = Field(description="The tool name that is exposed")
 
-    type: Literal["endpoint"] = Field(
-        description = "The tool type"
-    )
+    type: Literal["endpoint"] = Field(description="The tool type")
 
-    description: str = Field(
-        description = "Description of this tool",
-        default = None
-    )
+    description: str = Field(description="Description of this tool", default=None)
 
     tags: str = Field(
-        description = "List of comma separated tags applied to this tool",
-        default = None
+        description="List of comma separated tags applied to this tool", default=None
     )
 
-    @field_validator('tool_name')
+    @field_validator("tool_name")
     @classmethod
     def validate_tool_name_field(cls, v: str) -> str:
         """
@@ -119,88 +110,61 @@ class Tool(object):
 
 @dataclass(frozen=True)
 class EndpointTool(Tool):
-
     automation: str = Field(
-        description = "The name of the automation the trigger is associated with"
+        description="The name of the automation the trigger is associated with"
     )
 
 
 @dataclass(frozen=True)
 class Config(object):
-
     server_transport: Literal["stdio", "sse", "http"] = Field(
         description="The MCP server transport to use",
         default="stdio",
         json_schema_extra=options(
-            "--transport",
-            choices=("stdio", "sse", "http"),
-            metavar="<value>"
-        )
+            "--transport", choices=("stdio", "sse", "http"), metavar="<value>"
+        ),
     )
-
 
     server_host: str = Field(
         description="Address to listen for connections on",
         default="127.0.0.1",
-        json_schema_extra=options(
-            "--host",
-            metavar="<host>"
-        )
+        json_schema_extra=options("--host", metavar="<host>"),
     )
 
     server_port: int = Field(
         description="Port to listen for connections on",
         default=8000,
-        json_schema_extra=options(
-            "--port",
-            metavar="<port>",
-            type=int
-        )
+        json_schema_extra=options("--port", metavar="<port>", type=int),
     )
 
     server_path: str = Field(
         description="URI path used to accept requests from",
         default="/mcp",
-        json_schema_extra=options(
-            "--path",
-            metavar="<path>"
-        )
+        json_schema_extra=options("--path", metavar="<path>"),
     )
 
     server_log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(
         description="Logging level for verbose output",
         default="INFO",
-        json_schema_extra=options(
-            "--log-level",
-            metavar="<level>"
-        )
+        json_schema_extra=options("--log-level", metavar="<level>"),
     )
 
     server_include_tags: str | None = Field(
         description="Include tools that match at least on tag",
         default=None,
-        json_schema_extra=options(
-            "--include-tags",
-            metavar="<tags>"
-        )
+        json_schema_extra=options("--include-tags", metavar="<tags>"),
     )
 
     server_exclude_tags: str | None = Field(
         description="Exclude any tool that matches one of these tags",
         default="experimental,beta",
-        json_schema_extra=options(
-            "--exclude-tags",
-            metavar="<tags>"
-        )
+        json_schema_extra=options("--exclude-tags", metavar="<tags>"),
     )
 
     platform_host: str = Field(
         description="The host addres of the Itential Platform server",
         default="localhost",
-        json_schema_extra=options(
-            "--platform-host",
-            metavar="<host>"
-        )
+        json_schema_extra=options("--platform-host", metavar="<host>"),
     )
 
     platform_port: int = Field(
@@ -210,76 +174,56 @@ class Config(object):
             "--platform-port",
             type=int,
             metavar="<port>",
-        )
+        ),
     )
 
     platform_disable_tls: bool = Field(
         description="Disable using TLS to connect to the server",
         default=False,
-        json_schema_extra=options(
-            "--platform-disable-tls",
-            action="store_true"
-        )
+        json_schema_extra=options("--platform-disable-tls", action="store_true"),
     )
 
     platform_disable_verify: bool = Field(
         description="Disable certificate verification",
         default=False,
-        json_schema_extra=options(
-            "--platform-disable-verify",
-            action="store_true"
-        )
+        json_schema_extra=options("--platform-disable-verify", action="store_true"),
     )
 
     platform_user: str = Field(
         description="Username to use when authenticating to the server",
         default="admin",
-        json_schema_extra=options(
-            "--platform-user",
-            metavar="<user>"
-        )
+        json_schema_extra=options("--platform-user", metavar="<user>"),
     )
 
     platform_password: str = Field(
         description="Password to use when authenticating to the server",
         default="admin",
-        json_schema_extra=options(
-            "--platform-password",
-            metavar="<password>"
-        )
+        json_schema_extra=options("--platform-password", metavar="<password>"),
     )
 
     platform_client_id: str | None = Field(
         description="Client ID to use when authenticating using OAuth",
         default=None,
-        json_schema_extra=options(
-            "--platform-client-id",
-            metavar="<client_id>"
-        )
+        json_schema_extra=options("--platform-client-id", metavar="<client_id>"),
     )
 
     platform_client_secret: str | None = Field(
         description="Client secret to use when authenticating using OAuth",
         default=None,
         json_schema_extra=options(
-            "--platform-client-secret",
-            metavar="<client_secret>"
-
-        )
+            "--platform-client-secret", metavar="<client_secret>"
+        ),
     )
 
     platform_timeout: int = Field(
         description="Sets the timeout in seconds when communciating with the server",
         default=30,
-        json_schema_extra=options(
-            "--platform-timeout",
-            metavar="<secs>"
-        )
+        json_schema_extra=options("--platform-timeout", metavar="<secs>"),
     )
 
     tools: List[Tool] = Field(
-        description = "List of Itential Platform assets to be exposed as tools",
-        default_factory = list
+        description="List of Itential Platform assets to be exposed as tools",
+        default_factory=list,
     )
 
     @property
@@ -296,8 +240,12 @@ class Config(object):
             "port": self.server_port,
             "path": self.server_path,
             "log_level": self.server_log_level,
-            "include_tags": self._coerce_to_set(self.server_include_tags) if self.server_include_tags else None,
-            "exclude_tags": self._coerce_to_set(self.server_exclude_tags) if self.server_exclude_tags else None
+            "include_tags": self._coerce_to_set(self.server_include_tags)
+            if self.server_include_tags
+            else None,
+            "exclude_tags": self._coerce_to_set(self.server_exclude_tags)
+            if self.server_exclude_tags
+            else None,
         }
 
     @property
@@ -315,9 +263,13 @@ class Config(object):
             "verify": not self.platform_disable_verify,
             "user": self.platform_user,
             "password": self.platform_password,
-            "client_id": None if self.platform_client_id == "" else self.platform_client_id,
-            "client_secret": None if self.platform_client_secret == "" else self.platform_client_secret,
-            "timeout": self.platform_timeout
+            "client_id": None
+            if self.platform_client_id == ""
+            else self.platform_client_id,
+            "client_secret": None
+            if self.platform_client_secret == ""
+            else self.platform_client_secret,
+            "timeout": self.platform_timeout,
         }
 
     def _coerce_to_set(self, value) -> list:
@@ -325,6 +277,58 @@ class Config(object):
         for ele in value.split(","):
             items.add(ele.strip())
         return items
+
+
+def _get_tools_from_env() -> dict:
+    """
+    Parse tool configuration from environment variables.
+
+    Parses environment variables with the pattern ITENTIAL_MCP_TOOL_<tool_name>_<key>
+    and returns a nested dictionary structure organized by tool name.
+
+    Expected format: ITENTIAL_MCP_TOOL_<tool_name>_<key>=<value>
+
+    Args:
+        None
+
+    Returns:
+        dict: Nested dictionary where keys are tool names and values are
+            dictionaries of configuration key-value pairs for each tool.
+            Example: {"my_tool": {"name": "value", "type": "endpoint"}}
+
+    Raises:
+        ValueError: If environment variable format is invalid or missing required parts
+    """
+    tool_config = {}
+    prefix = "ITENTIAL_MCP_TOOL_"
+
+    # Filter and process environment variables in a single pass
+    for env_key, env_value in os.environ.items():
+        if not env_key.startswith(prefix):
+            continue
+
+        # Remove prefix and split remaining parts
+        remaining = env_key[len(prefix) :]
+        parts = remaining.split("_", 2)  # Split into at most 3 parts
+
+        if len(parts) < 2:
+            raise ValueError(
+                f"Invalid tool environment variable format: {env_key}. "
+                f"Expected format: {prefix}<tool_name>_<key>=<value>"
+            )
+
+        tool_name, config_key = parts[0], parts[1]
+
+        if not tool_name or not config_key:
+            raise ValueError(f"Tool name and config key cannot be empty in: {env_key}")
+
+        # Initialize tool config if not exists
+        if tool_name not in tool_config:
+            tool_config[tool_name] = {}
+
+        tool_config[tool_name][config_key] = env_value
+
+    return tool_config
 
 
 @lru_cache(maxsize=None)
@@ -361,6 +365,7 @@ def get() -> Config:
         cf.read(conf_file)
 
         tools = []
+        tool_config = _get_tools_from_env()
 
         for item in cf.sections():
             if item.startswith("tool:"):
@@ -370,6 +375,9 @@ def get() -> Config:
 
                 for key, value in cf.items(item):
                     t[key] = value
+
+                if tool_name in tool_config:
+                    t.update(tool_config[tool_name])
 
                 if t["type"] == "endpoint":
                     tools.append(EndpointTool(**t))
@@ -381,6 +389,28 @@ def get() -> Config:
                     key = f"{item}_{key}"
                     data[key] = value
 
+        # Add any remaining environment tools not found in config file
+        for tool_name, tool_data in tool_config.items():
+            if not any(t.tool_name == tool_name for t in tools):
+                tool_data["tool_name"] = tool_name
+                if tool_data.get("type") == "endpoint":
+                    tools.append(EndpointTool(**tool_data))
+                else:
+                    tools.append(Tool(**tool_data))
+
+    else:
+        # No config file, but check for environment variables
+        tool_config = _get_tools_from_env()
+        tools = []
+
+        for tool_name, tool_data in tool_config.items():
+            tool_data["tool_name"] = tool_name
+            if tool_data.get("type") == "endpoint":
+                tools.append(EndpointTool(**tool_data))
+            else:
+                tools.append(Tool(**tool_data))
+
+    if tools:
         data["tools"] = tools
 
     for item in fields(Config):
@@ -388,6 +418,5 @@ def get() -> Config:
         if envkey in os.environ:
             value = ", ".join(os.environ[envkey].split(","))
             data[item.name] = value
-
 
     return Config(**data)
