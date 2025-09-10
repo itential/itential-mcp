@@ -181,11 +181,3 @@ Every tool function automatically receives a tag matching its function name. Thi
 ```bash
 --include-tags configuration_manager,get_health
 ```
-
-## Notes
-
-- Tags are case-sensitive
-- Multiple tags can be applied to a single tool using the `@tags` decorator
-- Tag groups provide efficient management of related tools
-- The `configuration_manager` tag group is the most extensive, covering 6 different files and 15 tools
-- Total of 48 tool functions are available across 14 tool files
