@@ -528,7 +528,11 @@ class TestConfigurationManagerService:
         assert hasattr(service, "create_device_group")
         assert hasattr(service, "add_devices_to_group")
         assert hasattr(service, "remove_devices_from_group")
-        # Note: render_template method currently has import issues, so not testing
+        assert hasattr(service, "render_template")
+        assert hasattr(service, "get_devices")
+        assert hasattr(service, "get_device_configuration")
+        assert hasattr(service, "backup_device_configuration")
+        assert hasattr(service, "apply_device_configuration")
 
     def test_service_methods_are_async(self, service):
         """Test that all service methods are async."""
@@ -544,12 +548,11 @@ class TestConfigurationManagerService:
         assert asyncio.iscoroutinefunction(service.create_device_group)
         assert asyncio.iscoroutinefunction(service.add_devices_to_group)
         assert asyncio.iscoroutinefunction(service.remove_devices_from_group)
-        # Note: render_template method currently has import issues, so not testing
-
-
-# NOTE: TestConfigurationManagerTemplateRendering class was removed because 
-# the render_template method in the service has import issues that prevent testing.
-# The method references 'models.RenderTemplateResponse' but doesn't import 'models'.
+        assert asyncio.iscoroutinefunction(service.render_template)
+        assert asyncio.iscoroutinefunction(service.get_devices)
+        assert asyncio.iscoroutinefunction(service.get_device_configuration)
+        assert asyncio.iscoroutinefunction(service.backup_device_configuration)
+        assert asyncio.iscoroutinefunction(service.apply_device_configuration)
 
 
 class TestConfigurationManagerDeviceGroups:
@@ -1121,4 +1124,590 @@ class TestConfigurationManagerDeviceGroups:
         }
         mock_client.put.assert_called_with(
             "/configuration_manager/deviceGroups/workflow-group", json=expected_body
+        )
+
+
+class TestConfigurationManagerDevices:
+    """Test cases for Configuration Manager Device methods."""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock AsyncPlatform client."""
+        return AsyncMock(spec=ipsdk.platform.AsyncPlatform)
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Configuration Manager Service instance."""
+        return Service(mock_client)
+
+    @pytest.mark.asyncio
+    async def test_get_devices_success(self, service, mock_client):
+        """Test successful retrieval of devices with pagination."""
+        # Mock first page response
+        first_page_data = {
+            "list": [
+                {
+                    "name": "router-1",
+                    "host": "192.168.1.1",
+                    "deviceType": "cisco_ios",
+                    "status": "active",
+                },
+                {
+                    "name": "switch-1",
+                    "host": "192.168.1.2",
+                    "deviceType": "cisco_ios",
+                    "status": "active",
+                },
+            ],
+            "return_count": 4,
+        }
+
+        # Mock second page response
+        second_page_data = {
+            "list": [
+                {
+                    "name": "router-2",
+                    "host": "192.168.1.3",
+                    "deviceType": "juniper",
+                    "status": "inactive",
+                },
+                {
+                    "name": "switch-2",
+                    "host": "192.168.1.4",
+                    "deviceType": "arista_eos",
+                    "status": "active",
+                },
+            ],
+            "return_count": 4,
+        }
+
+        mock_responses = []
+        for data in [first_page_data, second_page_data]:
+            mock_response = Mock()
+            mock_response.json.return_value = data
+            mock_responses.append(mock_response)
+
+        mock_client.post.side_effect = mock_responses
+
+        result = await service.get_devices()
+
+        # Verify pagination calls were made
+        assert mock_client.post.call_count == 2
+
+        # Verify first call
+        first_call = mock_client.post.call_args_list[0]
+        assert first_call[0][0] == "/configuration_manager/devices"
+        expected_first_body = {
+            "options": {
+                "order": "ascending",
+                "sort": [{"name": 1}],
+                "start": 0,
+                "limit": 100,
+            }
+        }
+        assert first_call[1]["json"] == expected_first_body
+
+        # Verify second call
+        second_call = mock_client.post.call_args_list[1]
+        expected_second_body = {
+            "options": {
+                "order": "ascending",
+                "sort": [{"name": 1}],
+                "start": 100,
+                "limit": 100,
+            }
+        }
+        assert second_call[1]["json"] == expected_second_body
+
+        # Verify combined results
+        expected_devices = [
+            {
+                "name": "router-1",
+                "host": "192.168.1.1",
+                "deviceType": "cisco_ios",
+                "status": "active",
+            },
+            {
+                "name": "switch-1",
+                "host": "192.168.1.2",
+                "deviceType": "cisco_ios",
+                "status": "active",
+            },
+            {
+                "name": "router-2",
+                "host": "192.168.1.3",
+                "deviceType": "juniper",
+                "status": "inactive",
+            },
+            {
+                "name": "switch-2",
+                "host": "192.168.1.4",
+                "deviceType": "arista_eos",
+                "status": "active",
+            },
+        ]
+
+        assert result == expected_devices
+        assert len(result) == 4
+
+    @pytest.mark.asyncio
+    async def test_get_devices_empty_response(self, service, mock_client):
+        """Test get_devices with empty response."""
+        mock_data = {
+            "list": [],
+            "return_count": 0,
+        }
+
+        mock_response = Mock()
+        mock_response.json.return_value = mock_data
+        mock_client.post.return_value = mock_response
+
+        result = await service.get_devices()
+
+        mock_client.post.assert_called_once_with(
+            "/configuration_manager/devices",
+            json={
+                "options": {
+                    "order": "ascending",
+                    "sort": [{"name": 1}],
+                    "start": 0,
+                    "limit": 100,
+                }
+            },
+        )
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_get_devices_single_page(self, service, mock_client):
+        """Test get_devices with single page of results."""
+        mock_data = {
+            "list": [
+                {
+                    "name": "single-device",
+                    "host": "10.0.0.1",
+                    "deviceType": "cisco_ios",
+                    "status": "active",
+                }
+            ],
+            "return_count": 1,
+        }
+
+        mock_response = Mock()
+        mock_response.json.return_value = mock_data
+        mock_client.post.return_value = mock_response
+
+        result = await service.get_devices()
+
+        # Verify only one API call was made since all results fit in one page
+        mock_client.post.assert_called_once()
+        assert len(result) == 1
+        assert result[0]["name"] == "single-device"
+
+    @pytest.mark.asyncio
+    async def test_get_device_configuration_success(self, service, mock_client):
+        """Test successful device configuration retrieval."""
+        expected_config = """hostname router-1
+interface GigabitEthernet0/0
+ ip address 192.168.1.1 255.255.255.0
+ no shutdown
+!
+interface GigabitEthernet0/1
+ description Management Interface
+ ip address dhcp
+!"""
+
+        mock_response = Mock()
+        mock_response.json.return_value = {"config": expected_config}
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_device_configuration("router-1")
+
+        mock_client.get.assert_called_once_with(
+            "/configuration_manager/devices/router-1/configuration"
+        )
+        assert result == expected_config
+
+    @pytest.mark.asyncio
+    async def test_get_device_configuration_empty_config(self, service, mock_client):
+        """Test device configuration retrieval with empty configuration."""
+        mock_response = Mock()
+        mock_response.json.return_value = {"config": ""}
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_device_configuration("empty-device")
+
+        mock_client.get.assert_called_once_with(
+            "/configuration_manager/devices/empty-device/configuration"
+        )
+        assert result == ""
+
+    @pytest.mark.asyncio
+    async def test_get_device_configuration_error(self, service, mock_client):
+        """Test device configuration retrieval with error."""
+        mock_client.get.side_effect = ValueError("Device not found")
+
+        with pytest.raises(ValueError, match="Device not found"):
+            await service.get_device_configuration("non-existent-device")
+
+        mock_client.get.assert_called_once_with(
+            "/configuration_manager/devices/non-existent-device/configuration"
+        )
+
+    @pytest.mark.asyncio
+    async def test_backup_device_configuration_success(self, service, mock_client):
+        """Test successful device configuration backup."""
+        expected_response = {
+            "id": "backup-123",
+            "status": "success",
+            "message": "Backup created successfully",
+        }
+
+        mock_response = Mock()
+        mock_response.json.return_value = expected_response
+        mock_client.post.return_value = mock_response
+
+        result = await service.backup_device_configuration(
+            name="router-1",
+            description="Weekly backup",
+            notes="Backup before maintenance window",
+        )
+
+        expected_body = {
+            "name": "router-1",
+            "options": {
+                "description": "Weekly backup",
+                "notes": "Backup before maintenance window",
+            },
+        }
+        mock_client.post.assert_called_once_with(
+            "/configuration_manager/devices/backups", json=expected_body
+        )
+        assert result == expected_response
+
+    @pytest.mark.asyncio
+    async def test_backup_device_configuration_minimal(self, service, mock_client):
+        """Test device backup with minimal parameters."""
+        expected_response = {
+            "id": "backup-456",
+            "status": "success",
+            "message": "Basic backup created",
+        }
+
+        mock_response = Mock()
+        mock_response.json.return_value = expected_response
+        mock_client.post.return_value = mock_response
+
+        result = await service.backup_device_configuration(name="switch-1")
+
+        expected_body = {
+            "name": "switch-1",
+            "options": {
+                "description": "",
+                "notes": "",
+            },
+        }
+        mock_client.post.assert_called_once_with(
+            "/configuration_manager/devices/backups", json=expected_body
+        )
+        assert result == expected_response
+
+    @pytest.mark.asyncio
+    async def test_backup_device_configuration_with_description_only(
+        self, service, mock_client
+    ):
+        """Test device backup with description but no notes."""
+        expected_response = {
+            "id": "backup-789",
+            "status": "success",
+            "message": "Backup with description created",
+        }
+
+        mock_response = Mock()
+        mock_response.json.return_value = expected_response
+        mock_client.post.return_value = mock_response
+
+        result = await service.backup_device_configuration(
+            name="router-2", description="Emergency backup"
+        )
+
+        expected_body = {
+            "name": "router-2",
+            "options": {
+                "description": "Emergency backup",
+                "notes": "",
+            },
+        }
+        mock_client.post.assert_called_once_with(
+            "/configuration_manager/devices/backups", json=expected_body
+        )
+        assert result == expected_response
+
+    @pytest.mark.asyncio
+    async def test_backup_device_configuration_with_notes_only(
+        self, service, mock_client
+    ):
+        """Test device backup with notes but no description."""
+        expected_response = {
+            "id": "backup-012",
+            "status": "success",
+            "message": "Backup with notes created",
+        }
+
+        mock_response = Mock()
+        mock_response.json.return_value = expected_response
+        mock_client.post.return_value = mock_response
+
+        result = await service.backup_device_configuration(
+            name="switch-2", notes="Pre-upgrade backup for version 15.1"
+        )
+
+        expected_body = {
+            "name": "switch-2",
+            "options": {
+                "description": "",
+                "notes": "Pre-upgrade backup for version 15.1",
+            },
+        }
+        mock_client.post.assert_called_once_with(
+            "/configuration_manager/devices/backups", json=expected_body
+        )
+        assert result == expected_response
+
+    @pytest.mark.asyncio
+    async def test_apply_device_configuration_success(self, service, mock_client):
+        """Test successful device configuration application."""
+        configuration = """interface GigabitEthernet0/0
+ ip address 192.168.2.1 255.255.255.0
+ description Updated by automation
+ no shutdown"""
+
+        expected_response = {
+            "jobId": "job-123",
+            "status": "completed",
+            "message": "Configuration applied successfully",
+        }
+
+        mock_response = Mock()
+        mock_response.json.return_value = expected_response
+        mock_client.post.return_value = mock_response
+
+        result = await service.apply_device_configuration(
+            device="router-1", config=configuration
+        )
+
+        expected_body = {
+            "config": {
+                "device": "router-1",
+                "config": configuration,
+            }
+        }
+        mock_client.post.assert_called_once_with(
+            "/configuration_manager/devices/router-1/configuration", json=expected_body
+        )
+        assert result == expected_response
+
+    @pytest.mark.asyncio
+    async def test_apply_device_configuration_empty_config(self, service, mock_client):
+        """Test applying empty configuration."""
+        expected_response = {
+            "jobId": "job-456",
+            "status": "completed",
+            "message": "Empty configuration applied",
+        }
+
+        mock_response = Mock()
+        mock_response.json.return_value = expected_response
+        mock_client.post.return_value = mock_response
+
+        result = await service.apply_device_configuration(
+            device="test-device", config=""
+        )
+
+        expected_body = {
+            "config": {
+                "device": "test-device",
+                "config": "",
+            }
+        }
+        mock_client.post.assert_called_once_with(
+            "/configuration_manager/devices/test-device/configuration",
+            json=expected_body,
+        )
+        assert result == expected_response
+
+    @pytest.mark.asyncio
+    async def test_apply_device_configuration_complex_config(
+        self, service, mock_client
+    ):
+        """Test applying complex multi-line configuration."""
+        complex_config = """hostname complex-router
+!
+vlan 100
+ name VLAN_100
+!
+vlan 200
+ name VLAN_200
+!
+interface GigabitEthernet0/1
+ switchport mode trunk
+ switchport trunk allowed vlan 100,200
+ description Trunk to Switch
+!
+interface GigabitEthernet0/2
+ switchport mode access
+ switchport access vlan 100
+ description Access port for VLAN 100
+!
+router ospf 1
+ network 192.168.1.0 0.0.0.255 area 0
+ network 10.0.0.0 0.255.255.255 area 1
+!
+end"""
+
+        expected_response = {
+            "jobId": "job-789",
+            "status": "pending",
+            "message": "Complex configuration deployment started",
+            "estimatedTime": "5 minutes",
+        }
+
+        mock_response = Mock()
+        mock_response.json.return_value = expected_response
+        mock_client.post.return_value = mock_response
+
+        result = await service.apply_device_configuration(
+            device="complex-switch", config=complex_config
+        )
+
+        expected_body = {
+            "config": {
+                "device": "complex-switch",
+                "config": complex_config,
+            }
+        }
+        mock_client.post.assert_called_once_with(
+            "/configuration_manager/devices/complex-switch/configuration",
+            json=expected_body,
+        )
+        assert result == expected_response
+        assert result["estimatedTime"] == "5 minutes"
+
+    @pytest.mark.asyncio
+    async def test_apply_device_configuration_error_response(
+        self, service, mock_client
+    ):
+        """Test configuration application with error response."""
+        config = "invalid configuration command"
+        expected_response = {
+            "jobId": "job-error",
+            "status": "failed",
+            "message": "Configuration contains syntax errors",
+            "errors": ["Line 1: Unknown command 'invalid'"],
+        }
+
+        mock_response = Mock()
+        mock_response.json.return_value = expected_response
+        mock_client.post.return_value = mock_response
+
+        result = await service.apply_device_configuration(
+            device="error-device", config=config
+        )
+
+        expected_body = {
+            "config": {
+                "device": "error-device",
+                "config": config,
+            }
+        }
+        mock_client.post.assert_called_once_with(
+            "/configuration_manager/devices/error-device/configuration",
+            json=expected_body,
+        )
+        assert result == expected_response
+        assert result["status"] == "failed"
+        assert "syntax errors" in result["message"]
+
+    @pytest.mark.asyncio
+    async def test_devices_integration_workflow(self, service, mock_client):
+        """Test integration workflow: get devices, get config, backup, apply."""
+        # Step 1: Get devices
+        devices_data = {
+            "list": [
+                {
+                    "name": "workflow-device",
+                    "host": "10.1.1.1",
+                    "deviceType": "cisco_ios",
+                    "status": "active",
+                }
+            ],
+            "return_count": 1,
+        }
+
+        devices_response = Mock()
+        devices_response.json.return_value = devices_data
+        mock_client.post.return_value = devices_response
+
+        devices = await service.get_devices()
+        assert len(devices) == 1
+        device_name = devices[0]["name"]
+
+        # Step 2: Get current configuration
+        current_config = (
+            "hostname workflow-device\ninterface GigabitEthernet0/0\n shutdown"
+        )
+        config_response = Mock()
+        config_response.json.return_value = {"config": current_config}
+        mock_client.get.return_value = config_response
+
+        config = await service.get_device_configuration(device_name)
+        assert config == current_config
+
+        # Step 3: Create backup before changes
+        backup_response_data = {
+            "id": "workflow-backup",
+            "status": "success",
+            "message": "Backup created before workflow changes",
+        }
+        backup_response = Mock()
+        backup_response.json.return_value = backup_response_data
+        mock_client.post.return_value = backup_response
+
+        backup_result = await service.backup_device_configuration(
+            name=device_name,
+            description="Pre-workflow backup",
+            notes="Backup before automated configuration change",
+        )
+        assert backup_result["id"] == "workflow-backup"
+
+        # Step 4: Apply new configuration
+        new_config = "hostname workflow-device\ninterface GigabitEthernet0/0\n no shutdown\n description Updated by workflow"
+        apply_response_data = {
+            "jobId": "workflow-job",
+            "status": "completed",
+            "message": "Configuration applied successfully in workflow",
+        }
+        apply_response = Mock()
+        apply_response.json.return_value = apply_response_data
+
+        # Reset post mock for apply call
+        mock_client.post = AsyncMock(return_value=apply_response)
+
+        apply_result = await service.apply_device_configuration(
+            device=device_name, config=new_config
+        )
+        assert apply_result["jobId"] == "workflow-job"
+        assert apply_result["status"] == "completed"
+
+        # Verify all methods were called with correct parameters
+        mock_client.get.assert_called_with(
+            f"/configuration_manager/devices/{device_name}/configuration"
+        )
+        mock_client.post.assert_called_with(
+            f"/configuration_manager/devices/{device_name}/configuration",
+            json={
+                "config": {
+                    "device": device_name,
+                    "config": new_config,
+                }
+            },
         )
