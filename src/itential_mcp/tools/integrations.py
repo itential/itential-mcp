@@ -8,11 +8,7 @@ from pydantic import Field
 from fastmcp import Context
 
 from itential_mcp import exceptions
-from itential_mcp.models.integrations import (
-    GetIntegrationModelsResponse,
-    GetIntegrationModelsElement,
-    CreateIntegrationModelResponse
-)
+from itential_mcp.models import integrations as models
 
 
 __tags__ = ("integrations",)
@@ -22,7 +18,7 @@ async def get_integration_models(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
     )]
-) -> GetIntegrationModelsResponse:
+) -> models.GetIntegrationModelsResponse:
     """
     Get all integration models from Itential Platform.
 
@@ -49,14 +45,14 @@ async def get_integration_models(
     results = list()
 
     for ele in res["integrationModels"]:
-        results.append(GetIntegrationModelsElement(
+        results.append(models.GetIntegrationModelsElement(
             id=ele["versionId"],
             title=ele["versionId"].split(":")[0],
             version=ele["properties"]["version"],
             description=ele.get("description"),
         ))
 
-    return GetIntegrationModelsResponse(root=results)
+    return models.GetIntegrationModelsResponse(root=results)
 
 
 async def create_integration_model(
@@ -66,7 +62,7 @@ async def create_integration_model(
     model: Annotated[dict, Field(
         description="OpenAPI specification"
     )]
-) -> CreateIntegrationModelResponse:
+) -> models.CreateIntegrationModelResponse:
     """
     Create a new integration model on Itential Platform from an OpenAPI specification.
 
@@ -103,7 +99,7 @@ async def create_integration_model(
 
     res = await client.integrations.create_integration_model(model)
 
-    return CreateIntegrationModelResponse(
+    return models.CreateIntegrationModelResponse(
         status=res["status"],
         message=res["message"]
     )
