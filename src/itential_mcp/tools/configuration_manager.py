@@ -7,6 +7,8 @@ from pydantic import Field
 
 from fastmcp import Context
 
+from itential_mcp.models import configuration_manager as models
+
 
 __tags__ = ("configuration_manager",)
 
@@ -20,9 +22,9 @@ async def render_template(
     )],
     variables: Annotated[dict, Field(
         description="Zero or more variables to associate with this template",
-        default=None
-    )]
-) -> str:
+        default=None,
+    )],
+) -> models.RenderTemplateResponse:
     """
     Render a Jinja2 template with provided variables.
 
@@ -36,20 +38,14 @@ async def render_template(
         variables (dict): Key-value pairs to substitute in the template (optional)
 
     Returns:
-        str: The fully rendered template with variables substituted
+        RenderTemplateResponse: The fully rendered template with variables substituted
     """
     await ctx.info("inside render_template()")
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    body = {
-        "template": template,
-        "variables": variables or {}
-    }
-
-    res = await client.post(
-        "/configuration_manager/jinja2",
-        json=body
+    data = client.configuration_manager.render_template(
+        template=template, variables=variables
     )
 
-    return res.json()
+    return models.RenderTemplateResponse(result=data)
