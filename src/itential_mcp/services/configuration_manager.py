@@ -2,6 +2,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 import json
+from typing import List, Mapping, Any
 
 import ipsdk
 
@@ -15,14 +16,15 @@ class Service(ServiceBase):
     Configuration Manager service for managing network device configurations and templates.
 
     This service provides comprehensive functionality for managing Golden Configuration trees,
-    device groups, and template rendering through the Itential Configuration Manager. It enables
-    network operators to create, modify, and deploy configuration templates across network
+    device groups, device management, and template rendering through the Itential Configuration Manager.
+    It enables network operators to create, modify, and deploy configuration templates across network
     devices with version control, variable substitution, and hierarchical organization.
 
     The service supports the following key capabilities:
     - Golden Configuration tree management (create, modify, version control)
     - Configuration node management within hierarchical structures
     - Device group creation and management for bulk operations
+    - Device configuration retrieval, backup, and deployment
     - Jinja2 template rendering with variable substitution
     - Template and variable assignment to configuration nodes
 
@@ -45,11 +47,8 @@ class Service(ServiceBase):
             device_type="cisco_ios"
         )
 
-        # Render a configuration template
-        config = await service.render_template(
-            template="hostname {{ hostname }}\\nip domain-name {{ domain }}",
-            variables={"hostname": "router1", "domain": "example.com"}
-        )
+        # Get device configuration
+        config = await service.get_device_configuration("router1")
 
         # Create and manage device groups
         group = await service.create_device_group(
@@ -59,7 +58,6 @@ class Service(ServiceBase):
         )
         ```
     """
-
     name: str = "configuration_manager"
 
     async def get_golden_config_trees(self) -> list[dict]:
@@ -499,3 +497,164 @@ class Service(ServiceBase):
         )
         data = res.json()
         return data
+
+    async def get_devices(self) -> List[Mapping[str, Any]]:
+        """
+        Get all devices known to the Configuration Manager.
+
+        This method fetches a complete list of all devices that are available
+        through the Configuration Manager. Devices represent physical or virtual
+        network infrastructure that can be managed, configured, and monitored
+        through Itential Platform.
+
+        The method uses pagination to handle large device inventories efficiently,
+        fetching devices in batches of 100 and combining the results into a
+        single comprehensive list.
+
+        Returns:
+            List[Mapping[str, Any]]: List of device objects containing device
+                information and metadata including names, hosts, device types,
+                and status information
+
+        Raises:
+            None: This method does not raise any specific exceptions
+        """
+        limit = 100
+        start = 0
+
+        results = list()
+
+        while True:
+            body = {
+                "options": {
+                    "order": "ascending",
+                    "sort": [{"name": 1}],
+                    "start": start,
+                    "limit": limit,
+                }
+            }
+
+            res = await self.client.post(
+                "/configuration_manager/devices",
+                json=body,
+            )
+
+            data = res.json()
+
+            results.extend(data["list"])
+
+            if len(results) == data["return_count"]:
+                break
+
+            start += limit
+
+        return results
+
+    async def get_device_configuration(self, name: str) -> str:
+        """
+        Retrieve the current configuration from a network device.
+
+        This method fetches the running configuration from the specified network
+        device through the Configuration Manager. The configuration is returned
+        as a string containing the complete device configuration in the device's
+        native format.
+
+        Args:
+            name (str): Name of the device to retrieve configuration from.
+                The device must be known to the Configuration Manager.
+
+        Returns:
+            str: The current device configuration as a string in the device's
+                native configuration format
+
+        Raises:
+            ValueError: If there is an error retrieving the configuration or
+                if the specified device is not found
+        """
+        try:
+            res = await self.client.get(
+                f"/configuration_manager/devices/{name}/configuration"
+            )
+        except ValueError:
+            raise
+
+        return res.json()["config"]
+
+    async def backup_device_configuration(
+        self, name: str, description: str | None = None, notes: str | None = None
+    ) -> dict:
+        """
+        Create a backup of a device configuration in the Configuration Manager.
+
+        This method creates a backup snapshot of the current configuration for
+        the specified network device. Configuration backups provide recovery
+        points and change tracking for network devices, enabling rollback
+        capabilities and configuration management workflows.
+
+        Args:
+            name (str): Name of the device to backup. The device must be known
+                to the Configuration Manager.
+            description (str | None): Short description to attach to the backup
+                for identification purposes (optional).
+            notes (str | None): Additional notes to attach to the backup for
+                documentation purposes (optional).
+
+        Returns:
+            dict: Backup operation result containing backup metadata including:
+                - id: Unique identifier for the created backup
+                - status: Status of the backup operation
+                - message: Descriptive message about the operation status
+
+        Raises:
+            ValueError: If there is an error creating the backup or if the
+                specified device is not found
+        """
+        body = {
+            "name": name,
+            "options": {"description": description or "", "notes": notes or ""},
+        }
+
+        res = await self.client.post(
+            "/configuration_manager/devices/backups", json=body
+        )
+
+        return res.json()
+
+    async def apply_device_configuration(self, device: str, config: str) -> dict:
+        """
+        Apply configuration commands to a network device through the Configuration Manager.
+
+        This method deploys configuration changes to the specified network device
+        by applying the provided configuration string. Configuration deployment
+        enables automated provisioning and updates of network device settings,
+        supporting configuration management and infrastructure automation workflows.
+
+        Args:
+            device (str): Name of the target device to apply the configuration to.
+                The device must be known to the Configuration Manager.
+            config (str): Configuration string to apply to the device. This should
+                contain valid configuration commands in the device's native format.
+
+        Returns:
+            dict: Configuration application results and operation status containing
+                information about the success or failure of the configuration
+                deployment operation
+
+        Raises:
+            ValueError: If there is an error applying the configuration or if the
+                specified device is not found
+            ServerException: If there is a server-side error during configuration
+                deployment
+        """
+        body = {
+            "config": {
+                "device": device,
+                "config": config,
+            }
+        }
+
+        res = await self.client.post(
+            f"/configuration_manager/devices/{device}/configuration", json=body
+        )
+
+        return res.json()
