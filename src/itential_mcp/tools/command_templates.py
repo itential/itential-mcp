@@ -5,45 +5,15 @@ from typing import Annotated
 from pydantic import Field
 
 from fastmcp import Context
+from itential_mcp.models import command_templates as models
 
 
 __tags__ = ("automation_studio",)
 
 
-async def _get_project_id_from_name(ctx: Context, name: str) -> str:
-    """
-    Get the project ID for a specified project name.
-
-    Args:
-        ctx (Context): The FastMCP Context object
-        name (str): Case-sensitive project name to locate
-
-    Returns:
-        str: The project ID associated with the project name
-
-    Raises:
-        ValueError: If the project name cannot be definitively located
-    """
-    client = ctx.request_context.lifespan_context.get("client")
-
-    res = await client.get(
-        "/automation-studio/projects",
-        params={"equals[name]": name}
-    )
-
-    data = res.json()
-
-    if len(data["data"]) != 1:
-        raise ValueError(f"unable to locate project `{name}`")
-
-    return data["data"][0]["_id"]
-
-
 async def get_command_templates(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )]
-) -> list[dict]:
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+) -> models.GetCommandTemplatesResponse:
     """
     Get all command templates from Itential Platform.
 
@@ -55,44 +25,38 @@ async def get_command_templates(
         ctx (Context): The FastMCP Context object
 
     Returns:
-        list[dict]: List of command template objects with the following fields:
-            - _id: Unique identifier
-            - name: Template name
-            - description: Template description
-            - namespace: Project namespace (null for global templates)
-            - passRule: Pass rule configuration (True=all must pass, False=one must pass)
+        GetCommandTemplatesResponse: Response containing list of command template objects
     """
     await ctx.info("inside get_command_templates(...)")
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    res = await client.get("/mop/listTemplates")
+    res = await client.mop.get_command_templates()
 
     results = list()
 
-    for item in res.json():
-        results.append({
-            "_id": item["_id"],
-            "name": item["name"],
-            "description": item["description"],
-            "namespace": item["namespace"],
-            "passRule": item["passRule"],
-        })
+    for item in res:
+        template = models.CommandTemplate(
+            **item  # Use dict unpacking to handle the _id alias automatically
+        )
+        results.append(template)
 
-    return results
+    return models.GetCommandTemplatesResponse(templates=results)
+
 
 async def describe_command_template(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the command template to describe"
-    )],
-    project: Annotated[str | None, Field(
-        description="The name of the project to get the command template from",
-        default=None
-    )]
-) -> dict:
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[
+        str, Field(description="The name of the command template to describe")
+    ],
+    project: Annotated[
+        str | None,
+        Field(
+            description="The name of the project to get the command template from",
+            default=None,
+        ),
+    ],
+) -> models.DescribeCommandTemplateResponse:
     """
     Get detailed information about a specific command template.
 
@@ -102,49 +66,35 @@ async def describe_command_template(
         project (str | None): Project name containing the template (None for global templates)
 
     Returns:
-        dict: Command template details with the following fields:
-            - _id: Unique identifier
-            - name: Template name
-            - commands: List of commands and associated rules
-            - namespace: Project namespace (null for global templates)
-            - passRule: Pass rule configuration (True=all must pass, False=one must pass)
+        DescribeCommandTemplateResponse: Response containing detailed command template information
     """
     await ctx.info("inside describe_command_template(...)")
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    if project is not None:
-        project_id = await _get_project_id_from_name(ctx, project)
-        name = f"@{project_id}: {name}"
+    data = await client.mop.describe_command_template(
+        name=name, project=project
+    )
 
-    res = await client.get(f"/mop/listATemplate/{name}")
+    template = models.CommandTemplateDetail(
+        **data  # Use dict unpacking to handle the _id alias automatically
+    )
 
-    data = res.json()[0]
-
-    return {
-        "_id": data["_id"],
-        "name": data["name"],
-        "passRule": data["passRule"],
-        "commands": data["commands"],
-        "namespace": data["namespace"]
-    }
+    return models.DescribeCommandTemplateResponse(template=template)
 
 
 async def run_command_template(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the command template to run"
-    )],
-    devices: Annotated[list, Field(
-        description="The list of devices to run the command template against"
-    )],
-    project: Annotated[str | None, Field(
-        description="Project that contains the command template",
-        default=None
-    )]
-) -> dict:
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="The name of the command template to run")],
+    devices: Annotated[
+        list,
+        Field(description="The list of devices to run the command template against"),
+    ],
+    project: Annotated[
+        str | None,
+        Field(description="Project that contains the command template", default=None),
+    ],
+) -> models.RunCommandTemplateResponse:
     """
     Execute a command template against specified devices with rule evaluation.
 
@@ -161,49 +111,54 @@ async def run_command_template(
         project (str | None): Project containing the template (None for global templates)
 
     Returns:
-        dict: Execution results with the following structure:
-            - name: Command template name that was executed
-            - all_pass_flag: Whether all rules must pass for success
-            - command_results: List of results for each command/device combination:
-                - raw: Original command executed on the remote device
-                - evaluated: Command sent to the device
-                - device: Target device name
-                - response: Device response used for rule evaluation
-                - rules: Rule evaluation results with fields:
-                    - eval: Type of rule evaluation performed
-                    - rule: Data used for performing the rule check
-                    - severity: Severity of error if rule matches
-                    - result: Result from the rule check
+        RunCommandTemplateResponse: Response containing execution results with template name,
+            pass flag, and detailed command results for each device
     """
     await ctx.info("inside run_command_templates(...)")
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    if project is not None:
-        project_id = await _get_project_id_from_name(ctx, project)
-        name = f"@{project_id}: {name}"
+    data = await client.mop.run_command_template(
+        name=name, devices=devices, project=project
+    )
 
-    body = {
-        "template": name,
-        "devices": devices,
-    }
+    # Parse command results
+    command_results = []
 
-    res = await client.post("/mop/RunCommandTemplate", json=body)
+    for result in data.get("command_results", []):
+        rules = []
+        for rule_data in result.get("rules", []):
+            rule = models.RuleEvaluation(
+                eval=rule_data["eval"],
+                rule=rule_data["rule"],
+                severity=rule_data["severity"],
+                result=rule_data["result"],
+            )
+            rules.append(rule)
 
-    return res.json()
+        cmd_result = models.CommandResult(
+            raw=result["raw"],
+            evaluated=result["evaluated"],
+            device=result["device"],
+            response=result["response"],
+            rules=rules,
+        )
+        command_results.append(cmd_result)
+
+    return models.RunCommandTemplateResponse(
+        name=data["name"],
+        all_pass_flag=data["all_pass_flag"],
+        command_results=command_results,
+    )
 
 
 async def run_command(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    cmd: Annotated[str, Field(
-        description="The command to run on the devices"
-    )],
-    devices: Annotated[list[str], Field(
-        description="The list of devices to run the command on"
-    )]
-) -> list[dict]:
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    cmd: Annotated[str, Field(description="The command to run on the devices")],
+    devices: Annotated[
+        list[str], Field(description="The list of devices to run the command on")
+    ],
+) -> models.RunCommandResponse:
     """
     Run a single command against multiple devices.
 
@@ -213,29 +168,21 @@ async def run_command(
         devices (list[str]): List of device names. Use `get_devices` to see available devices.
 
     Returns:
-        list[dict]: List of command execution results with the following fields:
-            - device: Target device name
-            - command: Command sent to the device
-            - response: Output from running the command
+        RunCommandResponse: Response containing list of command execution results for each device
     """
     await ctx.info("inside run_command(...)")
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    body = {
-        "command": cmd,
-        "devices": devices,
-    }
+    res = await client.mop.run_command(cmd=cmd, devices=devices)
 
-    res = await client.post("/mop/RunCommandDevices", json=body)
+    results = []
+    for item in res:
+        result = models.DeviceCommandResult(
+            device=item["device"],
+            command=item["raw"],
+            response=item["response"],
+        )
+        results.append(result)
 
-    results = list()
-
-    for item in res.json():
-        results.append({
-            "device": item["device"],
-            "command": item["raw"],
-            "response": item["response"],
-        })
-
-    return results
+    return models.RunCommandResponse(results=results)
