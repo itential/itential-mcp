@@ -59,7 +59,6 @@ class ServiceElement(BaseModel):
     description: Annotated[
         str | None,
         Field(
-            default="",
             description=inspect.cleandoc(
                 """
                 Short description of the service
