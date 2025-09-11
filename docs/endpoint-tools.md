@@ -281,7 +281,7 @@ For endpoint tools to work properly, the Itential Platform automation must have:
 
 Tags control tool visibility and can be used for filtering. Endpoint tools automatically get these tags:
 
-- `dynamic` - Added to all dynamically created tools
+- `bindings` - Added to all dynamically created tools
 - The tool's `name` value from configuration
 - Any additional tags specified in the `tags` field
 
@@ -382,7 +382,7 @@ Endpoint tools work alongside the standard MCP tools. You can mix and match:
 ```ini
 [server]
 # Include both standard operations tools and custom endpoint tools
-include_tags = operations,dynamic,custom-workflows
+include_tags = operations,bindings,custom-workflows
 exclude_tags = experimental
 
 [tool:custom-provisioning]
@@ -394,7 +394,7 @@ tags = custom-workflows
 
 This configuration would provide access to:
 - Standard operations manager tools (tagged with `operations`)
-- Your custom endpoint tool (tagged with `dynamic` and `custom-workflows`)
+- Your custom endpoint tool (tagged with `bindings` and `custom-workflows`)
 - All other default tools
 
 ## Troubleshooting
