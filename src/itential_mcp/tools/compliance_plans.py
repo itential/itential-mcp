@@ -7,15 +7,15 @@ from pydantic import Field
 
 from fastmcp import Context
 
+from itential_mcp.models import compliance_plans as models
+
 
 __tags__ = ("configuration_manager",)
 
 
 async def get_compliance_plans(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-) -> list[dict]:
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+) -> models.GetCompliancePlansResponse:
     """
     Get all compliance plans from Itential Platform.
 
@@ -26,63 +26,18 @@ async def get_compliance_plans(
         ctx (Context): The FastMCP Context object
 
     Returns:
-        list[dict]: List of compliance plan objects with the following fields:
-            - id: Unique identifier for the compliance plan
-            - name: Compliance plan name
-            - description: Plan description
-            - throttle: Number of devices checked in parallel during execution
+        models.GetCompliancePlansResponse: Response containing list of compliance plan objects
     """
     await ctx.info("inside get_compliance_plans(...)")
-
     client = ctx.request_context.lifespan_context.get("client")
-
-    limit = 100
-    start = 0
-
-    results = list()
-
-    while True:
-        body = {
-            "name": "",
-            "options": {
-                "start": start,
-                "limit": limit
-            }
-        }
-
-        res = await client.post(
-            "/configuration_manager/search/compliance_plans",
-            json=body,
-        )
-
-        data = res.json()
-
-        print(data)
-
-        for ele in data["plans"]:
-            results.append({
-                "id": ele["id"],
-                "name": ele["name"],
-                "description": ele["description"],
-                "throttle": ele["throttle"]
-            })
-
-        if len(results) == data["totalCount"]:
-            break
-
-        start += limit
-
-    return results
+    results = client.configuration_manager.get_compliance_plans()
+    return models.GetCompliancePlansResponse(plans=results)
 
 
 async def run_compliance_plan(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the compliance plan to run"
-    )]
-) -> dict:
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="The name of the compliance plan to run")],
+) -> models.RunCompliancePlanResponse:
     """
     Execute a compliance plan against network devices.
 
@@ -95,11 +50,7 @@ async def run_compliance_plan(
         name (str): Case-sensitive name of the compliance plan to run
 
     Returns:
-        dict: Running compliance plan instance with the following fields:
-            - id: Unique identifier for this compliance plan instance
-            - name: Name of the compliance plan that was started
-            - description: Compliance plan description
-            - jobStatus: Current execution status of the compliance plan instance
+        models.RunCompliancePlanResponse: Response containing running compliance plan instance details
 
     Raises:
         ValueError: If the specified compliance plan name is not found
@@ -108,42 +59,13 @@ async def run_compliance_plan(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    plans = await get_compliance_plans(ctx)
+    data = client.configuration_manager.run_compliance_plan(name=name)
 
-    plan_id = None
-
-    for ele in plans:
-        if ele["name"] == name:
-            plan_id = ele["id"]
-            break
-    else:
-        raise ValueError(f"compliance plan {name} not found")
-
-    await client.post(
-        "/configuration_manager/compliance_plans/run",
-        json={"planId": plan_id}
+    compliance_instance = models.CompliancePlanInstance(
+        id=data["id"],
+        name=data["name"],
+        description=data["description"],
+        jobStatus=data["jobStatus"],
     )
 
-    body = {
-        "searchParams": {
-            "limit": 1,
-            "planId": plan_id,
-            "sort": { "started": -1 },
-            "start": 0
-        }
-    }
-
-    res = await client.post(
-        "/configuration_manager/search/compliance_plan_instances",
-        json=body
-    )
-
-    instance = res.json()
-    data = instance["plans"][0]
-
-    return {
-        "id": data["id"],
-        "name": data["name"],
-        "description": data["description"],
-        "jobStatus": data["jobStatus"]
-    }
+    return models.RunCompliancePlanResponse(instance=compliance_instance)
