@@ -352,3 +352,172 @@ class TestRunCommandResponse:
 
         assert len(response.results) == 1
         assert response.results[0] == result
+
+
+class TestCreateCommandTemplateRequest:
+    """Tests for CreateCommandTemplateRequest model."""
+
+    def test_create_command_template_request_creation(self):
+        """Test creating a CreateCommandTemplateRequest with valid data."""
+        commands = [
+            {
+                "command": "show version",
+                "passRule": True,
+                "rules": [
+                    {
+                        "rule": "Version 16.12",
+                        "eval": "contains",
+                        "severity": "error"
+                    }
+                ]
+            }
+        ]
+        
+        request = models.CreateCommandTemplateRequest(
+            name="test_template",
+            commands=commands,
+            description="Test template",
+            project="Test Project"
+        )
+
+        assert request.name == "test_template"
+        assert request.commands == commands
+        assert request.description == "Test template"
+        assert request.project == "Test Project"
+        assert request.os == ""
+        assert request.pass_rule is True
+        assert request.ignore_warnings is False
+
+    def test_create_command_template_request_with_regex(self):
+        """Test CreateCommandTemplateRequest with regex and variable substitution."""
+        commands = [
+            {
+                "command": "show interfaces <!type!> <!interface!>.<!subInterface!>",
+                "passRule": True,
+                "rules": [
+                    {
+                        "rule": "<!type!><!interface!>.<!subInterface!>.*\\s+.*(down|up)",
+                        "eval": "RegEx",
+                        "severity": "error"
+                    }
+                ]
+            }
+        ]
+        
+        request = models.CreateCommandTemplateRequest(
+            name="interface_check",
+            commands=commands,
+            description="Interface status check with regex"
+        )
+
+        assert request.name == "interface_check"
+        assert request.commands[0]["command"] == "show interfaces <!type!> <!interface!>.<!subInterface!>"
+        assert request.commands[0]["rules"][0]["eval"] == "RegEx"
+        assert request.commands[0]["rules"][0]["rule"] == "<!type!><!interface!>.<!subInterface!>.*\\s+.*(down|up)"
+
+    def test_create_command_template_request_defaults(self):
+        """Test CreateCommandTemplateRequest with default values."""
+        commands = [{"command": "show version", "passRule": True, "rules": []}]
+        
+        request = models.CreateCommandTemplateRequest(
+            name="minimal_template",
+            commands=commands
+        )
+
+        assert request.name == "minimal_template"
+        assert request.commands == commands
+        assert request.description is None
+        assert request.project is None
+        assert request.os == ""
+        assert request.pass_rule is True
+        assert request.ignore_warnings is False
+
+
+class TestCreateCommandTemplateResponse:
+    """Tests for CreateCommandTemplateResponse model."""
+
+    def test_create_command_template_response_creation(self):
+        """Test creating a CreateCommandTemplateResponse with valid data."""
+        response_data = {
+            "result": {"ok": 1, "n": 1},
+            "ops": [
+                {
+                    "_id": "testcmd",
+                    "name": "testcmd",
+                    "os": "",
+                    "passRule": True,
+                    "ignoreWarnings": False,
+                    "commands": [],
+                    "created": 1757610875214,
+                    "createdBy": "test@example.com",
+                    "lastUpdated": 1757610875484,
+                    "lastUpdatedBy": "test@example.com"
+                }
+            ],
+            "insertedCount": 1,
+            "insertedIds": {"0": "testcmd"}
+        }
+        
+        response = models.CreateCommandTemplateResponse(**response_data)
+
+        assert response.result == {"ok": 1, "n": 1}
+        assert len(response.ops) == 1
+        assert response.ops[0]["_id"] == "testcmd"
+        assert response.inserted_count == 1
+        assert response.inserted_ids == {"0": "testcmd"}
+
+
+class TestUpdateCommandTemplateRequest:
+    """Tests for UpdateCommandTemplateRequest model."""
+
+    def test_update_command_template_request_creation(self):
+        """Test creating an UpdateCommandTemplateRequest with valid data."""
+        commands = [
+            {
+                "command": "show ip interface brief",
+                "passRule": True,
+                "rules": [
+                    {
+                        "rule": "up",
+                        "eval": "contains",
+                        "severity": "error"
+                    }
+                ]
+            }
+        ]
+        
+        request = models.UpdateCommandTemplateRequest(
+            name="existing_template",
+            commands=commands,
+            description="Updated template"
+        )
+
+        assert request.name == "existing_template"
+        assert request.commands == commands
+        assert request.description == "Updated template"
+        assert request.project is None
+        assert request.os == ""
+        assert request.pass_rule is True
+        assert request.ignore_warnings is False
+
+
+class TestUpdateCommandTemplateResponse:
+    """Tests for UpdateCommandTemplateResponse model."""
+
+    def test_update_command_template_response_creation(self):
+        """Test creating an UpdateCommandTemplateResponse with valid data."""
+        response_data = {
+            "acknowledged": True,
+            "modifiedCount": 1,
+            "upsertedId": None,
+            "upsertedCount": 0,
+            "matchedCount": 1
+        }
+        
+        response = models.UpdateCommandTemplateResponse(**response_data)
+
+        assert response.acknowledged is True
+        assert response.modified_count == 1
+        assert response.upserted_id is None
+        assert response.upserted_count == 0
+        assert response.matched_count == 1
