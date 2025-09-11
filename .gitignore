@@ -19,6 +19,3 @@ htmlcov/
 # local development 
 .devel
 
-# ignore folder
-ignorefolder/
-
