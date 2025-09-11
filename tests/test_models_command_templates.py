@@ -16,14 +16,14 @@ class TestCommandTemplate:
             _id="template_123",
             name="test_template",
             description="Test command template",
-            namespace="test_project",
+            namespace={"type": "project", "_id": "test_project", "name": "Test Project"},
             passRule=True,
         )
 
         assert template.id == "template_123"
         assert template.name == "test_template"
         assert template.description == "Test command template"
-        assert template.namespace == "test_project"
+        assert template.namespace["_id"] == "test_project"
         assert template.passRule is True
 
     def test_command_template_null_namespace(self):
@@ -83,7 +83,7 @@ class TestGetCommandTemplatesResponse:
             _id="template_1",
             name="template_one",
             description="First template",
-            namespace="project1",
+            namespace={"type": "project", "_id": "project1", "name": "Project 1"},
             passRule=True,
         )
 
@@ -119,14 +119,14 @@ class TestCommandTemplateDetail:
             _id="detail_123",
             name="detailed_template",
             commands=commands,
-            namespace="project1",
+            namespace={"type": "project", "_id": "project1", "name": "Project 1"},
             passRule=True,
         )
 
         assert detail.id == "detail_123"
         assert detail.name == "detailed_template"
         assert detail.commands == commands
-        assert detail.namespace == "project1"
+        assert detail.namespace["_id"] == "project1"
         assert detail.passRule is True
 
     def test_command_template_detail_empty_commands(self):
@@ -151,7 +151,7 @@ class TestDescribeCommandTemplateResponse:
             _id="template_123",
             name="test_template",
             commands=[{"command": "show version"}],
-            namespace="project1",
+            namespace={"type": "project", "_id": "project1", "name": "Project 1"},
             passRule=True,
         )
 

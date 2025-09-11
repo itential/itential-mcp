@@ -47,22 +47,22 @@ class CommandTemplate(BaseModel):
     ]
 
     description: Annotated[
-        str,
+        str | None,
         Field(
             description=inspect.cleandoc(
                 """
-                Brief description of what the template does
+                Brief description of what the template does (null if not provided)
                 """
             )
         ),
     ]
 
     namespace: Annotated[
-        str | None,
+        dict[str, Any] | None,
         Field(
             description=inspect.cleandoc(
                 """
-                Project namespace (null for global templates)
+                Project namespace object (null for global templates)
                 """
             )
         ),
@@ -152,11 +152,11 @@ class CommandTemplateDetail(BaseModel):
     ]
 
     namespace: Annotated[
-        str | None,
+        dict[str, Any] | None,
         Field(
             description=inspect.cleandoc(
                 """
-                Project namespace (null for global templates)
+                Project namespace object (null for global templates)
                 """
             )
         ),
@@ -214,7 +214,13 @@ class RuleEvaluation(BaseModel):
         Field(
             description=inspect.cleandoc(
                 """
-                Type of rule evaluation performed (e.g., contains, regex, equals)
+                Type of rule evaluation performed. Supported values:
+                - "contains": Check if output contains the rule string
+                - "!contains": Check if output does NOT contain the rule string
+                - "contains1": Check if output contains the rule string (case-sensitive)
+                - "RegEx": Use regular expression pattern matching
+                - "!RegEx": Use regular expression pattern matching (negated)
+                - "#comparison": Numeric comparison evaluation
                 """
             )
         ),
@@ -225,7 +231,11 @@ class RuleEvaluation(BaseModel):
         Field(
             description=inspect.cleandoc(
                 """
-                Data used for performing the rule check (string, regex pattern, etc.)
+                Data used for performing the rule check. Can be:
+                - String for contains operations
+                - Regular expression pattern for RegEx evaluation
+                - String with variable substitution syntax <!variable!>
+                - Numeric value for #comparison operations
                 """
             )
         ),
@@ -433,6 +443,338 @@ class RunCommandResponse(BaseModel):
             description=inspect.cleandoc(
                 """
                 List of command execution results for each device
+                """
+            )
+        ),
+    ]
+
+
+class CreateCommandTemplateRequest(BaseModel):
+    """Request model for creating a new command template.
+
+    This model defines the structure for creating a new command template
+    with commands and validation rules.
+
+    Attributes:
+        name: Name for the command template.
+        commands: List of commands with their validation rules.
+        project: Project name to create the template in (None for global).
+        description: Optional description for the template.
+        os: Operating system type.
+        pass_rule: Pass rule configuration.
+        ignore_warnings: Whether to ignore warnings during execution.
+    """
+
+    name: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Name for the command template
+                """
+            )
+        ),
+    ]
+
+    commands: Annotated[
+        List[dict[str, Any]],
+        Field(
+            description=inspect.cleandoc(
+                """
+                List of commands with their validation rules
+                """
+            )
+        ),
+    ]
+
+    project: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Project name to create the template in (None for global templates)
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    description: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Optional description for the template
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    os: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Operating system type (default: empty string)
+                """
+            ),
+            default="",
+        ),
+    ]
+
+    pass_rule: Annotated[
+        bool,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Pass rule configuration (True=all must pass, False=one must pass)
+                """
+            ),
+            default=True,
+        ),
+    ]
+
+    ignore_warnings: Annotated[
+        bool,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Whether to ignore warnings during execution
+                """
+            ),
+            default=False,
+        ),
+    ]
+
+
+class CreateCommandTemplateResponse(BaseModel):
+    """Response model for the create command template API endpoint.
+
+    This model wraps the result of creating a new command template,
+    including the created template details and operation status.
+
+    Attributes:
+        result: Operation result with success status.
+        ops: List of created template operations.
+        inserted_count: Number of templates inserted.
+        inserted_ids: Mapping of inserted template IDs.
+    """
+
+    result: Annotated[
+        dict[str, Any],
+        Field(
+            description=inspect.cleandoc(
+                """
+                Operation result with success status
+                """
+            )
+        ),
+    ]
+
+    ops: Annotated[
+        List[dict[str, Any]],
+        Field(
+            description=inspect.cleandoc(
+                """
+                List of created template operations
+                """
+            )
+        ),
+    ]
+
+    inserted_count: Annotated[
+        int,
+        Field(
+            alias="insertedCount",
+            description=inspect.cleandoc(
+                """
+                Number of templates inserted
+                """
+            )
+        ),
+    ]
+
+    inserted_ids: Annotated[
+        dict[str, str],
+        Field(
+            alias="insertedIds",
+            description=inspect.cleandoc(
+                """
+                Mapping of inserted template IDs
+                """
+            )
+        ),
+    ]
+
+
+class UpdateCommandTemplateRequest(BaseModel):
+    """Request model for updating an existing command template.
+
+    This model defines the structure for updating an existing command template
+    with new commands and validation rules.
+
+    Attributes:
+        name: Name of the command template to update.
+        commands: List of commands with their validation rules.
+        project: Project name containing the template (None for global).
+        description: Optional description for the template.
+        os: Operating system type.
+        pass_rule: Pass rule configuration.
+        ignore_warnings: Whether to ignore warnings during execution.
+    """
+
+    name: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Name of the command template to update
+                """
+            )
+        ),
+    ]
+
+    commands: Annotated[
+        List[dict[str, Any]],
+        Field(
+            description=inspect.cleandoc(
+                """
+                List of commands with their validation rules
+                """
+            )
+        ),
+    ]
+
+    project: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Project name containing the template (None for global templates)
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    description: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Optional description for the template
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    os: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Operating system type (default: empty string)
+                """
+            ),
+            default="",
+        ),
+    ]
+
+    pass_rule: Annotated[
+        bool,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Pass rule configuration (True=all must pass, False=one must pass)
+                """
+            ),
+            default=True,
+        ),
+    ]
+
+    ignore_warnings: Annotated[
+        bool,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Whether to ignore warnings during execution
+                """
+            ),
+            default=False,
+        ),
+    ]
+
+
+class UpdateCommandTemplateResponse(BaseModel):
+    """Response model for the update command template API endpoint.
+
+    This model wraps the result of updating an existing command template,
+    including the operation status and affected document counts.
+
+    Attributes:
+        acknowledged: Whether the update was acknowledged.
+        modified_count: Number of documents modified.
+        upserted_id: ID of upserted document (if any).
+        upserted_count: Number of documents upserted.
+        matched_count: Number of documents matched.
+    """
+
+    acknowledged: Annotated[
+        bool,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Whether the update was acknowledged
+                """
+            )
+        ),
+    ]
+
+    modified_count: Annotated[
+        int,
+        Field(
+            alias="modifiedCount",
+            description=inspect.cleandoc(
+                """
+                Number of documents modified
+                """
+            )
+        ),
+    ]
+
+    upserted_id: Annotated[
+        str | None,
+        Field(
+            alias="upsertedId",
+            description=inspect.cleandoc(
+                """
+                ID of upserted document (if any)
+                """
+            )
+        ),
+    ]
+
+    upserted_count: Annotated[
+        int,
+        Field(
+            alias="upsertedCount",
+            description=inspect.cleandoc(
+                """
+                Number of documents upserted
+                """
+            )
+        ),
+    ]
+
+    matched_count: Annotated[
+        int,
+        Field(
+            alias="matchedCount",
+            description=inspect.cleandoc(
+                """
+                Number of documents matched
                 """
             )
         ),
