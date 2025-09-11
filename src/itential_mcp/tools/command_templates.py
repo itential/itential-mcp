@@ -186,3 +186,283 @@ async def run_command(
         results.append(result)
 
     return models.RunCommandResponse(results=results)
+
+
+async def create_command_template(
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="Name for the command template")],
+    commands: Annotated[
+        list[dict],
+        Field(description="List of commands with their validation rules")
+    ],
+    project: Annotated[
+        str | None,
+        Field(
+            description="Project name to create the template in (None for global templates)",
+            default=None,
+        ),
+    ],
+    description: Annotated[
+        str | None,
+        Field(
+            description="Optional description for the template",
+            default=None,
+        ),
+    ],
+    os: Annotated[
+        str,
+        Field(
+            description="Operating system type (default: empty string)",
+            default="",
+        ),
+    ],
+    pass_rule: Annotated[
+        bool,
+        Field(
+            description="Pass rule configuration (True=all must pass, False=one must pass)",
+            default=True,
+        ),
+    ],
+    ignore_warnings: Annotated[
+        bool,
+        Field(
+            description="Whether to ignore warnings during execution",
+            default=False,
+        ),
+    ],
+) -> models.CreateCommandTemplateResponse:
+    """
+    Create a new command template in Itential Platform.
+
+    Creates a new command template with the specified name, commands, and validation rules.
+    Templates can be created in the global space or within a specific project.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+        name (str): Name for the command template
+        commands (list[dict]): List of commands with their validation rules. Each command should have:
+            - command: The command string to execute (supports variable substitution <!variable!>)
+            - passRule: Whether this command must pass (True/False)
+            - rules: List of validation rules with eval, rule, and severity fields
+                - eval: Evaluation type ("contains", "!contains", "contains1", "RegEx", "!RegEx", "#comparison")
+                - rule: Rule pattern (string, regex, or with variable substitution <!variable!>)
+                - severity: Severity level ("error", "warning", "info")
+        project (str | None): Project name to create the template in (None for global templates)
+        description (str | None): Optional description for the template
+        os (str): Operating system type (default: empty string)
+        pass_rule (bool): Pass rule configuration (True=all must pass, False=one must pass)
+        ignore_warnings (bool): Whether to ignore warnings during execution
+
+    Returns:
+        CreateCommandTemplateResponse: Response containing creation result with template details
+
+    Raises:
+        ValueError: If the project name cannot be located
+        Exception: If there is an error creating the command template
+
+    Example:
+        # Simple contains check
+        commands = [
+            {
+                "command": "show version",
+                "passRule": True,
+                "rules": [
+                    {
+                        "rule": "Version 16.12",
+                        "eval": "contains",
+                        "severity": "error"
+                    }
+                ]
+            }
+        ]
+        
+        # Regex with variable substitution
+        commands = [
+            {
+                "command": "show interfaces <!type!> <!interface!>.<!subInterface!>",
+                "passRule": True,
+                "rules": [
+                    {
+                        "rule": "<!type!><!interface!>.<!subInterface!>.*\\s+.*(down|up)",
+                        "eval": "RegEx",
+                        "severity": "error"
+                    }
+                ]
+            }
+        ]
+        
+        # Multiple evaluation types
+        commands = [
+            {
+                "command": "show version",
+                "passRule": True,
+                "rules": [
+                    {
+                        "rule": "Version 16.12",
+                        "eval": "contains",
+                        "severity": "error"
+                    },
+                    {
+                        "rule": "Version 15.0",
+                        "eval": "!contains",
+                        "severity": "warning"
+                    }
+                ]
+            }
+        ]
+    """
+    await ctx.info("inside create_command_template(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    data = await client.mop.create_command_template(
+        name=name,
+        commands=commands,
+        project=project,
+        description=description,
+        os=os,
+        pass_rule=pass_rule,
+        ignore_warnings=ignore_warnings,
+    )
+
+    return models.CreateCommandTemplateResponse(**data)
+
+
+async def update_command_template(
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="Name of the command template to update")],
+    commands: Annotated[
+        list[dict],
+        Field(description="List of commands with their validation rules")
+    ],
+    project: Annotated[
+        str | None,
+        Field(
+            description="Project name containing the template (None for global templates)",
+            default=None,
+        ),
+    ],
+    description: Annotated[
+        str | None,
+        Field(
+            description="Optional description for the template",
+            default=None,
+        ),
+    ],
+    os: Annotated[
+        str,
+        Field(
+            description="Operating system type (default: empty string)",
+            default="",
+        ),
+    ],
+    pass_rule: Annotated[
+        bool,
+        Field(
+            description="Pass rule configuration (True=all must pass, False=one must pass)",
+            default=True,
+        ),
+    ],
+    ignore_warnings: Annotated[
+        bool,
+        Field(
+            description="Whether to ignore warnings during execution",
+            default=False,
+        ),
+    ],
+) -> models.UpdateCommandTemplateResponse:
+    """
+    Update an existing command template in Itential Platform.
+
+    Updates an existing command template with new commands and validation rules.
+    The template must exist in the specified project or global space.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+        name (str): Name of the command template to update
+        commands (list[dict]): List of commands with their validation rules. Each command should have:
+            - command: The command string to execute (supports variable substitution <!variable!>)
+            - passRule: Whether this command must pass (True/False)
+            - rules: List of validation rules with eval, rule, and severity fields
+                - eval: Evaluation type ("contains", "!contains", "contains1", "RegEx", "!RegEx", "#comparison")
+                - rule: Rule pattern (string, regex, or with variable substitution <!variable!>)
+                - severity: Severity level ("error", "warning", "info")
+        project (str | None): Project name containing the template (None for global templates)
+        description (str | None): Optional description for the template
+        os (str): Operating system type (default: empty string)
+        pass_rule (bool): Pass rule configuration (True=all must pass, False=one must pass)
+        ignore_warnings (bool): Whether to ignore warnings during execution
+
+    Returns:
+        UpdateCommandTemplateResponse: Response containing update result with operation status
+
+    Raises:
+        ValueError: If the project name cannot be located or template not found
+        Exception: If there is an error updating the command template
+
+    Example:
+        # Simple contains check
+        commands = [
+            {
+                "command": "show ip interface brief",
+                "passRule": True,
+                "rules": [
+                    {
+                        "rule": "up",
+                        "eval": "contains",
+                        "severity": "error"
+                    }
+                ]
+            }
+        ]
+        
+        # Regex with variable substitution
+        commands = [
+            {
+                "command": "show interfaces <!type!> <!interface!>.<!subInterface!>",
+                "passRule": True,
+                "rules": [
+                    {
+                        "rule": "<!type!><!interface!>.<!subInterface!>.*\\s+.*(down|up)",
+                        "eval": "RegEx",
+                        "severity": "error"
+                    }
+                ]
+            }
+        ]
+        
+        # Multiple evaluation types
+        commands = [
+            {
+                "command": "show version",
+                "passRule": True,
+                "rules": [
+                    {
+                        "rule": "Version 16.12",
+                        "eval": "contains",
+                        "severity": "error"
+                    },
+                    {
+                        "rule": "Version 15.0",
+                        "eval": "!contains",
+                        "severity": "warning"
+                    }
+                ]
+            }
+        ]
+    """
+    await ctx.info("inside update_command_template(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    data = await client.mop.update_command_template(
+        name=name,
+        commands=commands,
+        project=project,
+        description=description,
+        os=os,
+        pass_rule=pass_rule,
+        ignore_warnings=ignore_warnings,
+    )
+
+    return models.UpdateCommandTemplateResponse(**data)

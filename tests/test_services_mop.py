@@ -365,7 +365,158 @@ class TestMOPService:
         mock_project_response.json.return_value = {"data": []}
         mock_client.get.return_value = mock_project_response
 
-        with pytest.raises(ValueError, match="unable to locate project `unknown`"):
+        with pytest.raises(ValueError, match="unable to locate project `unknown`"):                                                                             
             await mop_service.run_command_template(
                 "Template Name", ["device1"], project="unknown"
+            )
+
+    @pytest.mark.asyncio
+    async def test_create_command_template_global(self, mop_service, mock_client):
+        """Test creating a global command template."""
+        commands = [
+            {
+                "command": "show version",
+                "passRule": True,
+                "rules": [
+                    {
+                        "rule": "Version 16.12",
+                        "eval": "contains",
+                        "severity": "error"
+                    }
+                ]
+            }
+        ]
+        
+        expected_response = {
+            "result": {"ok": 1, "n": 1},
+            "ops": [{"_id": "test_template", "name": "test_template"}],
+            "insertedCount": 1,
+            "insertedIds": {"0": "test_template"}
+        }
+        
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_response
+        mock_client.post.return_value = mock_response
+        
+        result = await mop_service.create_command_template(
+            name="test_template",
+            commands=commands,
+            description="Test template"
+        )
+        
+        assert result == expected_response
+        mock_client.post.assert_called_once()
+        call_args = mock_client.post.call_args
+        assert call_args[0][0] == "/mop/createTemplate"
+        assert "mop" in call_args[1]["json"]
+        assert call_args[1]["json"]["mop"]["name"] == "test_template"
+        assert call_args[1]["json"]["mop"]["commands"] == commands
+        assert call_args[1]["json"]["mop"]["description"] == "Test template"
+
+    @pytest.mark.asyncio
+    async def test_create_command_template_with_project(self, mop_service, mock_client):
+        """Test creating a command template in a project."""
+        commands = [{"command": "show version", "passRule": True, "rules": []}]
+        
+        # Mock project lookup
+        mock_project_response = MagicMock()
+        mock_project_response.json.return_value = {
+            "data": [{"_id": "project123", "name": "Test Project"}]
+        }
+        
+        expected_response = {
+            "result": {"ok": 1, "n": 1},
+            "ops": [{"_id": "@project123: test_template", "name": "@project123: test_template"}],
+            "insertedCount": 1,
+            "insertedIds": {"0": "@project123: test_template"}
+        }
+        
+        mock_create_response = MagicMock()
+        mock_create_response.json.return_value = expected_response
+        
+        # Setup mock to return different responses for different calls
+        mock_client.get.return_value = mock_project_response
+        mock_client.post.return_value = mock_create_response
+        
+        result = await mop_service.create_command_template(
+            name="test_template",
+            commands=commands,
+            project="Test Project"
+        )
+        
+        assert result == expected_response
+        mock_client.post.assert_called_once()
+        call_args = mock_client.post.call_args
+        assert call_args[0][0] == "/mop/createTemplate"
+        assert call_args[1]["json"]["mop"]["name"] == "@project123: test_template"
+
+    @pytest.mark.asyncio
+    async def test_update_command_template_global(self, mop_service, mock_client):
+        """Test updating a global command template."""
+        commands = [
+            {
+                "command": "show ip interface brief",
+                "passRule": True,
+                "rules": [
+                    {
+                        "rule": "up",
+                        "eval": "contains",
+                        "severity": "error"
+                    }
+                ]
+            }
+        ]
+        
+        # Mock existing template lookup
+        existing_template = {
+            "_id": "test_template",
+            "name": "test_template",
+            "created": 1757610875214,
+            "createdBy": "test@example.com"
+        }
+        mock_get_response = MagicMock()
+        mock_get_response.json.return_value = [existing_template]
+        
+        expected_response = {
+            "acknowledged": True,
+            "modifiedCount": 1,
+            "upsertedId": None,
+            "upsertedCount": 0,
+            "matchedCount": 1
+        }
+        
+        mock_put_response = MagicMock()
+        mock_put_response.json.return_value = expected_response
+        
+        mock_client.get.return_value = mock_get_response
+        mock_client.put.return_value = mock_put_response
+        
+        result = await mop_service.update_command_template(
+            name="test_template",
+            commands=commands,
+            description="Updated template"
+        )
+        
+        assert result == expected_response
+        mock_client.put.assert_called_once()
+        call_args = mock_client.put.call_args
+        assert call_args[0][0] == "/mop/updateTemplate/test_template"
+        assert call_args[1]["json"]["mop"]["_id"] == "test_template"
+        assert call_args[1]["json"]["mop"]["commands"] == commands
+        assert call_args[1]["json"]["mop"]["description"] == "Updated template"
+
+    @pytest.mark.asyncio
+    async def test_update_command_template_not_found(self, mop_service, mock_client):
+        """Test updating a non-existent command template."""
+        commands = [{"command": "show version", "passRule": True, "rules": []}]
+        
+        # Mock empty template lookup
+        mock_get_response = MagicMock()
+        mock_get_response.json.return_value = []
+        mock_client.get.return_value = mock_get_response
+        
+        with pytest.raises(ValueError, match="Command template 'nonexistent' not found"):
+            await mop_service.update_command_template(
+                name="nonexistent",
+                commands=commands
             )
