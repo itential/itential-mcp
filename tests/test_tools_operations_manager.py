@@ -176,7 +176,7 @@ class TestStartWorkflow:
         mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.return_value = mock_workflow_response
         
         with patch('itential_mcp.tools.operations_manager.timeutils.epoch_to_timestamp') as mock_timestamp, \
-             patch('itential_mcp.tools.operations_manager.functions.account_id_to_username') as mock_username:
+             patch('itential_mcp.tools.operations_manager._account_id_to_username') as mock_username:
             mock_timestamp.return_value = "2022-01-01T00:00:00Z"
             mock_username.return_value = "test-user"
             
@@ -197,7 +197,7 @@ class TestStartWorkflow:
         mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.return_value = mock_workflow_response
         
         with patch('itential_mcp.tools.operations_manager.timeutils.epoch_to_timestamp') as mock_timestamp, \
-             patch('itential_mcp.tools.operations_manager.functions.account_id_to_username') as mock_username:
+             patch('itential_mcp.tools.operations_manager._account_id_to_username') as mock_username:
             mock_timestamp.return_value = "2022-01-01T00:00:00Z"
             mock_username.return_value = "test-user"
             
