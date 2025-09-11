@@ -184,3 +184,89 @@ class Service(ServiceBase):
             f"/automation-studio/templates/{template_id}", json=body
         )
         return res.json()
+
+    async def create_textfsm_template(
+        self,
+        name: str,
+        group: str,
+        description: str,
+        template: str,
+        data: str = "",
+        command: str = ""
+    ) -> Mapping[str, Any]:
+        """
+        Create a new TextFSM template for parsing network device output.
+
+        Args:
+            name (str): Template name
+            group (str): Group name
+            description (str): Template description
+            template (str): TextFSM template body with Value definitions and state machine
+            data (str): Sample data for testing the template
+            command (str): Command that produces the data to parse
+
+        Returns:
+            Mapping[str, Any]: Server response including the created template and edit link
+
+        Raises:
+            Exception: If there is an error creating the template
+        """
+        body = {
+            "template": {
+                "name": name,
+                "group": group,
+                "description": description,
+                "template": template,
+                "data": data,
+                "command": command,
+                "type": "textfsm"
+            }
+        }
+
+        res = await self.client.post("/automation-studio/templates", json=body)
+        return res.json()
+
+    async def update_textfsm_template(
+        self,
+        template_id: str,
+        name: str,
+        group: str,
+        description: str,
+        template: str,
+        data: str = "",
+        command: str = ""
+    ) -> Mapping[str, Any]:
+        """
+        Update an existing TextFSM template by id.
+
+        Args:
+            template_id (str): Template _id to update
+            name (str): Template name
+            group (str): Group name
+            description (str): Template description
+            template (str): TextFSM template body with Value definitions and state machine
+            data (str): Sample data for testing the template
+            command (str): Command that produces the data to parse
+
+        Returns:
+            Mapping[str, Any]: Server response including the updated template and edit link
+
+        Raises:
+            Exception: If there is an error updating the template
+        """
+        body = {
+            "update": {
+                "name": name,
+                "group": group,
+                "description": description,
+                "template": template,
+                "data": data,
+                "command": command,
+                "type": "textfsm"
+            }
+        }
+
+        res = await self.client.put(
+            f"/automation-studio/templates/{template_id}", json=body
+        )
+        return res.json()

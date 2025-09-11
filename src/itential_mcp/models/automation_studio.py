@@ -58,3 +58,57 @@ class DescribeProjectResponse(BaseModel):
     
     message: str = Field(description="Response message")
     data: dict = Field(description="Project details including components")
+
+
+class TextFSMTemplate(BaseModel):
+    """TextFSM template model for parsing network device output."""
+
+    id: str = Field(alias="_id", description="Template ID")
+    name: str = Field(description="Template name")
+    group: str = Field(description="Group name")
+    description: str = Field(description="Template description")
+    template: str = Field(description="TextFSM template body with Value definitions and state machine")
+    data: str = Field(description="Sample data for testing the template")
+    command: str = Field(description="Command that produces the data to parse")
+    type: str = Field(default="textfsm", description="Template type (textfsm)")
+    created: str = Field(description="Creation timestamp")
+    lastUpdated: str = Field(description="Last update timestamp")
+    createdBy: dict[str, Any] = Field(description="Creator information")
+    lastUpdatedBy: dict[str, Any] = Field(description="Last updater information")
+    tags: list[str] = Field(default_factory=list, description="Template tags")
+
+
+class CreateTextFSMTemplateRequest(BaseModel):
+    """Request model for creating a TextFSM template."""
+
+    name: str = Field(description="Template name")
+    group: str = Field(description="Group name")
+    description: str = Field(description="Template description")
+    template: str = Field(description="TextFSM template body with Value definitions and state machine")
+    data: str = Field(default="", description="Sample data for testing the template")
+    command: str = Field(default="", description="Command that produces the data to parse")
+
+
+class CreateTextFSMTemplateResponse(BaseModel):
+    """Response model for creating a TextFSM template."""
+
+    created: TextFSMTemplate = Field(description="Created template")
+    edit: str = Field(description="Edit URL for the template")
+
+
+class UpdateTextFSMTemplateRequest(BaseModel):
+    """Request model for updating a TextFSM template."""
+
+    name: str = Field(description="Template name")
+    group: str = Field(description="Group name")
+    description: str = Field(description="Template description")
+    template: str = Field(description="TextFSM template body with Value definitions and state machine")
+    data: str = Field(default="", description="Sample data for testing the template")
+    command: str = Field(default="", description="Command that produces the data to parse")
+
+
+class UpdateTextFSMTemplateResponse(BaseModel):
+    """Response model for updating a TextFSM template."""
+
+    updated: TextFSMTemplate = Field(description="Updated template")
+    edit: str = Field(description="Edit URL for the template")

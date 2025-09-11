@@ -327,3 +327,203 @@ class TestAutomationStudioService:
                 }
             }
         )
+
+    @pytest.mark.asyncio
+    async def test_create_textfsm_template_success(self, automation_studio_service, mock_client):
+        """Test successful TextFSM template creation."""
+        expected_response = {
+            "created": {
+                "_id": "template123",
+                "name": "ACL Parser",
+                "group": "Network Parsers",
+                "description": "Parse Cisco ACL configurations",
+                "template": "Value Required,Filldown ACL_NAME (\\S+)\nValue ACL_TYPE (standard|extended)\nValue ACTION (permit|deny)\nValue PROTOCOL ([a-z]+)\n\nStart\n  ^ip\\s+access-list\\s+${ACL_TYPE}\\s+${ACL_NAME}\\s* -> Record\n  ^\\s+${ACTION}\\s+${PROTOCOL}\\s+.* -> Record\n\nEOF",
+                "type": "textfsm",
+                "data": "ip access-list extended sample\n permit tcp host 10.1.1.1 any\n deny ip any any",
+                "command": "show access-list",
+                "created": "2025-01-11T10:00:00.000Z",
+                "createdBy": "user123",
+                "lastUpdated": "2025-01-11T10:00:00.000Z",
+                "lastUpdatedBy": "user123"
+            },
+            "edit": "/automation-studio/#/edit?tab=0&template=template123"
+        }
+        
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_response
+        mock_client.post.return_value = mock_response
+        
+        result = await automation_studio_service.create_textfsm_template(
+            name="ACL Parser",
+            group="Network Parsers",
+            description="Parse Cisco ACL configurations",
+            template="Value Required,Filldown ACL_NAME (\\S+)\nValue ACL_TYPE (standard|extended)\nValue ACTION (permit|deny)\nValue PROTOCOL ([a-z]+)\n\nStart\n  ^ip\\s+access-list\\s+${ACL_TYPE}\\s+${ACL_NAME}\\s* -> Record\n  ^\\s+${ACTION}\\s+${PROTOCOL}\\s+.* -> Record\n\nEOF",
+            data="ip access-list extended sample\n permit tcp host 10.1.1.1 any\n deny ip any any",
+            command="show access-list"
+        )
+        
+        assert result == expected_response
+        mock_client.post.assert_called_once_with(
+            "/automation-studio/templates",
+            json={
+                "template": {
+                    "name": "ACL Parser",
+                    "group": "Network Parsers",
+                    "description": "Parse Cisco ACL configurations",
+                    "template": "Value Required,Filldown ACL_NAME (\\S+)\nValue ACL_TYPE (standard|extended)\nValue ACTION (permit|deny)\nValue PROTOCOL ([a-z]+)\n\nStart\n  ^ip\\s+access-list\\s+${ACL_TYPE}\\s+${ACL_NAME}\\s* -> Record\n  ^\\s+${ACTION}\\s+${PROTOCOL}\\s+.* -> Record\n\nEOF",
+                    "data": "ip access-list extended sample\n permit tcp host 10.1.1.1 any\n deny ip any any",
+                    "command": "show access-list",
+                    "type": "textfsm"
+                }
+            }
+        )
+
+    @pytest.mark.asyncio
+    async def test_create_textfsm_template_minimal(self, automation_studio_service, mock_client):
+        """Test TextFSM template creation with minimal parameters."""
+        expected_response = {
+            "created": {
+                "_id": "template456",
+                "name": "Simple Parser",
+                "group": "Basic Parsers",
+                "description": "Simple parsing template",
+                "template": "Value NAME (\\S+)\n\nStart\n  ^${NAME} -> Record\n\nEOF",
+                "type": "textfsm",
+                "data": "",
+                "command": ""
+            }
+        }
+        
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_response
+        mock_client.post.return_value = mock_response
+        
+        result = await automation_studio_service.create_textfsm_template(
+            name="Simple Parser",
+            group="Basic Parsers",
+            description="Simple parsing template",
+            template="Value NAME (\\S+)\n\nStart\n  ^${NAME} -> Record\n\nEOF"
+        )
+        
+        assert result == expected_response
+        mock_client.post.assert_called_once_with(
+            "/automation-studio/templates",
+            json={
+                "template": {
+                    "name": "Simple Parser",
+                    "group": "Basic Parsers",
+                    "description": "Simple parsing template",
+                    "template": "Value NAME (\\S+)\n\nStart\n  ^${NAME} -> Record\n\nEOF",
+                    "data": "",
+                    "command": "",
+                    "type": "textfsm"
+                }
+            }
+        )
+
+    @pytest.mark.asyncio
+    async def test_update_textfsm_template_success(self, automation_studio_service, mock_client):
+        """Test successful TextFSM template update."""
+        template_id = "template123"
+        expected_response = {
+            "updated": {
+                "_id": template_id,
+                "name": "Updated ACL Parser",
+                "group": "Updated Network Parsers",
+                "description": "Updated parse Cisco ACL configurations",
+                "template": "Value Required,Filldown ACL_NAME (\\S+)\nValue ACL_TYPE (standard|extended)\nValue ACTION (permit|deny)\nValue PROTOCOL ([a-z]+)\n\nStart\n  ^ip\\s+access-list\\s+${ACL_TYPE}\\s+${ACL_NAME}\\s* -> Record\n  ^\\s+${ACTION}\\s+${PROTOCOL}\\s+.* -> Record\n\nEOF",
+                "type": "textfsm",
+                "data": "ip access-list extended updated\n permit tcp host 10.1.1.1 any\n deny ip any any",
+                "command": "show access-list",
+                "created": "2025-01-11T10:00:00.000Z",
+                "createdBy": {
+                    "_id": "user123",
+                    "username": "test@example.com",
+                    "firstname": "Test",
+                    "email": "test@example.com"
+                },
+                "lastUpdated": "2025-01-11T11:00:00.000Z",
+                "lastUpdatedBy": {
+                    "_id": "user123",
+                    "username": "test@example.com",
+                    "firstname": "Test",
+                    "email": "test@example.com"
+                }
+            },
+            "edit": "/automation-studio/#/edit?tab=0&template=template123"
+        }
+        
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_response
+        mock_client.put.return_value = mock_response
+        
+        result = await automation_studio_service.update_textfsm_template(
+            template_id=template_id,
+            name="Updated ACL Parser",
+            group="Updated Network Parsers",
+            description="Updated parse Cisco ACL configurations",
+            template="Value Required,Filldown ACL_NAME (\\S+)\nValue ACL_TYPE (standard|extended)\nValue ACTION (permit|deny)\nValue PROTOCOL ([a-z]+)\n\nStart\n  ^ip\\s+access-list\\s+${ACL_TYPE}\\s+${ACL_NAME}\\s* -> Record\n  ^\\s+${ACTION}\\s+${PROTOCOL}\\s+.* -> Record\n\nEOF",
+            data="ip access-list extended updated\n permit tcp host 10.1.1.1 any\n deny ip any any",
+            command="show access-list"
+        )
+        
+        assert result == expected_response
+        mock_client.put.assert_called_once_with(
+            f"/automation-studio/templates/{template_id}",
+            json={
+                "update": {
+                    "name": "Updated ACL Parser",
+                    "group": "Updated Network Parsers",
+                    "description": "Updated parse Cisco ACL configurations",
+                    "template": "Value Required,Filldown ACL_NAME (\\S+)\nValue ACL_TYPE (standard|extended)\nValue ACTION (permit|deny)\nValue PROTOCOL ([a-z]+)\n\nStart\n  ^ip\\s+access-list\\s+${ACL_TYPE}\\s+${ACL_NAME}\\s* -> Record\n  ^\\s+${ACTION}\\s+${PROTOCOL}\\s+.* -> Record\n\nEOF",
+                    "data": "ip access-list extended updated\n permit tcp host 10.1.1.1 any\n deny ip any any",
+                    "command": "show access-list",
+                    "type": "textfsm"
+                }
+            }
+        )
+
+    @pytest.mark.asyncio
+    async def test_update_textfsm_template_minimal(self, automation_studio_service, mock_client):
+        """Test TextFSM template update with minimal parameters."""
+        template_id = "template456"
+        expected_response = {
+            "updated": {
+                "_id": template_id,
+                "name": "Minimal Update",
+                "group": "Minimal Group",
+                "description": "Minimal update description",
+                "template": "Value NAME (\\S+)\n\nStart\n  ^${NAME} -> Record\n\nEOF",
+                "type": "textfsm",
+                "data": "",
+                "command": ""
+            }
+        }
+        
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_response
+        mock_client.put.return_value = mock_response
+        
+        result = await automation_studio_service.update_textfsm_template(
+            template_id=template_id,
+            name="Minimal Update",
+            group="Minimal Group",
+            description="Minimal update description",
+            template="Value NAME (\\S+)\n\nStart\n  ^${NAME} -> Record\n\nEOF"
+        )
+        
+        assert result == expected_response
+        mock_client.put.assert_called_once_with(
+            f"/automation-studio/templates/{template_id}",
+            json={
+                "update": {
+                    "name": "Minimal Update",
+                    "group": "Minimal Group",
+                    "description": "Minimal update description",
+                    "template": "Value NAME (\\S+)\n\nStart\n  ^${NAME} -> Record\n\nEOF",
+                    "data": "",
+                    "command": "",
+                    "type": "textfsm"
+                }
+            }
+        )
