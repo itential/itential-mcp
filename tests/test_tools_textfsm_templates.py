@@ -45,7 +45,7 @@ class TestTextFSMTemplatesTools:
         
         result = await textfsm_templates.get_textfsm_templates(
             ctx=mock_context,
-            include=("_id", "name", "group"),
+            include="_id,name,group",
             exclude_project_members=True,
             limit=50,
             sort="group",
@@ -54,7 +54,7 @@ class TestTextFSMTemplatesTools:
         
         assert result == expected_response
         mock_client.automation_studio.get_templates.assert_called_once_with(
-            include=("_id", "name", "group"),
+            include=["_id", "name", "group"],
             exclude_project_members=True,
             limit=50,
             sort="group",
@@ -70,7 +70,7 @@ class TestTextFSMTemplatesTools:
         
         result = await textfsm_templates.get_textfsm_templates(
             ctx=mock_context,
-            include=("_id", "name"),
+            include="_id,name",
             exclude_project_members=False,
             limit=25,
             sort="name",
@@ -79,7 +79,7 @@ class TestTextFSMTemplatesTools:
         
         assert result == expected_response
         mock_client.automation_studio.get_templates.assert_called_once_with(
-            include=("_id", "name"),
+            include=["_id", "name"],
             exclude_project_members=False,
             limit=25,
             sort="name",
@@ -100,19 +100,9 @@ class TestTextFSMTemplatesTools:
                 "data": "ip access-list extended sample\n permit tcp host 10.1.1.1 any\n deny ip any any",
                 "command": "show access-list",
                 "created": "2025-01-11T10:00:00.000Z",
-                "createdBy": {
-                    "_id": "user123",
-                    "username": "test@example.com",
-                    "firstname": "Test",
-                    "email": "test@example.com"
-                },
+                "createdBy": "user123",
                 "lastUpdated": "2025-01-11T10:00:00.000Z",
-                "lastUpdatedBy": {
-                    "_id": "user123",
-                    "username": "test@example.com",
-                    "firstname": "Test",
-                    "email": "test@example.com"
-                }
+                "lastUpdatedBy": "user123"
             },
             "edit": "/automation-studio/#/edit?tab=0&template=template123"
         }
@@ -157,18 +147,8 @@ class TestTextFSMTemplatesTools:
                 "command": "",
                 "created": "2025-01-11T10:00:00.000Z",
                 "lastUpdated": "2025-01-11T10:00:00.000Z",
-                "createdBy": {
-                    "_id": "user123",
-                    "username": "test@example.com",
-                    "firstname": "Test",
-                    "email": "test@example.com"
-                },
-                "lastUpdatedBy": {
-                    "_id": "user123",
-                    "username": "test@example.com",
-                    "firstname": "Test",
-                    "email": "test@example.com"
-                },
+                "createdBy": "user123",
+                "lastUpdatedBy": "user123",
                 "tags": []
             },
             "edit": "/automation-studio/#/edit?tab=0&template=template456"
@@ -213,19 +193,9 @@ class TestTextFSMTemplatesTools:
                 "data": "ip access-list extended updated\n permit tcp host 10.1.1.1 any\n deny ip any any",
                 "command": "show access-list",
                 "created": "2025-01-11T10:00:00.000Z",
-                "createdBy": {
-                    "_id": "user123",
-                    "username": "test@example.com",
-                    "firstname": "Test",
-                    "email": "test@example.com"
-                },
+                "createdBy": "user123",
                 "lastUpdated": "2025-01-11T11:00:00.000Z",
-                "lastUpdatedBy": {
-                    "_id": "user123",
-                    "username": "test@example.com",
-                    "firstname": "Test",
-                    "email": "test@example.com"
-                }
+                "lastUpdatedBy": "user123"
             },
             "edit": "/automation-studio/#/edit?tab=0&template=template123"
         }
@@ -273,18 +243,8 @@ class TestTextFSMTemplatesTools:
                 "command": "",
                 "created": "2025-01-11T10:00:00.000Z",
                 "lastUpdated": "2025-01-11T11:00:00.000Z",
-                "createdBy": {
-                    "_id": "user123",
-                    "username": "test@example.com",
-                    "firstname": "Test",
-                    "email": "test@example.com"
-                },
-                "lastUpdatedBy": {
-                    "_id": "user123",
-                    "username": "test@example.com",
-                    "firstname": "Test",
-                    "email": "test@example.com"
-                },
+                "createdBy": "user123",
+                "lastUpdatedBy": "user123",
                 "tags": []
             },
             "edit": "/automation-studio/#/edit?tab=0&template=template456"
