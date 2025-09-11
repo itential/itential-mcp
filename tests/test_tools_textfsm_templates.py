@@ -100,19 +100,9 @@ class TestTextFSMTemplatesTools:
                 "data": "ip access-list extended sample\n permit tcp host 10.1.1.1 any\n deny ip any any",
                 "command": "show access-list",
                 "created": "2025-01-11T10:00:00.000Z",
-                "createdBy": {
-                    "_id": "user123",
-                    "username": "test@example.com",
-                    "firstname": "Test",
-                    "email": "test@example.com"
-                },
+                "createdBy": "user123",
                 "lastUpdated": "2025-01-11T10:00:00.000Z",
-                "lastUpdatedBy": {
-                    "_id": "user123",
-                    "username": "test@example.com",
-                    "firstname": "Test",
-                    "email": "test@example.com"
-                }
+                "lastUpdatedBy": "user123"
             },
             "edit": "/automation-studio/#/edit?tab=0&template=template123"
         }
@@ -203,19 +193,9 @@ class TestTextFSMTemplatesTools:
                 "data": "ip access-list extended updated\n permit tcp host 10.1.1.1 any\n deny ip any any",
                 "command": "show access-list",
                 "created": "2025-01-11T10:00:00.000Z",
-                "createdBy": {
-                    "_id": "user123",
-                    "username": "test@example.com",
-                    "firstname": "Test",
-                    "email": "test@example.com"
-                },
+                "createdBy": "user123",
                 "lastUpdated": "2025-01-11T11:00:00.000Z",
-                "lastUpdatedBy": {
-                    "_id": "user123",
-                    "username": "test@example.com",
-                    "firstname": "Test",
-                    "email": "test@example.com"
-                }
+                "lastUpdatedBy": "user123"
             },
             "edit": "/automation-studio/#/edit?tab=0&template=template123"
         }
