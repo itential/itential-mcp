@@ -1,6 +1,7 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+import time
 from typing import Dict, Any, List
 
 from itential_mcp.services import ServiceBase
@@ -98,8 +99,12 @@ class Service(ServiceBase):
             template_name = f"@{project_id}: {name}"
 
         res = await self.client.get(f"/mop/listATemplate/{template_name}")
-
-        return res.json()[0]
+        
+        data = res.json()
+        if not data:
+            raise ValueError(f"Command template '{name}' not found")
+        
+        return data[0]
 
     async def run_command_template(
         self,
@@ -173,4 +178,135 @@ class Service(ServiceBase):
 
         res = await self.client.post("/mop/RunCommandDevices", json=body)
 
+        return res.json()
+
+    async def create_command_template(
+        self,
+        name: str,
+        commands: List[Dict[str, Any]],
+        project: str | None = None,
+        description: str | None = None,
+        os: str = "",
+        pass_rule: bool = True,
+        ignore_warnings: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Create a new command template in Itential Platform.
+
+        Creates a new command template with the specified name, commands, and validation rules.
+        Templates can be created in the global space or within a specific project.
+
+        Args:
+            name (str): Name for the command template
+            commands (List[Dict[str, Any]]): List of commands with their validation rules
+            project (str | None): Project name to create the template in (None for global)
+            description (str | None): Optional description for the template
+            os (str): Operating system type (default: empty string)
+            pass_rule (bool): Pass rule configuration (True=all must pass, False=one must pass)
+            ignore_warnings (bool): Whether to ignore warnings during execution
+
+        Returns:
+            dict: Created command template object with the following fields:
+                - _id: Unique identifier
+                - name: Template name
+                - commands: List of commands and rules
+                - namespace: Project namespace (null for global templates)
+                - passRule: Pass rule configuration
+                - created: Creation timestamp
+                - createdBy: User who created the template
+
+        Raises:
+            ValueError: If the project name cannot be located
+            Exception: If there is an error creating the command template
+        """
+        template_name = name
+        if project is not None:
+            project_id = await self._get_project_id_from_name(project)
+            template_name = f"@{project_id}: {name}"
+
+        body = {
+            "mop": {
+                "name": template_name,
+                "os": os,
+                "passRule": pass_rule,
+                "ignoreWarnings": ignore_warnings,
+                "commands": commands,
+                "created": int(time.time() * 1000),  # Current timestamp in milliseconds
+                "createdBy": "system",  # This should be replaced with actual user
+                "lastUpdated": int(time.time() * 1000),
+                "lastUpdatedBy": "system"
+            }
+        }
+
+        if description is not None:
+            body["mop"]["description"] = description
+
+        res = await self.client.post("/mop/createTemplate", json=body)
+        return res.json()
+
+    async def update_command_template(
+        self,
+        name: str,
+        commands: List[Dict[str, Any]],
+        project: str | None = None,
+        description: str | None = None,
+        os: str = "",
+        pass_rule: bool = True,
+        ignore_warnings: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Update an existing command template in Itential Platform.
+
+        Updates an existing command template with new commands and validation rules.
+        The template must exist in the specified project or global space.
+
+        Args:
+            name (str): Name of the command template to update
+            commands (List[Dict[str, Any]]): List of commands with their validation rules
+            project (str | None): Project name containing the template (None for global)
+            description (str | None): Optional description for the template
+            os (str): Operating system type (default: empty string)
+            pass_rule (bool): Pass rule configuration (True=all must pass, False=one must pass)
+            ignore_warnings (bool): Whether to ignore warnings during execution
+
+        Returns:
+            dict: Update result with the following fields:
+                - acknowledged: Whether the update was acknowledged
+                - modifiedCount: Number of documents modified
+                - matchedCount: Number of documents matched
+
+        Raises:
+            ValueError: If the project name cannot be located or template not found
+            Exception: If there is an error updating the command template
+        """
+        template_name = name
+        if project is not None:
+            project_id = await self._get_project_id_from_name(project)
+            template_name = f"@{project_id}: {name}"
+
+        # Get existing template to preserve metadata
+        try:
+            existing_template = await self.describe_command_template(name, project)
+        except ValueError:
+            raise ValueError(f"Command template '{name}' not found")
+
+        body = {
+            "mop": {
+                "_id": existing_template["_id"],
+                "name": template_name,
+                "os": os,
+                "passRule": pass_rule,
+                "ignoreWarnings": ignore_warnings,
+                "commands": commands,
+                "created": existing_template.get("created"),
+                "createdBy": existing_template.get("createdBy"),
+                "lastUpdated": int(time.time() * 1000),
+                "lastUpdatedBy": "system"
+            }
+        }
+
+        if description is not None:
+            body["mop"]["description"] = description
+
+        res = await self.client.put(f"/mop/updateTemplate/{template_name}", json=body)
         return res.json()
