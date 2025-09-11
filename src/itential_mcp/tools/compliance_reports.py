@@ -7,18 +7,16 @@ from pydantic import Field
 
 from fastmcp import Context
 
+from itential_mcp.models import compliance_reports as models
+
 
 __tags__ = ("configuration_manager",)
 
 
 async def describe_compliance_report(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    report_id: Annotated[str, Field(
-        description="The ID of the report to describe"
-    )]
-) -> dict:
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    report_id: Annotated[str, Field(description="The ID of the report to describe")],
+) -> models.DescribeComplianceReportResponse:
     """
     Retrieve detailed compliance report results from Itential Platform.
 
@@ -31,16 +29,11 @@ async def describe_compliance_report(
         report_id (str): Unique identifier of the compliance report to retrieve
 
     Returns:
-        dict: Compliance report details containing validation results, device
+        models.DescribeComplianceReportResponse: Compliance report details containing validation results, device
             compliance status, rule violations, and configuration analysis from
             running compliance checks against network infrastructure
     """
     await ctx.info("inside describe_compliance_report(...)")
-
     client = ctx.request_context.lifespan_context.get("client")
-
-    res = await client.get(
-        f"/configuration_manager/compliance_reports/details/{report_id}"
-    )
-
-    return res.json()
+    res = client.configuration_manager.describe_compliance_report(report_id)
+    return models.DescribeComplianceReportResponse(result=res)
