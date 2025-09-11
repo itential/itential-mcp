@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from typing import List, Optional, Any
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -73,8 +73,8 @@ class TextFSMTemplate(BaseModel):
     type: str = Field(default="textfsm", description="Template type (textfsm)")
     created: str = Field(description="Creation timestamp")
     lastUpdated: str = Field(description="Last update timestamp")
-    createdBy: dict[str, Any] = Field(description="Creator information")
-    lastUpdatedBy: dict[str, Any] = Field(description="Last updater information")
+    createdBy: str = Field(description="Creator user ID")
+    lastUpdatedBy: str = Field(description="Last updater user ID")
     tags: list[str] = Field(default_factory=list, description="Template tags")
 
 

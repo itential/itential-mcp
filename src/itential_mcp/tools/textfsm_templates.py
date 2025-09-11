@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from typing import Annotated, Sequence
+from typing import Annotated
 
 from pydantic import Field
 
@@ -15,10 +15,10 @@ __tags__ = ("automation_studio", "textfsm")
 async def get_textfsm_templates(
     ctx: Annotated[Context, Field(description="The FastMCP Context object")],
     include: Annotated[
-        Sequence[str] | None,
+        str | None,
         Field(
-            description="Fields to include in the response (_id,name,group)",
-            default=("_id", "name", "group"),
+            description="Comma-separated fields to include in the response (e.g., '_id,name,group,command')",
+            default="_id,name,group",
         ),
     ],
     exclude_project_members: Annotated[
@@ -41,8 +41,13 @@ async def get_textfsm_templates(
 
     client = ctx.request_context.lifespan_context.get("client")
 
+    # Convert comma-separated string to list if needed
+    include_list = None
+    if include:
+        include_list = [field.strip() for field in include.split(",")]
+
     return await client.automation_studio.get_templates(
-        include=include,
+        include=include_list,
         exclude_project_members=exclude_project_members,
         limit=limit,
         sort=sort,
