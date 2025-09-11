@@ -297,6 +297,7 @@ async def describe_job(
 
     return models.DescribeJobResponse(
         **{
+            "_id": data["_id"],
             "name": data["name"],
             "description": data["description"],
             "type": data["type"],

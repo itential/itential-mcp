@@ -344,7 +344,7 @@ class TestDescribeJob:
 
     @pytest.mark.asyncio
     async def test_describe_job_validation_error(self, mock_context):
-        """Test describe_job fails due to missing _id field in DescribeJobResponse constructor"""
+        """Test describe_job fails due to missing _id field - KeyError for direct access"""
         mock_data = {
             "name": "Detailed Job",
             "description": "A detailed job description",
@@ -356,14 +356,9 @@ class TestDescribeJob:
         }
         mock_context.request_context.lifespan_context.get.return_value.operations_manager.describe_job.return_value = mock_data
         
-        # The source code has a bug - it doesn't pass _id to DescribeJobResponse constructor
-        with pytest.raises(ValidationError) as exc_info:
+        # The source code uses direct access - missing _id causes KeyError
+        with pytest.raises(KeyError, match="_id"):
             await operations_manager.describe_job(mock_context, "job-123")
-        
-        errors = exc_info.value.errors()
-        assert len(errors) == 1
-        assert errors[0]["type"] == "missing"
-        assert errors[0]["loc"] == ("_id",)
         
         # Verify that the correct object_id was passed to the service
         mock_context.request_context.lifespan_context.get.return_value.operations_manager.describe_job.assert_called_with("job-123")
@@ -372,6 +367,7 @@ class TestDescribeJob:
     async def test_describe_job_multiple_validation_errors(self, mock_context):
         """Test describe_job with multiple validation errors"""
         mock_data = {
+            "_id": "job-123",  # Include _id to get past KeyError and test ValidationError
             "name": "Minimal Job",
             "description": None,
             "type": "resource:action",
@@ -382,14 +378,13 @@ class TestDescribeJob:
         }
         mock_context.request_context.lifespan_context.get.return_value.operations_manager.describe_job.return_value = mock_data
         
-        # The source code has bugs - missing _id, invalid status, and None for required string field
+        # The source code has bugs - invalid status, and None for required string field
         with pytest.raises(ValidationError) as exc_info:
             await operations_manager.describe_job(mock_context, "job-456")
         
         errors = exc_info.value.errors()
-        assert len(errors) == 3  # _id missing, status invalid, updated None
+        assert len(errors) == 2  # status invalid, updated None
         
         error_types = [error["type"] for error in errors]
-        assert "missing" in error_types  # _id field missing
         assert "literal_error" in error_types  # status not in valid literals
         assert "string_type" in error_types  # updated should be string, not None
