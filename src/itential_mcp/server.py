@@ -11,10 +11,17 @@ from typing import Any
 
 from fastmcp import FastMCP
 
+from fastmcp.utilities import logging
+
+from fastmcp.server.middleware import Middleware, MiddlewareContext
+from fastmcp.server.middleware.logging import LoggingMiddleware
+from fastmcp.server.middleware.timing import DetailedTimingMiddleware
+from fastmcp.server.middleware.error_handling import ErrorHandlingMiddleware
+
 from . import client
 from . import config
-from . import cache
 from . import toolutils
+from . import bindings
 
 
 INSTRUCTIONS = """
@@ -31,13 +38,16 @@ run_command or create_resource will indicate your operational scope.
 """
 
 
+logger = logging.get_logger(__name__)
+
+
 @asynccontextmanager
 async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
     """
     Manage the lifespan of Itential Platform connections.
 
-    Creates and manages the client connection to Itential Platform and cache
-    instance, yielding them to FastMCP for inclusion in the request context.
+    Creates and manages the client connection to Itential Platform,
+    yielding it to FastMCP for inclusion in the request context.
 
     Args:
         mcp (FastMCP): The FastMCP server instance
@@ -45,66 +55,151 @@ async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
     Yields:
         dict: Context containing:
             - client: PlatformClient instance for Itential API calls
-            - cache: Cache instance for performance optimization
     """
-    # Create cache and client instances
-    cache_instance = cache.Cache()
+    # Create client instance
     client_instance = client.PlatformClient()
 
     try:
-        # Start the cache background cleanup task
-        await cache_instance.start()
-
-        yield {
-            "client": client_instance,
-            "cache": cache_instance
-        }
+        yield {"client": client_instance}
 
     finally:
-        # Ensure cache is properly stopped on shutdown
-        await cache_instance.stop()
+        # No cleanup needed for client
+        pass
 
 
-def new(cfg: config.Config) -> FastMCP:
+class DynamicToolInjectionMiddleware(Middleware):
+    """Middleware for injecting dynamic tool configurations into MCP calls.
+
+    This middleware automatically injects tool configuration objects into
+    the arguments of MCP tool calls when the tool name matches a configured
+    dynamic tool. It adds the configuration as a special `_tool_config` parameter
+    that can be used by the tool implementation, then removes it after execution.
+
+    The middleware enables dynamic tool behavior based on configuration without
+    requiring manual parameter passing from the client.
+
+    Attributes:
+        config (config.Config): The application configuration containing tool definitions.
     """
-    Initialize a new FastMCP server instance.
 
-    Creates and configures a FastMCP server with Itential Platform integration,
-    including tool filtering based on tags.
+    def __init__(self, cfg: config.Config):
+        """Initialize the middleware with configuration.
+
+        Args:
+            cfg (config.Config): The application configuration containing tool definitions.
+
+        Returns:
+            None
+
+        Raises:
+            None
+        """
+        self.config = cfg
+
+    async def on_call_tool(self, context: MiddlewareContext, call_next):
+        """Inject tool configuration into MCP tool calls.
+
+        Automatically adds the `_tool_config` parameter to tool arguments when
+        the tool name matches a configured dynamic tool. The configuration is
+        removed after the tool execution completes.
+
+        Args:
+            context (MiddlewareContext): The middleware context containing the
+                message and other request information.
+            call_next: The next middleware or handler in the chain.
+
+        Returns:
+            Any: The result from the next handler in the middleware chain.
+
+        Raises:
+            Any exceptions from the next handler in the chain.
+        """
+        for t in self.config.tools:
+            if t.tool_name == context.message.name:
+                context.message.arguments["_tool_config"] = t
+
+        res = await call_next(context)
+
+        for t in self.config.tools:
+            if t.tool_name == context.message.name:
+                context.message.arguments.pop("_tool_config", None)
+                break
+
+        return res
+
+
+async def new(cfg: config.Config) -> FastMCP:
+    """Initialize a new FastMCP server instance with Itential Platform integration.
+
+    Creates and configures a FastMCP server with comprehensive Itential Platform
+    integration including tool discovery, middleware setup, and binding registration.
+    The server is configured with tool filtering, error handling, timing, logging,
+    and dynamic tool injection capabilities.
+
+    The function performs the following setup:
+    - Configures FastMCP server with name, instructions, and lifespan management
+    - Adds middleware stack for error handling, timing, logging, and tool injection
+    - Registers all discovered tools from the tools directory with appropriate tags
+    - Registers dynamic tool bindings based on configuration
+    - Sets up JSON schema validation for tool outputs where available
 
     Args:
-        cfg (Config): Server configuration containing:
-            - include_tags: Optional tags to include specific tools
-            - exclude_tags: Optional tags to exclude tools (default: experimental,beta)
+        cfg (config.Config): The application configuration containing server settings,
+            tool definitions, and platform connection details.
 
     Returns:
-        FastMCP: Configured server instance ready for tool registration
+        FastMCP: Fully configured server instance ready for execution with all
+            tools registered and middleware configured.
+
+    Raises:
+        Exception: If tool discovery, binding registration, or server configuration fails.
+
+    Examples:
+        >>> config = config.get()
+        >>> server = await new(config)
+        >>> await server.run_async(transport="stdio")
 
     Note:
         This function should only be called once during server initialization.
+        Multiple calls may result in duplicate tool registrations.
     """
+    logger.info("Initializing the MCP server instance")
     # Initialize FastMCP server
     srv = FastMCP(
         name="Itential Platform MCP",
         instructions=inspect.cleandoc(INSTRUCTIONS),
         lifespan=lifespan,
         include_tags=cfg.server.get("include_tags"),
-        exclude_tags=cfg.server.get("exclude_tags")
+        exclude_tags=cfg.server.get("exclude_tags"),
     )
 
+    srv.add_middleware(ErrorHandlingMiddleware(logger=logger))
+    srv.add_middleware(DetailedTimingMiddleware(logger=logger))
+    srv.add_middleware(LoggingMiddleware(logger=logger))
+    srv.add_middleware(DynamicToolInjectionMiddleware(cfg))
 
+    logger.info("Adding tools to MCP server")
     for f, tags in toolutils.itertools():
+        tags.add("default")
+
         kwargs = {"tags": tags}
 
         try:
             schema = toolutils.get_json_schema(f)
             if schema["type"] == "object":
                 kwargs["output_schema"] = toolutils.get_json_schema(f)
+
         except ValueError:
             # tool does not have an output_schema defined
             pass
 
         srv.tool(f, **kwargs)
+        logger.debug(f"Successfully added tool: {f.__name__}")
+
+    logger.info("Creating dynamic bindings for tools")
+    async for fn, kwargs in bindings.iterbindings(cfg):
+        srv.tool(fn, **kwargs)
+    logger.info("Dynamic tool bindings is now complete")
 
     return srv
 
@@ -146,18 +241,24 @@ async def run() -> int:
     try:
         cfg = config.get()
 
-        mcp = new(cfg)
+        if cfg.server.get("log_level"):
+            logging.configure_logging(
+                level=cfg.server.get("log_level"),
+            )
 
-        kwargs = {
-            "transport": cfg.server.get("transport")
-        }
+        mcp = await new(cfg)
+
+        kwargs = {"transport": cfg.server.get("transport")}
 
         if kwargs["transport"] in ("sse", "http"):
-            kwargs.update({
-                "host": cfg.server.get("host"),
-                "port": cfg.server.get("port"),
-                "log_level": cfg.server.get("log_level")
-            })
+            kwargs.update(
+                {
+                    "host": cfg.server.get("host"),
+                    "port": cfg.server.get("port"),
+                    "log_level": cfg.server.get("log_level"),
+                }
+            )
+
             if kwargs["transport"] == "http":
                 kwargs["path"] = cfg.server.get("path")
 

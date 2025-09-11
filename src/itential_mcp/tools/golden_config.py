@@ -10,12 +10,7 @@ from fastmcp import Context
 from itential_mcp import exceptions
 from itential_mcp import errors
 
-from itential_mcp.models.configuration_manager import (
-    GetGoldenConfigTreesResponse,
-    GoldenConfigTree,
-    CreateGoldenConfigTreeResponse,
-    AddGoldenConfigNodeResponse
-)
+from itential_mcp.models import configuration_manager as models
 
 
 __tags__ = ("configuration_manager",)
@@ -25,7 +20,7 @@ async def get_golden_config_trees(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
     )]
-) -> GetGoldenConfigTreesResponse:
+) -> models.GetGoldenConfigTreesResponse:
     """
     Get all Golden Configuration trees from Itential Platform.
 
@@ -55,14 +50,14 @@ async def get_golden_config_trees(
     results = []
 
     for ele in res:
-        tree = GoldenConfigTree(
+        tree = models.GoldenConfigTree(
             name=ele["name"],
             device_type=ele["deviceType"],
             versions=ele["versions"]
         )
         results.append(tree)
 
-    return GetGoldenConfigTreesResponse(root=results)
+    return models.GetGoldenConfigTreesResponse(root=results)
 
 
 async def create_golden_config_tree(
@@ -83,7 +78,7 @@ async def create_golden_config_tree(
         description="The variables associated with this Golden Config tree",
         default=None
     )]
-) -> CreateGoldenConfigTreeResponse:
+) -> models.CreateGoldenConfigTreeResponse:
     """
     Create a new Golden Configuration tree on Itential Platform.
 
@@ -121,7 +116,7 @@ async def create_golden_config_tree(
     except exceptions.ServerException as exc:
         return errors.internal_server_error(str(exc))
 
-    return CreateGoldenConfigTreeResponse(
+    return models.CreateGoldenConfigTreeResponse(
         name=res["name"],
         device_type=res["deviceType"]
     )
@@ -149,7 +144,7 @@ async def add_golden_config_node(
         description="The configuration template associated with this node",
         default=None
     )]
-) -> AddGoldenConfigNodeResponse:
+) -> models.AddGoldenConfigNodeResponse:
     """
     Add a new node to an existing Golden Configuration tree.
 
@@ -200,6 +195,6 @@ async def add_golden_config_node(
     except exceptions.ServerException as exc:
         return errors.internal_server_error(str(exc))
 
-    return AddGoldenConfigNodeResponse(
+    return models.AddGoldenConfigNodeResponse(
         message=f"Successfully added node {name}"
     )

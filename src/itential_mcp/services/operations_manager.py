@@ -1,13 +1,31 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-
 from itential_mcp import exceptions
 
 from itential_mcp.services import ServiceBase
 
 
 class Service(ServiceBase):
+    """Operations Manager service for Itential Platform workflow and job management.
+
+    This service provides methods for interacting with the Itential Platform's
+    Operations Manager component, which handles workflow execution, job management,
+    and automation orchestration. It serves as the primary interface for triggering
+    workflows, monitoring job execution, and retrieving workflow metadata.
+
+    The Operations Manager is the core automation engine of Itential Platform,
+    enabling the execution of complex network automation workflows, device
+    management operations, and service provisioning tasks.
+
+    Attributes:
+        name (str): The service identifier used for registration and routing.
+            Set to "operations_manager".
+
+    Inherits:
+        ServiceBase: Base service class providing common functionality including
+            client initialization and configuration management.
+    """
 
     name: str = "operations_manager"
 
@@ -64,7 +82,6 @@ class Service(ServiceBase):
 
         return results
 
-
     async def start_workflow(
         self,
         route_name: str,
@@ -114,7 +131,6 @@ class Service(ServiceBase):
         )
 
         return res.json().get("data")
-
 
     async def get_jobs(
         self,
@@ -173,8 +189,7 @@ class Service(ServiceBase):
 
         if project is not None:
             res = await self.client.get(
-                "/automation-studio/projects",
-                params={"equals[name]": name}
+                "/automation-studio/projects", params={"equals[name]": name}
             )
 
             data = res.json()
@@ -195,21 +210,20 @@ class Service(ServiceBase):
         while True:
             params["skip"] = skip
 
-            res = await self.client.get(
-                "/operations-manager/jobs",
-                params=params
-            )
+            res = await self.client.get("/operations-manager/jobs", params=params)
 
             data = res.json()
             metadata = data.get("metadata")
 
             for item in data.get("data") or list():
-                results.append({
-                    "_id": item.get("_id"),
-                    "name": item.get("name"),
-                    "description": item.get("description"),
-                    "status": item.get("status")
-                })
+                results.append(
+                    {
+                        "_id": item.get("_id"),
+                        "name": item.get("name"),
+                        "description": item.get("description"),
+                        "status": item.get("status"),
+                    }
+                )
 
             if len(results) == metadata["total"]:
                 break
@@ -218,8 +232,10 @@ class Service(ServiceBase):
 
         return results
 
-
-    async def describe_job(self, object_id: str) -> dict:
+    async def describe_job(
+        self,
+        object_id: str
+    ) -> dict:
         """
         Retrieve detailed information about a specific job.
 
@@ -260,3 +276,70 @@ class Service(ServiceBase):
         """
         res = await self.client.get(f"/operations-manager/jobs/{object_id}")
         return res.json()["data"]
+
+    async def start_job(
+        self,
+        workflow: str,
+        description: str,
+        variables: dict
+    ) -> dict:
+        """Start a job execution directly using workflow name.
+
+        This method initiates a job execution by directly specifying the workflow
+        name rather than using a trigger endpoint. It creates a new job with the
+        provided description and variables for workflow execution on the Itential
+        Platform operations manager.
+
+        This is an alternative way to start workflows compared to start_workflow(),
+        which uses trigger endpoints. This method provides more direct control
+        over job creation parameters including custom descriptions and variable sets.
+
+        Args:
+            workflow (str): The name of the workflow to execute. This should be
+                the exact workflow name as defined in the platform.
+            description (str): Human-readable description for the job execution.
+                This description will be associated with the created job for
+                identification and tracking purposes.
+            variables (dict): Dictionary of variables to pass to the workflow
+                execution. The structure should match the workflow's expected
+                input schema.
+
+        Returns:
+            dict: Job creation response containing details about the newly created
+                job including job ID, status, and other execution metadata.
+
+        Raises:
+            Exception: If there is an error communicating with the Itential Platform API,
+                if the workflow is not found, or if the API returns an unexpected
+                response format.
+
+        Examples:
+            Start a job with description and variables:
+                >>> variables = {"device": "router1", "config": "template1"}
+                >>> result = await service.start_job(
+                ...     "device-config-workflow",
+                ...     "Configure router1 with template1",
+                ...     variables
+                ... )
+                >>> print(f"Job created: {result.get('_id')}")
+
+            Start a job with minimal parameters:
+                >>> result = await service.start_job(
+                ...     "health-check",
+                ...     "Scheduled health check",
+                ...     {}
+                ... )
+        """
+        body = {
+            "workflow": workflow,
+            "options": {
+                "type": "automation",
+                "groups": [],
+                "description": description or "",
+                "variables": variables or {},
+            },
+        }
+
+        res = await self.client.post("/operations_manager/jobs/start", json=body)
+
+        return res.json()

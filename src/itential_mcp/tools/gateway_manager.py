@@ -2,11 +2,13 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 
-from typing import Annotated, Sequence, Mapping, Any
+from typing import Annotated
 
 from pydantic import Field
 
 from fastmcp import Context
+
+from itential_mcp.models import gateway_manager as models
 
 
 __tags__ = ("gateway_manager",)
@@ -16,7 +18,7 @@ async def get_services(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
     )]
-) -> Sequence[Mapping[str, Any]]:
+) -> models.GetServicesResponse:
     """
     Get the list of all know services from Itential Platform Gateway Manager
 
@@ -24,7 +26,7 @@ async def get_services(
         ctx (Context): The FastMCP Context object
 
     Returns:
-        Sequence[Mapping]: List of service objects with the following fields:
+        GetServicesResponse: List of service objects with the following fields:
             - name: The service name
             - cluster: The cluster name
             - type: The service type (ansible-playbook, python-script,
@@ -38,7 +40,7 @@ async def get_services(
 
     data = await client.gateway_manager.get_services()
 
-    results = list()
+    results = []
 
     for ele in data["result"]:
         results.append({
@@ -49,14 +51,14 @@ async def get_services(
             "decorator": ele["service_metadata"]["decorator"]
         })
 
-    return results
+    return models.GetServicesResponse(results)
 
 
 async def get_gateways(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
     )]
-) -> Sequence[Mapping[str, Any]]:
+) -> models.GetGatewaysResponse:
     """
     Get the list of all know services from Itential Platform Gateway Manager
 
@@ -64,7 +66,7 @@ async def get_gateways(
         ctx (Context): The FastMCP Context object
 
     Returns:
-        Sequence[Mapping]: List of gateway objects with the following fields:
+        GetGatewaysResponse: List of gateway objects with the following fields:
             - name: The gateway name
             - cluster: The cluster name
             - description: Short description of the gateway
@@ -77,7 +79,7 @@ async def get_gateways(
 
     data = await client.get_gateways()
 
-    results = list()
+    results = []
 
     for ele in data["results"]:
         results.append({
@@ -88,7 +90,7 @@ async def get_gateways(
             "enabled": ele["enabled"]
         })
 
-    return results
+    return models.GetGatewaysResponse(results)
 
 
 async def run_service(
@@ -105,7 +107,7 @@ async def run_service(
         description="Optional input parameters to pass to the service",
         default=None
     )]
-) -> Mapping[str, Any]:
+) -> models.RunServiceResponse:
     """
     Run an existing service using the optional input parameters
 
@@ -119,7 +121,7 @@ async def run_service(
         input_params (dict): Optional input parameters to pass to the service
 
     Returns:
-        Mapping[str, Any]: An object that represents output from the service
+        RunServiceResponse: An object that represents output from the service
             with the following fields:
                 - stdout: The output sent to stdout
                 - stderr: The output sent to stderr
@@ -134,4 +136,4 @@ async def run_service(
 
     data = await client.run_service(name, cluster, input_params)
 
-    return data["result"]
+    return models.RunServiceResponse(**data["result"])
