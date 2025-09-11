@@ -49,16 +49,20 @@ class TestDevice:
         assert device.location == "datacenter-a"
         assert device.vendor == "cisco"
 
-    def test_device_missing_required_fields(self):
-        """Test that Device validation fails with missing required fields."""
+    def test_device_missing_optional_fields(self):
+        """Test that Device allows missing optional fields with default values."""
         device_data = {
             "name": "router-1",
             "host": "192.168.1.1",
-            # Missing deviceType and status
+            # Missing deviceType and status - should default to None
         }
 
-        with pytest.raises(ValidationError):
-            Device(**device_data)
+        device = Device(**device_data)
+        
+        assert device.name == "router-1"
+        assert device.host == "192.168.1.1"
+        assert device.deviceType is None
+        assert device.status is None
 
 
 class TestGetDevicesResponse:
