@@ -16,15 +16,17 @@ class Service(ServiceBase):
     Configuration Manager service for managing network device configurations and templates.
 
     This service provides comprehensive functionality for managing Golden Configuration trees,
-    device groups, device management, and template rendering through the Itential Configuration Manager.
-    It enables network operators to create, modify, and deploy configuration templates across network
-    devices with version control, variable substitution, and hierarchical organization.
+    device groups, device management, compliance plans, and template rendering through the 
+    Itential Configuration Manager. It enables network operators to create, modify, and deploy 
+    configuration templates across network devices with version control, variable substitution, 
+    and hierarchical organization.
 
     The service supports the following key capabilities:
     - Golden Configuration tree management (create, modify, version control)
     - Configuration node management within hierarchical structures
     - Device group creation and management for bulk operations
     - Device configuration retrieval, backup, and deployment
+    - Compliance plans execution and management for configuration validation
     - Jinja2 template rendering with variable substitution
     - Template and variable assignment to configuration nodes
 
@@ -56,6 +58,9 @@ class Service(ServiceBase):
             devices=["router1", "router2"],
             description="Production network routers"
         )
+
+        # Run compliance plans
+        result = await service.run_compliance_plan("security-compliance")
         ```
     """
     name: str = "configuration_manager"
@@ -658,3 +663,94 @@ class Service(ServiceBase):
         )
 
         return res.json()
+
+    async def get_compliance_plans(self) -> list:
+        """
+        Retrieve all compliance plans from the Configuration Manager.
+
+        This method fetches a complete list of all compliance plans that have been
+        configured in the Configuration Manager. Compliance plans define
+        configuration validation rules and checks that can be executed against
+        network devices to ensure they meet organizational standards.
+
+        Returns:
+            list: List of compliance plan objects containing plan metadata
+                including IDs, names, descriptions, and throttle settings
+
+        Raises:
+            None: This method does not raise any specific exceptions
+        """
+        limit = 100
+        start = 0
+
+        results = list()
+
+        while True:
+            body = {"name": "", "options": {"start": start, "limit": limit}}
+
+            res = await self.client.post(
+                "/configuration_manager/search/compliance_plans",
+                json=body,
+            )
+
+            data = res.json()
+
+            results.extend(data["plans"])
+
+            if len(results) == data["totalCount"]:
+                break
+
+            start += limit
+
+        return results
+
+    async def run_compliance_plan(self, name: str) -> dict:
+        """
+        Execute a compliance plan against network devices.
+
+        This method starts the execution of a specified compliance plan by name.
+        Compliance plans validate device configurations against organizational
+        standards by running predefined checks and rules. The method returns
+        the created compliance plan instance with its execution details.
+
+        Args:
+            name (str): Case-sensitive name of the compliance plan to execute
+
+        Returns:
+            dict: Running compliance plan instance containing execution details
+                including instance ID, name, description, and job status
+
+        Raises:
+            ValueError: If the specified compliance plan name is not found
+        """
+        plans_list = await self.get_compliance_plans()
+
+        plan_id = None
+
+        for plan in plans_list:
+            if plan["name"] == name:
+                plan_id = plan["id"]
+                break
+        else:
+            raise ValueError(f"compliance plan {name} not found")
+
+        await self.client.post(
+            "/configuration_manager/compliance_plans/run", json={"planId": plan_id}
+        )
+
+        body = {
+            "searchParams": {
+                "limit": 1,
+                "planId": plan_id,
+                "sort": {"started": -1},
+                "start": 0,
+            }
+        }
+
+        res = await self.client.post(
+            "/configuration_manager/search/compliance_plan_instances", json=body
+        )
+
+        json_data = res.json()
+
+        return json_data["plans"][0]
