@@ -8,7 +8,6 @@ from pydantic import Field
 from fastmcp import Context
 
 from itential_mcp import timeutils
-from itential_mcp import functions
 
 from itential_mcp.models import operations_manager as models
 
@@ -16,10 +15,69 @@ from itential_mcp.models import operations_manager as models
 __tags__ = ("operations_manager",)
 
 
+async def _account_id_to_username(ctx: Context, account_id: str) -> str:
+    """Retrieve the username for an account ID.
+
+    This function will take an account ID and use it to look up the username
+    associated with it. The function will cache the username value to
+    avoid making duplicate calls to the server.
+
+    Args:
+        ctx (Context): The FastMCP Context object.
+        account_id (str): The ID of the account to lookup and return the
+            username for.
+
+    Returns:
+        str: The username associated with the account ID.
+
+    Raises:
+        ValueError: If the account ID cannot be found on the server.
+        Exception: If there is an error communicating with the authorization API.
+    """
+    cache = ctx.request_context.lifespan_context.get("cache")
+
+    value = cache.get(f"/accounts/{account_id}")
+    if value is not None:
+        return value
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    limit = 100
+    skip = 0
+    cnt = 0
+
+    params = {"limit": limit}
+
+    while True:
+        params["skip"] = skip
+
+        res = await client.get("/authorization/accounts", params=params)
+
+        data = res.json()
+        results = data["results"]
+
+        for item in results:
+            if item["_id"] == account_id:
+                value = item["username"]
+                break
+
+        cnt += len(results)
+
+        if cnt == data["total"]:
+            break
+
+        skip += limit
+
+    if value is None:
+        raise ValueError(f"unable to find account with id {account_id}")
+
+    cache.put(f"/accounts/{account_id}", value)
+
+    return value
+
+
 async def get_workflows(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
 ) -> models.GetWorkflowsResponse:
     """
     Get all workflow API endpoints from Itential Platform.
@@ -75,16 +133,18 @@ async def get_workflows(
 
 
 async def start_workflow(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    route_name: Annotated[str, Field(
-        description="The name of the API endpoint used to start the workflow"
-    )],
-    data: Annotated[dict | None, Field(
-        description="Data to include in the request body when calling the route",
-        default=None
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    route_name: Annotated[
+        str,
+        Field(description="The name of the API endpoint used to start the workflow"),
+    ],
+    data: Annotated[
+        dict | None,
+        Field(
+            description="Data to include in the request body when calling the route",
+            default=None,
+        ),
+    ],
 ) -> models.StartWorkflowResponse:
     """
     Execute a workflow by triggering its API endpoint.
@@ -137,7 +197,7 @@ async def start_workflow(
         end_time = timeutils.epoch_to_timestamp(metrics_data["end_time"])
 
     if metrics_data.get("user") is not None:
-        user = await functions.account_id_to_username(ctx, metrics_data["user"])
+        user = await _account_id_to_username(ctx, metrics_data["user"])
 
     metrics = models.JobMetrics(
         start_time=start_time,
@@ -158,17 +218,15 @@ async def start_workflow(
 
 
 async def get_jobs(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str | None, Field(
-        description="Workflow name used to filter the results",
-        default=None
-    )],
-    project: Annotated[str | None, Field(
-        description="Project name used to filter the results",
-        default=None
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[
+        str | None,
+        Field(description="Workflow name used to filter the results", default=None),
+    ],
+    project: Annotated[
+        str | None,
+        Field(description="Project name used to filter the results", default=None),
+    ],
 ) -> models.GetJobsResponse:
     """
     Get all jobs from Itential Platform.
@@ -203,7 +261,7 @@ async def get_jobs(
                 "object_id": item.get("_id"),
                 "name": item.get("name"),
                 "description": item.get("description"),
-                "status": item.get("status")
+                "status": item.get("status"),
             }
         )
         job_elements.append(job_element)
@@ -212,12 +270,8 @@ async def get_jobs(
 
 
 async def describe_job(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    object_id: Annotated[str, Field(
-        description="The ID used to retrieve the job"
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    object_id: Annotated[str, Field(description="The ID used to retrieve the job")],
 ) -> models.DescribeJobResponse:
     """
     Get detailed information about a specific job from Itential Platform.
@@ -257,6 +311,6 @@ async def describe_job(
             "tasks": data["tasks"],
             "status": data["status"],
             "metrics": data["metrics"],
-            "updated": data["last_updated"]
+            "updated": data["last_updated"],
         }
     )
