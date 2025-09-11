@@ -20,22 +20,8 @@ class TestTextFSMTemplate:
             "type": "textfsm",
             "created": "2025-09-11T19:15:17.397Z",
             "lastUpdated": "2025-09-11T19:15:17.397Z",
-            "createdBy": {
-                "_id": "67eaf8b49b093bfbf0e62a9f",
-                "provenance": "Okta SAML",
-                "username": "ankit.bhansali@itential.com",
-                "firstname": "Ankit",
-                "inactive": False,
-                "email": "ankit.bhansali@itential.com"
-            },
-            "lastUpdatedBy": {
-                "_id": "67eaf8b49b093bfbf0e62a9f",
-                "provenance": "Okta SAML",
-                "username": "ankit.bhansali@itential.com",
-                "firstname": "Ankit",
-                "inactive": False,
-                "email": "ankit.bhansali@itential.com"
-            },
+            "createdBy": "67eaf8b49b093bfbf0e62a9f",
+            "lastUpdatedBy": "67eaf8b49b093bfbf0e62a9f",
             "tags": []
         }
 
@@ -110,22 +96,8 @@ EOF""",
             "type": "textfsm",
             "created": "2025-09-11T19:15:17.397Z",
             "lastUpdated": "2025-09-11T19:18:00.060Z",
-            "createdBy": {
-                "_id": "67eaf8b49b093bfbf0e62a9f",
-                "provenance": "Okta SAML",
-                "username": "ankit.bhansali@itential.com",
-                "firstname": "Ankit",
-                "inactive": False,
-                "email": "ankit.bhansali@itential.com"
-            },
-            "lastUpdatedBy": {
-                "_id": "67eaf8b49b093bfbf0e62a9f",
-                "provenance": "Okta SAML",
-                "username": "ankit.bhansali@itential.com",
-                "firstname": "Ankit",
-                "inactive": False,
-                "email": "ankit.bhansali@itential.com"
-            },
+            "createdBy": "67eaf8b49b093bfbf0e62a9f",
+            "lastUpdatedBy": "67eaf8b49b093bfbf0e62a9f",
             "tags": []
         }
 
@@ -196,22 +168,8 @@ class TestCreateTextFSMTemplateResponse:
                 "type": "textfsm",
                 "created": "2025-09-11T19:15:17.397Z",
                 "lastUpdated": "2025-09-11T19:15:17.397Z",
-                "createdBy": {
-                    "_id": "67eaf8b49b093bfbf0e62a9f",
-                    "provenance": "Okta SAML",
-                    "username": "ankit.bhansali@itential.com",
-                    "firstname": "Ankit",
-                    "inactive": False,
-                    "email": "ankit.bhansali@itential.com"
-                },
-                "lastUpdatedBy": {
-                    "_id": "67eaf8b49b093bfbf0e62a9f",
-                    "provenance": "Okta SAML",
-                    "username": "ankit.bhansali@itential.com",
-                    "firstname": "Ankit",
-                    "inactive": False,
-                    "email": "ankit.bhansali@itential.com"
-                },
+                "createdBy": "67eaf8b49b093bfbf0e62a9f",
+                "lastUpdatedBy": "67eaf8b49b093bfbf0e62a9f",
                 "tags": []
             },
             "edit": "/automation-studio/#/edit?tab=0&template=68c31fc5f7a1e4d40186b6d5"
@@ -264,22 +222,8 @@ class TestUpdateTextFSMTemplateResponse:
                 "type": "textfsm",
                 "created": "2025-09-11T19:15:17.397Z",
                 "lastUpdated": "2025-09-11T19:18:00.060Z",
-                "createdBy": {
-                    "_id": "67eaf8b49b093bfbf0e62a9f",
-                    "provenance": "Okta SAML",
-                    "username": "ankit.bhansali@itential.com",
-                    "firstname": "Ankit",
-                    "inactive": False,
-                    "email": "ankit.bhansali@itential.com"
-                },
-                "lastUpdatedBy": {
-                    "_id": "67eaf8b49b093bfbf0e62a9f",
-                    "provenance": "Okta SAML",
-                    "username": "ankit.bhansali@itential.com",
-                    "firstname": "Ankit",
-                    "inactive": False,
-                    "email": "ankit.bhansali@itential.com"
-                },
+                "createdBy": "67eaf8b49b093bfbf0e62a9f",
+                "lastUpdatedBy": "67eaf8b49b093bfbf0e62a9f",
                 "tags": []
             },
             "edit": "/automation-studio/#/edit?tab=0&template=68c31fc5f7a1e4d40186b6d5"
