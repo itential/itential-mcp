@@ -46,8 +46,9 @@ class Device(BaseModel):
     ]
 
     deviceType: Annotated[
-        str,
+        str | None,
         Field(
+            default=None,
             description=inspect.cleandoc(
                 """
                 The type of device (e.g., 'cisco_ios', 'juniper')
@@ -57,8 +58,9 @@ class Device(BaseModel):
     ]
 
     status: Annotated[
-        str,
+        str | None,
         Field(
+            default=None,
             description=inspect.cleandoc(
                 """
                 Current operational status of the device
