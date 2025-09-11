@@ -42,7 +42,7 @@ async def run(tool: str, params: Mapping[str, Any] | None=None) -> None:
 
         ValueError: If there are invalid parameters
     """
-    async with Client(server.new(config.get())) as client:
+    async with Client(await server.new(config.get())) as client:
         # Basic server interaction
         if await client.ping() is False:
             raise ValueError("ERROR: cannot reach the server")
