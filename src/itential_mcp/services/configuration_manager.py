@@ -2,7 +2,6 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 import json
-from typing import List, Mapping, Any
 
 import ipsdk
 
@@ -63,6 +62,7 @@ class Service(ServiceBase):
         result = await service.run_compliance_plan("security-compliance")
         ```
     """
+
     name: str = "configuration_manager"
 
     async def get_golden_config_trees(self) -> list[dict]:
@@ -431,6 +431,149 @@ class Service(ServiceBase):
 
         return res.json()
 
+    async def describe_compliance_report(self, report_id: str) -> dict:
+        """
+        Retrieve detailed compliance report results from Itential Platform.
+
+        Compliance reports contain the results of executing compliance plans against
+        network devices, showing configuration validation outcomes, rule violations,
+        and compliance status for each checked device.
+
+        Args:
+            report_id (str): Unique identifier of the compliance report to retrieve
+
+        Returns:
+            dict: Compliance report details containing validation results, device
+                compliance status, rule violations, and configuration analysis from
+                running compliance checks against network infrastructure
+
+        Raises:
+            ServerException: If there is an error communicating with the server
+        """
+        res = await self.client.get(
+            f"/configuration_manager/compliance_reports/details/{report_id}"
+        )
+        return res.json()
+
+    async def get_devices(self) -> list[dict]:
+        """
+        Get all devices known to Itential Platform.
+
+        Itential Platform federates device information from multiple sources and makes
+        it available for network automation workflows. Devices represent physical or
+        virtual network infrastructure that can be managed, configured, and monitored.
+
+        Returns:
+            list[dict]: List of device objects containing device information and metadata
+
+        Raises:
+            ServerException: If there is an error communicating with the server
+        """
+        limit = 100
+        start = 0
+        results = list()
+
+        while True:
+            body = {
+                "options": {
+                    "order": "ascending",
+                    "sort": [{"name": 1}],
+                    "start": start,
+                    "limit": limit,
+                }
+            }
+
+            res = await self.client.post("/configuration_manager/devices", json=body)
+            data = res.json()
+            results.extend(data["list"])
+
+            if len(results) == data["return_count"]:
+                break
+
+            start += limit
+
+        return results
+
+    async def get_device_configuration(self, name: str) -> str:
+        """
+        Retrieve the current configuration from a network device.
+
+        Args:
+            name (str): Name of the device to retrieve configuration from
+
+        Returns:
+            str: The current device configuration
+
+        Raises:
+            ValueError: If there is an error retrieving the configuration or device is not found
+            ServerException: If there is an error communicating with the server
+        """
+        try:
+            res = await self.client.get(
+                f"/configuration_manager/devices/{name}/configuration"
+            )
+        except ValueError:
+            raise
+
+        return res.json()["config"]
+
+    async def backup_device_configuration(
+        self, name: str, description: str | None = None, notes: str | None = None
+    ) -> dict:
+        """
+        Create a backup of a device configuration in Itential Platform.
+
+        Configuration backups provide recovery points and change tracking for network
+        devices, enabling rollback capabilities and configuration management workflows.
+
+        Args:
+            name (str): Name of the device to backup
+            description (str | None): Short description of the backup (optional)
+            notes (str | None): Additional notes for the backup (optional)
+
+        Returns:
+            dict: Backup operation result with the following fields:
+                - id: Unique identifier for the backup
+                - status: Status of the backup operation
+                - message: Descriptive message about the operation status
+
+        Raises:
+            ServerException: If there is an error communicating with the server
+        """
+        body = {
+            "name": name,
+            "options": {"description": description or "", "notes": notes or ""},
+        }
+
+        res = await self.client.post(
+            "/configuration_manager/devices/backups", json=body
+        )
+        return res.json()
+
+    async def apply_device_configuration(self, device: str, config: str) -> dict:
+        """
+        Apply configuration commands to a network device through Itential Platform.
+
+        Configuration deployment enables automated provisioning and updates of network
+        device settings, supporting configuration management and infrastructure automation.
+
+        Args:
+            device (str): Name of the target device
+            config (str): Configuration string to apply to the device
+
+        Returns:
+            dict: Configuration application results and operation status
+
+        Raises:
+            ServerException: If there is an error communicating with the server
+        """
+        body = {"config": {"device": device, "config": config}}
+
+        res = await self.client.post(
+            f"/configuration_manager/devices/{device}/configuration", json=body
+        )
+        return res.json()
+
     async def render_template(
         self, template: str, variables: dict | None = None
     ) -> str:
@@ -502,167 +645,6 @@ class Service(ServiceBase):
         )
         data = res.json()
         return data
-
-    async def get_devices(self) -> List[Mapping[str, Any]]:
-        """
-        Get all devices known to the Configuration Manager.
-
-        This method fetches a complete list of all devices that are available
-        through the Configuration Manager. Devices represent physical or virtual
-        network infrastructure that can be managed, configured, and monitored
-        through Itential Platform.
-
-        The method uses pagination to handle large device inventories efficiently,
-        fetching devices in batches of 100 and combining the results into a
-        single comprehensive list.
-
-        Returns:
-            List[Mapping[str, Any]]: List of device objects containing device
-                information and metadata including names, hosts, device types,
-                and status information
-
-        Raises:
-            None: This method does not raise any specific exceptions
-        """
-        limit = 100
-        start = 0
-
-        results = list()
-
-        while True:
-            body = {
-                "options": {
-                    "order": "ascending",
-                    "sort": [{"name": 1}],
-                    "start": start,
-                    "limit": limit,
-                }
-            }
-
-            res = await self.client.post(
-                "/configuration_manager/devices",
-                json=body,
-            )
-
-            data = res.json()
-
-            results.extend(data["list"])
-
-            if len(results) == data["return_count"]:
-                break
-
-            start += limit
-
-        return results
-
-    async def get_device_configuration(self, name: str) -> str:
-        """
-        Retrieve the current configuration from a network device.
-
-        This method fetches the running configuration from the specified network
-        device through the Configuration Manager. The configuration is returned
-        as a string containing the complete device configuration in the device's
-        native format.
-
-        Args:
-            name (str): Name of the device to retrieve configuration from.
-                The device must be known to the Configuration Manager.
-
-        Returns:
-            str: The current device configuration as a string in the device's
-                native configuration format
-
-        Raises:
-            ValueError: If there is an error retrieving the configuration or
-                if the specified device is not found
-        """
-        try:
-            res = await self.client.get(
-                f"/configuration_manager/devices/{name}/configuration"
-            )
-        except ValueError:
-            raise
-
-        return res.json()["config"]
-
-    async def backup_device_configuration(
-        self, name: str, description: str | None = None, notes: str | None = None
-    ) -> dict:
-        """
-        Create a backup of a device configuration in the Configuration Manager.
-
-        This method creates a backup snapshot of the current configuration for
-        the specified network device. Configuration backups provide recovery
-        points and change tracking for network devices, enabling rollback
-        capabilities and configuration management workflows.
-
-        Args:
-            name (str): Name of the device to backup. The device must be known
-                to the Configuration Manager.
-            description (str | None): Short description to attach to the backup
-                for identification purposes (optional).
-            notes (str | None): Additional notes to attach to the backup for
-                documentation purposes (optional).
-
-        Returns:
-            dict: Backup operation result containing backup metadata including:
-                - id: Unique identifier for the created backup
-                - status: Status of the backup operation
-                - message: Descriptive message about the operation status
-
-        Raises:
-            ValueError: If there is an error creating the backup or if the
-                specified device is not found
-        """
-        body = {
-            "name": name,
-            "options": {"description": description or "", "notes": notes or ""},
-        }
-
-        res = await self.client.post(
-            "/configuration_manager/devices/backups", json=body
-        )
-
-        return res.json()
-
-    async def apply_device_configuration(self, device: str, config: str) -> dict:
-        """
-        Apply configuration commands to a network device through the Configuration Manager.
-
-        This method deploys configuration changes to the specified network device
-        by applying the provided configuration string. Configuration deployment
-        enables automated provisioning and updates of network device settings,
-        supporting configuration management and infrastructure automation workflows.
-
-        Args:
-            device (str): Name of the target device to apply the configuration to.
-                The device must be known to the Configuration Manager.
-            config (str): Configuration string to apply to the device. This should
-                contain valid configuration commands in the device's native format.
-
-        Returns:
-            dict: Configuration application results and operation status containing
-                information about the success or failure of the configuration
-                deployment operation
-
-        Raises:
-            ValueError: If there is an error applying the configuration or if the
-                specified device is not found
-            ServerException: If there is a server-side error during configuration
-                deployment
-        """
-        body = {
-            "config": {
-                "device": device,
-                "config": config,
-            }
-        }
-
-        res = await self.client.post(
-            f"/configuration_manager/devices/{device}/configuration", json=body
-        )
-
-        return res.json()
 
     async def get_compliance_plans(self) -> list:
         """
