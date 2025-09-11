@@ -16,7 +16,6 @@ from .. import client
 logger = get_logger(__name__)
 
 
-
 def _import_binding(module_name: str) -> ModuleType:
     """Dynamically import a binding module by name.
 
@@ -82,7 +81,7 @@ async def bind_to_tool(
 
     kwargs["description"] = description
 
-    tags = f"dynamic,{tool.name}"
+    tags = f"bindings,{tool.name}"
 
     if tool.tags is not None:
         tags = f"{tags},{tool.tags}"
