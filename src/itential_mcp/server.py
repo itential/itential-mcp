@@ -20,7 +20,6 @@ from fastmcp.server.middleware.error_handling import ErrorHandlingMiddleware
 
 from . import client
 from . import config
-from . import cache
 from . import toolutils
 from . import bindings
 
@@ -47,8 +46,8 @@ async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
     """
     Manage the lifespan of Itential Platform connections.
 
-    Creates and manages the client connection to Itential Platform and cache
-    instance, yielding them to FastMCP for inclusion in the request context.
+    Creates and manages the client connection to Itential Platform,
+    yielding it to FastMCP for inclusion in the request context.
 
     Args:
         mcp (FastMCP): The FastMCP server instance
@@ -56,21 +55,16 @@ async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
     Yields:
         dict: Context containing:
             - client: PlatformClient instance for Itential API calls
-            - cache: Cache instance for performance optimization
     """
-    # Create cache and client instances
-    cache_instance = cache.Cache()
+    # Create client instance
     client_instance = client.PlatformClient()
 
     try:
-        # Start the cache background cleanup task
-        await cache_instance.start()
-
-        yield {"client": client_instance, "cache": cache_instance}
+        yield {"client": client_instance}
 
     finally:
-        # Ensure cache is properly stopped on shutdown
-        await cache_instance.stop()
+        # No cleanup needed for client
+        pass
 
 
 class DynamicToolInjectionMiddleware(Middleware):
@@ -251,8 +245,6 @@ async def run() -> int:
             logging.configure_logging(
                 level=cfg.server.get("log_level"),
             )
-
-
 
         mcp = await new(cfg)
 
