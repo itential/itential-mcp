@@ -1,0 +1,84 @@
+create template
+curl 'https://platform-6.0-dev.se.itential.io/automation-studio/templates' \
+  --data-raw '{"template":{"command":"","template":"","data":"","type":"jinja2","name":"TemplateName","description":"template description","group":"NewGroupName"}}'
+rest response
+{
+    "created": {
+        "command": "",
+        "template": "",
+        "data": "",
+        "type": "jinja2",
+        "name": "TemplateName",
+        "description": "template description",
+        "group": "NewGroupName",
+        "createdBy": "67eaf8b49b093bfbf0e62a9f",
+        "lastUpdatedBy": "67eaf8b49b093bfbf0e62a9f",
+        "created": "2025-09-11T17:36:15.064Z",
+        "lastUpdated": "2025-09-11T17:36:15.064Z",
+        "_id": "68c3088ff7a1e4d40186b6d2"
+    },
+    "edit": "/automation-studio/#/edit?tab=0&template=68c3088ff7a1e4d40186b6d2"
+}
+
+update template
+curl 'https://platform-6.0-dev.se.itential.io/automation-studio/templates/68c3088ff7a1e4d40186b6d2' \
+  -X 'PUT' \
+  --data-raw $'{"update":{"name":"TemplateName","command":"","template":"conf t\\ninterface {{type}}{{interface}}.{{subInterface}}\\n description {{description}}\\n{% if vlan %}\\n encapsulation dot1Q {{vlan}}\\n{% endif %}\\n ip address {{ipAddress}} {{subnetMask}}\\n{% if deviceConfig %}\\n    {% if servicePolicyOutput \u0021= deviceConfig.SERVICE_POLICY_OUT %}\\n no service-policy output {{ deviceConfig.SERVICE_POLICY_OUT }}\\n    {% endif %}\\n{% endif %}\\n service-policy output {{servicePolicyOutput}}\\n no shutdown\\n end\\ncopy run start","type":"jinja2","data":"{\\n  \\"description\\": \\"Dummy Interface 9876\\",\\n  \\"interface\\": 1,\\n  \\"ipAddress\\": \\"11.1.3.237\\",\\n  \\"servicePolicyOutput\\": \\"traffic-shape-silver\\",\\n  \\"subInterface\\": 186,\\n  \\"subnetMask\\": \\"255.255.255.252\\",\\n  \\"type\\": \\"GigabitEthernet\\",\\n  \\"vlan\\": 186,\\n  \\"deviceConfig\\": \\n    {\\n      \\"INTERFACE\\": \\"GigabitEthernet1.186\\",\\n      \\"SERVICE_POLICY_IN\\": \\"\\",\\n      \\"SERVICE_POLICY_OUT\\": \\"traffic-shape-gold\\",\\n      \\"SHAPE_CIR\\": \\"300000000\\",\\n      \\"SHAPE_BC\\": \\"1200000\\",\\n      \\"SHAPE_BE\\": \\"1200000\\",\\n      \\"RATE\\": \\"300000000\\"\\n    }\\n  \\n}","group":"NewGroupName","description":"template description"}}'
+
+rest response
+{
+  "updated": {
+      "name": "TemplateName",
+      "command": "",
+      "template": "conf t\ninterface {{type}}{{interface}}.{{subInterface}}\n description {{description}}\n{% if vlan %}\n encapsulation dot1Q {{vlan}}\n{% endif %}\n ip address {{ipAddress}} {{subnetMask}}\n{% if deviceConfig %}\n    {% if servicePolicyOutput != deviceConfig.SERVICE_POLICY_OUT %}\n no service-policy output {{ deviceConfig.SERVICE_POLICY_OUT }}\n    {% endif %}\n{% endif %}\n service-policy output {{servicePolicyOutput}}\n no shutdown\n end\ncopy run start",
+      "type": "jinja2",
+      "data": "{\n  \"description\": \"Dummy Interface 9876\",\n  \"interface\": 1,\n  \"ipAddress\": \"11.1.3.237\",\n  \"servicePolicyOutput\": \"traffic-shape-silver\",\n  \"subInterface\": 186,\n  \"subnetMask\": \"255.255.255.252\",\n  \"type\": \"GigabitEthernet\",\n  \"vlan\": 186,\n  \"deviceConfig\": \n    {\n      \"INTERFACE\": \"GigabitEthernet1.186\",\n      \"SERVICE_POLICY_IN\": \"\",\n      \"SERVICE_POLICY_OUT\": \"traffic-shape-gold\",\n      \"SHAPE_CIR\": \"300000000\",\n      \"SHAPE_BC\": \"1200000\",\n      \"SHAPE_BE\": \"1200000\",\n      \"RATE\": \"300000000\"\n    }\n  \n}",
+      "group": "NewGroupName",
+      "description": "template description",
+      "created": "2025-09-11T17:37:29.474Z",
+      "lastUpdated": "2025-09-11T17:37:29.474Z",
+      "_id": "68c3088ff7a1e4d40186b6d2",
+      "createdBy": {
+          "_id": "67eaf8b49b093bfbf0e62a9f",
+          "provenance": "Okta SAML",
+          "username": "ankit.bhansali@itential.com",
+          "firstname": "Ankit",
+          "inactive": false,
+          "email": "ankit.bhansali@itential.com"
+      },
+      "lastUpdatedBy": {
+          "_id": "67eaf8b49b093bfbf0e62a9f",
+          "provenance": "Okta SAML",
+          "username": "ankit.bhansali@itential.com",
+          "firstname": "Ankit",
+          "inactive": false,
+          "email": "ankit.bhansali@itential.com"
+      }
+  },
+  "edit": "/automation-studio/#/edit?tab=0&template=68c3088ff7a1e4d40186b6d2"
+}
+
+get templates
+curl 'https://platform-6.0-dev.se.itential.io/automation-studio/templates?include=_id,name,group&exclude-project-members=true&limit=50&sort=group' \
+rest response
+{
+    "items": [
+        {
+            "_id": "67c5c2731ba1c1a3fd14ba37",
+            "name": "alcatel_sros_show_service_id_base",
+            "group": "alcatel sros",
+            "tags": []
+        },
+        {
+            "_id": "67c5c2731ba1c1a3fd14ba35",
+            "name": "alcatel_sros_oam_mac-ping",
+            "group": "alcatel sros",
+            "tags": []
+        }],
+        "total": 241,
+        "skip": 0,
+        "limit": 50,
+        "count": 50,
+        "next": "/automation-studio/templates?include=_id,name,group&skip=50&limit=50&sort=group",
+        "previous": null
+    }

@@ -1,0 +1,728 @@
+get all projects
+make call https://platform-6.0-dev.se.itential.io/automation-studio/projects
+returns projects 
+
+{ "message": "Successfully retrieved projects",
+    "data": [
+        {
+            "_id": "68a34b28f7a1e4d40186b6aa",
+            "name": "Application Infra Provisioning - Python + Infoblox + CMDB",
+            "description": "",
+            "components": [
+                {
+                    "iid": 0,
+                    "type": "workflow",
+                    "folder": "/Workflows",
+                    "reference": "aacb2f48-061a-4798-bb58-fa7735c7b9f4"
+                },
+                {
+                    "iid": 1,
+                    "type": "jsonForm",
+                    "reference": "68a35111f7a1e4d40186b6ab",
+                    "folder": "/Transformations"
+                },
+                {
+                    "iid": 2,
+                    "type": "transformation",
+                    "reference": "6899e71db7eed9c97c2ac819",
+                    "folder": "/Transformations"
+                },
+                {
+                    "iid": 3,
+                    "type": "workflow",
+                    "reference": "458c215c-45ee-498d-925f-de2ab0c283a1",
+                    "folder": "/Workflows"
+                },
+                {
+                    "iid": 4,
+                    "type": "workflow",
+                    "reference": "f16b71ec-c79a-4ed0-b089-881762e4b877",
+                    "folder": "/Workflows"
+                },
+                {
+                    "iid": 5,
+                    "type": "workflow",
+                    "folder": "/",
+                    "reference": "cf880fa0-90ff-4f0b-b474-130b73a25300"
+                },
+                {
+                    "iid": 6,
+                    "type": "transformation",
+                    "folder": "/Transformations",
+                    "reference": "68a46f18b7eed9c97c2ac81b"
+                },
+                {
+                    "iid": 7,
+                    "type": "transformation",
+                    "reference": "68a49469b7eed9c97c2ac81c",
+                    "folder": "/Transformations"
+                },
+                {
+                    "iid": 8,
+                    "type": "transformation",
+                    "reference": "68a495e6b7eed9c97c2ac81d",
+                    "folder": "/Transformations"
+                },
+                {
+                    "iid": 11,
+                    "type": "transformation",
+                    "reference": "68a49c98b7eed9c97c2ac821",
+                    "folder": "/Transformations"
+                },
+                {
+                    "iid": 12,
+                    "type": "transformation",
+                    "reference": "68a49cdbb7eed9c97c2ac822",
+                    "folder": "/Transformations"
+                },
+                {
+                    "iid": 13,
+                    "type": "workflow",
+                    "folder": "/Workflows",
+                    "reference": "ce403795-21bb-47ec-ba27-e90c46ffbab2"
+                },
+                {
+                    "iid": 14,
+                    "type": "workflow",
+                    "reference": "78fb070d-d950-4237-8f71-987f80b06802",
+                    "folder": "/Workflows"
+                },
+                {
+                    "iid": 15,
+                    "type": "workflow",
+                    "reference": "5ca7afbd-f892-421e-942a-666c2379e867",
+                    "folder": "/Workflows"
+                },
+                {
+                    "iid": 17,
+                    "type": "workflow",
+                    "folder": "/Workflows",
+                    "reference": "452814b4-508f-4bf1-a79d-f65dfd7b9f21"
+                },
+                {
+                    "iid": 18,
+                    "type": "transformation",
+                    "folder": "/Transformations",
+                    "reference": "68a61e8cb7eed9c97c2ac824"
+                },
+                {
+                    "iid": 19,
+                    "type": "workflow",
+                    "folder": "/Workflows",
+                    "reference": "9364df4f-0946-4012-996a-26bb211ac65a"
+                },
+                {
+                    "iid": 20,
+                    "type": "workflow",
+                    "folder": "/Workflows",
+                    "reference": "7248c97b-d92d-4935-93d4-0b876639a111"
+                }
+            ],
+            "createdBy": {
+                "_id": "67c856baabe686cf9cb78b2d",
+                "provenance": "Okta SAML",
+                "username": "joksan.flores@itential.com"
+            },
+            "created": "2025-08-18T15:47:52.956Z",
+            "lastUpdated": "2025-08-26T15:24:30.873Z",
+            "iid": 97,
+        }],    
+        "metadata": {
+            "skip": 0,
+            "limit": 100,
+            "total": 29,
+            "nextPageSkip": null,
+            "previousPageSkip": null
+        }}
+
+describe project
+the project_id is in the project object "iid": 97,
+make call https://platform-6.0-dev.se.itential.io/automation-studio/projects/{project_id}/export
+returns project details
+
+{
+    "message": "Successfully exported project",
+    "data": {
+        "_id": "68a34b28f7a1e4d40186b6aa",
+        "name": "Application Infra Provisioning - Python + Infoblox + CMDB",
+        "description": "",
+        "components": [
+            {
+                "iid": 0,
+                "type": "workflow",
+                "folder": "/Workflows",
+                "reference": "aacb2f48-061a-4798-bb58-fa7735c7b9f4",
+                "document": {
+                    "name": "Application Provisioning",
+                    "tasks": {
+                        "5835": {
+                            "name": "transformation",
+                            "canvasName": "transformation",
+                            "summary": "Application Provisioning",
+                            "description": "Perform a JSON Transformation using the JST library.",
+                            "location": "Application",
+                            "locationType": null,
+                            "app": "WorkFlowEngine",
+                            "type": "operation",
+                            "displayName": "WorkFlowEngine",
+                            "variables": {
+                                "incoming": {
+                                    "tr_id": "6899e71db7eed9c97c2ac819",
+                                    "variableMap": {
+                                        "networkZone": "$var.job.networkZone",
+                                        "applicationName": "$var.job.applicationName",
+                                        "region": "$var.job.region",
+                                        "template": "$var.job.template"
+                                    },
+                                    "options": {
+                                        "extractOutput": false,
+                                        "validateIncoming": true,
+                                        "revertToDefaultValue": true
+                                    }
+                                },
+                                "outgoing": {
+                                    "zoneSubnet": "$var.job.zoneCIDR",
+                                    "slackNotification": null,
+                                    "slackNotificationCompleted": null
+                                },
+                                "decorators": []
+                            },
+                            "actor": "Pronghorn",
+                            "groups": [],
+                            "nodeLocation": {
+                                "x": -1008,
+                                "y": -288
+                            }
+                        },
+                        "workflow_start": {
+                            "name": "workflow_start",
+                            "groups": [],
+                            "x": 0,
+                            "y": 0.5,
+                            "nodeLocation": {
+                                "x": -1272,
+                                "y": -288
+                            }
+                        },
+                        "workflow_end": {
+                            "name": "workflow_end",
+                            "groups": [],
+                            "x": 1,
+                            "y": 0.5,
+                            "nodeLocation": {
+                                "x": 504,
+                                "y": -288
+                            }
+                        },
+                        "c111": {
+                            "name": "childJob",
+                            "canvasName": "childJob",
+                            "summary": "Send Notification - Slack",
+                            "description": "Runs a child job inside a workflow.",
+                            "location": "Application",
+                            "locationType": null,
+                            "app": "WorkFlowEngine",
+                            "type": "operation",
+                            "displayName": "WorkFlowEngine",
+                            "variables": {
+                                "incoming": {
+                                    "task": "",
+                                    "workflow": "@66f4078e30aeab948ca3f106: Send Notification - Slack",
+                                    "variables": {
+                                        "notificationTitle": {
+                                            "task": "static",
+                                            "value": "🚀 New Application Provisioning Request"
+                                        },
+                                        "notificationText": {
+                                            "task": "5835",
+                                            "value": "slackNotification"
+                                        }
+                                    },
+                                    "data_array": "",
+                                    "transformation": "",
+                                    "loopType": ""
+                                },
+                                "outgoing": {
+                                    "job_details": ""
+                                }
+                            },
+                            "actor": "job",
+                            "groups": [],
+                            "nodeLocation": {
+                                "x": -1008,
+                                "y": -156
+                            }
+                        },
+                        "9e02": {
+                            "name": "childJob",
+                            "canvasName": "childJob",
+                            "summary": "Save Instance in CMDB",
+                            "description": "Runs a child job inside a workflow.",
+                            "location": "Application",
+                            "locationType": null,
+                            "app": "WorkFlowEngine",
+                            "type": "operation",
+                            "displayName": "WorkFlowEngine",
+                            "variables": {
+                                "incoming": {
+                                    "task": "",
+                                    "workflow": "@685163588ad58929838fc95b: ServiceNow  CMDB Write",
+                                    "variables": {
+                                        "ec2": {
+                                            "task": "2bb7",
+                                            "value": "instanceProperties"
+                                        }
+                                    },
+                                    "data_array": "",
+                                    "transformation": "",
+                                    "loopType": ""
+                                },
+                                "outgoing": {
+                                    "job_details": ""
+                                }
+                            },
+                            "actor": "job",
+                            "groups": [],
+                            "nodeLocation": {
+                                "x": -84,
+                                "y": -288
+                            }
+                        },
+                        "b518": {
+                            "name": "assignNextNetwork",
+                            "canvasName": "assignNextNetwork",
+                            "summary": "Assign Subnet by Zone",
+                            "description": "assignNextNetwork will create a network from master block",
+                            "location": "Adapter",
+                            "locationType": "Infoblox",
+                            "app": "Infoblox",
+                            "type": "automatic",
+                            "displayName": "infobloxv9",
+                            "variables": {
+                                "incoming": {
+                                    "networkBlock": "$var.5835.zoneSubnet",
+                                    "nextNetworkSubnetMask": "24",
+                                    "comment": "$var.job.applicationName",
+                                    "adapter_id": "infobloxv9"
+                                },
+                                "outgoing": {
+                                    "result": ""
+                                }
+                            },
+                            "actor": "Pronghorn",
+                            "groups": [],
+                            "nodeLocation": {
+                                "x": -696,
+                                "y": -288
+                            }
+                        },
+                        "4dcd": {
+                            "name": "query",
+                            "canvasName": "query",
+                            "summary": "Query allocated subnet",
+                            "description": "Query data using a dot/bracket notation string and a matching key/value pair.",
+                            "location": "Application",
+                            "locationType": null,
+                            "app": "WorkFlowEngine",
+                            "type": "operation",
+                            "displayName": "WorkFlowEngine",
+                            "variables": {
+                                "incoming": {
+                                    "pass_on_null": false,
+                                    "query": "response.network",
+                                    "obj": "$var.b518.result"
+                                },
+                                "outgoing": {
+                                    "return_data": "$var.job.allocatedSubnet"
+                                }
+                            },
+                            "actor": "Pronghorn",
+                            "groups": [],
+                            "nodeLocation": {
+                                "x": -696,
+                                "y": -156
+                            }
+                        },
+                        "2bb7": {
+                            "name": "transformation",
+                            "canvasName": "transformation",
+                            "summary": "Application_Parameters",
+                            "description": "Perform a JSON Transformation using the JST library.",
+                            "location": "Application",
+                            "locationType": null,
+                            "app": "WorkFlowEngine",
+                            "type": "operation",
+                            "displayName": "WorkFlowEngine",
+                            "variables": {
+                                "incoming": {
+                                    "tr_id": "68a46f18b7eed9c97c2ac81b",
+                                    "variableMap": {
+                                        "applicationDeploy": "$var.f4eb.return_data",
+                                        "applicationName": "$var.job.applicationName"
+                                    },
+                                    "options": {
+                                        "extractOutput": true,
+                                        "revertToDefaultValue": true,
+                                        "validateIncoming": true
+                                    }
+                                },
+                                "outgoing": {
+                                    "instanceProperties": "$var.job.instanceProperties"
+                                },
+                                "decorators": []
+                            },
+                            "actor": "Pronghorn",
+                            "groups": [],
+                            "nodeLocation": {
+                                "x": -84,
+                                "y": -156
+                            }
+                        },
+                        "1fdd": {
+                            "name": "query",
+                            "canvasName": "query",
+                            "summary": "Query snow_cmdb_id",
+                            "description": "Query data using a dot/bracket notation string and a matching key/value pair.",
+                            "location": "Application",
+                            "locationType": null,
+                            "app": "WorkFlowEngine",
+                            "type": "operation",
+                            "displayName": "WorkFlowEngine",
+                            "variables": {
+                                "incoming": {
+                                    "pass_on_null": false,
+                                    "query": "snow_cmdb_record.response.id",
+                                    "obj": "$var.9e02.job_details"
+                                },
+                                "outgoing": {
+                                    "return_data": "$var.job.snow_cmdb_id"
+                                }
+                            },
+                            "actor": "Pronghorn",
+                            "groups": [],
+                            "nodeLocation": {
+                                "x": 240,
+                                "y": -156
+                            }
+                        },
+                        "1fb4": {
+                            "name": "childJob",
+                            "canvasName": "childJob",
+                            "summary": "Application Deploy",
+                            "description": "Runs a child job inside a workflow.",
+                            "location": "Application",
+                            "locationType": null,
+                            "app": "WorkFlowEngine",
+                            "type": "operation",
+                            "displayName": "WorkFlowEngine",
+                            "variables": {
+                                "incoming": {
+                                    "task": "",
+                                    "workflow": "@68a34b28f7a1e4d40186b6aa: Application Deploy",
+                                    "variables": {
+                                        "region": {
+                                            "task": "job",
+                                            "value": "region"
+                                        },
+                                        "cidr": {
+                                            "task": "5835",
+                                            "value": "zoneSubnet"
+                                        },
+                                        "vpcName": {
+                                            "task": "job",
+                                            "value": "applicationName"
+                                        },
+                                        "subnet": {
+                                            "task": "4dcd",
+                                            "value": "return_data"
+                                        },
+                                        "applicationName": {
+                                            "task": "job",
+                                            "value": "applicationName"
+                                        },
+                                        "template": {
+                                            "task": "job",
+                                            "value": "template"
+                                        }
+                                    },
+                                    "data_array": "",
+                                    "transformation": "",
+                                    "loopType": ""
+                                },
+                                "outgoing": {
+                                    "job_details": ""
+                                }
+                            },
+                            "actor": "job",
+                            "groups": [],
+                            "nodeLocation": {
+                                "x": -396,
+                                "y": -288
+                            }
+                        },
+                        "f4eb": {
+                            "name": "query",
+                            "canvasName": "query",
+                            "summary": "Query applicationParameters",
+                            "description": "Query data using a dot/bracket notation string and a matching key/value pair.",
+                            "location": "Application",
+                            "locationType": null,
+                            "app": "WorkFlowEngine",
+                            "type": "operation",
+                            "displayName": "WorkFlowEngine",
+                            "variables": {
+                                "incoming": {
+                                    "pass_on_null": false,
+                                    "query": "applicationParameters",
+                                    "obj": "$var.1fb4.job_details"
+                                },
+                                "outgoing": {
+                                    "return_data": ""
+                                }
+                            },
+                            "actor": "Pronghorn",
+                            "groups": [],
+                            "nodeLocation": {
+                                "x": -396,
+                                "y": -156
+                            }
+                        },
+                        "8f46": {
+                            "name": "childJob",
+                            "canvasName": "childJob",
+                            "summary": "Send Notification - Slack",
+                            "description": "Runs a child job inside a workflow.",
+                            "location": "Application",
+                            "locationType": null,
+                            "app": "WorkFlowEngine",
+                            "type": "operation",
+                            "displayName": "WorkFlowEngine",
+                            "variables": {
+                                "incoming": {
+                                    "task": "",
+                                    "workflow": "@66f4078e30aeab948ca3f106: Send Notification - Slack",
+                                    "variables": {
+                                        "notificationTitle": {
+                                            "task": "static",
+                                            "value": "🚀 New Application Provisioning Request"
+                                        },
+                                        "notificationText": {
+                                            "task": "5835",
+                                            "value": "slackNotificationCompleted"
+                                        }
+                                    },
+                                    "data_array": "",
+                                    "transformation": "",
+                                    "loopType": ""
+                                },
+                                "outgoing": {
+                                    "job_details": ""
+                                }
+                            },
+                            "actor": "job",
+                            "groups": [],
+                            "nodeLocation": {
+                                "x": 240,
+                                "y": -288
+                            }
+                        }
+                    },
+                    "transitions": {
+                        "5835": {
+                            "c111": {
+                                "state": "success",
+                                "type": "standard"
+                            }
+                        },
+                        "workflow_start": {
+                            "5835": {
+                                "state": "success",
+                                "type": "standard"
+                            }
+                        },
+                        "workflow_end": {},
+                        "c111": {
+                            "b518": {
+                                "state": "success",
+                                "type": "standard"
+                            }
+                        },
+                        "9e02": {
+                            "8f46": {
+                                "state": "success",
+                                "type": "standard"
+                            }
+                        },
+                        "b518": {
+                            "4dcd": {
+                                "state": "success",
+                                "type": "standard"
+                            }
+                        },
+                        "4dcd": {
+                            "1fb4": {
+                                "state": "success",
+                                "type": "standard"
+                            }
+                        },
+                        "2bb7": {
+                            "9e02": {
+                                "state": "success",
+                                "type": "standard"
+                            }
+                        },
+                        "1fdd": {
+                            "workflow_end": {
+                                "state": "success",
+                                "type": "standard"
+                            }
+                        },
+                        "1fb4": {
+                            "f4eb": {
+                                "state": "success",
+                                "type": "standard"
+                            }
+                        },
+                        "f4eb": {
+                            "2bb7": {
+                                "state": "success",
+                                "type": "standard"
+                            }
+                        },
+                        "8f46": {
+                            "1fdd": {
+                                "state": "success",
+                                "type": "standard"
+                            }
+                        }
+                    },
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "networkZone": {
+                                "type": "string"
+                            },
+                            "applicationName": {
+                                "type": "string"
+                            },
+                            "region": {
+                                "type": "string"
+                            },
+                            "template": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "networkZone",
+                            "applicationName",
+                            "region",
+                            "template"
+                        ]
+                    },
+                    "outputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "networkZone": {
+                                "type": "string"
+                            },
+                            "applicationName": {
+                                "type": "string"
+                            },
+                            "region": {
+                                "type": "string"
+                            },
+                            "template": {
+                                "type": "string"
+                            },
+                            "_id": {
+                                "type": "string",
+                                "pattern": "^[0-9a-f]{24}$"
+                            },
+                            "initiator": {
+                                "type": "string"
+                            },
+                            "zoneCIDR": {
+                                "type": "string"
+                            },
+                            "allocatedSubnet": {
+                                "title": "return_data",
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "number"
+                                    },
+                                    {
+                                        "type": "object"
+                                    },
+                                    {
+                                        "type": "array"
+                                    },
+                                    {
+                                        "type": "boolean"
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ],
+                                "examples": [
+                                    "value"
+                                ]
+                            },
+                            "instanceProperties": {
+                                "type": "object"
+                            },
+                            "snow_cmdb_id": {
+                                "title": "return_data",
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "number"
+                                    },
+                                    {
+                                        "type": "object"
+                                    },
+                                    {
+                                        "type": "array"
+                                    },
+                                    {
+                                        "type": "boolean"
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ],
+                                "examples": [
+                                    "value"
+                                ]
+                            }
+                        }
+                    },
+                    "decorators": [],
+                    "type": "automation",
+                    "font_size": 12,
+                    "canvasVersion": 3,
+                    "last_updated": "2025-08-22T19:01:37.558Z",
+                    "lastUpdatedVersion": "5.55.5",
+                    "createdVersion": "5.55.5",
+                    "last_updated_by": {
+                        "provenance": "Okta SAML",
+                        "username": "joksan.flores@itential.com",
+                        "firstname": "Joksan",
+                        "inactive": false,
+                        "sso": true,
+                        "nameID": "joksan.flores@itential.com"
+                    },
+                    "created": "1970-01-01T00:00:00.000Z",
+                    "tags": [],
+                    "groups": [],
+                    "migrationVersion": 6
+                }
+            },
+            //more components
+        ],
+    },
+}

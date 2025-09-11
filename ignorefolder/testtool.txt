@@ -1,0 +1,314 @@
+https://platform-6.0-dev.se.itential.io/mop/listTemplates
+rest response
+[
+    {
+        "_id": "@681320fde4ada476b27c5f21: test",
+        "name": "@681320fde4ada476b27c5f21: test",
+        "tags": [],
+        "os": "",
+        "commands": [
+            {
+                "command": "",
+                "passRule": true,
+                "rules": [
+                    {
+                        "rule": "",
+                        "eval": "contains",
+                        "severity": "error"
+                    }
+                ]
+            }
+        ],
+        "passRule": true,
+        "created": 1749511638083,
+        "createdBy": "ankit.bhansali@itential.com",
+        "lastUpdated": 1749511638317,
+        "lastUpdatedBy": "unknown",
+        "description": null,
+        "namespace": {
+            "type": "project",
+            "_id": "681320fde4ada476b27c5f21",
+            "name": "Compliance Report with Email",
+            "accessControl": {
+                "manage": [
+                    "account:67eaf8b49b093bfbf0e62a9f"
+                ],
+                "write": [
+                    "account:67eaf8b49b093bfbf0e62a9f",
+                    "group:67c85954abe686cf9cb78b2e"
+                ],
+                "execute": [
+                    "account:67eaf8b49b093bfbf0e62a9f",
+                    "group:67c85954abe686cf9cb78b2e"
+                ],
+                "read": [
+                    "account:67eaf8b49b093bfbf0e62a9f",
+                    "group:67c85954abe686cf9cb78b2e"
+                ]
+            }
+        }
+    },
+    {
+        "_id": "@67ab91c2052365ffa07d509d: IOS Check Interface Errors",
+        "name": "@67ab91c2052365ffa07d509d: IOS Check Interface Errors",
+        "tags": [],
+        "os": "",
+        "commands": [
+            {
+                "command": "show interface <!device_interface!>",
+                "passRule": true,
+                "rules": [
+                    {
+                        "eval": "contains",
+                        "evaluation": "error",
+                        "rule": "MTU 1400 bytes",
+                        "severity": "error"
+                    }
+                ]
+            }
+        ],
+        "passRule": true,
+        "created": 1739297274412,
+        "createdBy": "joksan.flores@itential.com",
+        "lastUpdated": 1748182090777,
+        "lastUpdatedBy": "unknown",
+        "description": null,
+        "namespace": {
+            "type": "project",
+            "_id": "67ab91c2052365ffa07d509d",
+            "name": "Router Port Troubleshooting",
+            "accessControl": {
+                "manage": [
+                    "group:67c85954abe686cf9cb78b2e",
+                    "account:67c86606abe686cf9cb78b36"
+                ],
+                "write": [
+                    "group:67c85954abe686cf9cb78b2e",
+                    "account:67c86606abe686cf9cb78b36"
+                ],
+                "execute": [
+                    "group:67c85954abe686cf9cb78b2e",
+                    "account:67c86606abe686cf9cb78b36"
+                ],
+                "read": [
+                    "group:67c85954abe686cf9cb78b2e",
+                    "account:67c86606abe686cf9cb78b36"
+                ]
+            }
+        }
+    },
+    {
+        "_id": "@66e2e4599b9c1e60b3e23639: VXLAN_Post-Checks",
+        "name": "@66e2e4599b9c1e60b3e23639: VXLAN_Post-Checks",
+        "tags": [],
+        "os": "",
+        "commands": [
+            {
+                "command": "show ip int br vrf <!vrfName!>",
+                "passRule": true,
+                "rules": [
+                    {
+                        "rule": "protocol-up/link-up/admin-up",
+                        "eval": "contains",
+                        "severity": "error"
+                    }
+                ]
+            },
+            {
+                "command": "show ip route vrf <!vrfName!> | exclude 'IP Route|denotes|<string>'",
+                "passRule": true,
+                "rules": [
+                    {
+                        "rule": "<!vniSubnet!>",
+                        "eval": "contains",
+                        "severity": "error"
+                    }
+                ]
+            },
+            {
+                "command": "sh bgp ipv4 unicast vrf <!vrfName!> | exclude 'BGP|Status|Path type|Origin'",
+                "passRule": true,
+                "rules": [
+                    {
+                        "rule": "<!vniSubnet!>",
+                        "eval": "contains",
+                        "severity": "error"
+                    }
+                ]
+            },
+            {
+                "command": "sh bgp l2vpn evpn | exclude 'BGP|Status|Path type|Origin'",
+                "passRule": true,
+                "rules": [
+                    {
+                        "rule": "L3VNI",
+                        "eval": "contains",
+                        "severity": "error"
+                    }
+                ]
+            }
+        ],
+        "passRule": true,
+        "created": 1726145778384,
+        "createdBy": "jflores",
+        "lastUpdated": 1746116079786,
+        "lastUpdatedBy": "unknown",
+        "description": null,
+        "namespace": {
+            "type": "project",
+            "_id": "66e2e4599b9c1e60b3e23639",
+            "name": "VXLAN Fabric Services LCM",
+            "accessControl": {
+                "manage": [
+                    "account:67c856baabe686cf9cb78b2d"
+                ],
+                "write": [
+                    "account:67c856baabe686cf9cb78b2d",
+                    "group:67c85954abe686cf9cb78b2e"
+                ],
+                "execute": [
+                    "account:67c856baabe686cf9cb78b2d",
+                    "group:67c85954abe686cf9cb78b2e"
+                ],
+                "read": [
+                    "account:67c856baabe686cf9cb78b2d",
+                    "group:67c85954abe686cf9cb78b2e"
+                ]
+            }
+        }
+    },
+    {
+        "_id": "@66d0304521161b4df2717497: File Verification",
+        "name": "@66d0304521161b4df2717497: File Verification",
+        "tags": [],
+        "os": "",
+        "commands": [
+            {
+                "command": "show ver | i System image file is",
+                "passRule": true,
+                "rules": [
+                    {
+                        "rule": "<!version!>",
+                        "eval": "!contains",
+                        "severity": "error",
+                        "flags": {
+                            "case": true
+                        }
+                    }
+                ]
+            },
+            {
+                "command": "dir <!flashMemory!><!version!>",
+                "passRule": true,
+                "rules": [
+                    {
+                        "rule": "No such file or directory",
+                        "eval": "!contains",
+                        "severity": "error"
+                    },
+                    {
+                        "rule": "Directory of <!flashMemory!>/<!version!>",
+                        "eval": "contains",
+                        "severity": "error"
+                    }
+                ]
+            },
+            {
+                "command": "show running | inc boot",
+                "passRule": true,
+                "rules": [
+                    {
+                        "rule": "<!version!>",
+                        "eval": "!contains",
+                        "severity": "error"
+                    },
+                    {
+                        "rule": "boot system <!flashMemory!>",
+                        "eval": "contains",
+                        "severity": "error"
+                    }
+                ]
+            }
+        ],
+        "passRule": true,
+        "created": 1724972860346,
+        "createdBy": null,
+        "lastUpdated": 1746034193201,
+        "lastUpdatedBy": "unknown",
+        "description": null,
+        "namespace": {
+            "type": "project",
+            "_id": "66d0304521161b4df2717497",
+            "name": "Cisco IOS",
+            "accessControl": {
+                "manage": [
+                    "account:67c856baabe686cf9cb78b2d"
+                ],
+                "write": [
+                    "account:67c856baabe686cf9cb78b2d",
+                    "group:67c85954abe686cf9cb78b2e"
+                ],
+                "execute": [
+                    "account:67c856baabe686cf9cb78b2d",
+                    "group:67c85954abe686cf9cb78b2e"
+                ],
+                "read": [
+                    "account:67c856baabe686cf9cb78b2d",
+                    "group:67c85954abe686cf9cb78b2e"
+                ]
+            }
+        }
+    }
+]
+
+curl 'https://platform-6.0-dev.se.itential.io/mop/createTemplate' \
+  --data-raw '{"mop":{"name":"testcmd","os":"","passRule":true,"ignoreWarnings":false,"commands":[{"command":"","passRule":true,"rules":[{"rule":"","eval":"contains","severity":"error"}]}],"created":1757610875214,"createdBy":"ankit.bhansali@itential.com","lastUpdated":1757610875214,"lastUpdatedBy":"ankit.bhansali@itential.com"}}'
+rest response
+  {
+    "result": {
+        "ok": 1,
+        "n": 1
+    },
+    "ops": [
+        {
+            "_id": "testcmd",
+            "name": "testcmd",
+            "os": "",
+            "passRule": true,
+            "ignoreWarnings": false,
+            "commands": [
+                {
+                    "command": "",
+                    "passRule": true,
+                    "rules": [
+                        {
+                            "rule": "",
+                            "eval": "contains",
+                            "severity": "error"
+                        }
+                    ]
+                }
+            ],
+            "created": 1757610875214,
+            "createdBy": "ankit.bhansali@itential.com",
+            "lastUpdated": 1757610875484,
+            "lastUpdatedBy": "unknown"
+        }
+    ],
+    "insertedCount": 1,
+    "insertedIds": {
+        "0": "testcmd"
+    }
+}
+
+
+curl 'https://platform-6.0-dev.se.itential.io/mop/updateTemplate/testcmd' \
+  --data-raw '{"mop":{"_id":"testcmd","name":"testcmd","os":"","passRule":true,"ignoreWarnings":false,"commands":[{"command":"show ip int br","passRule":true,"rules":[{"rule":"test","eval":"contains","severity":"warning"}]},{"passRule":true,"rules":[{"rule":"3.3","eval":"contains","severity":"error"}],"command":"show version"}],"created":1757610875214,"createdBy":"ankit.bhansali@itential.com","lastUpdated":1757610875484,"lastUpdatedBy":"unknown"}}'
+ rest response
+  {
+    "acknowledged": true,
+    "modifiedCount": 1,
+    "upsertedId": null,
+    "upsertedCount": 0,
+    "matchedCount": 1
+}
