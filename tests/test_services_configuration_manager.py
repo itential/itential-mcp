@@ -533,6 +533,8 @@ class TestConfigurationManagerService:
         assert hasattr(service, "get_device_configuration")
         assert hasattr(service, "backup_device_configuration")
         assert hasattr(service, "apply_device_configuration")
+        assert hasattr(service, "get_compliance_plans")
+        assert hasattr(service, "run_compliance_plan")
 
     def test_service_methods_are_async(self, service):
         """Test that all service methods are async."""
@@ -553,6 +555,8 @@ class TestConfigurationManagerService:
         assert asyncio.iscoroutinefunction(service.get_device_configuration)
         assert asyncio.iscoroutinefunction(service.backup_device_configuration)
         assert asyncio.iscoroutinefunction(service.apply_device_configuration)
+        assert asyncio.iscoroutinefunction(service.get_compliance_plans)
+        assert asyncio.iscoroutinefunction(service.run_compliance_plan)
 
 
 class TestConfigurationManagerDeviceGroups:
@@ -1711,3 +1715,372 @@ end"""
                 }
             },
         )
+
+
+class TestConfigurationManagerCompliancePlans:
+    """Test cases for Configuration Manager Compliance Plans methods."""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock AsyncPlatform client."""
+        return AsyncMock(spec=ipsdk.platform.AsyncPlatform)
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Configuration Manager Service instance."""
+        return Service(mock_client)
+
+    @pytest.mark.asyncio
+    async def test_get_compliance_plans_success(self, service, mock_client):
+        """Test successful retrieval of compliance plans."""
+        # Mock first API call
+        mock_response_1 = Mock()
+        mock_response_1.json.return_value = {
+            "plans": [
+                {
+                    "id": "plan-1",
+                    "name": "Security Compliance",
+                    "description": "Security configuration checks",
+                    "throttle": 5,
+                },
+                {
+                    "id": "plan-2",
+                    "name": "Interface Compliance",
+                    "description": "Interface configuration validation",
+                    "throttle": 10,
+                },
+            ],
+            "totalCount": 3,
+        }
+
+        # Mock second API call
+        mock_response_2 = Mock()
+        mock_response_2.json.return_value = {
+            "plans": [
+                {
+                    "id": "plan-3",
+                    "name": "VLAN Compliance",
+                    "description": "VLAN configuration checks",
+                    "throttle": 3,
+                }
+            ],
+            "totalCount": 3,
+        }
+
+        mock_client.post.side_effect = [mock_response_1, mock_response_2]
+
+        result = await service.get_compliance_plans()
+
+        # Verify API calls were made correctly
+        assert mock_client.post.call_count == 2
+
+        expected_body_1 = {"name": "", "options": {"start": 0, "limit": 100}}
+        expected_body_2 = {"name": "", "options": {"start": 100, "limit": 100}}
+
+        mock_client.post.assert_any_call(
+            "/configuration_manager/search/compliance_plans", json=expected_body_1
+        )
+        mock_client.post.assert_any_call(
+            "/configuration_manager/search/compliance_plans", json=expected_body_2
+        )
+
+        # Verify result structure
+        assert len(result) == 3
+        assert result[0]["id"] == "plan-1"
+        assert result[0]["name"] == "Security Compliance"
+        assert result[1]["id"] == "plan-2"
+        assert result[1]["name"] == "Interface Compliance"
+        assert result[2]["id"] == "plan-3"
+        assert result[2]["name"] == "VLAN Compliance"
+
+    @pytest.mark.asyncio
+    async def test_get_compliance_plans_single_page(self, service, mock_client):
+        """Test get_compliance_plans with all results in single page."""
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "plans": [
+                {
+                    "id": "plan-1",
+                    "name": "Single Plan",
+                    "description": "Only one plan",
+                    "throttle": 1,
+                }
+            ],
+            "totalCount": 1,
+        }
+
+        mock_client.post.return_value = mock_response
+
+        result = await service.get_compliance_plans()
+
+        # Verify only one API call was made
+        assert mock_client.post.call_count == 1
+        mock_client.post.assert_called_once_with(
+            "/configuration_manager/search/compliance_plans",
+            json={"name": "", "options": {"start": 0, "limit": 100}},
+        )
+
+        assert len(result) == 1
+        assert result[0]["id"] == "plan-1"
+        assert result[0]["name"] == "Single Plan"
+
+    @pytest.mark.asyncio
+    async def test_get_compliance_plans_empty_response(self, service, mock_client):
+        """Test get_compliance_plans with empty response."""
+        mock_response = Mock()
+        mock_response.json.return_value = {"plans": [], "totalCount": 0}
+
+        mock_client.post.return_value = mock_response
+
+        result = await service.get_compliance_plans()
+
+        mock_client.post.assert_called_once_with(
+            "/configuration_manager/search/compliance_plans",
+            json={"name": "", "options": {"start": 0, "limit": 100}},
+        )
+
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_run_compliance_plan_success(self, service, mock_client):
+        """Test successful execution of compliance plan."""
+        # Mock get_compliance_plans
+        plans_data = [
+            {
+                "id": "plan-1",
+                "name": "Security Plan",
+                "description": "Security checks",
+                "throttle": 5,
+            },
+            {
+                "id": "plan-2",
+                "name": "Network Plan",
+                "description": "Network checks",
+                "throttle": 10,
+            },
+        ]
+        service.get_compliance_plans = AsyncMock(return_value=plans_data)
+
+        # Mock run compliance plan API call
+        mock_run_response = Mock()
+        mock_run_response.json.return_value = {"status": "started"}
+
+        # Mock search compliance plan instances API call
+        mock_search_response = Mock()
+        mock_search_response.json.return_value = {
+            "plans": [
+                {
+                    "id": "instance-123",
+                    "name": "Security Plan",
+                    "description": "Security checks",
+                    "jobStatus": "running",
+                }
+            ]
+        }
+
+        mock_client.post.side_effect = [mock_run_response, mock_search_response]
+
+        result = await service.run_compliance_plan("Security Plan")
+
+        # Verify get_compliance_plans was called
+        service.get_compliance_plans.assert_called_once()
+
+        # Verify API calls were made
+        assert mock_client.post.call_count == 2
+
+        # First call: run compliance plan
+        mock_client.post.assert_any_call(
+            "/configuration_manager/compliance_plans/run", json={"planId": "plan-1"}
+        )
+
+        # Second call: search instances
+        expected_search_body = {
+            "searchParams": {
+                "limit": 1,
+                "planId": "plan-1",
+                "sort": {"started": -1},
+                "start": 0,
+            }
+        }
+        mock_client.post.assert_any_call(
+            "/configuration_manager/search/compliance_plan_instances",
+            json=expected_search_body,
+        )
+
+        # Verify result
+        assert result["id"] == "instance-123"
+        assert result["name"] == "Security Plan"
+        assert result["jobStatus"] == "running"
+
+    @pytest.mark.asyncio
+    async def test_run_compliance_plan_not_found(self, service):
+        """Test run_compliance_plan with non-existent plan name."""
+        plans_data = [
+            {
+                "id": "plan-1",
+                "name": "Existing Plan",
+                "description": "Exists",
+                "throttle": 5,
+            }
+        ]
+        service.get_compliance_plans = AsyncMock(return_value=plans_data)
+
+        with pytest.raises(
+            ValueError, match="compliance plan Non-Existent Plan not found"
+        ):
+            await service.run_compliance_plan("Non-Existent Plan")
+
+        service.get_compliance_plans.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_run_compliance_plan_empty_plans_list(self, service):
+        """Test run_compliance_plan with no available plans."""
+        service.get_compliance_plans = AsyncMock(return_value=[])
+
+        with pytest.raises(ValueError, match="compliance plan Any Plan not found"):
+            await service.run_compliance_plan("Any Plan")
+
+        service.get_compliance_plans.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_run_compliance_plan_case_sensitive(self, service):
+        """Test that run_compliance_plan is case-sensitive."""
+        plans_data = [
+            {
+                "id": "plan-1",
+                "name": "Security Plan",
+                "description": "Security checks",
+                "throttle": 5,
+            }
+        ]
+        service.get_compliance_plans = AsyncMock(return_value=plans_data)
+
+        # Test exact match works
+        mock_run_response = Mock()
+        mock_run_response.json.return_value = {"status": "started"}
+
+        mock_search_response = Mock()
+        mock_search_response.json.return_value = {
+            "plans": [
+                {
+                    "id": "instance-123",
+                    "name": "Security Plan",
+                    "description": "Security checks",
+                    "jobStatus": "running",
+                }
+            ]
+        }
+
+        service.client.post = AsyncMock(
+            side_effect=[mock_run_response, mock_search_response]
+        )
+
+        result = await service.run_compliance_plan("Security Plan")
+        assert result["name"] == "Security Plan"
+
+        # Test case mismatch fails
+        with pytest.raises(ValueError, match="compliance plan security plan not found"):
+            await service.run_compliance_plan("security plan")
+
+    @pytest.mark.asyncio
+    async def test_run_compliance_plan_multiple_instances(self, service, mock_client):
+        """Test run_compliance_plan returns most recent instance."""
+        plans_data = [
+            {"id": "plan-1", "name": "Test Plan", "description": "Test", "throttle": 1}
+        ]
+        service.get_compliance_plans = AsyncMock(return_value=plans_data)
+
+        mock_run_response = Mock()
+        mock_run_response.json.return_value = {"status": "started"}
+
+        # Mock search response with multiple instances (sorted by started desc)
+        mock_search_response = Mock()
+        mock_search_response.json.return_value = {
+            "plans": [
+                {
+                    "id": "instance-newest",
+                    "name": "Test Plan",
+                    "description": "Test",
+                    "jobStatus": "running",
+                }
+            ]
+        }
+
+        mock_client.post.side_effect = [mock_run_response, mock_search_response]
+
+        result = await service.run_compliance_plan("Test Plan")
+
+        # Verify correct search parameters (limit 1, sort by started desc)
+        expected_search_body = {
+            "searchParams": {
+                "limit": 1,
+                "planId": "plan-1",
+                "sort": {"started": -1},
+                "start": 0,
+            }
+        }
+        mock_client.post.assert_any_call(
+            "/configuration_manager/search/compliance_plan_instances",
+            json=expected_search_body,
+        )
+
+        assert result["id"] == "instance-newest"
+
+    @pytest.mark.asyncio
+    async def test_compliance_plans_integration_workflow(self, service, mock_client):
+        """Test integration workflow: get plans, find plan, run plan."""
+        # Step 1: Get compliance plans returns multiple plans
+        plans_data = [
+            {
+                "id": "plan-1",
+                "name": "Security Compliance",
+                "description": "Security checks",
+                "throttle": 5,
+            },
+            {
+                "id": "plan-2",
+                "name": "Interface Compliance",
+                "description": "Interface checks",
+                "throttle": 10,
+            },
+            {
+                "id": "plan-3",
+                "name": "VLAN Compliance",
+                "description": "VLAN checks",
+                "throttle": 3,
+            },
+        ]
+        service.get_compliance_plans = AsyncMock(return_value=plans_data)
+
+        # Step 2: Run specific plan
+        mock_run_response = Mock()
+        mock_run_response.json.return_value = {"status": "started", "planId": "plan-2"}
+
+        mock_search_response = Mock()
+        mock_search_response.json.return_value = {
+            "plans": [
+                {
+                    "id": "instance-interface-123",
+                    "name": "Interface Compliance",
+                    "description": "Interface checks",
+                    "jobStatus": "running",
+                }
+            ]
+        }
+
+        mock_client.post.side_effect = [mock_run_response, mock_search_response]
+
+        result = await service.run_compliance_plan("Interface Compliance")
+
+        # Verify the workflow
+        service.get_compliance_plans.assert_called_once()
+
+        assert mock_client.post.call_count == 2
+        mock_client.post.assert_any_call(
+            "/configuration_manager/compliance_plans/run",
+            json={"planId": "plan-2"},  # Correct plan ID for "Interface Compliance"
+        )
+
+        assert result["id"] == "instance-interface-123"
+        assert result["name"] == "Interface Compliance"
+        assert result["jobStatus"] == "running"
