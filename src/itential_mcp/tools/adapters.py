@@ -1,57 +1,22 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-import asyncio
-
 from typing import Annotated
 
 from pydantic import Field
 
 from fastmcp import Context
 
-from itential_mcp import exceptions
 from itential_mcp.models import adapters as models
 
 
 __tags__ = ("adapters",)
 
 
-async def _get_adapter_health(ctx: Context, name: str) -> dict:
-    """
-    Get health information for a specific adapter.
-
-    Args:
-        ctx (Context): The FastMCP Context object
-        name (str): Adapter name to get health for
-
-    Returns:
-        dict: Adapter health data from the platform
-
-    Raises:
-        NotFoundError: If the adapter is not found
-    """
-    client = ctx.request_context.lifespan_context.get("client")
-
-    res = await client.get(
-        "/health/adapters",
-        params={
-            "equals": name,
-            "equalsField": "id"
-        }
-    )
-
-    data = res.json()
-
-    if data["total"] != 1:
-        raise exceptions.NotFoundError(f"unable to find adapter {name}")
-
-    return data
-
-
 async def get_adapters(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
-    )]
+    )],
 ) -> models.GetAdaptersResponse:
     """
     Get all adapters configured on the Itential Platform instance.
@@ -67,20 +32,20 @@ async def get_adapters(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    res = await client.get("/health/adapters")
-
-    data = res.json()
+    data = await client.health.get_adapters_health()
 
     elements = list()
 
     for ele in data["results"]:
-        elements.append(models.GetAdaptersElement(
-            name=ele["id"],
-            package=ele.get("package_id"),
-            version=ele["version"],
-            description=ele.get("description"),
-            state=ele["state"]
-        ))
+        elements.append(
+            models.GetAdaptersElement(
+                name=ele["id"],
+                package=ele.get("package_id"),
+                version=ele["version"],
+                description=ele.get("description"),
+                state=ele["state"],
+            )
+        )
 
     return models.GetAdaptersResponse(elements)
 
@@ -123,32 +88,9 @@ async def start_adapter(
         - Function polls adapter state every second until timeout
     """
     await ctx.info("inside start_adapter(...)")
-
     client = ctx.request_context.lifespan_context.get("client")
-
-    data = await _get_adapter_health(ctx, name)
-    state = data["results"][0]["state"]
-
-    if state == "STOPPED":
-        await client.put(f"/adapters/{name}/start")
-
-        while timeout:
-            data = await _get_adapter_health(ctx, name)
-            state = data["results"][0]["state"]
-
-            if state == "RUNNING":
-                break
-
-            await asyncio.sleep(1)
-            timeout -= 1
-
-    elif state in ("DEAD", "DELETED"):
-        raise exceptions.InvalidStateError(f"adapter `{name}` is `{state}`")
-
-    if timeout == 0:
-        raise exceptions.TimeoutExceededError()
-
-    return models.StartAdapterResponse(name=name, state=state)
+    data = await client.adapters.start_adapter(name=name, timeout=timeout)
+    return models.StartAdapterResponse(name=data["id"], state=data["state"])
 
 
 async def stop_adapter(
@@ -161,7 +103,7 @@ async def stop_adapter(
     timeout: Annotated[int, Field(
         description="Timeout waiting for adapter to stop",
         default=10
-    )]
+    )],
 ) -> models.StopAdapterResponse:
     """
     Stop an adapter on Itential Platform.
@@ -189,33 +131,9 @@ async def stop_adapter(
         - Function polls adapter state every second until timeout
     """
     await ctx.info("inside stop_adapter(...)")
-
     client = ctx.request_context.lifespan_context.get("client")
-
-    data = await _get_adapter_health(ctx, name)
-    state = data["results"][0]["state"]
-
-    if state == "RUNNING":
-        await client.put(f"/adapters/{name}/stop")
-
-        while timeout:
-            data = await _get_adapter_health(ctx, name)
-
-            state = data["results"][0]["state"]
-
-            if state == "STOPPED":
-                break
-
-            await asyncio.sleep(1)
-            timeout -= 1
-
-    elif state in ("DEAD", "DELETED"):
-        raise exceptions.InvalidStateError(f"adapter `{name}` is `{state}`")
-
-    if timeout == 0:
-        raise exceptions.TimeoutExceededError()
-
-    return models.StopAdapterResponse(name=name, state=state)
+    data = await client.adapters.stop_adapter(name=name, timeout=timeout)
+    return models.StopAdapterResponse(name=data["name"], state=data["state"])
 
 
 async def restart_adapter(
@@ -243,8 +161,8 @@ async def restart_adapter(
         timeout (int): Seconds to wait for adapter to return to RUNNING state
 
     Returns:
-        ResartAdapterResponse: Response object that indicates the status of
-            the ressart adapter operation
+        RestartAdapterResponse: Response object that indicates the status of
+            the restart adapter operation
 
     Raises:
         TimeoutExceededError: If adapter doesn't return to RUNNING state within timeout
@@ -257,30 +175,6 @@ async def restart_adapter(
         - Function polls adapter state every second until timeout
     """
     await ctx.info("inside restart_adapter(...)")
-
     client = ctx.request_context.lifespan_context.get("client")
-
-    data = await _get_adapter_health(ctx, name)
-    state = data["results"][0]["state"]
-
-    if state == "RUNNING":
-        await client.put(f"/adapters/{name}/restart")
-
-        while timeout:
-            data = await _get_adapter_health(ctx, name)
-
-            state = data["results"][0]["state"]
-
-            if state == "RUNNING":
-                break
-
-            await asyncio.sleep(1)
-            timeout -= 1
-
-    elif state in ("DEAD", "DELETED", "STOPPED"):
-        raise exceptions.InvalidStateError(f"adapter `{name}` is `{state}`")
-
-    if timeout == 0:
-        raise exceptions.TimeoutExceededError()
-
-    return models.RestartAdapterResponse(name=name, state=state)
+    data = await client.adapters.restart_adapter(name=name, timeout=timeout)
+    return models.RestartAdapterResponse(name=data["name"], state=data["state"])
