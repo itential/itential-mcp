@@ -19,7 +19,7 @@ __tags__ = ("configuration_manager",)
 async def get_golden_config_trees(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
-    )]
+    )],
 ) -> models.GetGoldenConfigTreesResponse:
     """
     Get all Golden Configuration trees from Itential Platform.
@@ -51,9 +51,7 @@ async def get_golden_config_trees(
 
     for ele in res:
         tree = models.GoldenConfigTree(
-            name=ele["name"],
-            device_type=ele["deviceType"],
-            versions=ele["versions"]
+            name=ele["name"], device_type=ele["deviceType"], versions=ele["versions"]
         )
         results.append(tree)
 
@@ -72,11 +70,11 @@ async def create_golden_config_tree(
     )],
     template: Annotated[str | None, Field(
         description="The configuration template associated with the base node",
-        default=None
+        default=None,
     )],
     variables: Annotated[dict | None, Field(
         description="The variables associated with this Golden Config tree",
-        default=None
+        default=None,
     )]
 ) -> models.CreateGoldenConfigTreeResponse:
     """
@@ -108,17 +106,13 @@ async def create_golden_config_tree(
 
     try:
         res = await client.configuration_manager.create_golden_config_tree(
-            name=name,
-            device_type=device_type,
-            template=template,
-            variables=variables
+            name=name, device_type=device_type, template=template, variables=variables
         )
     except exceptions.ServerException as exc:
         return errors.internal_server_error(str(exc))
 
     return models.CreateGoldenConfigTreeResponse(
-        name=res["name"],
-        device_type=res["deviceType"]
+        name=res["name"], device_type=res["deviceType"]
     )
 
 
@@ -133,8 +127,7 @@ async def add_golden_config_node(
         description="The name of the new node to add"
     )],
     version: Annotated[str, Field(
-        description="The version of the tree to add the node to",
-        default="initial"
+        description="The version of the tree to add the node to", default="initial"
     )],
     path: Annotated[str, Field(
         description="The parent path",
@@ -142,8 +135,8 @@ async def add_golden_config_node(
     )],
     template: Annotated[str, Field(
         description="The configuration template associated with this node",
-        default=None
-    )]
+        default=None,
+    )],
 ) -> models.AddGoldenConfigNodeResponse:
     """
     Add a new node to an existing Golden Configuration tree.
@@ -172,11 +165,7 @@ async def add_golden_config_node(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    kwargs = {
-        "tree_name": tree_name,
-        "name": name,
-        "version": version
-    }
+    kwargs = {"tree_name": tree_name, "name": name, "version": version}
 
     if path:
         kwargs["path"] = path
@@ -190,11 +179,9 @@ async def add_golden_config_node(
             tree_name=tree_name,
             version=version,
             path=path,
-            template=template
+            template=template,
         )
     except exceptions.ServerException as exc:
         return errors.internal_server_error(str(exc))
 
-    return models.AddGoldenConfigNodeResponse(
-        message=f"Successfully added node {name}"
-    )
+    return models.AddGoldenConfigNodeResponse(message=f"Successfully added node {name}")

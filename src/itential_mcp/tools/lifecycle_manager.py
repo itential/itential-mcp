@@ -20,7 +20,7 @@ __tags__ = ("lifecycle_manager",)
 async def get_resources(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
-    )]
+    )],
 ) -> models.GetResourcesResponse:
     """
     Get all Lifecycle Manager resource models from Itential Platform.
@@ -46,10 +46,12 @@ async def get_resources(
     results = []
 
     for ele in res:
-        results.append(models.GetResourcesElement(
-            name=ele["name"],
-            description=ele.get("description"),
-        ))
+        results.append(
+            models.GetResourcesElement(
+                name=ele["name"],
+                description=ele.get("description"),
+            )
+        )
 
     return models.GetResourcesResponse(root=results)
 
@@ -100,9 +102,7 @@ async def create_resource(
 
     try:
         await client.lifecycle_manager.describe_resource(name)
-        return errors.resource_already_exists(
-            f"resource {name} already exists"
-        )
+        return errors.resource_already_exists(f"resource {name} already exists")
     except exceptions.NotFoundError:
         # Resource doesn't exist, we can create it
         pass
@@ -156,13 +156,15 @@ async def describe_resource(
 
         if ele["preWorkflowJst"] is not None:
             try:
-                jst = await client.transformations.describe_transformation(ele["preWorkflowJst"])
+                jst = await client.transformations.describe_transformation(
+                    ele["preWorkflowJst"]
+                )
                 action_schema = jst["incoming"]
             except exceptions.NotFoundError:
                 return errors.resource_not_found(
                     f"The transformation for the {ele['name']} action could "
-                     "not be found, please verify it exists and you have "
-                     "permissions to access it"
+                    "not be found, please verify it exists and you have "
+                    "permissions to access it"
                 )
 
         elif ele["workflow"] is not None:
@@ -172,20 +174,18 @@ async def describe_resource(
             except exceptions.NotFoundError:
                 return errors.resource_not_found(
                     f"The workflow for the {ele['name']} action could not be "
-                     "found,  please verify it exists and you have "
-                     "permissions to access it"
+                    "found,  please verify it exists and you have "
+                    "permissions to access it"
                 )
 
-        actions.append(models.Action(
-            name=ele["name"],
-            type=ele["type"],
-            input_schema=action_schema
-        ))
+        actions.append(
+            models.Action(
+                name=ele["name"], type=ele["type"], input_schema=action_schema
+            )
+        )
 
     return models.DescribeResourceResponse(
-        name=item["name"],
-        description=item.get("description"),
-        actions=actions
+        name=item["name"], description=item.get("description"), actions=actions
     )
 
 
@@ -224,16 +224,18 @@ async def get_instances(
     results = []
 
     for ele in data:
-        results.append(models.GetInstancesElement(
-            name=ele["name"],
-            description=ele.get("description"),
-            instance_data=ele["instanceData"],
-            last_action=models.LastAction(
-                name=ele["lastAction"]["name"],
-                type=ele["lastAction"]["type"],
-                status=ele["lastAction"]["status"]
+        results.append(
+            models.GetInstancesElement(
+                name=ele["name"],
+                description=ele.get("description"),
+                instance_data=ele["instanceData"],
+                last_action=models.LastAction(
+                    name=ele["lastAction"]["name"],
+                    type=ele["lastAction"]["type"],
+                    status=ele["lastAction"]["status"],
+                ),
             )
-        ))
+        )
 
     return models.GetInstancesResponse(root=results)
 
@@ -287,8 +289,8 @@ async def describe_instance(
         last_action=models.LastAction(
             name=data["lastAction"]["name"],
             type=data["lastAction"]["type"],
-            status=data["lastAction"]["status"]
-        )
+            status=data["lastAction"]["status"],
+        ),
     )
 
 
@@ -313,7 +315,7 @@ async def run_action(
     input_params: Annotated[dict, Field(
         description="The input parameters for the action",
         default=None
-    )]
+    )],
 ) -> models.RunActionResponse:
     """
     Run an action that is associated with a Lifecycle Manager resource
@@ -352,8 +354,11 @@ async def run_action(
 
     try:
         json_data = await client.lifecycle_manager.run_action(
-            resource_name, action_name, instance_name, instance_description,
-            input_params
+            resource_name,
+            action_name,
+            instance_name,
+            instance_description,
+            input_params,
         )
     except exceptions.NotFoundError:
         return errors.resource_not_found(
@@ -369,5 +374,5 @@ async def run_action(
         message=json_data.get("message"),
         start_time=json_data["data"]["startTime"],
         job_id=json_data["data"]["jobId"],
-        status=json_data["data"]["status"]
+        status=json_data["data"]["status"],
     )

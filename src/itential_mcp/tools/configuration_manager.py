@@ -39,13 +39,13 @@ async def render_template(
 
     Returns:
         RenderTemplateResponse: The fully rendered template with variables substituted
+
+    Raises:
+        Exception: If there is an error rendering the template
     """
     await ctx.info("inside render_template()")
-
     client = ctx.request_context.lifespan_context.get("client")
-
     data = client.configuration_manager.render_template(
         template=template, variables=variables
     )
-
     return models.RenderTemplateResponse(result=data)

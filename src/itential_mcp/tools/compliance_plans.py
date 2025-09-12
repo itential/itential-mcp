@@ -14,7 +14,9 @@ __tags__ = ("configuration_manager",)
 
 
 async def get_compliance_plans(
-    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
 ) -> models.GetCompliancePlansResponse:
     """
     Get all compliance plans from Itential Platform.
@@ -27,6 +29,9 @@ async def get_compliance_plans(
 
     Returns:
         models.GetCompliancePlansResponse: Response containing list of compliance plan objects
+
+    Raises:
+        Exception: If there is an error retrieving compliance plans from the platform
     """
     await ctx.info("inside get_compliance_plans(...)")
     client = ctx.request_context.lifespan_context.get("client")
@@ -35,8 +40,12 @@ async def get_compliance_plans(
 
 
 async def run_compliance_plan(
-    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
-    name: Annotated[str, Field(description="The name of the compliance plan to run")],
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    name: Annotated[str, Field(
+        description="The name of the compliance plan to run"
+    )],
 ) -> models.RunCompliancePlanResponse:
     """
     Execute a compliance plan against network devices.
@@ -56,16 +65,12 @@ async def run_compliance_plan(
         ValueError: If the specified compliance plan name is not found
     """
     await ctx.info("inside run_compliance_plan(...)")
-
     client = ctx.request_context.lifespan_context.get("client")
-
     data = client.configuration_manager.run_compliance_plan(name=name)
-
     compliance_instance = models.CompliancePlanInstance(
         id=data["id"],
         name=data["name"],
         description=data["description"],
         jobStatus=data["jobStatus"],
     )
-
     return models.RunCompliancePlanResponse(instance=compliance_instance)
