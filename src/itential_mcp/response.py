@@ -3,25 +3,26 @@
 
 from typing import Any
 
-import httpx
+from ipsdk import connection
 
 
 class Response(object):
     """Wrapper class for HTTP response objects.
-    
+
     Provides a standardized interface for handling HTTP responses from
-    the Itential Platform API by wrapping httpx.Response objects.
+    the Itential Platform API by wrapping ipsdk Response objects.
     """
 
-    def __init__(self, res: httpx.Response):
+    def __init__(self, res: connection.Response):
         """Initialize a new response instance.
-        
+
         Args:
-            res (httpx.Response): An instance of httpx.Response from the HTTP request.
-            
+            res (connection.Response): An instance of connection.Response
+                from the HTTP request.
+
         Returns:
             None
-            
+
         Raises:
             None
         """
@@ -30,7 +31,7 @@ class Response(object):
     @property
     def status_code(self) -> int:
         """Get the HTTP status code from the response.
-        
+
         Returns:
             int: The HTTP status code (e.g., 200, 404, 500).
         """
@@ -39,7 +40,7 @@ class Response(object):
     @property
     def reason(self) -> str:
         """Get the HTTP status code reason phrase.
-        
+
         Returns:
             str: The HTTP status code message (e.g., "OK", "Not Found").
         """
@@ -48,7 +49,7 @@ class Response(object):
     @property
     def text(self) -> str:
         """Get the response body as text.
-        
+
         Returns:
             str: The response body as a text string.
         """
@@ -56,16 +57,16 @@ class Response(object):
 
     def json(self) -> Any:
         """Parse the response body as JSON and return as Python object.
-        
+
         Attempts to parse the response body as JSON and return the
         resulting Python object (dict, list, etc.).
-        
+
         Args:
             None
-            
+
         Returns:
             Any: The response body parsed as a Python object.
-            
+
         Raises:
             ValueError: If the response body cannot be parsed as valid JSON.
             TypeError: If the response content type is not JSON-compatible.
