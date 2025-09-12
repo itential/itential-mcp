@@ -1,7 +1,6 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-
 from typing import Annotated
 
 from pydantic import Field
@@ -17,7 +16,7 @@ __tags__ = ("gateway_manager",)
 async def get_services(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
-    )]
+    )],
 ) -> models.GetServicesResponse:
     """
     Get the list of all know services from Itential Platform Gateway Manager
@@ -29,10 +28,12 @@ async def get_services(
         GetServicesResponse: List of service objects with the following fields:
             - name: The service name
             - cluster: The cluster name
-            - type: The service type (ansible-playbook, python-script,
-              opentofu-plan)
+            - type: The service type (ansible-playbook, python-script, opentofu-plan)
             - description: Short description of the service
             - decorator: JSON schema that defines the service input
+
+    Raises:
+        Exception: If there is an error retrieving services from Gateway Manager
     """
     await ctx.info("inside get_services(...)")
 
@@ -43,13 +44,13 @@ async def get_services(
     results = []
 
     for ele in data["result"]:
-        results.append({
-            "name": ele["service_metadata"]["name"],
-            "cluster": ele["service_metadata"]["location"],
-            "type": ele["service_metadata"]["type"],
-            "description": ele["service_metadata"]["description"],
-            "decorator": ele["service_metadata"]["decorator"]
-        })
+        results.append(models.ServiceElement(
+            name=ele["service_metadata"]["name"],
+            cluster=ele["service_metadata"]["location"],
+            type=ele["service_metadata"]["type"],
+            description=ele["service_metadata"]["description"],
+            decorator=ele["service_metadata"]["decorator"],
+        ))
 
     return models.GetServicesResponse(results)
 
@@ -57,7 +58,7 @@ async def get_services(
 async def get_gateways(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
-    )]
+    )],
 ) -> models.GetGatewaysResponse:
     """
     Get the list of all know services from Itential Platform Gateway Manager
@@ -72,6 +73,9 @@ async def get_gateways(
             - description: Short description of the gateway
             - status: Current status of the gateway connection
             - enabled: Whether or not the gateway is enabled and usable
+
+    Raises:
+        Exception: If there is an error retrieving gateways from Gateway Manager
     """
     await ctx.info("inside get_gateways(...)")
 
@@ -82,13 +86,13 @@ async def get_gateways(
     results = []
 
     for ele in data["results"]:
-        results.append({
-            "name": ele["gateway_name"],
-            "cluster": ele["cluster_id"],
-            "description": ele["description"],
-            "status": ele["connection_status"],
-            "enabled": ele["enabled"]
-        })
+        results.append(models.GatewayElement(
+            name=ele["gateway_name"],
+            cluster=ele["cluster_id"],
+            description=ele["description"],
+            status=ele["connection_status"],
+            enabled=ele["enabled"],
+        ))
 
     return models.GetGatewaysResponse(results)
 
@@ -129,11 +133,11 @@ async def run_service(
                 - start_time: The start time when the service was started
                 - end_time: The end time when the service run completed
                 - elapsed_time: The number of seconds the service ran for
+
+    Raises:
+        Exception: If there is an error running the service on Gateway Manager
     """
     await ctx.info("inside run_service(...)")
-
     client = ctx.request_context.lifespan_context.get("client")
-
     data = await client.run_service(name, cluster, input_params)
-
     return models.RunServiceResponse(**data["result"])
