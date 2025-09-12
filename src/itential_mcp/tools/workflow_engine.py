@@ -14,8 +14,7 @@ __tags__ = ("workflow_engine",)
 
 
 async def _get_job_metrics(
-    ctx: Context,
-    params: dict | None = None
+    ctx: Context, params: dict | None = None
 ) -> models.GetJobMetricsResponse:
     """
     Internal helper to get aggregate job metrics from the Workflow Engine.
@@ -51,7 +50,7 @@ async def _get_job_metrics(
 async def get_job_metrics(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
-    )]
+    )],
 ) -> models.GetJobMetricsResponse:
     """
     Get aggregate job metrics from the Workflow Engine.
@@ -83,7 +82,7 @@ async def get_job_metrics_for_workflow(
     )],
     name: Annotated[str, Field(
         description="The name of the workflow to get the job metrics for"
-    )]
+    )],
 ) -> models.GetJobMetricsResponse:
     """
     Get the job metrics for the specified workflow from Workflow Engine.
@@ -111,17 +110,12 @@ async def get_job_metrics_for_workflow(
         - The name argument is case sensitive
     """
     return await _get_job_metrics(
-        ctx,
-        params={
-            "containsField": "workflow.name",
-            "contains": name
-        }
+        ctx, params={"containsField": "workflow.name", "contains": name}
     )
 
 
 async def _get_task_metrics(
-    ctx: Context,
-    params: dict | None = None
+    ctx: Context, params: dict | None = None
 ) -> models.GetTaskMetricsResponse:
     """
     Internal helper to get aggregate task metrics from the Workflow Engine.
@@ -157,7 +151,7 @@ async def _get_task_metrics(
 async def get_task_metrics(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
-    )]
+    )],
 ) -> models.GetTaskMetricsResponse:
     """
     Get all aggregate task metrics from the Workflow Engine.
@@ -190,7 +184,7 @@ async def get_task_metrics_for_workflow(
     )],
     name: Annotated[str, Field(
         description="The name of the workflow to retrieve task metrics for"
-    )]
+    )],
 ) -> models.GetTaskMetricsResponse:
     """
     Get all task metrics for the specified workflow from Workflow Engine.
@@ -219,11 +213,7 @@ async def get_task_metrics_for_workflow(
         - The name argument is case sensitive
     """
     return await _get_task_metrics(
-        ctx,
-        params={
-            "equalsField": "workflow.name",
-            "equals": name
-        }
+        ctx, params={"equalsField": "workflow.name", "equals": name}
     )
 
 
@@ -233,7 +223,7 @@ async def get_task_metrics_for_app(
     )],
     name: Annotated[str, Field(
         description="The name of the application to retrieve task metrics for"
-    )]
+    )],
 ) -> models.GetTaskMetricsResponse:
     """
     Get all task metrics for the specified application from Workflow Engine.
@@ -263,13 +253,8 @@ async def get_task_metrics_for_app(
         - The name argument is case sensitive
         - Use get_applications tool to retrieve available application names
     """
-    return await _get_task_metrics(
-        ctx,
-        params={
-            "equalsField": "app",
-            "equals": name
-        }
-    )
+    return await _get_task_metrics(ctx, params={"equalsField": "app", "equals": name})
+
 
 async def get_task_metrics_for_task(
     ctx: Annotated[Context, Field(
@@ -277,7 +262,7 @@ async def get_task_metrics_for_task(
     )],
     name: Annotated[str, Field(
         description="The name of the task to retrieve task metrics for"
-    )]
+    )],
 ) -> models.GetTaskMetricsResponse:
     """
     Get all task metrics for the named task from Workflow Engine.
@@ -305,10 +290,4 @@ async def get_task_metrics_for_task(
     Notes:
         - The name argument is case sensitive
     """
-    return await _get_task_metrics(
-        ctx,
-        params={
-            "equalsField": "name",
-            "equals": name
-        }
-    )
+    return await _get_task_metrics(ctx, params={"equalsField": "name", "equals": name})
