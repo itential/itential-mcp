@@ -17,7 +17,7 @@ __tags__ = ("integrations",)
 async def get_integration_models(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
-    )]
+    )],
 ) -> models.GetIntegrationModelsResponse:
     """
     Get all integration models from Itential Platform.
@@ -45,12 +45,14 @@ async def get_integration_models(
     results = list()
 
     for ele in res["integrationModels"]:
-        results.append(models.GetIntegrationModelsElement(
-            id=ele["versionId"],
-            title=ele["versionId"].split(":")[0],
-            version=ele["properties"]["version"],
-            description=ele.get("description"),
-        ))
+        results.append(
+            models.GetIntegrationModelsElement(
+                id=ele["versionId"],
+                title=ele["versionId"].split(":")[0],
+                version=ele["properties"]["version"],
+                description=ele.get("description"),
+            )
+        )
 
     return models.GetIntegrationModelsResponse(root=results)
 
@@ -61,7 +63,7 @@ async def create_integration_model(
     )],
     model: Annotated[dict, Field(
         description="OpenAPI specification"
-    )]
+    )],
 ) -> models.CreateIntegrationModelResponse:
     """
     Create a new integration model on Itential Platform from an OpenAPI specification.
@@ -91,6 +93,7 @@ async def create_integration_model(
     model_id = f"{model['info']['title']}:{model['info']['version']}"
 
     models_response = await get_integration_models(ctx)
+
     for ele in models_response.root:
         if ele.id == model_id:
             raise exceptions.AlreadyExistsError(f"model {model_id} already exists")
@@ -100,6 +103,5 @@ async def create_integration_model(
     res = await client.integrations.create_integration_model(model)
 
     return models.CreateIntegrationModelResponse(
-        status=res["status"],
-        message=res["message"]
+        status=res["status"], message=res["message"]
     )

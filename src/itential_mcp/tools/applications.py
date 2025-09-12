@@ -1,15 +1,12 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-import asyncio
-
 from typing import Annotated
 
 from pydantic import Field
 
 from fastmcp import Context
 
-from itential_mcp import exceptions
 from itential_mcp.models import applications as models
 
 
@@ -19,7 +16,7 @@ __tags__ = ("applications",)
 async def get_applications(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
-    )]
+    )],
 ) -> models.GetApplicationsResponse:
     """
     Get all applications configured on the Itential Platform instance.
@@ -28,8 +25,11 @@ async def get_applications(
         ctx (Context): The FastMCP Context object
 
     Returns:
-        GetApplicationResponse: List of objects wher each element represents
+        GetApplicationsResponse: List of objects where each element represents
             a configured application from the server
+
+    Raises:
+        Exception: If there is an error retrieving applications from the platform
     """
     await ctx.info("inside get_applications(...)")
 
@@ -42,13 +42,15 @@ async def get_applications(
     elements = list()
 
     for ele in data["results"]:
-        elements.append(models.GetApplicationsElement(
-            name=ele["id"],
-            package=ele.get("package_id"),
-            version=ele.get("version"),
-            description=ele.get("description"),
-            state=ele["state"]
-        ))
+        elements.append(
+            models.GetApplicationsElement(
+                name=ele["id"],
+                package=ele.get("package_id"),
+                version=ele.get("version"),
+                description=ele.get("description"),
+                state=ele["state"],
+            )
+        )
 
     return models.GetApplicationsResponse(root=elements)
 
@@ -91,32 +93,12 @@ async def start_application(
         - Function polls application state every second until timeout
     """
     await ctx.info("inside start_application(...)")
-
     client = ctx.request_context.lifespan_context.get("client")
-
-    data = await client.get_application_health(ctx, name)
-    state = data["results"][0]["state"]
-
-    if state == "STOPPED":
-        await client.put(f"/applications/{name}/start")
-
-        while timeout:
-            data = await client.get_application_health(ctx, name)
-            state = data["results"][0]["state"]
-
-            if state == "RUNNING":
-                break
-
-            await asyncio.sleep(1)
-            timeout -= 1
-
-    elif state in ("DEAD", "DELETED"):
-        raise exceptions.InvalidStateError(f"application `{name}` is `{state}`")
-
-    if timeout == 0:
-        raise exceptions.TimeoutExceededError()
-
-    return models.StartApplicationResponse(name=name, state=state)
+    data = client.applications.start_application(name, timeout)
+    return models.StartApplicationResponse(
+        name=data["id"],
+        state=data["state"]
+    )
 
 
 async def stop_application(
@@ -129,7 +111,7 @@ async def stop_application(
     timeout: Annotated[int, Field(
         description="Timeout waiting for application to stop",
         default=10
-    )]
+    )],
 ) -> models.StopApplicationResponse:
     """
     Stop an application on Itential Platform.
@@ -157,33 +139,12 @@ async def stop_application(
         - Function polls application state every second until timeout
     """
     await ctx.info("inside stop_application(...)")
-
     client = ctx.request_context.lifespan_context.get("client")
-
-    data = await client.get_application_health(ctx, name)
-    state = data["results"][0]["state"]
-
-    if state == "RUNNING":
-        await client.put(f"/applications/{name}/stop")
-
-        while timeout:
-            data = await client.get_application_health(ctx, name)
-
-            state = data["results"][0]["state"]
-
-            if state == "STOPPED":
-                break
-
-            await asyncio.sleep(1)
-            timeout -= 1
-
-    elif state in ("DEAD", "DELETED"):
-        raise exceptions.InvalidStateError(f"application `{name}` is `{state}`")
-
-    if timeout == 0:
-        raise exceptions.TimeoutExceededError()
-
-    return models.StopApplicationResponse(name=name, state=state)
+    data = await client.applications.stop_application(name=name, timeout=timeout)
+    return models.StopApplicationResponse(
+        name=data["id"],
+        state=data["state"]
+    )
 
 
 async def restart_application(
@@ -225,30 +186,9 @@ async def restart_application(
         - Function polls application state every second until timeout
     """
     await ctx.info("inside restart_application(...)")
-
     client = ctx.request_context.lifespan_context.get("client")
-
-    data = await client.get_application_health(ctx, name)
-    state = data["results"][0]["state"]
-
-    if state == "RUNNING":
-        await client.put(f"/applications/{name}/restart")
-
-        while timeout:
-            data = await client.get_application_health(ctx, name)
-
-            state = data["results"][0]["state"]
-
-            if state == "RUNNING":
-                break
-
-            await asyncio.sleep(1)
-            timeout -= 1
-
-    elif state in ("DEAD", "DELETED", "STOPPED"):
-        raise exceptions.InvalidStateError(f"application `{name}` is `{state}`")
-
-    if timeout == 0:
-        raise exceptions.TimeoutExceededError()
-
-    return models.RestartApplicationResponse(name=name, state=state)
+    data = await client.applications.restart_application(name=name, timeout=timeout)
+    return models.RestartApplicationResponse(
+        name=data["id"],
+        state=data["state"]
+    )

@@ -14,8 +14,12 @@ __tags__ = ("configuration_manager",)
 
 
 async def describe_compliance_report(
-    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
-    report_id: Annotated[str, Field(description="The ID of the report to describe")],
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    report_id: Annotated[str, Field(
+        description="The ID of the report to describe"
+    )],
 ) -> models.DescribeComplianceReportResponse:
     """
     Retrieve detailed compliance report results from Itential Platform.
@@ -32,6 +36,9 @@ async def describe_compliance_report(
         models.DescribeComplianceReportResponse: Compliance report details containing validation results, device
             compliance status, rule violations, and configuration analysis from
             running compliance checks against network infrastructure
+
+    Raises:
+        Exception: If there is an error retrieving the compliance report or the report ID is not found
     """
     await ctx.info("inside describe_compliance_report(...)")
     client = ctx.request_context.lifespan_context.get("client")
