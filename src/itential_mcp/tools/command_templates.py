@@ -12,7 +12,9 @@ __tags__ = ("automation_studio",)
 
 
 async def get_command_templates(
-    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
 ) -> models.GetCommandTemplatesResponse:
     """
     Get all command templates from Itential Platform.
@@ -26,6 +28,9 @@ async def get_command_templates(
 
     Returns:
         GetCommandTemplatesResponse: Response containing list of command template objects
+
+    Raises:
+        Exception: If there is an error retrieving command templates from the platform
     """
     await ctx.info("inside get_command_templates(...)")
 
@@ -45,17 +50,16 @@ async def get_command_templates(
 
 
 async def describe_command_template(
-    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
-    name: Annotated[
-        str, Field(description="The name of the command template to describe")
-    ],
-    project: Annotated[
-        str | None,
-        Field(
-            description="The name of the project to get the command template from",
-            default=None,
-        ),
-    ],
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    name: Annotated[str, Field(
+        description="The name of the command template to describe"
+    )],
+    project: Annotated[str | None, Field(
+        description="The name of the project to get the command template from",
+        default=None,
+    )],
 ) -> models.DescribeCommandTemplateResponse:
     """
     Get detailed information about a specific command template.
@@ -67,33 +71,37 @@ async def describe_command_template(
 
     Returns:
         DescribeCommandTemplateResponse: Response containing detailed command template information
+
+    Raises:
+        Exception: If there is an error retrieving the command template or template is not found
     """
     await ctx.info("inside describe_command_template(...)")
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    data = await client.mop.describe_command_template(
-        name=name, project=project
-    )
+    data = await client.mop.describe_command_template(name=name, project=project)
 
     template = models.CommandTemplateDetail(
-        **data  # Use dict unpacking to handle the _id alias automatically
+        **data
     )
 
     return models.DescribeCommandTemplateResponse(template=template)
 
 
 async def run_command_template(
-    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
-    name: Annotated[str, Field(description="The name of the command template to run")],
-    devices: Annotated[
-        list,
-        Field(description="The list of devices to run the command template against"),
-    ],
-    project: Annotated[
-        str | None,
-        Field(description="Project that contains the command template", default=None),
-    ],
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    name: Annotated[str, Field(
+        description="The name of the command template to run"
+    )],
+    devices: Annotated[list, Field(
+        description="The list of devices to run the command template against"
+    )],
+    project: Annotated[str | None, Field(
+        description="Project that contains the command template",
+        default=None
+    )],
 ) -> models.RunCommandTemplateResponse:
     """
     Execute a command template against specified devices with rule evaluation.
@@ -113,6 +121,9 @@ async def run_command_template(
     Returns:
         RunCommandTemplateResponse: Response containing execution results with template name,
             pass flag, and detailed command results for each device
+
+    Raises:
+        Exception: If there is an error running the command template or template is not found
     """
     await ctx.info("inside run_command_templates(...)")
 
@@ -122,7 +133,6 @@ async def run_command_template(
         name=name, devices=devices, project=project
     )
 
-    # Parse command results
     command_results = []
 
     for result in data.get("command_results", []):
@@ -153,11 +163,15 @@ async def run_command_template(
 
 
 async def run_command(
-    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
-    cmd: Annotated[str, Field(description="The command to run on the devices")],
-    devices: Annotated[
-        list[str], Field(description="The list of devices to run the command on")
-    ],
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    cmd: Annotated[str, Field(
+        description="The command to run on the devices"
+    )],
+    devices: Annotated[list[str], Field(
+        description="The list of devices to run the command on"
+    )],
 ) -> models.RunCommandResponse:
     """
     Run a single command against multiple devices.
@@ -169,6 +183,9 @@ async def run_command(
 
     Returns:
         RunCommandResponse: Response containing list of command execution results for each device
+
+    Raises:
+        Exception: If there is an error running the command on the devices
     """
     await ctx.info("inside run_command(...)")
 
@@ -177,6 +194,7 @@ async def run_command(
     res = await client.mop.run_command(cmd=cmd, devices=devices)
 
     results = []
+
     for item in res:
         result = models.DeviceCommandResult(
             device=item["device"],
@@ -189,47 +207,35 @@ async def run_command(
 
 
 async def create_command_template(
-    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
-    name: Annotated[str, Field(description="Name for the command template")],
-    commands: Annotated[
-        list[dict],
-        Field(description="List of commands with their validation rules")
-    ],
-    project: Annotated[
-        str | None,
-        Field(
-            description="Project name to create the template in (None for global templates)",
-            default=None,
-        ),
-    ],
-    description: Annotated[
-        str | None,
-        Field(
-            description="Optional description for the template",
-            default=None,
-        ),
-    ],
-    os: Annotated[
-        str,
-        Field(
-            description="Operating system type (default: empty string)",
-            default="",
-        ),
-    ],
-    pass_rule: Annotated[
-        bool,
-        Field(
-            description="Pass rule configuration (True=all must pass, False=one must pass)",
-            default=True,
-        ),
-    ],
-    ignore_warnings: Annotated[
-        bool,
-        Field(
-            description="Whether to ignore warnings during execution",
-            default=False,
-        ),
-    ],
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    name: Annotated[str, Field(
+        description="Name for the command template"
+    )],
+    commands: Annotated[list[dict], Field(
+        description="List of commands with their validation rules"
+    )],
+    project: Annotated[str | None, Field(
+        description="Project name to create the template in (None for global templates)",
+        default=None,
+    )],
+    description: Annotated[str | None, Field(
+        description="Optional description for the template",
+        default=None,
+    )],
+    os: Annotated[str, Field(
+        description="Operating system type (default: empty string)",
+        default="",
+    )],
+    pass_rule: Annotated[ bool, Field(
+        description="Pass rule configuration (True=all must pass, False=one must pass)",
+        default=True,
+    )],
+    ignore_warnings: Annotated[bool, Field(
+        description="Whether to ignore warnings during execution",
+        default=False,
+    )],
 ) -> models.CreateCommandTemplateResponse:
     """
     Create a new command template in Itential Platform.
@@ -275,7 +281,7 @@ async def create_command_template(
                 ]
             }
         ]
-        
+
         # Regex with variable substitution
         commands = [
             {
@@ -290,7 +296,7 @@ async def create_command_template(
                 ]
             }
         ]
-        
+
         # Multiple evaluation types
         commands = [
             {
@@ -329,47 +335,35 @@ async def create_command_template(
 
 
 async def update_command_template(
-    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
-    name: Annotated[str, Field(description="Name of the command template to update")],
-    commands: Annotated[
-        list[dict],
-        Field(description="List of commands with their validation rules")
-    ],
-    project: Annotated[
-        str | None,
-        Field(
-            description="Project name containing the template (None for global templates)",
-            default=None,
-        ),
-    ],
-    description: Annotated[
-        str | None,
-        Field(
-            description="Optional description for the template",
-            default=None,
-        ),
-    ],
-    os: Annotated[
-        str,
-        Field(
-            description="Operating system type (default: empty string)",
-            default="",
-        ),
-    ],
-    pass_rule: Annotated[
-        bool,
-        Field(
-            description="Pass rule configuration (True=all must pass, False=one must pass)",
-            default=True,
-        ),
-    ],
-    ignore_warnings: Annotated[
-        bool,
-        Field(
-            description="Whether to ignore warnings during execution",
-            default=False,
-        ),
-    ],
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    name: Annotated[str, Field(
+        description="Name of the command template to update"
+    )],
+    commands: Annotated[list[dict], Field(
+        description="List of commands with their validation rules"
+    )],
+    project: Annotated[str | None, Field(
+        description="Project name containing the template (None for global templates)",
+        default=None,
+    )],
+    description: Annotated[str | None, Field(
+        description="Optional description for the template",
+        default=None,
+    )],
+    os: Annotated[str, Field(
+        description="Operating system type (default: empty string)",
+        default="",
+    )],
+    pass_rule: Annotated[bool, Field(
+        description="Pass rule configuration (True=all must pass, False=one must pass)",
+        default=True,
+    )],
+    ignore_warnings: Annotated[bool, Field(
+        description="Whether to ignore warnings during execution",
+        default=False,
+    )],
 ) -> models.UpdateCommandTemplateResponse:
     """
     Update an existing command template in Itential Platform.
@@ -415,7 +409,7 @@ async def update_command_template(
                 ]
             }
         ]
-        
+
         # Regex with variable substitution
         commands = [
             {
@@ -430,7 +424,7 @@ async def update_command_template(
                 ]
             }
         ]
-        
+
         # Multiple evaluation types
         commands = [
             {
@@ -464,5 +458,4 @@ async def update_command_template(
         pass_rule=pass_rule,
         ignore_warnings=ignore_warnings,
     )
-
     return models.UpdateCommandTemplateResponse(**data)
