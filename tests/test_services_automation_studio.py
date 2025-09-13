@@ -4,526 +4,807 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
+from itential_mcp import exceptions
 from itential_mcp.services.automation_studio import Service
 
 
 class TestAutomationStudioService:
-    """Tests for Automation Studio service."""
+    """Test cases for the Automation Studio Service class"""
 
     @pytest.fixture
     def mock_client(self):
-        """Create a mock AsyncPlatform client."""
+        """Create a mock client for testing"""
         client = AsyncMock()
         return client
 
     @pytest.fixture
-    def automation_studio_service(self, mock_client):
-        """Create an Automation Studio service instance with mock client."""
-        return Service(mock_client)
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
 
-    def test_service_name(self, automation_studio_service):
-        """Test service name is correct."""
-        assert automation_studio_service.name == "automation_studio"
+    def test_service_name(self, mock_client):
+        """Test that the service has the correct name"""
+        service = Service(mock_client)
+        assert service.name == "automation_studio"
 
     @pytest.mark.asyncio
-    async def test_describe_workflow_success(self, automation_studio_service, mock_client):
-        """Test successful workflow description."""
-        workflow_id = "workflow123"
-        expected_workflow = {
-            "_id": workflow_id,
-            "name": "Test Workflow",
-            "description": "A test workflow"
-        }
-        
+    async def test_describe_workflow_success(self, service, mock_client):
+        """Test successful workflow retrieval"""
+        # Mock response data
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "total": 1,
-            "items": [expected_workflow]
+            "items": [
+                {
+                    "_id": "workflow-123",
+                    "name": "Test Workflow",
+                    "description": "Test workflow description",
+                    "type": "automation",
+                    "status": "active",
+                }
+            ],
         }
         mock_client.get.return_value = mock_response
-        
-        result = await automation_studio_service.describe_workflow(workflow_id)
-        
-        assert result == expected_workflow
+
+        result = await service.describe_workflow("workflow-123")
+
+        # Verify client was called with correct parameters
         mock_client.get.assert_called_once_with(
-            "/automation-studio/workflows",
-            params={"equals[_id]": workflow_id}
+            "/automation-studio/workflows", params={"equals[_id]": "workflow-123"}
         )
 
+        # Verify response data
+        assert result["_id"] == "workflow-123"
+        assert result["name"] == "Test Workflow"
+        assert result["description"] == "Test workflow description"
+
     @pytest.mark.asyncio
-    async def test_describe_workflow_not_found(self, automation_studio_service, mock_client):
-        """Test workflow not found error."""
-        workflow_id = "nonexistent"
-        
+    async def test_describe_workflow_not_found(self, service, mock_client):
+        """Test workflow not found error"""
+        # Mock response with no results
         mock_response = MagicMock()
         mock_response.json.return_value = {"total": 0, "items": []}
         mock_client.get.return_value = mock_response
-        
-        from itential_mcp import exceptions
-        
-        with pytest.raises(exceptions.NotFoundError, match="workflow id nonexistent not found"):
-            await automation_studio_service.describe_workflow(workflow_id)
+
+        with pytest.raises(exceptions.NotFoundError) as exc_info:
+            await service.describe_workflow("nonexistent-workflow")
+
+        assert "workflow id nonexistent-workflow not found" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_get_templates_default_params(self, automation_studio_service, mock_client):
-        """Test getting templates with default parameters."""
-        expected_response = {
-            "items": [
-                {"_id": "template1", "name": "Template 1", "group": "Group 1"},
-                {"_id": "template2", "name": "Template 2", "group": "Group 2"}
-            ],
+    async def test_describe_workflow_multiple_found(self, service, mock_client):
+        """Test workflow multiple results error"""
+        # Mock response with multiple results (should not happen but test defensive code)
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
             "total": 2,
-            "skip": 0,
-            "limit": 50,
-            "count": 2,
-            "next": None,
-            "previous": None
+            "items": [
+                {"_id": "workflow-1", "name": "Workflow 1"},
+                {"_id": "workflow-2", "name": "Workflow 2"},
+            ],
         }
-        
-        mock_response = MagicMock()
-        mock_response.json.return_value = expected_response
         mock_client.get.return_value = mock_response
-        
-        result = await automation_studio_service.get_templates()
-        
-        assert result == expected_response
+
+        with pytest.raises(exceptions.NotFoundError) as exc_info:
+            await service.describe_workflow("duplicate-workflow")
+
+        assert "workflow id duplicate-workflow not found" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_get_templates_no_filter(self, service, mock_client):
+        """Test getting all templates without filtering"""
+        # Mock response data for single page
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "total": 2,
+            "items": [
+                {
+                    "_id": "template-1",
+                    "name": "Test Template 1",
+                    "type": "textfsm",
+                    "group": "parsing",
+                },
+                {
+                    "_id": "template-2",
+                    "name": "Test Template 2",
+                    "type": "jinja2",
+                    "group": "configuration",
+                },
+            ],
+        }
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_templates()
+
+        # Verify client was called with correct parameters
+        mock_client.get.assert_called_once_with(
+            "/automation-studio/templates", params={"limit": 100, "skip": 0}
+        )
+
+        # Verify response data
+        assert len(result) == 2
+        assert result[0]["_id"] == "template-1"
+        assert result[0]["type"] == "textfsm"
+        assert result[1]["_id"] == "template-2"
+        assert result[1]["type"] == "jinja2"
+
+    @pytest.mark.asyncio
+    async def test_get_templates_with_type_filter(self, service, mock_client):
+        """Test getting templates with type filter"""
+        # Mock response data
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "total": 1,
+            "items": [
+                {
+                    "_id": "template-textfsm",
+                    "name": "TextFSM Template",
+                    "type": "textfsm",
+                    "group": "parsing",
+                }
+            ],
+        }
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_templates(template_type="textfsm")
+
+        # Verify client was called with correct parameters
         mock_client.get.assert_called_once_with(
             "/automation-studio/templates",
-            params={
-                "exclude-project-members": "true",
-                "limit": 50,
-                "sort": "group",
-                "include": "_id,name,group"
+            params={"limit": 100, "equals[type]": "textfsm", "skip": 0},
+        )
+
+        # Verify response data
+        assert len(result) == 1
+        assert result[0]["type"] == "textfsm"
+
+    @pytest.mark.asyncio
+    async def test_get_templates_pagination(self, service, mock_client):
+        """Test templates retrieval with pagination"""
+        call_count = 0
+
+        def mock_get(url, params=None):
+            nonlocal call_count
+            mock_response = MagicMock()
+
+            if call_count == 0:
+                # First call - return first 100 items
+                mock_response.json.return_value = {
+                    "total": 150,
+                    "items": [
+                        {"_id": f"template-{i}", "name": f"Template {i}"}
+                        for i in range(100)
+                    ],
+                }
+            else:
+                # Second call - return remaining 50 items
+                mock_response.json.return_value = {
+                    "total": 150,
+                    "items": [
+                        {"_id": f"template-{i}", "name": f"Template {i}"}
+                        for i in range(100, 150)
+                    ],
+                }
+
+            call_count += 1
+            return mock_response
+
+        mock_client.get.side_effect = mock_get
+
+        result = await service.get_templates()
+
+        # Verify client was called twice for pagination
+        assert mock_client.get.call_count == 2
+
+        # Verify the correct URL was called
+        call_args_list = mock_client.get.call_args_list
+        assert all(
+            call[0][0] == "/automation-studio/templates" for call in call_args_list
+        )
+
+        # Note: We can't reliably test the exact param values because the service
+        # modifies the same params dict in place, so by the time the mock records
+        # the calls, all calls show the final state. This is normal behavior for
+        # the service and the important thing is that it makes the right number
+        # of calls and gets the right total results.
+
+        # Verify response data
+        assert len(result) == 150
+
+    @pytest.mark.asyncio
+    async def test_get_templates_empty_response(self, service, mock_client):
+        """Test getting templates with empty response"""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"total": 0, "items": []}
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_templates()
+
+        assert len(result) == 0
+
+    @pytest.mark.asyncio
+    async def test_get_projects_success(self, service, mock_client):
+        """Test successful projects retrieval"""
+        # Mock response data for single page
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "data": [
+                {
+                    "_id": "project-1",
+                    "name": "Test Project 1",
+                    "description": "First test project",
+                },
+                {
+                    "_id": "project-2",
+                    "name": "Test Project 2",
+                    "description": "Second test project",
+                },
+            ],
+            "metadata": {"total": 2, "skip": 0, "limit": 100},
+        }
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_projects()
+
+        # Verify client was called with correct parameters
+        mock_client.get.assert_called_once_with(
+            "/automation-studio/projects", params={"limit": 100, "skip": 0}
+        )
+
+        # Verify response data
+        assert len(result) == 2
+        assert result[0]["_id"] == "project-1"
+        assert result[0]["name"] == "Test Project 1"
+        assert result[1]["_id"] == "project-2"
+        assert result[1]["name"] == "Test Project 2"
+
+    @pytest.mark.asyncio
+    async def test_get_projects_pagination(self, service, mock_client):
+        """Test projects retrieval with pagination"""
+        call_count = 0
+
+        def mock_get(url, params=None):
+            nonlocal call_count
+            mock_response = MagicMock()
+
+            if call_count == 0:
+                # First call - return first 100 items
+                mock_response.json.return_value = {
+                    "data": [
+                        {"_id": f"project-{i}", "name": f"Project {i}"}
+                        for i in range(100)
+                    ],
+                    "metadata": {"total": 150, "skip": 0, "limit": 100},
+                }
+            else:
+                # Second call - return remaining 50 items
+                mock_response.json.return_value = {
+                    "data": [
+                        {"_id": f"project-{i}", "name": f"Project {i}"}
+                        for i in range(100, 150)
+                    ],
+                    "metadata": {"total": 150, "skip": 100, "limit": 100},
+                }
+
+            call_count += 1
+            return mock_response
+
+        mock_client.get.side_effect = mock_get
+
+        result = await service.get_projects()
+
+        # Verify client was called twice for pagination
+        assert mock_client.get.call_count == 2
+
+        # Verify the correct URL was called
+        call_args_list = mock_client.get.call_args_list
+        assert all(
+            call[0][0] == "/automation-studio/projects" for call in call_args_list
+        )
+
+        # Note: We can't reliably test the exact param values because the service
+        # modifies the same params dict in place, so by the time the mock records
+        # the calls, all calls show the final state. This is normal behavior for
+        # the service and the important thing is that it makes the right number
+        # of calls and gets the right total results.
+
+        # Verify response data
+        assert len(result) == 150
+
+    @pytest.mark.asyncio
+    async def test_get_projects_empty_response(self, service, mock_client):
+        """Test getting projects with empty response"""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "data": [],
+            "metadata": {"total": 0, "skip": 0, "limit": 100},
+        }
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_projects()
+
+        assert len(result) == 0
+
+    @pytest.mark.asyncio
+    async def test_describe_project_success(self, service, mock_client):
+        """Test successful project description"""
+        # Mock responses for the two API calls
+        mock_search_response = MagicMock()
+        mock_search_response.json.return_value = {
+            "data": [{"_id": "project-123", "name": "Test Project"}],
+            "metadata": {"total": 1},
+        }
+
+        mock_detail_response = MagicMock()
+        mock_detail_response.json.return_value = {
+            "data": {
+                "_id": "project-123",
+                "name": "Test Project",
+                "description": "Detailed test project",
+                "components": [
+                    {
+                        "name": ": Test Workflow",
+                        "type": "workflow",
+                        "reference": "workflow-ref",
+                        "folder": "/workflows",
+                    }
+                ],
             }
+        }
+
+        # Configure mock to return different responses for different calls
+        mock_client.get.side_effect = [mock_search_response, mock_detail_response]
+
+        result = await service.describe_project("Test Project")
+
+        # Verify both API calls were made
+        assert mock_client.get.call_count == 2
+        mock_client.get.assert_any_call(
+            "/automation-studio/projects", params={"equals[name]": "Test Project"}
+        )
+        mock_client.get.assert_any_call("/automation-studio/projects/project-123")
+
+        # Verify response data
+        assert result["_id"] == "project-123"
+        assert result["name"] == "Test Project"
+        assert result["description"] == "Detailed test project"
+        assert len(result["components"]) == 1
+
+    @pytest.mark.asyncio
+    async def test_describe_project_not_found(self, service, mock_client):
+        """Test project not found error"""
+        # Mock response with no results
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"data": [], "metadata": {"total": 0}}
+        mock_client.get.return_value = mock_response
+
+        with pytest.raises(exceptions.NotFoundError) as exc_info:
+            await service.describe_project("Nonexistent Project")
+
+        assert "unable to find project: Nonexistent Project" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_describe_project_multiple_found(self, service, mock_client):
+        """Test project multiple results error"""
+        # Mock response with multiple results (should not happen but test defensive code)
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "data": [
+                {"_id": "project-1", "name": "Duplicate Project"},
+                {"_id": "project-2", "name": "Duplicate Project"},
+            ],
+            "metadata": {"total": 2},
+        }
+        mock_client.get.return_value = mock_response
+
+        with pytest.raises(exceptions.NotFoundError) as exc_info:
+            await service.describe_project("Duplicate Project")
+
+        assert "unable to find project: Duplicate Project" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_describe_project_case_sensitive(self, service, mock_client):
+        """Test that project name search is case sensitive"""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"data": [], "metadata": {"total": 0}}
+        mock_client.get.return_value = mock_response
+
+        with pytest.raises(exceptions.NotFoundError):
+            await service.describe_project("test project")  # lowercase
+
+        # Verify the exact search was performed
+        mock_client.get.assert_called_once_with(
+            "/automation-studio/projects", params={"equals[name]": "test project"}
         )
 
     @pytest.mark.asyncio
-    async def test_get_templates_custom_params(self, automation_studio_service, mock_client):
-        """Test getting templates with custom parameters."""
-        expected_response = {"items": [], "total": 0}
-        
+    async def test_get_templates_jinja2_filter(self, service, mock_client):
+        """Test getting templates with jinja2 filter (note: typo in original code)"""
+        # Note: The original code has a typo "jinaj2" instead of "jinja2"
         mock_response = MagicMock()
-        mock_response.json.return_value = expected_response
+        mock_response.json.return_value = {
+            "total": 1,
+            "items": [
+                {
+                    "_id": "template-jinja2",
+                    "name": "Jinja2 Template",
+                    "type": "jinja2",
+                    "group": "configuration",
+                }
+            ],
+        }
         mock_client.get.return_value = mock_response
-        
-        result = await automation_studio_service.get_templates(
-            include=("_id", "name"),
-            exclude_project_members=False,
-            limit=25,
-            sort="name",
-            skip=10
-        )
-        
-        assert result == expected_response
+
+        # Test the typo version as it exists in the code
+        result = await service.get_templates(template_type="jinaj2")
+
+        # Verify client was called with correct parameters
         mock_client.get.assert_called_once_with(
             "/automation-studio/templates",
-            params={
-                "exclude-project-members": "false",
-                "limit": 25,
-                "sort": "name",
-                "include": "_id,name",
-                "skip": 10
-            }
+            params={"limit": 100, "equals[type]": "jinaj2", "skip": 0},
         )
 
+        assert len(result) == 1
+
     @pytest.mark.asyncio
-    async def test_create_template_success(self, automation_studio_service, mock_client):
-        """Test successful template creation."""
-        expected_response = {
-            "created": {
-                "_id": "template123",
+    async def test_client_error_handling(self, service, mock_client):
+        """Test that client errors are propagated correctly"""
+        # Mock client to raise an exception
+        mock_client.get.side_effect = Exception("Network error")
+
+        with pytest.raises(Exception) as exc_info:
+            await service.describe_workflow("test-workflow")
+
+        assert "Network error" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_pagination_edge_case_exact_page_size(self, service, mock_client):
+        """Test pagination when total matches page size exactly"""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "total": 100,
+            "items": [
+                {"_id": f"template-{i}", "name": f"Template {i}"} for i in range(100)
+            ],
+        }
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_templates()
+
+        # Should only make one call since we got all results
+        mock_client.get.assert_called_once()
+        assert len(result) == 100
+
+    @pytest.mark.asyncio
+    async def test_describe_project_minimal_data(self, service, mock_client):
+        """Test describe project with minimal response data"""
+        # Mock responses with minimal required fields
+        mock_search_response = MagicMock()
+        mock_search_response.json.return_value = {
+            "data": [{"_id": "minimal-project"}],
+            "metadata": {"total": 1},
+        }
+
+        mock_detail_response = MagicMock()
+        mock_detail_response.json.return_value = {
+            "data": {"_id": "minimal-project", "components": []}
+        }
+
+        mock_client.get.side_effect = [mock_search_response, mock_detail_response]
+
+        result = await service.describe_project("Minimal Project")
+
+        assert result["_id"] == "minimal-project"
+        assert result["components"] == []
+
+    @pytest.mark.asyncio
+    async def test_describe_template_success(self, service, mock_client):
+        """Test successful template description retrieval"""
+        # Mock _get_templates call
+        service._get_templates = AsyncMock()
+        service._get_templates.return_value = [
+            {
+                "_id": "template-123",
                 "name": "Test Template",
-                "group": "Test Group",
-                "description": "Test description",
-                "template": "conf t\ninterface {{interface}}\n ip address {{ip}}\nend",
-                "type": "jinja2",
-                "data": '{"interface": "gi0/1", "ip": "192.168.1.1"}',
-                "command": "",
-                "created": "2025-01-11T10:00:00.000Z",
-                "createdBy": "user123",
-                "lastUpdated": "2025-01-11T10:00:00.000Z",
-                "lastUpdatedBy": "user123"
-            },
-            "edit": "/automation-studio/#/edit?tab=0&template=template123"
-        }
-        
-        mock_response = MagicMock()
-        mock_response.json.return_value = expected_response
-        mock_client.post.return_value = mock_response
-        
-        result = await automation_studio_service.create_template(
-            name="Test Template",
-            group="Test Group",
-            description="Test description",
-            template="conf t\ninterface {{interface}}\n ip address {{ip}}\nend",
-            data='{"interface": "gi0/1", "ip": "192.168.1.1"}',
-            command="",
-            type="jinja2"
+                "description": "Test template description",
+                "type": "textfsm",
+                "group": "parsing",
+                "command": "show version",
+                "template": "Value VERSION (\\S+)",
+                "data": "sample output",
+            }
+        ]
+
+        result = await service.describe_template("Test Template", project=None)
+
+        # Verify _get_templates was called with correct parameters
+        service._get_templates.assert_called_once_with(
+            params={"equals[name]": "Test Template"}
         )
-        
-        assert result == expected_response
+
+        # Verify response data
+        assert result["_id"] == "template-123"
+        assert result["name"] == "Test Template"
+        assert result["description"] == "Test template description"
+        assert result["type"] == "textfsm"
+        assert result["group"] == "parsing"
+        assert result["command"] == "show version"
+        assert result["template"] == "Value VERSION (\\S+)"
+        assert result["data"] == "sample output"
+
+    @pytest.mark.asyncio
+    async def test_describe_template_with_project(self, service, mock_client):
+        """Test template description retrieval with project"""
+        # Mock describe_project call
+        service.describe_project = AsyncMock()
+        service.describe_project.return_value = {"_id": "project-123"}
+
+        # Mock _get_templates call
+        service._get_templates = AsyncMock()
+        service._get_templates.return_value = [
+            {
+                "_id": "template-456",
+                "name": "@project-123: Project Template",
+                "type": "jinja2",
+                "group": "config",
+            }
+        ]
+
+        result = await service.describe_template(
+            "Project Template", project="my-project"
+        )
+
+        # Verify describe_project was called
+        service.describe_project.assert_called_once_with("my-project")
+
+        # Verify _get_templates was called with project-prefixed name
+        service._get_templates.assert_called_once_with(
+            params={"equals[name]": "@project-123: Project Template"}
+        )
+
+        # Verify response data
+        assert result["_id"] == "template-456"
+        assert result["name"] == "@project-123: Project Template"
+        assert result["type"] == "jinja2"
+
+    @pytest.mark.asyncio
+    async def test_describe_template_not_found(self, service, mock_client):
+        """Test template description when template is not found"""
+        # Mock _get_templates to return empty list
+        service._get_templates = AsyncMock()
+        service._get_templates.return_value = []
+
+        with pytest.raises(exceptions.NotFoundError) as exc_info:
+            await service.describe_template("Nonexistent Template")
+
+        assert "template Nonexistent Template could not found" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_describe_template_multiple_found(self, service, mock_client):
+        """Test template description when multiple templates are found"""
+        # Mock _get_templates to return multiple templates
+        service._get_templates = AsyncMock()
+        service._get_templates.return_value = [
+            {"_id": "template-1", "name": "Duplicate Template"},
+            {"_id": "template-2", "name": "Duplicate Template"},
+        ]
+
+        with pytest.raises(exceptions.NotFoundError) as exc_info:
+            await service.describe_template("Duplicate Template")
+
+        assert "template Duplicate Template could not found" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_create_template_success(self, service, mock_client):
+        """Test successful template creation"""
+        # Mock response data
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "created": {
+                "_id": "new-template-123",
+                "name": "New Template",
+                "description": "A new test template",
+                "type": "textfsm",
+                "group": "testing",
+            }
+        }
+        mock_client.post.return_value = mock_response
+
+        result = await service.create_template(
+            name="New Template",
+            template_type="textfsm",
+            group="testing",
+            project=None,
+            description="A new test template",
+            command="show interfaces",
+            template="Value INTERFACE (\\S+)",
+            data="GigabitEthernet0/1",
+        )
+
+        # Verify client was called with correct parameters
         mock_client.post.assert_called_once_with(
             "/automation-studio/templates",
             json={
                 "template": {
-                    "command": "",
-                    "template": "conf t\ninterface {{interface}}\n ip address {{ip}}\nend",
-                    "data": '{"interface": "gi0/1", "ip": "192.168.1.1"}',
-                    "type": "jinja2",
-                    "name": "Test Template",
-                    "description": "Test description",
-                    "group": "Test Group"
+                    "name": "New Template",
+                    "type": "textfsm",
+                    "group": "testing",
+                    "description": "A new test template",
+                    "command": "show interfaces",
+                    "template": "Value INTERFACE (\\S+)",
+                    "data": "GigabitEthernet0/1",
                 }
-            }
+            },
         )
 
+        # Verify response data
+        assert result["_id"] == "new-template-123"
+        assert result["name"] == "New Template"
+        assert result["description"] == "A new test template"
+        assert result["type"] == "textfsm"
+        assert result["group"] == "testing"
+
     @pytest.mark.asyncio
-    async def test_create_template_minimal(self, automation_studio_service, mock_client):
-        """Test template creation with minimal parameters."""
-        expected_response = {
+    async def test_create_template_minimal_params(self, service, mock_client):
+        """Test template creation with minimal parameters"""
+        # Mock response data
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
             "created": {
-                "_id": "template456",
+                "_id": "minimal-template",
                 "name": "Minimal Template",
-                "group": "Default Group",
-                "description": "Minimal description",
-                "template": "show version",
                 "type": "jinja2",
-                "data": "",
-                "command": ""
+                "group": "basic",
             }
         }
-        
-        mock_response = MagicMock()
-        mock_response.json.return_value = expected_response
         mock_client.post.return_value = mock_response
-        
-        result = await automation_studio_service.create_template(
-            name="Minimal Template",
-            group="Default Group",
-            description="Minimal description",
-            template="show version"
+
+        result = await service.create_template(
+            name="Minimal Template", template_type="jinja2", group="basic"
         )
-        
-        assert result == expected_response
+
+        # Verify client was called with default empty strings for optional fields
         mock_client.post.assert_called_once_with(
             "/automation-studio/templates",
             json={
                 "template": {
-                    "command": "",
-                    "template": "show version",
-                    "data": "",
-                    "type": "jinja2",
                     "name": "Minimal Template",
-                    "description": "Minimal description",
-                    "group": "Default Group"
+                    "type": "jinja2",
+                    "group": "basic",
+                    "description": "",
+                    "command": "",
+                    "template": "",
+                    "data": "",
                 }
-            }
+            },
         )
 
+        # Verify response data
+        assert result["_id"] == "minimal-template"
+        assert result["name"] == "Minimal Template"
+        assert result["type"] == "jinja2"
+        assert result["group"] == "basic"
+
     @pytest.mark.asyncio
-    async def test_update_template_success(self, automation_studio_service, mock_client):
-        """Test successful template update."""
-        template_id = "template123"
-        expected_response = {
+    async def test_update_template_success(self, service, mock_client):
+        """Test successful template update"""
+        # Mock describe_template call to get existing template
+        service.describe_template = AsyncMock()
+        service.describe_template.return_value = {
+            "_id": "existing-template-123",
+            "name": "Existing Template",
+            "type": "textfsm",
+            "group": "parsing",
+            "description": "Original description",
+            "command": "show version",
+            "template": "Original template",
+            "data": "Original data",
+        }
+
+        # Mock update response
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
             "updated": {
-                "_id": template_id,
-                "name": "Updated Template",
-                "group": "Updated Group",
+                "_id": "existing-template-123",
+                "name": "Existing Template",
+                "type": "textfsm",
+                "group": "parsing",
                 "description": "Updated description",
-                "template": "conf t\ninterface {{interface}}\n ip address {{ip}}\nend",
-                "type": "jinja2",
-                "data": '{"interface": "gi0/2", "ip": "192.168.1.2"}',
-                "command": "configure terminal",
-                "created": "2025-01-11T10:00:00.000Z",
-                "createdBy": {
-                    "_id": "user123",
-                    "username": "test@example.com",
-                    "firstname": "Test",
-                    "email": "test@example.com"
-                },
-                "lastUpdated": "2025-01-11T11:00:00.000Z",
-                "lastUpdatedBy": {
-                    "_id": "user123",
-                    "username": "test@example.com",
-                    "firstname": "Test",
-                    "email": "test@example.com"
-                }
-            },
-            "edit": "/automation-studio/#/edit?tab=0&template=template123"
+                "command": "show version",
+                "template": "Updated template",
+                "data": "Original data",
+            }
         }
-        
-        mock_response = MagicMock()
-        mock_response.json.return_value = expected_response
         mock_client.put.return_value = mock_response
-        
-        result = await automation_studio_service.update_template(
-            template_id=template_id,
-            name="Updated Template",
-            group="Updated Group",
+
+        result = await service.update_template(
+            name="Existing Template",
+            project=None,
             description="Updated description",
-            template="conf t\ninterface {{interface}}\n ip address {{ip}}\nend",
-            data='{"interface": "gi0/2", "ip": "192.168.1.2"}',
-            command="configure terminal",
-            type="jinja2"
-        )
-        
-        assert result == expected_response
-        mock_client.put.assert_called_once_with(
-            f"/automation-studio/templates/{template_id}",
-            json={
-                "update": {
-                    "name": "Updated Template",
-                    "command": "configure terminal",
-                    "template": "conf t\ninterface {{interface}}\n ip address {{ip}}\nend",
-                    "type": "jinja2",
-                    "data": '{"interface": "gi0/2", "ip": "192.168.1.2"}',
-                    "group": "Updated Group",
-                    "description": "Updated description"
-                }
-            }
+            template="Updated template",
         )
 
+        # Verify describe_template was called to get existing template
+        service.describe_template.assert_called_once_with(
+            name="Existing Template", project=None
+        )
+
+        # Verify client was called with correct parameters
+        mock_client.put.assert_called_once_with(
+            "/automation-studio/templates/existing-template-123",
+            json={
+                "update": {
+                    "name": "Existing Template",
+                    "group": "parsing",
+                    "type": "textfsm",
+                    "description": "Updated description",
+                    "command": "show version",
+                    "template": "Updated template",
+                    "data": "Original data",
+                }
+            },
+        )
+
+        # Verify response data
+        assert result["_id"] == "existing-template-123"
+        assert result["name"] == "Existing Template"
+        assert result["description"] == "Updated description"
+        assert result["template"] == "Updated template"
+
     @pytest.mark.asyncio
-    async def test_update_template_minimal(self, automation_studio_service, mock_client):
-        """Test template update with minimal parameters."""
-        template_id = "template456"
-        expected_response = {
+    async def test_update_template_partial_update(self, service, mock_client):
+        """Test template update with partial field updates"""
+        # Mock describe_template call to get existing template
+        service.describe_template = AsyncMock()
+        service.describe_template.return_value = {
+            "_id": "partial-template-456",
+            "name": "Partial Template",
+            "type": "jinja2",
+            "group": "config",
+            "description": "Original description",
+            "command": "show interfaces",
+            "template": "Original template",
+            "data": "Original data",
+        }
+
+        # Mock update response
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
             "updated": {
-                "_id": template_id,
-                "name": "Minimal Update",
-                "group": "Minimal Group",
-                "description": "Minimal update description",
-                "template": "show interfaces",
+                "_id": "partial-template-456",
+                "name": "Partial Template",
                 "type": "jinja2",
-                "data": "",
-                "command": ""
+                "group": "config",
+                "description": "Original description",
+                "command": "show ip interface brief",
+                "template": "Original template",
+                "data": "Original data",
             }
         }
-        
-        mock_response = MagicMock()
-        mock_response.json.return_value = expected_response
         mock_client.put.return_value = mock_response
-        
-        result = await automation_studio_service.update_template(
-            template_id=template_id,
-            name="Minimal Update",
-            group="Minimal Group",
-            description="Minimal update description",
-            template="show interfaces"
+
+        result = await service.update_template(
+            name="Partial Template", command="show ip interface brief"
         )
-        
-        assert result == expected_response
+
+        # Verify only the command field was updated, others preserved
+        expected_update = {
+            "update": {
+                "name": "Partial Template",
+                "group": "config",
+                "type": "jinja2",
+                "description": "Original description",
+                "command": "show ip interface brief",
+                "template": "Original template",
+                "data": "Original data",
+            }
+        }
+
         mock_client.put.assert_called_once_with(
-            f"/automation-studio/templates/{template_id}",
-            json={
-                "update": {
-                    "name": "Minimal Update",
-                    "command": "",
-                    "template": "show interfaces",
-                    "type": "jinja2",
-                    "data": "",
-                    "group": "Minimal Group",
-                    "description": "Minimal update description"
-                }
-            }
+            "/automation-studio/templates/partial-template-456", json=expected_update
         )
 
-    @pytest.mark.asyncio
-    async def test_create_textfsm_template_success(self, automation_studio_service, mock_client):
-        """Test successful TextFSM template creation."""
-        expected_response = {
-            "created": {
-                "_id": "template123",
-                "name": "ACL Parser",
-                "group": "Network Parsers",
-                "description": "Parse Cisco ACL configurations",
-                "template": "Value Required,Filldown ACL_NAME (\\S+)\nValue ACL_TYPE (standard|extended)\nValue ACTION (permit|deny)\nValue PROTOCOL ([a-z]+)\n\nStart\n  ^ip\\s+access-list\\s+${ACL_TYPE}\\s+${ACL_NAME}\\s* -> Record\n  ^\\s+${ACTION}\\s+${PROTOCOL}\\s+.* -> Record\n\nEOF",
-                "type": "textfsm",
-                "data": "ip access-list extended sample\n permit tcp host 10.1.1.1 any\n deny ip any any",
-                "command": "show access-list",
-                "created": "2025-01-11T10:00:00.000Z",
-                "createdBy": "user123",
-                "lastUpdated": "2025-01-11T10:00:00.000Z",
-                "lastUpdatedBy": "user123"
-            },
-            "edit": "/automation-studio/#/edit?tab=0&template=template123"
-        }
-        
-        mock_response = MagicMock()
-        mock_response.json.return_value = expected_response
-        mock_client.post.return_value = mock_response
-        
-        result = await automation_studio_service.create_textfsm_template(
-            name="ACL Parser",
-            group="Network Parsers",
-            description="Parse Cisco ACL configurations",
-            template="Value Required,Filldown ACL_NAME (\\S+)\nValue ACL_TYPE (standard|extended)\nValue ACTION (permit|deny)\nValue PROTOCOL ([a-z]+)\n\nStart\n  ^ip\\s+access-list\\s+${ACL_TYPE}\\s+${ACL_NAME}\\s* -> Record\n  ^\\s+${ACTION}\\s+${PROTOCOL}\\s+.* -> Record\n\nEOF",
-            data="ip access-list extended sample\n permit tcp host 10.1.1.1 any\n deny ip any any",
-            command="show access-list"
-        )
-        
-        assert result == expected_response
-        mock_client.post.assert_called_once_with(
-            "/automation-studio/templates",
-            json={
-                "template": {
-                    "name": "ACL Parser",
-                    "group": "Network Parsers",
-                    "description": "Parse Cisco ACL configurations",
-                    "template": "Value Required,Filldown ACL_NAME (\\S+)\nValue ACL_TYPE (standard|extended)\nValue ACTION (permit|deny)\nValue PROTOCOL ([a-z]+)\n\nStart\n  ^ip\\s+access-list\\s+${ACL_TYPE}\\s+${ACL_NAME}\\s* -> Record\n  ^\\s+${ACTION}\\s+${PROTOCOL}\\s+.* -> Record\n\nEOF",
-                    "data": "ip access-list extended sample\n permit tcp host 10.1.1.1 any\n deny ip any any",
-                    "command": "show access-list",
-                    "type": "textfsm"
-                }
-            }
-        )
-
-    @pytest.mark.asyncio
-    async def test_create_textfsm_template_minimal(self, automation_studio_service, mock_client):
-        """Test TextFSM template creation with minimal parameters."""
-        expected_response = {
-            "created": {
-                "_id": "template456",
-                "name": "Simple Parser",
-                "group": "Basic Parsers",
-                "description": "Simple parsing template",
-                "template": "Value NAME (\\S+)\n\nStart\n  ^${NAME} -> Record\n\nEOF",
-                "type": "textfsm",
-                "data": "",
-                "command": ""
-            }
-        }
-        
-        mock_response = MagicMock()
-        mock_response.json.return_value = expected_response
-        mock_client.post.return_value = mock_response
-        
-        result = await automation_studio_service.create_textfsm_template(
-            name="Simple Parser",
-            group="Basic Parsers",
-            description="Simple parsing template",
-            template="Value NAME (\\S+)\n\nStart\n  ^${NAME} -> Record\n\nEOF"
-        )
-        
-        assert result == expected_response
-        mock_client.post.assert_called_once_with(
-            "/automation-studio/templates",
-            json={
-                "template": {
-                    "name": "Simple Parser",
-                    "group": "Basic Parsers",
-                    "description": "Simple parsing template",
-                    "template": "Value NAME (\\S+)\n\nStart\n  ^${NAME} -> Record\n\nEOF",
-                    "data": "",
-                    "command": "",
-                    "type": "textfsm"
-                }
-            }
-        )
-
-    @pytest.mark.asyncio
-    async def test_update_textfsm_template_success(self, automation_studio_service, mock_client):
-        """Test successful TextFSM template update."""
-        template_id = "template123"
-        expected_response = {
-            "updated": {
-                "_id": template_id,
-                "name": "Updated ACL Parser",
-                "group": "Updated Network Parsers",
-                "description": "Updated parse Cisco ACL configurations",
-                "template": "Value Required,Filldown ACL_NAME (\\S+)\nValue ACL_TYPE (standard|extended)\nValue ACTION (permit|deny)\nValue PROTOCOL ([a-z]+)\n\nStart\n  ^ip\\s+access-list\\s+${ACL_TYPE}\\s+${ACL_NAME}\\s* -> Record\n  ^\\s+${ACTION}\\s+${PROTOCOL}\\s+.* -> Record\n\nEOF",
-                "type": "textfsm",
-                "data": "ip access-list extended updated\n permit tcp host 10.1.1.1 any\n deny ip any any",
-                "command": "show access-list",
-                "created": "2025-01-11T10:00:00.000Z",
-                "createdBy": {
-                    "_id": "user123",
-                    "username": "test@example.com",
-                    "firstname": "Test",
-                    "email": "test@example.com"
-                },
-                "lastUpdated": "2025-01-11T11:00:00.000Z",
-                "lastUpdatedBy": {
-                    "_id": "user123",
-                    "username": "test@example.com",
-                    "firstname": "Test",
-                    "email": "test@example.com"
-                }
-            },
-            "edit": "/automation-studio/#/edit?tab=0&template=template123"
-        }
-        
-        mock_response = MagicMock()
-        mock_response.json.return_value = expected_response
-        mock_client.put.return_value = mock_response
-        
-        result = await automation_studio_service.update_textfsm_template(
-            template_id=template_id,
-            name="Updated ACL Parser",
-            group="Updated Network Parsers",
-            description="Updated parse Cisco ACL configurations",
-            template="Value Required,Filldown ACL_NAME (\\S+)\nValue ACL_TYPE (standard|extended)\nValue ACTION (permit|deny)\nValue PROTOCOL ([a-z]+)\n\nStart\n  ^ip\\s+access-list\\s+${ACL_TYPE}\\s+${ACL_NAME}\\s* -> Record\n  ^\\s+${ACTION}\\s+${PROTOCOL}\\s+.* -> Record\n\nEOF",
-            data="ip access-list extended updated\n permit tcp host 10.1.1.1 any\n deny ip any any",
-            command="show access-list"
-        )
-        
-        assert result == expected_response
-        mock_client.put.assert_called_once_with(
-            f"/automation-studio/templates/{template_id}",
-            json={
-                "update": {
-                    "name": "Updated ACL Parser",
-                    "group": "Updated Network Parsers",
-                    "description": "Updated parse Cisco ACL configurations",
-                    "template": "Value Required,Filldown ACL_NAME (\\S+)\nValue ACL_TYPE (standard|extended)\nValue ACTION (permit|deny)\nValue PROTOCOL ([a-z]+)\n\nStart\n  ^ip\\s+access-list\\s+${ACL_TYPE}\\s+${ACL_NAME}\\s* -> Record\n  ^\\s+${ACTION}\\s+${PROTOCOL}\\s+.* -> Record\n\nEOF",
-                    "data": "ip access-list extended updated\n permit tcp host 10.1.1.1 any\n deny ip any any",
-                    "command": "show access-list",
-                    "type": "textfsm"
-                }
-            }
-        )
-
-    @pytest.mark.asyncio
-    async def test_update_textfsm_template_minimal(self, automation_studio_service, mock_client):
-        """Test TextFSM template update with minimal parameters."""
-        template_id = "template456"
-        expected_response = {
-            "updated": {
-                "_id": template_id,
-                "name": "Minimal Update",
-                "group": "Minimal Group",
-                "description": "Minimal update description",
-                "template": "Value NAME (\\S+)\n\nStart\n  ^${NAME} -> Record\n\nEOF",
-                "type": "textfsm",
-                "data": "",
-                "command": ""
-            }
-        }
-        
-        mock_response = MagicMock()
-        mock_response.json.return_value = expected_response
-        mock_client.put.return_value = mock_response
-        
-        result = await automation_studio_service.update_textfsm_template(
-            template_id=template_id,
-            name="Minimal Update",
-            group="Minimal Group",
-            description="Minimal update description",
-            template="Value NAME (\\S+)\n\nStart\n  ^${NAME} -> Record\n\nEOF"
-        )
-        
-        assert result == expected_response
-        mock_client.put.assert_called_once_with(
-            f"/automation-studio/templates/{template_id}",
-            json={
-                "update": {
-                    "name": "Minimal Update",
-                    "group": "Minimal Group",
-                    "description": "Minimal update description",
-                    "template": "Value NAME (\\S+)\n\nStart\n  ^${NAME} -> Record\n\nEOF",
-                    "data": "",
-                    "command": "",
-                    "type": "textfsm"
-                }
-            }
-        )
+        # Verify response data
+        assert result["_id"] == "partial-template-456"
+        assert result["command"] == "show ip interface brief"

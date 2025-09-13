@@ -19,7 +19,7 @@ The following tags are available for filtering tools based on their functionalit
 - `workflow_engine` - Workflow execution metrics and performance tools
 
 ## Adapters Management (`adapters.py`)
-** Group Tags:** `adapters`
+**Group Tags:** `adapters`
 
 - **get_adapters** - Get all adapters configured on the Itential Platform instance
 - **start_adapter** - Start an adapter on Itential Platform with timeout and state validation
@@ -27,7 +27,7 @@ The following tags are available for filtering tools based on their functionalit
 - **restart_adapter** - Restart an adapter on Itential Platform with timeout and state validation
 
 ## Applications Management (`applications.py`)
-** Group Tags:** `applications`
+**Group Tags:** `applications`
 
 - **get_applications** - Get all applications configured on the Itential Platform instance
 - **start_application** - Start an application on Itential Platform with timeout and state validation
@@ -35,27 +35,35 @@ The following tags are available for filtering tools based on their functionalit
 - **restart_application** - Restart an application on Itential Platform with timeout and state validation
 
 ## Command Templates (`command_templates.py`)
-** Group Tags:** `automation_studio`
+**Group Tags:** `automation_studio`
 
 - **get_command_templates** - Get all command templates from Itential Platform (global and project-scoped)
 - **describe_command_template** - Get detailed information about a specific command template including commands and rules
 - **run_command_template** - Execute a command template against specified devices with rule evaluation and results
 - **run_command** - Run a single command against multiple devices and get execution results
 
+## Templates (`templates.py`)
+**Group Tags:** `automation_studio`
+
+- **get_templates** - Get all templates from Automation Studio with optional filtering by template type (textfsm, jinja2)
+- **describe_template** - Get detailed information about a specific template from Automation Studio including name, type, group, command, template content, and sample data
+- **create_template** - Create a new template in Automation Studio with specified name, type, group, and optional content including command, template text, and sample data
+- **update_template** - Update an existing template in Automation Studio with new content including command, template text, and sample data
+
 ## Compliance Management (`compliance_plans.py` & `compliance_reports.py`)
-** Group Tags:** `configuration_manager`
+**Group Tags:** `configuration_manager`
 
 - **get_compliance_plans** - Get all compliance plans from Itential Platform with pagination support
 - **run_compliance_plan** - Execute a compliance plan against network devices and return running instance
 - **describe_compliance_report** - Retrieve detailed compliance report results including validation outcomes and rule violations
 
 ## Configuration Manager (`configuration_manager.py`)
-** Group Tags:** `configuration_manager`
+**Group Tags:** `configuration_manager`
 
 - **render_template** - Render a Jinja2 template with provided variables for configuration generation
 
 ## Device Groups (`device_groups.py`)
-** Group Tags:** `configuration_manager`
+**Group Tags:** `configuration_manager`
 
 - **get_device_groups** - Get all device groups from Itential Platform with device lists and descriptions
 - **create_device_group** - Create a new device group on Itential Platform with optional device assignment and duplicate name validation
@@ -63,7 +71,7 @@ The following tags are available for filtering tools based on their functionalit
 - **remove_devices_from_group** - Remove one or more devices from an existing device group with filtered device list reconstruction
 
 ## Devices Management (`devices.py`)
-** Group Tags:** `configuration_manager`
+**Group Tags:** `configuration_manager`
 
 - **get_devices** - Get all devices known to Itential Platform with pagination support
 - **get_device_configuration** - Retrieve the current configuration from a network device
@@ -71,27 +79,27 @@ The following tags are available for filtering tools based on their functionalit
 - **apply_device_configuration** - Apply configuration commands to a network device through Itential Platform
 
 ## Gateway Manager (`gateway_manager.py`)
-** Group Tags:** `gateway_manager`
+**Group Tags:** `gateway_manager`
 
 - **get_services** - Get all services from Itential Platform Gateway Manager including metadata and schemas
 - **get_gateways** - Get all gateways from Gateway Manager with connection status and cluster information
 - **run_service** - Execute a service with optional input parameters and get execution results
 
 ## Golden Configuration (`golden_config.py`)
-** Group Tags:** `configuration_manager`
+**Group Tags:** `configuration_manager`
 
 - **get_golden_config_trees** - Get all Golden Configuration trees with device types and available versions
 - **create_golden_config_tree** - Create a new Golden Configuration tree with device type and optional template
 - **add_golden_config_node** - Add a new node to an existing Golden Configuration tree with version and path control
 
 ## Integrations (`integrations.py`)
-** Group Tags:** `integrations`
+**Group Tags:** `integrations`
 
 - **get_integration_models** - Get all integration models from Itential Platform with OpenAPI specifications
 - **create_integration_model** - Create a new integration model from an OpenAPI specification with validation
 
 ## Lifecycle Manager (`lifecycle_manager.py`)
-** Group Tags:** `lifecycle_manager`
+**Group Tags:** `lifecycle_manager`
 
 - **get_resources** - Get all Lifecycle Manager resource models with descriptions
 - **create_resource** - Create a new Lifecycle Manager resource model with JSON Schema validation
@@ -101,7 +109,7 @@ The following tags are available for filtering tools based on their functionalit
 - **run_action** - Execute a lifecycle action on a resource instance with input parameters and job tracking
 
 ## Operations Manager (`operations_manager.py`)
-** Group Tags:** `operations_manager`
+**Group Tags:** `operations_manager`
 
 - **get_workflows** - Get all workflow API endpoints with schemas, route names, and execution history
 - **start_workflow** - Execute a workflow by triggering its API endpoint with input validation and job creation
@@ -109,12 +117,12 @@ The following tags are available for filtering tools based on their functionalit
 - **describe_job** - Get detailed information about a specific job including tasks, metrics, and execution status
 
 ## System Health (`system.py`)
-** Group Tags:** `system`
+**Group Tags:** `system`
 
 - **get_health** - Get comprehensive health information including system status, resource utilization, and component status
 
 ## Workflow Engine Metrics (`workflow_engine.py`)
-** Group Tags:** `workflow_engine`
+**Group Tags:** `workflow_engine`
 
 - **get_job_metrics** - Get aggregate job metrics from the Workflow Engine for all workflows
 - **get_job_metrics_for_workflow** - Get job metrics for a specific workflow with completion counts and runtime data
