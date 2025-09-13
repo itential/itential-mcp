@@ -34,6 +34,9 @@ async def get_device_groups(
             - name: Device group name
             - devices: List of device names in this group
             - description: Device group description
+
+    Raises:
+        Exception: If there is an error retrieving device groups from the platform
     """
     await ctx.info("inside get_device_groups(...)")
 
@@ -41,14 +44,9 @@ async def get_device_groups(
 
     data = await client.configuration_manager.get_device_groups()
 
-    results = []
-    for ele in data:
-        device_group = models.DeviceGroupElement(
-            **ele
-        )
-        results.append(device_group)
-
-    return models.GetDeviceGroupsResponse(results)
+    return models.GetDeviceGroupsResponse(
+        [models.DeviceGroupElement(**ele) for ele in data]
+    )
 
 
 async def create_device_group(
@@ -61,11 +59,11 @@ async def create_device_group(
     description: Annotated[str | None, Field(
         description="Short description of the device group",
         default=None
-    )] = None,
+    )],
     devices: Annotated[list | None, Field(
         description="List of devices to add to the group",
         default=None
-    )] = None
+    )]
 ) -> models.CreateDeviceGroupResponse:
     """
     Create a new device group on Itential Platform.
@@ -93,31 +91,11 @@ async def create_device_group(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    groups_response = await get_device_groups(ctx)
-
-    for ele in groups_response.root:
-        if ele.name == name:
-            raise ValueError(f"device group {name} already exists")
-
-    body = {
-        "groupName": name,
-        "groupDescription": description
-    }
-
-    if devices:
-        body["deviceNames"] = ",".join(devices)
-    else:
-        body["deviceNames"] = ""
-
-    res = await client.post(
-        "/configuration_manager/devicegroup",
-        json=body
+    res = await client.configuration_manager.create_device_group(
+        name=name, description=description, devices=devices
     )
 
-    data = res.json()
-    return models.CreateDeviceGroupResponse(
-        **data
-    )
+    return models.CreateDeviceGroupResponse(**res)
 
 
 async def add_devices_to_group(
@@ -129,8 +107,7 @@ async def add_devices_to_group(
     )],
     devices: Annotated[list | None, Field(
         description="List of devices to add to the group",
-        default=None
-    )] = None
+    )]
 ) -> models.AddDevicesToGroupResponse:
     """
     Add one or more devices to a device group
@@ -153,14 +130,13 @@ async def add_devices_to_group(
             device group
 
     Returns:
-        dict: An object representing the status of the operation with the
+        AddDevicesToGroupResponse: An object representing the status of the operation with the
             following fields:
-
-            - status: Message the provides the status of the operation
+            - status: Message that provides the status of the operation
             - message: Short description of the status of the operation
 
     Raises:
-        None
+        Exception: If there is an error adding devices to the group
 
     """
     await ctx.info("inside add_devices_to_group(...)")
@@ -174,6 +150,7 @@ async def add_devices_to_group(
         message=data.get("message", "Devices added successfully")
     )
 
+
 async def remove_devices_from_group(
     ctx: Annotated[Context, Field(
         description="The FastMCP Context object"
@@ -183,7 +160,7 @@ async def remove_devices_from_group(
     )],
     devices: Annotated[list[str] | None, Field(
         description="List of devices to remove from the group"
-    )]
+    )],
 ) -> models.RemoveDevicesFromGroupResponse:
     """
     Remove one or more devices from a device group
@@ -208,9 +185,11 @@ async def remove_devices_from_group(
     Returns:
         RemoveDevicesFromGroupResponse: An object representing the status of the operation with the
             following fields:
+            - status: Message that provides the status of the operation
+            - message: Short description of the status of the operation
 
     Raises:
-        None
+        Exception: If there is an error removing devices from the group
     """
     await ctx.info("inside remove_devices_from_group(...)")
 
@@ -220,5 +199,5 @@ async def remove_devices_from_group(
 
     return models.RemoveDevicesFromGroupResponse(
         status=data["status"],
-        message=data.get("message", "Devices removed successfully")
+        message=data.get("message", "Devices removed successfully"),
     )
