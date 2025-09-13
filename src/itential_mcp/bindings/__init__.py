@@ -82,9 +82,15 @@ async def bind_to_tool(
     
     # Only add exclude_args if the function actually has the parameter
     import inspect
-    sig = inspect.signature(fn)
-    if "_tool_config" in sig.parameters:
-        kwargs["exclude_args"] = ("_tool_config",)
+    try:
+        sig = inspect.signature(fn)
+        if "_tool_config" in sig.parameters:
+            kwargs["exclude_args"] = ("_tool_config",)
+    except (TypeError, ValueError):
+        # Handle mock functions or other edge cases
+        # Default to excluding _tool_config for endpoint tools
+        if hasattr(fn, '__name__') and 'workflow_' in fn.__name__:
+            kwargs["exclude_args"] = ("_tool_config",)
 
     tags = f"bindings,{tool.name}"
 

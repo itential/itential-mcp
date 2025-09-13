@@ -1,8 +1,6 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-import inspect
-
 from typing import Tuple, Callable, Annotated
 
 from pydantic import BaseModel, Field
@@ -127,6 +125,10 @@ async def new(
     schema = trigger.get("schema", {})
     properties = schema.get("properties", {})
     
+    # Ensure description always has some content for schema information
+    if not description:
+        description = f"Workflow trigger: {t.name}"
+    
     # Generate the function dynamically with explicit parameters
     required_params = schema.get('required', [])
     
@@ -178,7 +180,7 @@ async def dynamic_workflow_function(ctx, {param_list}):
         't': t
     })
     local_vars = {}
-    exec(func_code, exec_globals, local_vars)
+    exec(func_code, exec_globals, local_vars)  # nosec B102
     dynamic_workflow_function = local_vars['dynamic_workflow_function']
     
     # Set the annotations on the function

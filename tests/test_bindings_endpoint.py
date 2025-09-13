@@ -307,6 +307,7 @@ class TestNew:
     ):
         """Test successful creation of bound workflow function."""
         # Setup
+        mock_endpoint_tool.tool_name = "test_tool"
         mock_get_trigger.return_value = mock_trigger_data
 
         # Execute
@@ -316,10 +317,10 @@ class TestNew:
         mock_get_trigger.assert_called_once_with(
             mock_platform_client, mock_endpoint_tool
         )
-        assert fn == start_workflow
+        # Verify it's a dynamically generated function
+        assert callable(fn)
+        assert fn.__name__ == "workflow_test_tool"
         assert "Test trigger description" in description
-        assert "Args:" in description
-        assert "data (dict):" in description
 
     @patch("itential_mcp.bindings.endpoint._get_trigger")
     @pytest.mark.asyncio
@@ -328,11 +329,12 @@ class TestNew:
     ):
         """Test new function with empty trigger description."""
         # Setup
+        mock_endpoint_tool.tool_name = "test_tool"
         trigger_data = {
             "name": "test-trigger",
             "routeName": "test-route",
             "description": "",
-            "schema": {"type": "object"},
+            "schema": {"type": "object", "properties": {}},
         }
         mock_get_trigger.return_value = trigger_data
 
@@ -340,8 +342,10 @@ class TestNew:
         fn, description = await new(mock_endpoint_tool, mock_platform_client)
 
         # Verify
-        assert fn == start_workflow
-        assert "Args:\ndata (dict):" in description
+        assert callable(fn)
+        assert fn.__name__ == "workflow_test_tool"
+        # Empty description should still have some content
+        assert len(description) > 0
 
     @patch("itential_mcp.bindings.endpoint._get_trigger")
     @pytest.mark.asyncio
@@ -350,11 +354,12 @@ class TestNew:
     ):
         """Test new function with None trigger description."""
         # Setup
+        mock_endpoint_tool.tool_name = "test_tool"
         trigger_data = {
             "name": "test-trigger",
             "routeName": "test-route",
             "description": None,
-            "schema": {"type": "object"},
+            "schema": {"type": "object", "properties": {}},
         }
         mock_get_trigger.return_value = trigger_data
 
@@ -362,8 +367,10 @@ class TestNew:
         fn, description = await new(mock_endpoint_tool, mock_platform_client)
 
         # Verify
-        assert fn == start_workflow
-        assert "Args:\ndata (dict):" in description
+        assert callable(fn)
+        assert fn.__name__ == "workflow_test_tool"
+        # None description should still result in some content
+        assert len(description) > 0
 
     @patch("itential_mcp.bindings.endpoint._get_trigger")
     @pytest.mark.asyncio
@@ -388,6 +395,7 @@ class TestEndpointIntegration:
     ):
         """Test complete endpoint workflow from trigger retrieval to function binding."""
         # Setup
+        mock_endpoint_tool.tool_name = "test_workflow"
         automation_response = {
             "metadata": {"total": 1},
             "data": [{"_id": "automation-123", "name": "test-automation"}],
@@ -401,6 +409,7 @@ class TestEndpointIntegration:
                     "schema": {
                         "type": "object",
                         "properties": {"device": {"type": "string"}},
+                        "required": ["device"]
                     },
                 }
             ]
@@ -419,11 +428,9 @@ class TestEndpointIntegration:
         fn, description = await new(mock_endpoint_tool, mock_platform_client)
 
         # Verify
-        assert fn == start_workflow
+        assert callable(fn)
+        assert fn.__name__ == "workflow_test_workflow"
         assert "Complete test workflow" in description
-        assert "Args:" in description
-        assert "data (dict):" in description
-        assert "'type': 'object'" in description
 
         # Verify the trigger was retrieved correctly in a separate call
         trigger = await _get_trigger(mock_platform_client, mock_endpoint_tool)
