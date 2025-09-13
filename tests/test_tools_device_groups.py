@@ -2,7 +2,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 from fastmcp import Context
 
@@ -188,160 +188,140 @@ class TestCreateDeviceGroup:
     @pytest.mark.asyncio
     async def test_create_device_group_success(self, mock_context):
         """Test create_device_group with successful creation"""
-        # Mock get_device_groups to return existing groups
-        with patch('itential_mcp.tools.device_groups.get_device_groups') as mock_get:
-            mock_get.return_value = GetDeviceGroupsResponse([])  # No existing groups
-            
-            # Mock create response
-            mock_response = MagicMock()
-            mock_response_data = {
-                "id": "new-group-123",
-                "name": "New Production Group",
-                "message": "Device group created successfully",
-                "status": "active"
-            }
-            mock_response.json.return_value = mock_response_data
-            
-            mock_client = mock_context.request_context.lifespan_context.get.return_value
-            mock_client.post.return_value = mock_response
-            
-            result = await device_groups.create_device_group(
-                mock_context,
-                name="New Production Group",
-                description="A new production device group",
-                devices=["router1", "router2"]
-            )
-            
-            # Verify get_device_groups was called to check for duplicates
-            mock_get.assert_called_once_with(mock_context)
-            
-            # Verify API call
-            expected_body = {
-                "groupName": "New Production Group",
-                "groupDescription": "A new production device group",
-                "deviceNames": "router1,router2"
-            }
-            mock_client.post.assert_called_once_with(
-                "/configuration_manager/devicegroup",
-                json=expected_body
-            )
-            
-            # Verify result
-            assert isinstance(result, CreateDeviceGroupResponse)
-            assert result.object_id == "new-group-123"
-            assert result.name == "New Production Group"
-            assert result.message == "Device group created successfully"
-            assert result.status == "active"
+        # Mock create response
+        mock_response_data = {
+            "id": "new-group-123",
+            "name": "New Production Group",
+            "message": "Device group created successfully",
+            "status": "active"
+        }
+        
+        mock_client = mock_context.request_context.lifespan_context.get.return_value
+        mock_client.configuration_manager = MagicMock()
+        mock_client.configuration_manager.create_device_group = AsyncMock(return_value=mock_response_data)
+        
+        result = await device_groups.create_device_group(
+            mock_context,
+            name="New Production Group",
+            description="A new production device group",
+            devices=["router1", "router2"]
+        )
+        
+        # Verify response structure
+        assert isinstance(result, CreateDeviceGroupResponse)
+        assert result.object_id == "new-group-123"
+        assert result.name == "New Production Group"
+        assert result.message == "Device group created successfully"
+        assert result.status == "active"
+        
+        # Verify service method was called with correct parameters
+        mock_client.configuration_manager.create_device_group.assert_called_once_with(
+            name="New Production Group",
+            description="A new production device group", 
+            devices=["router1", "router2"]
+        )
 
     @pytest.mark.asyncio
     async def test_create_device_group_no_devices(self, mock_context):
         """Test create_device_group with no devices specified"""
-        with patch('itential_mcp.tools.device_groups.get_device_groups') as mock_get:
-            mock_get.return_value = GetDeviceGroupsResponse([])
-            
-            mock_response = MagicMock()
-            mock_response_data = {
-                "id": "empty-group-456",
-                "name": "Empty Group",
-                "message": "Empty device group created",
-                "status": "active"
-            }
-            mock_response.json.return_value = mock_response_data
-            
-            mock_client = mock_context.request_context.lifespan_context.get.return_value
-            mock_client.post.return_value = mock_response
-            
-            result = await device_groups.create_device_group(
-                mock_context,
-                name="Empty Group",
-                description="An empty device group"
-            )
-            
-            # Verify empty deviceNames was sent
-            expected_body = {
-                "groupName": "Empty Group",
-                "groupDescription": "An empty device group",
-                "deviceNames": ""
-            }
-            mock_client.post.assert_called_once_with(
-                "/configuration_manager/devicegroup",
-                json=expected_body
-            )
-            
-            assert result.object_id == "empty-group-456"
+        mock_response_data = {
+            "id": "empty-group-456",
+            "name": "Empty Group",
+            "message": "Empty device group created",
+            "status": "active"
+        }
+        
+        mock_client = mock_context.request_context.lifespan_context.get.return_value
+        mock_client.configuration_manager = MagicMock()
+        mock_client.configuration_manager.create_device_group = AsyncMock(return_value=mock_response_data)
+        
+        result = await device_groups.create_device_group(
+            mock_context,
+            name="Empty Group",
+            description="An empty device group",
+            devices=[]
+        )
+        
+        # Verify response structure
+        assert isinstance(result, CreateDeviceGroupResponse)
+        assert result.object_id == "empty-group-456"
+        assert result.name == "Empty Group"
+        assert result.message == "Empty device group created"
+        assert result.status == "active"
+        
+        # Verify service method was called with correct parameters
+        mock_client.configuration_manager.create_device_group.assert_called_once_with(
+            name="Empty Group",
+            description="An empty device group",
+            devices=[]
+        )
 
     @pytest.mark.asyncio
     async def test_create_device_group_duplicate_name_error(self, mock_context):
         """Test create_device_group raises error for duplicate name"""
-        # Mock get_device_groups to return existing group with same name
-        existing_group = DeviceGroupElement(
-            id="existing-123",
-            name="Existing Group",
-            devices=["device1"],
-            description="Already exists"
+        mock_client = mock_context.request_context.lifespan_context.get.return_value
+        mock_client.configuration_manager = MagicMock()
+        mock_client.configuration_manager.create_device_group = AsyncMock(
+            side_effect=ValueError("device group Existing Group already exists")
         )
         
-        with patch('itential_mcp.tools.device_groups.get_device_groups') as mock_get:
-            mock_get.return_value = GetDeviceGroupsResponse([existing_group])
-            
-            with pytest.raises(ValueError, match="device group Existing Group already exists"):
-                await device_groups.create_device_group(
-                    mock_context,
-                    name="Existing Group",
-                    description="Duplicate group"
-                )
+        with pytest.raises(ValueError, match="device group Existing Group already exists"):
+            await device_groups.create_device_group(
+                mock_context,
+                name="Existing Group",
+                description="Duplicate group",
+                devices=[]
+            )
 
     @pytest.mark.asyncio
     async def test_create_device_group_no_description(self, mock_context):
         """Test create_device_group with no description"""
-        with patch('itential_mcp.tools.device_groups.get_device_groups') as mock_get:
-            mock_get.return_value = GetDeviceGroupsResponse([])
-            
-            mock_response = MagicMock()
-            mock_response_data = {
-                "id": "no-desc-group",
-                "name": "No Description Group",
-                "message": "Group created without description",
-                "status": "active"
-            }
-            mock_response.json.return_value = mock_response_data
-            
-            mock_client = mock_context.request_context.lifespan_context.get.return_value
-            mock_client.post.return_value = mock_response
-            
-            await device_groups.create_device_group(
-                mock_context,
-                name="No Description Group"
-            )
-            
-            # Verify None description was passed
-            expected_body = {
-                "groupName": "No Description Group",
-                "groupDescription": None,
-                "deviceNames": ""
-            }
-            mock_client.post.assert_called_once_with(
-                "/configuration_manager/devicegroup",
-                json=expected_body
-            )
+        mock_response_data = {
+            "id": "no-desc-group",
+            "name": "No Description Group",
+            "message": "Group created without description",
+            "status": "active"
+        }
+        
+        mock_client = mock_context.request_context.lifespan_context.get.return_value
+        mock_client.configuration_manager = MagicMock()
+        mock_client.configuration_manager.create_device_group = AsyncMock(return_value=mock_response_data)
+        
+        result = await device_groups.create_device_group(
+            mock_context,
+            name="No Description Group",
+            description=None,
+            devices=[]
+        )
+        
+        # Verify response structure
+        assert isinstance(result, CreateDeviceGroupResponse)
+        assert result.object_id == "no-desc-group"
+        assert result.name == "No Description Group"
+        assert result.message == "Group created without description"
+        assert result.status == "active"
+        
+        # Verify service method was called with correct parameters (None description)
+        mock_client.configuration_manager.create_device_group.assert_called_once_with(
+            name="No Description Group",
+            description=None,
+            devices=[]
+        )
 
     @pytest.mark.asyncio
     async def test_create_device_group_logs_info(self, mock_context):
         """Test create_device_group logs info message"""
-        with patch('itential_mcp.tools.device_groups.get_device_groups') as mock_get:
-            mock_get.return_value = GetDeviceGroupsResponse([])
-            
-            mock_response = MagicMock()
-            mock_response.json.return_value = {
-                "id": "test", "name": "test", "message": "test", "status": "test"
-            }
-            
-            mock_client = mock_context.request_context.lifespan_context.get.return_value
-            mock_client.post.return_value = mock_response
-            
-            await device_groups.create_device_group(mock_context, name="Test")
-            
-            mock_context.info.assert_called_once_with("inside create_device_group(...)")
+        mock_response_data = {
+            "id": "test", "name": "test", "message": "test", "status": "test"
+        }
+        
+        mock_client = mock_context.request_context.lifespan_context.get.return_value
+        mock_client.configuration_manager = MagicMock()
+        mock_client.configuration_manager.create_device_group = AsyncMock(return_value=mock_response_data)
+        
+        await device_groups.create_device_group(mock_context, name="Test", description=None, devices=[])
+        
+        mock_context.info.assert_called_once_with("inside create_device_group(...)")
 
 
 class TestAddDevicesToGroup:
@@ -423,12 +403,13 @@ class TestAddDevicesToGroup:
         
         await device_groups.add_devices_to_group(
             mock_context,
-            name="No Devices Group"
+            name="No Devices Group",
+            devices=[]
         )
         
-        # Verify None devices was handled
+        # Verify empty devices list was handled
         mock_client.configuration_manager.add_devices_to_group.assert_called_once_with(
-            "No Devices Group", None
+            "No Devices Group", []
         )
 
     @pytest.mark.asyncio
@@ -438,7 +419,7 @@ class TestAddDevicesToGroup:
         mock_client.configuration_manager = MagicMock()
         mock_client.configuration_manager.add_devices_to_group = AsyncMock(return_value={"status": "test"})
         
-        await device_groups.add_devices_to_group(mock_context, name="Test")
+        await device_groups.add_devices_to_group(mock_context, name="Test", devices=[])
         
         mock_context.info.assert_called_once_with("inside add_devices_to_group(...)")
 
@@ -632,28 +613,26 @@ class TestToolsIntegration:
     async def test_create_then_add_devices_workflow(self, mock_context):
         """Test workflow: create device group then add devices to it"""
         # Step 1: Create device group
-        with patch('itential_mcp.tools.device_groups.get_device_groups') as mock_get:
-            mock_get.return_value = GetDeviceGroupsResponse([])  # No existing groups
-            
-            create_response = MagicMock()
-            create_response.json.return_value = {
-                "id": "workflow-group",
-                "name": "Workflow Test Group",
-                "message": "Created successfully",
-                "status": "active"
-            }
-            
-            mock_client = mock_context.request_context.lifespan_context.get.return_value
-            mock_client.post.return_value = create_response
-            
-            create_result = await device_groups.create_device_group(
-                mock_context,
-                name="Workflow Test Group",
-                description="Test workflow integration"
-            )
-            
-            assert create_result.object_id == "workflow-group"
-            assert create_result.status == "active"
+        create_response_data = {
+            "id": "workflow-group",
+            "name": "Workflow Test Group",
+            "message": "Created successfully",
+            "status": "active"
+        }
+        
+        mock_client = mock_context.request_context.lifespan_context.get.return_value
+        mock_client.configuration_manager = MagicMock()
+        mock_client.configuration_manager.create_device_group = AsyncMock(return_value=create_response_data)
+        
+        create_result = await device_groups.create_device_group(
+            mock_context,
+            name="Workflow Test Group",
+            description="Test workflow integration",
+            devices=[]
+        )
+        
+        assert create_result.object_id == "workflow-group"
+        assert create_result.status == "active"
         
         # Step 2: Add devices to the created group
         mock_client.configuration_manager.add_devices_to_group = AsyncMock(return_value={"status": "success"})
@@ -680,25 +659,22 @@ class TestToolsIntegration:
         assert len(initial_groups.root) == 0
         
         # Step 2: Create new group
-        with patch('itential_mcp.tools.device_groups.get_device_groups') as mock_get:
-            mock_get.return_value = GetDeviceGroupsResponse([])  # For duplicate check
-            
-            create_response = MagicMock()
-            create_response.json.return_value = {
-                "id": "new-workflow-group",
-                "name": "New Workflow Group",
-                "message": "Created in workflow",
-                "status": "active"
-            }
-            mock_client.post.return_value = create_response
-            
-            create_result = await device_groups.create_device_group(
-                mock_context,
-                name="New Workflow Group",
-                description="Created in integration test"
-            )
-            
-            assert create_result.object_id == "new-workflow-group"
+        create_response_data = {
+            "id": "new-workflow-group",
+            "name": "New Workflow Group",
+            "message": "Created in workflow",
+            "status": "active"
+        }
+        mock_client.configuration_manager.create_device_group = AsyncMock(return_value=create_response_data)
+        
+        create_result = await device_groups.create_device_group(
+            mock_context,
+            name="New Workflow Group",
+            description="Created in integration test",
+            devices=[]
+        )
+        
+        assert create_result.object_id == "new-workflow-group"
         
         # Step 3: List groups again (should include new one)
         updated_data = [{
@@ -726,19 +702,15 @@ class TestToolsIntegration:
             await device_groups.get_device_groups(mock_context)
         
         # Test create_device_group with duplicate name detection
-        existing_group = DeviceGroupElement(
-            id="existing",
-            name="Existing Group",
-            devices=[],
-            description="Exists"
+        # Reset the mock to raise an exception for duplicate detection
+        mock_client.configuration_manager.create_device_group = AsyncMock(
+            side_effect=ValueError("device group Existing Group already exists")
         )
         
-        with patch('itential_mcp.tools.device_groups.get_device_groups') as mock_get:
-            mock_get.return_value = GetDeviceGroupsResponse([existing_group])
-            
-            with pytest.raises(ValueError, match="already exists"):
-                await device_groups.create_device_group(
-                    mock_context,
-                    name="Existing Group",
-                    description="Should fail"
-                )
+        with pytest.raises(ValueError, match="already exists"):
+            await device_groups.create_device_group(
+                mock_context,
+                name="Existing Group",
+                description="Should fail",
+                devices=[]
+            )
