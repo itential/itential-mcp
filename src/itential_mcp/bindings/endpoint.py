@@ -3,9 +3,9 @@
 
 import inspect
 
-from typing import Tuple, Callable
+from typing import Tuple, Callable, Annotated
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from fastmcp import Context
 
@@ -124,11 +124,67 @@ async def new(
     trigger = await _get_trigger(platform_client, t)
 
     description = trigger["description"] or ""
-    description = inspect.cleandoc(
-        f"""
-        {description}\nArgs:\ndata (dict): Object that provides input
-        to the tool using the following input schema:\n{trigger["schema"]}
-        """
-    )
+    schema = trigger.get("schema", {})
+    properties = schema.get("properties", {})
+    
+    # Generate the function dynamically with explicit parameters
+    required_params = schema.get('required', [])
+    
+    # Build the parameter definitions and function body
+    required_param_definitions = []
+    optional_param_definitions = []
+    param_names = []
+    annotations = {
+        'ctx': Annotated[Context, Field(description="The FastMCP Context object")],
+        '_tool_config': config.EndpointTool | None,
+        'return': BaseModel
+    }
+    
+    for param_name, param_info in properties.items():
+        param_type = str  # Default to string type
+        param_description = param_info.get('description', param_info.get('title', param_name))
+        param_names.append(param_name)
+        
+        # Check if parameter is required
+        if param_name in required_params:
+            required_param_definitions.append(f"{param_name}")
+            annotations[param_name] = Annotated[param_type, Field(description=param_description)]
+        else:
+            optional_param_definitions.append(f"{param_name}=None")
+            annotations[param_name] = Annotated[param_type | None, Field(description=param_description, default=None)]
+    
+    # Create the function code with proper parameter order (required first, then optional)
+    all_params = required_param_definitions + ["_tool_config=None"] + optional_param_definitions
+    param_list = ", ".join(all_params) if all_params else ""
+    data_assembly = "{" + ", ".join([f'"{name}": {name}' for name in param_names]) + "}"
+    
+    # Create function dynamically using exec
+    func_code = f"""
+async def dynamic_workflow_function(ctx, {param_list}):
+    '''Dynamically created workflow function with proper schema.'''
+    # Assemble data object from parameters
+    data = {data_assembly}
+    # Filter out None values for optional parameters
+    data = {{k: v for k, v in data.items() if v is not None}}
+    
+    # Use the tool config from the closure instead of the injected one
+    return await start_workflow(ctx, _tool_config=t, data=data)
+"""
+    
+    # Execute the function definition
+    exec_globals = globals().copy()
+    exec_globals.update({
+        'start_workflow': start_workflow,
+        't': t
+    })
+    local_vars = {}
+    exec(func_code, exec_globals, local_vars)
+    dynamic_workflow_function = local_vars['dynamic_workflow_function']
+    
+    # Set the annotations on the function
+    dynamic_workflow_function.__annotations__ = annotations
 
-    return start_workflow, description
+    # Set the function name for better debugging
+    dynamic_workflow_function.__name__ = f"workflow_{t.tool_name}"
+    
+    return dynamic_workflow_function, description

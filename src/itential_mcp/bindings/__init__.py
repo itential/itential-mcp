@@ -71,7 +71,6 @@ async def bind_to_tool(
 
     kwargs = {
         "name": tool.tool_name,
-        "exclude_args": ("_tool_config",),
     }
 
     module = _import_binding(tool.type)
@@ -80,6 +79,12 @@ async def bind_to_tool(
     fn, description = await f(tool, platform_client)
 
     kwargs["description"] = description
+    
+    # Only add exclude_args if the function actually has the parameter
+    import inspect
+    sig = inspect.signature(fn)
+    if "_tool_config" in sig.parameters:
+        kwargs["exclude_args"] = ("_tool_config",)
 
     tags = f"bindings,{tool.name}"
 
