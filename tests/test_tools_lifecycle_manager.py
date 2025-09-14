@@ -360,13 +360,13 @@ class TestDescribeResource:
         
         mock_client = mock_context.request_context.lifespan_context.get.return_value
         mock_client.lifecycle_manager.describe_resource.return_value = mock_resource_data
-        mock_client.automation_studio.describe_workflow.return_value = mock_workflow_data
+        mock_client.automation_studio.describe_workflow_with_id.return_value = mock_workflow_data
 
         result = await lifecycle_manager.describe_resource(mock_context, "test-resource")
 
         assert isinstance(result, DescribeResourceResponse)
         assert result.actions[0].input_schema == mock_workflow_data["inputSchema"]
-        mock_client.automation_studio.describe_workflow.assert_called_once_with("workflow123")
+        mock_client.automation_studio.describe_workflow_with_id.assert_called_once_with("workflow123")
 
     @pytest.mark.asyncio
     async def test_describe_resource_transformation_not_found(self, mock_context):

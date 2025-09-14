@@ -445,3 +445,24 @@ class DescribeJobResponse(BaseModel):
         )
     ]
 
+class ExposeWorkflowResponse(BaseModel):
+    """Response model for workflow exposure endpoints.
+
+    This model represents the response returned when exposing a workflow
+    as an API endpoint through the operations manager. It contains status
+    information about the workflow exposure operation.
+
+    Attributes:
+        message: The status of the expose operation.
+    """
+
+    message: Annotated[
+        str,
+        Field(
+            description = inspect.cleandoc(
+                """
+                The status of the expose operation
+                """
+            )
+        )
+    ]
