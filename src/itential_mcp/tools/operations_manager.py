@@ -8,6 +8,7 @@ from pydantic import Field
 from fastmcp import Context
 
 from itential_mcp import timeutils
+from itential_mcp import exceptions
 
 from itential_mcp.models import operations_manager as models
 
@@ -288,7 +289,6 @@ async def describe_job(
             - metrics: Job execution metrics including start time, end time, and account
             - updated: Last update timestamp
     """
-
     await ctx.info("inside describe_job(...)")
 
     client = ctx.request_context.lifespan_context.get("client")
@@ -306,4 +306,105 @@ async def describe_job(
             "metrics": data["metrics"],
             "updated": data["last_updated"],
         }
+    )
+
+async def expose_workflow(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object",
+    )],
+    name: Annotated[str, Field(
+        description="The name of the workflow to expose",
+    )],
+    route_name: Annotated[str | None, Field(
+        description="The API route name to assign to this endpoint",
+        default=None
+    )],
+    project: Annotated[str | None, Field(
+        description="The project where the workflow resides",
+        default=None
+    )],
+    endpoint_name: Annotated[str | None, Field(
+        description="Set the name for the trigger endpoint",
+        default=None
+    )],
+    endpoint_description: Annotated[str | None, Field(
+        description="Set a description on the endpoint trigger",
+        default=None
+    )],
+    endpoint_schema: Annotated[dict | None, Field(
+        description="Set the request schemd for the endpoint trigger",
+        default=None
+    )]
+) -> models.ExposeWorkflowResponse:
+    """Expose a workflow as an API endpoint.
+
+    Creates an automation and API endpoint trigger to expose a workflow
+    for external consumption. This enables workflows to be called via
+    REST API endpoints with custom routing and input validation.
+
+    Args:
+        ctx (Context): The FastMCP Context object.
+        name (str): The name of the workflow to expose.
+        route_name (str | None): The API route name to assign to this endpoint.
+            If None, defaults to the workflow name with spaces replaced by underscores.
+        project (str | None): The project where the workflow resides.
+            If None, looks for the workflow in global space.
+        endpoint_name (str | None): Set the name for the trigger endpoint.
+            If None, defaults to "API Route for {workflow_name}".
+        endpoint_description (str | None): Set a description on the endpoint trigger.
+            If None, defaults to "auto-created by itential-mcp".
+        endpoint_schema (dict | None): Set the request schema for the endpoint trigger.
+            If None, uses the workflow's input schema.
+
+    Returns:
+        models.ExposeWorkflowResponse: Response containing the status message
+            about the workflow exposure operation.
+
+    Raises:
+        exceptions.ConfigurationException: If there is an error creating the endpoint
+            trigger or the workflow cannot be exposed.
+        Exception: If there is an error retrieving workflow information or
+            creating the automation.
+    """
+    await ctx.info("inside expose_workflow(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    if project:
+        res = await client.automation_studio.describe_project(project)
+        workflow_name = f"@{res['_id']}: {name}"
+        automation_name = f"{name} from {project}"
+    else:
+        workflow_name = name
+        automation_name = name
+
+    res = await client.operations_manager.create_automation(
+        name=automation_name,
+        component_type="workflows",
+        component_name=workflow_name,
+        description="auto-created by itential-mcp"
+    )
+
+    automation_id = res["_id"]
+
+    if not endpoint_schema:
+        res = await client.automation_studio.describe_workflow_with_name(workflow_name)
+        endpoint_schema = res["inputSchema"]
+
+    try:
+        await client.operations_manager.create_endpoint_trigger(
+            name=endpoint_name or f"API Route for {name}",
+            automation_id=automation_id,
+            description=endpoint_description or "auto-created by itential-mcp",
+            route_name=route_name or name.replace(" ", "_"),
+            schema=endpoint_schema
+        )
+
+    except Exception as exc:
+        await client.operations_manager.delete_automation(automation_id)
+        raise exceptions.ConfigurationException(f"failed to expose workflow: {exc}")
+
+
+    return models.ExposeWorkflowResponse(
+        message=f"Successfully exposed workflow `{name}` with route `{route_name}`"
     )

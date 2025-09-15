@@ -35,7 +35,46 @@ class Service(ServiceBase):
 
     name: str = "automation_studio"
 
-    async def describe_workflow(self, workflow_id: str) -> Mapping[str, Any]:
+    async def _describe_workflow(
+        self,
+        params: dict | None = None
+    ) -> Mapping[str, Any]:
+        """Internal helper method for retrieving workflow details from Automation Studio.
+
+        This private method handles the common workflow retrieval logic used by both
+        describe_workflow_with_id and describe_workflow_with_name methods. It fetches
+        workflow data from the Automation Studio API using the provided query parameters
+        and validates that exactly one workflow is found.
+
+        Args:
+            params (dict | None): Optional query parameters for filtering workflows.
+                Common parameters include equals[_id] for ID-based lookups and
+                equals[name] for name-based lookups. Defaults to None.
+
+        Returns:
+            Mapping[str, Any]: The workflow object containing all workflow details
+                including name, description, tasks, and configuration.
+
+        Raises:
+            NotFoundError: If no workflow is found or if multiple workflows match
+                the query parameters.
+        """
+        res = await self.client.get(
+            "/automation-studio/workflows",
+            params=params
+        )
+
+        data = res.json()
+
+        if data["total"] != 1:
+            raise exceptions.NotFoundError("workflow not found")
+
+        return data["items"][0]
+
+    async def describe_workflow_with_id(
+        self,
+        workflow_id: str
+    ) -> Mapping[str, Any]:
         """
         Describe an Automation Studio workflow
 
@@ -59,16 +98,40 @@ class Service(ServiceBase):
             NotFoundError: If the workflow could not be found on
                 the server
         """
-        res = await self.client.get(
-            "/automation-studio/workflows", params={"equals[_id]": workflow_id}
+        return await self._describe_workflow(
+            params={"equals[_id]": workflow_id}
         )
 
-        data = res.json()
 
-        if data["total"] != 1:
-            raise exceptions.NotFoundError(f"workflow id {workflow_id} not found")
+    async def describe_workflow_with_name(
+        self,
+        name: str
+    ) -> Mapping[str, Any]:
+        """Describe an Automation Studio workflow by name.
 
-        return data["items"][0]
+        This method retrieves a specific workflow from the Automation Studio
+        using the workflow name as the search criteria. It provides an alternative
+        to describe_workflow_with_id when the workflow ID is not known but the
+        name is available.
+
+        The method searches for workflows across both global space and project
+        namespaces to find the specified workflow by exact name match.
+
+        Args:
+            name (str): The exact name of the workflow to retrieve. Workflow
+                names are case-sensitive and must match exactly.
+
+        Returns:
+            Mapping[str, Any]: An object that represents the workflow containing
+                all workflow details including configuration, tasks, and metadata.
+
+        Raises:
+            NotFoundError: If the workflow with the specified name could not be
+                found on the server.
+        """
+        return await self._describe_workflow(
+            params={"equals[name]": name}
+        )
 
     async def _get_templates(
         self,

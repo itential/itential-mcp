@@ -169,7 +169,9 @@ async def describe_resource(
 
         elif ele["workflow"] is not None:
             try:
-                wf = await client.automation_studio.describe_workflow(ele["workflow"])
+                wf = await client.automation_studio.describe_workflow_with_id(
+                    ele["workflow"]
+                )
                 action_schema = wf["inputSchema"]
             except exceptions.NotFoundError:
                 return errors.resource_not_found(
