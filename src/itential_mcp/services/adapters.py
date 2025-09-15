@@ -4,11 +4,6 @@
 import asyncio
 
 from itential_mcp import exceptions
-from itential_mcp.models.adapters import (
-    StartAdapterResponse,
-    StopAdapterResponse,
-    RestartAdapterResponse
-)
 
 from itential_mcp.services import ServiceBase
 
@@ -126,7 +121,7 @@ class Service(ServiceBase):
         if timeout == 0:
             raise exceptions.TimeoutExceededError()
 
-        return StartAdapterResponse(name=name, state=state)
+        return data["results"][0]
 
     async def stop_adapter(self, name, timeout):
         """
@@ -183,7 +178,7 @@ class Service(ServiceBase):
         if timeout == 0:
             raise exceptions.TimeoutExceededError()
 
-        return StopAdapterResponse(name=name, state=state)
+        return data["results"][0]
 
 
     async def restart_adapter(self, name, timeout):
@@ -240,4 +235,4 @@ class Service(ServiceBase):
         if timeout == 0:
             raise exceptions.TimeoutExceededError()
 
-        return RestartAdapterResponse(name=name, state=state)
+        return data["results"][0]
