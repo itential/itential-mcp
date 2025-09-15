@@ -165,7 +165,14 @@ class PlatformClient(object):
         try:
             res = await self.client._send_request(method, path, params, json)
         except Exception as exc:
-            raise exceptions.ItentialMcpException(exc.response.text)
+            # Handle exceptions that may or may not have a response attribute
+            if hasattr(exc, 'response') and exc.response is not None:
+                error_message = getattr(exc.response, 'text', str(exc))
+                if callable(error_message):
+                    error_message = error_message()
+            else:
+                error_message = str(exc)
+            raise exceptions.ItentialMcpException(error_message)
         return await self._make_response(res)
 
     async def get(self, path: str, params: dict | None = None) -> response.Response:
