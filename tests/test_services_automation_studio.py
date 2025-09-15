@@ -47,7 +47,7 @@ class TestAutomationStudioService:
         }
         mock_client.get.return_value = mock_response
 
-        result = await service.describe_workflow("workflow-123")
+        result = await service.describe_workflow_with_id("workflow-123")
 
         # Verify client was called with correct parameters
         mock_client.get.assert_called_once_with(
@@ -68,9 +68,9 @@ class TestAutomationStudioService:
         mock_client.get.return_value = mock_response
 
         with pytest.raises(exceptions.NotFoundError) as exc_info:
-            await service.describe_workflow("nonexistent-workflow")
+            await service.describe_workflow_with_id("nonexistent-workflow")
 
-        assert "workflow id nonexistent-workflow not found" in str(exc_info.value)
+        assert "workflow not found" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_describe_workflow_multiple_found(self, service, mock_client):
@@ -87,9 +87,9 @@ class TestAutomationStudioService:
         mock_client.get.return_value = mock_response
 
         with pytest.raises(exceptions.NotFoundError) as exc_info:
-            await service.describe_workflow("duplicate-workflow")
+            await service.describe_workflow_with_id("duplicate-workflow")
 
-        assert "workflow id duplicate-workflow not found" in str(exc_info.value)
+        assert "workflow not found" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_get_templates_no_filter(self, service, mock_client):
@@ -454,7 +454,7 @@ class TestAutomationStudioService:
         mock_client.get.side_effect = Exception("Network error")
 
         with pytest.raises(Exception) as exc_info:
-            await service.describe_workflow("test-workflow")
+            await service.describe_workflow_with_id("test-workflow")
 
         assert "Network error" in str(exc_info.value)
 

@@ -1,7 +1,10 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from typing import Literal, Mapping, Any
+
 from itential_mcp import exceptions
+from itential_mcp import stringutils
 
 from itential_mcp.services import ServiceBase
 
@@ -343,3 +346,225 @@ class Service(ServiceBase):
         res = await self.client.post("/operations_manager/jobs/start", json=body)
 
         return res.json()
+
+    async def create_automation(
+        self,
+        name: str,
+        component_type: Literal["workflows", "ucm_compliance_plan"],
+        component_name: str | None = None,
+        description: str | None = None
+    ) -> Mapping[str, Any]:
+        """Create a new automation in the Operations Manager.
+
+        This method creates an automation object that wraps a workflow or compliance
+        plan for execution through the Operations Manager. Automations serve as the
+        execution containers that can be triggered through various mechanisms including
+        manual triggers, scheduled triggers, or API endpoints.
+
+        The automation acts as a bridge between the underlying component (workflow or
+        compliance plan) and the trigger mechanisms that initiate execution.
+
+        Args:
+            name (str): The name of the automation to create. This name will be
+                used to identify the automation in the Operations Manager.
+            component_type (Literal["workflows", "ucm_compliance_plan"]): The type
+                of component this automation will execute. "workflows" for Automation
+                Studio workflows, "ucm_compliance_plan" for compliance plans.
+            component_name (str | None): The name of the specific component to
+                associate with this automation. If provided, the method will look up
+                the component ID. Defaults to None.
+            description (str | None): Optional description for the automation.
+                Defaults to None.
+
+        Returns:
+            Mapping[str, Any]: The created automation object containing automation
+                details including ID, name, description, and associated component information.
+
+        Raises:
+            NotFoundError: If the specified component_name is provided but the
+                component cannot be found.
+            Exception: If there is an error creating the automation in the
+                Operations Manager.
+        """
+        body = {
+            "name": name,
+            "componentType": component_type
+        }
+
+        if description:
+            body["description"] = description
+
+        if component_name:
+            if component_type == "workflows":
+                res = await self.client.get(
+                    "/automation-studio/workflows",
+                    params={"equals[name]": component_name}
+                )
+                json_data = res.json()
+
+                if json_data["total"] != 1:
+                    raise exceptions.NotFoundError(f"workflow {component_name} not found")
+
+                body["componentId"] = json_data["items"][0]["_id"]
+
+            elif component_type == "ucm_compliance_plan":
+                pass
+
+        res = await self.client.post(
+            "/operations-manager/automations",
+            json=body
+        )
+
+        return res.json()["data"]
+
+    async def create_manual_trigger(
+        self,
+        name: str,
+        automation_id: str,
+        description: str | None = None
+    ) -> Mapping[str, Any]:
+        """Create a manual trigger for an automation.
+
+        This method creates a manual trigger that allows users to manually initiate
+        an automation through the Itential Platform user interface. Manual triggers
+        provide a user-friendly way to execute automations on-demand without requiring
+        API calls or scheduled executions.
+
+        The created trigger will be enabled by default and associated with the
+        specified automation for execution.
+
+        Args:
+            name (str): The name of the manual trigger to create. This name will
+                be displayed in the user interface.
+            automation_id (str): The unique identifier of the automation that this
+                trigger will execute. This should be obtained from create_automation()
+                or other automation management methods.
+            description (str | None): Optional description for the trigger that
+                provides context about its purpose. Defaults to None.
+
+        Returns:
+            Mapping[str, Any]: The created trigger object containing trigger details
+                including ID, name, description, and associated automation information.
+
+        Raises:
+            Exception: If there is an error creating the manual trigger in the
+                Operations Manager.
+        """
+        body = {
+            "actionId": automation_id,
+            "actionType": "automations",
+            "name": name,
+            "type": "manual",
+            "description": description,
+            "enabled": True
+        }
+
+        res = await self.client.post(
+            "/operations-manager/triggers",
+            json=body
+        )
+
+        return res.json()["data"]
+
+    async def create_endpoint_trigger(
+        self,
+        name: str,
+        automation_id: str,
+        route_name: str,
+        schema: dict | None = None,
+        description: str | None = None
+    ) -> Mapping[str, Any]:
+        """Create an API endpoint trigger for an automation.
+
+        This method creates an HTTP API endpoint trigger that allows external systems
+        to initiate automation execution through REST API calls. Endpoint triggers
+        enable integration with external systems, webhooks, and programmatic automation
+        execution.
+
+        The created endpoint will accept POST requests and can include input validation
+        through JSON Schema if provided.
+
+        Args:
+            name (str): The name of the endpoint trigger to create. This name will
+                be used for identification in the Operations Manager.
+            automation_id (str): The unique identifier of the automation that this
+                trigger will execute. This should be obtained from create_automation()
+                or other automation management methods.
+            route_name (str): The API route name that will be used to access this
+                endpoint. This becomes part of the URL path for triggering the automation.
+            schema (dict | None): Optional JSON Schema definition for validating
+                input data sent to the endpoint. If None, a default permissive schema
+                is used. Defaults to None.
+            description (str | None): Optional description for the trigger that
+                provides context about its purpose. Defaults to None.
+
+        Returns:
+            Mapping[str, Any]: The created trigger object containing trigger details
+                including ID, name, route information, schema, and associated automation.
+
+        Raises:
+            Exception: If there is an error creating the endpoint trigger in the
+                Operations Manager.
+        """
+        if not stringutils.is_valid_url_path(route_name):
+            raise ValueError("route_name is invalid")
+
+        body = {
+            "actionId": automation_id,
+            "actionType": "automations",
+            "name": name,
+            "type": "endpoint",
+            "verb": "POST",
+            "routeName": route_name,
+            "description": description,
+            "enabled": True,
+            "schema": schema
+        }
+
+        if not schema:
+            body["schema"] = {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": True
+            }
+
+
+        res = await self.client.post(
+            "/operations-manager/triggers",
+            json=body
+        )
+
+        return res.json()["data"]
+
+    async def delete_automation(
+        self,
+        automation_id: str
+    ) -> Mapping[str, str]:
+        """Delete an automation from the Operations Manager.
+
+        This method removes an automation object from the Operations Manager. When
+        an automation is deleted, it can no longer be triggered or executed. This
+        operation is permanent and cannot be undone.
+
+        Note: Deleting an automation will also affect any associated triggers.
+        Ensure that dependent triggers are handled appropriately before deleting
+        the automation.
+
+        Args:
+            automation_id (str): The unique identifier of the automation to delete.
+                This should be the automation ID obtained from create_automation()
+                or other automation management methods.
+
+        Returns:
+            Mapping[str, str]: A dictionary containing a success message confirming
+                the deletion operation.
+
+        Raises:
+            Exception: If there is an error deleting the automation from the
+                Operations Manager, or if the automation ID is not found.
+        """
+        res = await self.client.delete(
+            f"/operations-manager/automations/{automation_id}"
+        )
+        json_data = res.json()
+        return {"message": json_data["message"]}

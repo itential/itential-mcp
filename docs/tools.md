@@ -39,6 +39,8 @@ The following tags are available for filtering tools based on their functionalit
 
 - **get_command_templates** - Get all command templates from Itential Platform (global and project-scoped)
 - **describe_command_template** - Get detailed information about a specific command template including commands and rules
+- **create_command_template** - Create a new command template with specified name, commands, and validation rules
+- **update_command_template** - Update an existing command template with new commands and validation rules
 - **run_command_template** - Execute a command template against specified devices with rule evaluation and results
 - **run_command** - Run a single command against multiple devices and get execution results
 
@@ -113,8 +115,15 @@ The following tags are available for filtering tools based on their functionalit
 
 - **get_workflows** - Get all workflow API endpoints with schemas, route names, and execution history
 - **start_workflow** - Execute a workflow by triggering its API endpoint with input validation and job creation
+- **expose_workflow** - Expose a workflow as an API endpoint with custom routing and input validation
 - **get_jobs** - Get all jobs from Itential Platform with optional workflow and project filtering
 - **describe_job** - Get detailed information about a specific job including tasks, metrics, and execution status
+
+## Projects (`projects.py`)
+**Group Tags:** `automation_studio`
+
+- **get_projects** - Get all Automation Studio projects from Itential Platform with project metadata
+- **describe_project** - Get detailed information about a specific project including all components and artifacts
 
 ## System Health (`system.py`)
 **Group Tags:** `system`
