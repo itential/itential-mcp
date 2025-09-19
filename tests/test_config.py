@@ -38,15 +38,8 @@ def test_get_config_from_file(tmp_path, monkeypatch):
     config_path = tmp_path / "test.ini"
 
     cp = configparser.ConfigParser()
-    cp["server"] = {
-        "host": "192.168.1.1",
-        "port": "9000"
-    }
-    cp["platform"] = {
-        "user": "fileuser",
-        "password": "filepass",
-        "disable_tls": "true"
-    }
+    cp["server"] = {"host": "192.168.1.1", "port": "9000"}
+    cp["platform"] = {"user": "fileuser", "password": "filepass", "disable_tls": "true"}
 
     with open(config_path, "w") as f:
         cp.write(f)
@@ -85,6 +78,52 @@ def test_config_platform_and_server_properties(monkeypatch):
     assert "host" in cfg.platform
 
 
+def test_config_server_tools_path_from_env(monkeypatch):
+    """Test server_tools_path configuration from environment variable"""
+    test_path = "/custom/tools/path"
+    monkeypatch.setenv("ITENTIAL_MCP_SERVER_TOOLS_PATH", test_path)
+
+    cfg = config_module.get()
+
+    assert cfg.server_tools_path == test_path
+    assert cfg.server["tools_path"] == test_path
+
+
+def test_config_server_tools_path_default(monkeypatch):
+    """Test server_tools_path defaults to None"""
+    # Clear any existing env var
+    monkeypatch.delenv("ITENTIAL_MCP_SERVER_TOOLS_PATH", raising=False)
+
+    cfg = config_module.get()
+
+    assert cfg.server_tools_path is None
+    assert cfg.server["tools_path"] is None
+
+
+def test_config_server_tools_path_from_file(tmp_path, monkeypatch):
+    """Test server_tools_path configuration from config file"""
+    config_path = tmp_path / "test.ini"
+    test_tools_path = "/file/tools/path"
+
+    cp = configparser.ConfigParser()
+    cp["server"] = {"tools_path": test_tools_path}
+
+    with open(config_path, "w") as f:
+        cp.write(f)
+
+    # Clear env vars
+    for ele in os.environ.keys():
+        if ele.startswith("ITENTIAL"):
+            monkeypatch.delenv(ele, raising=False)
+
+    monkeypatch.setenv("ITENTIAL_MCP_CONFIG", str(config_path))
+
+    cfg = config_module.get()
+
+    assert cfg.server_tools_path == test_tools_path
+    assert cfg.server["tools_path"] == test_tools_path
+
+
 class TestValidateToolName:
     """Test cases for validate_tool_name function."""
 
@@ -107,7 +146,7 @@ class TestValidateToolName:
             "snake_case",
             "mixed123_Case",
         ]
-        
+
         for name in valid_names:
             result = validate_tool_name(name)
             assert result == name
@@ -150,24 +189,26 @@ class TestValidateToolName:
             "tool~name",  # contains tilde
             "tool!name",  # contains exclamation
         ]
-        
+
         for name in invalid_names:
             with pytest.raises(ValueError) as exc_info:
                 validate_tool_name(name)
-            
+
             if name == "":
                 assert "cannot be empty" in str(exc_info.value)
             else:
                 assert "is invalid" in str(exc_info.value)
                 assert "must start with a letter" in str(exc_info.value)
-                assert "only contain letters, numbers, and underscores" in str(exc_info.value)
+                assert "only contain letters, numbers, and underscores" in str(
+                    exc_info.value
+                )
 
     def test_validate_tool_name_edge_cases(self):
         """Test validate_tool_name with edge cases."""
         # Single character valid names
         assert validate_tool_name("a") == "a"
         assert validate_tool_name("Z") == "Z"
-        
+
         # Very long valid name
         long_name = "a" + "b" * 100 + "_123"
         assert validate_tool_name(long_name) == long_name
@@ -183,7 +224,7 @@ class TestToolDataclass:
             tool_name="valid_tool_name",
             type="endpoint",
             description="Test tool",
-            tags="test"
+            tags="test",
         )
         assert tool.tool_name == "valid_tool_name"
 
@@ -195,9 +236,9 @@ class TestToolDataclass:
                 tool_name="123invalid",
                 type="endpoint",
                 description="Test tool",
-                tags="test"
+                tags="test",
             )
-        
+
         assert "is invalid" in str(exc_info.value)
 
     def test_tool_empty_tool_name(self):
@@ -208,9 +249,9 @@ class TestToolDataclass:
                 tool_name="",
                 type="endpoint",
                 description="Test tool",
-                tags="test"
+                tags="test",
             )
-        
+
         assert "cannot be empty" in str(exc_info.value)
 
     def test_endpoint_tool_valid_tool_name(self):
@@ -221,7 +262,7 @@ class TestToolDataclass:
             type="endpoint",
             automation="test-automation",
             description="Test endpoint tool",
-            tags="test"
+            tags="test",
         )
         assert tool.tool_name == "valid_endpoint_tool"
 
@@ -234,8 +275,7 @@ class TestToolDataclass:
                 type="endpoint",
                 automation="test-automation",
                 description="Test endpoint tool",
-                tags="test"
+                tags="test",
             )
-        
-        assert "is invalid" in str(exc_info.value)
 
+        assert "is invalid" in str(exc_info.value)

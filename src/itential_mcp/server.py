@@ -3,6 +3,7 @@
 
 import sys
 import inspect
+import pathlib
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -178,23 +179,33 @@ async def new(cfg: config.Config) -> FastMCP:
     srv.add_middleware(LoggingMiddleware(logger=logger))
     srv.add_middleware(DynamicToolInjectionMiddleware(cfg))
 
-    logger.info("Adding tools to MCP server")
-    for f, tags in toolutils.itertools():
-        tags.add("default")
 
-        kwargs = {"tags": tags}
+    tool_paths = [pathlib.Path(__file__).parent / "tools"]
 
-        try:
-            schema = toolutils.get_json_schema(f)
-            if schema["type"] == "object":
-                kwargs["output_schema"] = toolutils.get_json_schema(f)
+    if cfg.server.get("tools_path") is not None:
+        tool_paths.append(
+            pathlib.Path(cfg.server.get("tools_path")).resolve()
+        )
 
-        except ValueError:
-            # tool does not have an output_schema defined
-            pass
+    for ele in tool_paths:
+        logger.info(f"Adding MCP Tools from {ele}")
+        for f, tags in toolutils.itertools(ele):
+            tags.add("default")
 
-        srv.tool(f, **kwargs)
-        logger.debug(f"Successfully added tool: {f.__name__}")
+            kwargs = {"tags": tags}
+
+            try:
+                schema = toolutils.get_json_schema(f)
+                if schema["type"] == "object":
+                    kwargs["output_schema"] = toolutils.get_json_schema(f)
+
+            except ValueError:
+                # tool does not have an output_schema defined
+                logger.warning(f"tool {f.__name__} has a missing or invalid output_schema")
+                pass
+
+            srv.tool(f, **kwargs)
+            logger.debug(f"Successfully added tool: {f.__name__}")
 
     logger.info("Creating dynamic bindings for tools")
     async for fn, kwargs in bindings.iterbindings(cfg):
