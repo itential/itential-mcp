@@ -429,7 +429,7 @@ class TestRun:
         mock_new.assert_awaited_once_with(mock_config)
 
         # Check server was run with correct parameters
-        mock_mcp.run_async.assert_called_once_with(transport="stdio")
+        mock_mcp.run_async.assert_called_once_with(transport="stdio", show_banner=False)
 
     @pytest.mark.asyncio
     @patch("itential_mcp.server.toolutils.itertools")
@@ -457,7 +457,7 @@ class TestRun:
         await server.run()
 
         mock_mcp.run_async.assert_called_once_with(
-            transport="sse", host="0.0.0.0", port=8000, log_level="INFO"
+            transport="sse", host="0.0.0.0", port=8000, show_banner=False
         )
 
     @pytest.mark.asyncio
@@ -490,7 +490,7 @@ class TestRun:
             transport="http",
             host="localhost",
             port=3000,
-            log_level="DEBUG",
+            show_banner=False,
             path="/mcp",
         )
 
@@ -605,7 +605,7 @@ class TestRun:
 
         # Verify new() was called with the config and the MCP instance was used
         mock_new.assert_awaited_once_with(mock_config)
-        mock_mcp.run_async.assert_called_once_with(transport="stdio")
+        mock_mcp.run_async.assert_called_once_with(transport="stdio", show_banner=False)
 
     @pytest.mark.asyncio
     @patch("itential_mcp.server.new", new_callable=AsyncMock)
@@ -649,7 +649,7 @@ class TestRun:
 
         await server.run()
 
-        mock_mcp.run_async.assert_called_with(transport="stdio")
+        mock_mcp.run_async.assert_called_with(transport="stdio", show_banner=False)
 
     @pytest.mark.asyncio
     @patch("itential_mcp.server.toolutils.itertools")
@@ -673,7 +673,7 @@ class TestRun:
 
         # Should call with None values for missing keys
         mock_mcp.run_async.assert_called_with(
-            transport="sse", host=None, port=None, log_level=None
+            transport="sse", host=None, port=None, show_banner=False
         )
 
 
@@ -738,4 +738,4 @@ class TestIntegration:
             )
 
             # Verify server was started
-            mock_mcp.run_async.assert_called_once_with(transport="stdio")
+            mock_mcp.run_async.assert_called_once_with(transport="stdio", show_banner=False)

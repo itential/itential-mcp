@@ -14,8 +14,13 @@ and includes version information from package metadata.
 
 from importlib.metadata import version
 
+from . import logging
+
 from .app import run
+
 
 __version__ = version("itential_mcp")
 
 __all__ = ("run",)
+
+logging.initialize()

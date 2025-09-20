@@ -12,8 +12,6 @@ from typing import Any
 
 from fastmcp import FastMCP
 
-from fastmcp.utilities import logging
-
 from fastmcp.server.middleware import Middleware, MiddlewareContext
 from fastmcp.server.middleware.logging import LoggingMiddleware
 from fastmcp.server.middleware.timing import DetailedTimingMiddleware
@@ -23,6 +21,7 @@ from . import client
 from . import config
 from . import toolutils
 from . import bindings
+from . import logging
 
 
 INSTRUCTIONS = """
@@ -38,8 +37,6 @@ operating established workflows. Key tools like get_health, get_workflows,
 run_command or create_resource will indicate your operational scope.
 """
 
-
-logger = logging.get_logger(__name__)
 
 
 @asynccontextmanager
@@ -164,7 +161,8 @@ async def new(cfg: config.Config) -> FastMCP:
         This function should only be called once during server initialization.
         Multiple calls may result in duplicate tool registrations.
     """
-    logger.info("Initializing the MCP server instance")
+    logging.info("Initializing the MCP server instance")
+
     # Initialize FastMCP server
     srv = FastMCP(
         name="Itential Platform MCP",
@@ -174,11 +172,14 @@ async def new(cfg: config.Config) -> FastMCP:
         exclude_tags=cfg.server.get("exclude_tags"),
     )
 
+    logger = logging.get_logger()
+
     srv.add_middleware(ErrorHandlingMiddleware(logger=logger))
     srv.add_middleware(DetailedTimingMiddleware(logger=logger))
-    srv.add_middleware(LoggingMiddleware(logger=logger))
+    srv.add_middleware(LoggingMiddleware(logger=logger, include_payloads=True, max_payload_length=1000))
     srv.add_middleware(DynamicToolInjectionMiddleware(cfg))
 
+    logging.info("Adding tools to MCP server")
 
     tool_paths = [pathlib.Path(__file__).parent / "tools"]
 
@@ -191,7 +192,6 @@ async def new(cfg: config.Config) -> FastMCP:
         logger.info(f"Adding MCP Tools from {ele}")
         for f, tags in toolutils.itertools(ele):
             tags.add("default")
-
             kwargs = {"tags": tags}
 
             try:
@@ -205,12 +205,12 @@ async def new(cfg: config.Config) -> FastMCP:
                 pass
 
             srv.tool(f, **kwargs)
-            logger.debug(f"Successfully added tool: {f.__name__}")
+            logging.debug(f"Successfully added tool: {f.__name__}")
 
-    logger.info("Creating dynamic bindings for tools")
+    logging.info("Creating dynamic bindings for tools")
     async for fn, kwargs in bindings.iterbindings(cfg):
         srv.tool(fn, **kwargs)
-    logger.info("Dynamic tool bindings is now complete")
+    logging.info("Dynamic tool bindings is now complete")
 
     return srv
 
@@ -252,21 +252,19 @@ async def run() -> int:
     try:
         cfg = config.get()
 
-        if cfg.server.get("log_level"):
-            logging.configure_logging(
-                level=cfg.server.get("log_level"),
-            )
-
         mcp = await new(cfg)
 
-        kwargs = {"transport": cfg.server.get("transport")}
+        kwargs = {
+            "transport": cfg.server.get("transport"),
+            "show_banner": False
+        }
 
         if kwargs["transport"] in ("sse", "http"):
             kwargs.update(
                 {
                     "host": cfg.server.get("host"),
                     "port": cfg.server.get("port"),
-                    "log_level": cfg.server.get("log_level"),
+                    #"log_level": cfg.server.get("log_level"),
                 }
             )
 
