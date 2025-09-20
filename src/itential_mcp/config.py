@@ -161,6 +161,15 @@ class Config(object):
         json_schema_extra=options("--exclude-tags", metavar="<tags>"),
     )
 
+    server_tools_path: str | None = Field(
+        description = "Custom path to load tools from",
+        default = None,
+        json_schema_extra = options(
+            "--tools-path",
+            metavar="<path>",
+        )
+    )
+
     platform_host: str = Field(
         description="The host addres of the Itential Platform server",
         default="localhost",
@@ -239,13 +248,10 @@ class Config(object):
             "host": self.server_host,
             "port": self.server_port,
             "path": self.server_path,
+            "tools_path": self.server_tools_path,
             "log_level": self.server_log_level,
-            "include_tags": self._coerce_to_set(self.server_include_tags)
-            if self.server_include_tags
-            else None,
-            "exclude_tags": self._coerce_to_set(self.server_exclude_tags)
-            if self.server_exclude_tags
-            else None,
+            "include_tags": self._coerce_to_set(self.server_include_tags) if self.server_include_tags else None,
+            "exclude_tags": self._coerce_to_set(self.server_exclude_tags) if self.server_exclude_tags else None,
         }
 
     @property
