@@ -189,6 +189,7 @@ class TestNew:
         mock_config.server = {
             "include_tags": ["tag1", "tag2"],
             "exclude_tags": ["tag3"],
+            "tools_path": None,
         }
         mock_config.tools = []
 
@@ -280,6 +281,126 @@ class TestNew:
             lifespan=server.lifespan,
             include_tags=None,
             exclude_tags=None,
+        )
+
+    @patch("itential_mcp.server.bindings.iterbindings")
+    @patch("itential_mcp.server.toolutils.itertools")
+    @patch("itential_mcp.server.logging.get_logger")
+    @patch("itential_mcp.server.FastMCP")
+    @pytest.mark.asyncio
+    async def test_new_with_custom_tools_path(
+        self, mock_fastmcp, mock_logger, mock_itertools, mock_iterbindings
+    ):
+        """Test new() with custom tools_path configuration"""
+        mock_config = MagicMock(spec=Config)
+        mock_config.server = {
+            "include_tags": None,
+            "exclude_tags": None,
+            "tools_path": "/custom/tools/path",
+        }
+        mock_config.tools = []
+
+        mock_itertools.return_value = []
+
+        async def empty_aiter():
+            return
+            yield  # unreachable but makes this an async generator
+
+        mock_iterbindings.return_value = empty_aiter()
+
+        mock_mcp_instance = MagicMock()
+        mock_fastmcp.return_value = mock_mcp_instance
+
+        result = await server.new(mock_config)
+
+        # Should call itertools twice - once for default, once for custom path
+        assert mock_itertools.call_count == 2
+        mock_fastmcp.assert_called_once()
+        assert result == mock_mcp_instance
+
+    @patch("itential_mcp.server.bindings.iterbindings")
+    @patch("itential_mcp.server.toolutils.itertools")
+    @patch("itential_mcp.server.logging.get_logger")
+    @patch("itential_mcp.server.FastMCP")
+    @pytest.mark.asyncio
+    async def test_new_without_custom_tools_path(
+        self, mock_fastmcp, mock_logger, mock_itertools, mock_iterbindings
+    ):
+        """Test new() without custom tools_path (None)"""
+        mock_config = MagicMock(spec=Config)
+        mock_config.server = {
+            "include_tags": None,
+            "exclude_tags": None,
+            "tools_path": None,
+        }
+        mock_config.tools = []
+
+        mock_itertools.return_value = []
+
+        async def empty_aiter():
+            return
+            yield  # unreachable but makes this an async generator
+
+        mock_iterbindings.return_value = empty_aiter()
+
+        mock_mcp_instance = MagicMock()
+        mock_fastmcp.return_value = mock_mcp_instance
+
+        await server.new(mock_config)
+
+        # Should only call itertools once for default path
+        assert mock_itertools.call_count == 1
+
+    @patch("itential_mcp.server.bindings.iterbindings")
+    @patch("itential_mcp.server.toolutils.itertools")
+    @patch("itential_mcp.server.toolutils.get_json_schema")
+    @patch("itential_mcp.server.logging.get_logger")
+    @patch("itential_mcp.server.FastMCP")
+    @pytest.mark.asyncio
+    async def test_new_tool_with_missing_output_schema(
+        self,
+        mock_fastmcp,
+        mock_logger,
+        mock_get_json_schema,
+        mock_itertools,
+        mock_iterbindings,
+    ):
+        """Test new() handles tools with missing or invalid output_schema"""
+        mock_config = MagicMock(spec=Config)
+        mock_config.server = {
+            "include_tags": None,
+            "exclude_tags": None,
+            "tools_path": None,
+        }
+        mock_config.tools = []
+
+        # Mock a tool function
+        def mock_tool():
+            """Test tool function"""
+            pass
+
+        mock_tool.__name__ = "test_tool"
+        mock_itertools.return_value = [(mock_tool, {"test"})]
+
+        # Mock get_json_schema to raise ValueError (missing/invalid schema)
+        mock_get_json_schema.side_effect = ValueError("Missing schema")
+
+        async def empty_aiter():
+            return
+            yield  # unreachable but makes this an async generator
+
+        mock_iterbindings.return_value = empty_aiter()
+
+        mock_mcp_instance = MagicMock()
+        mock_fastmcp.return_value = mock_mcp_instance
+        mock_logger_instance = MagicMock()
+        mock_logger.return_value = mock_logger_instance
+
+        await server.new(mock_config)
+
+        # Should still register the tool without output_schema
+        mock_mcp_instance.tool.assert_called_once_with(
+            mock_tool, tags={"test", "default"}
         )
 
 
