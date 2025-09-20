@@ -187,6 +187,7 @@ class TestParseArgs:
             mock_args.help = False
             mock_args.command = "run"
             mock_args.config = None
+            mock_args.server_log_level = "INFO"  # Set required attribute with valid log level
             mock_args._get_kwargs.return_value = [
                 ("server_host", "example.com"),
                 ("platform_username", "testuser"),
@@ -360,6 +361,7 @@ class TestIntegration:
             mock_args.help = False
             mock_args.command = "run"
             mock_args.config = "/path/to/config.ini"
+            mock_args.server_log_level = "INFO"  # Set required attribute with valid log level
             mock_args._get_kwargs.return_value = [
                 ("server_host", "example.com"),
                 ("platform_username", "testuser"),
