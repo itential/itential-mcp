@@ -5,37 +5,32 @@ import os
 import configparser
 import re
 
-from functools import lru_cache
+from functools import lru_cache, partial
 from pathlib import Path
 
-from typing import Literal, List
-from dataclasses import fields
+from typing import Literal, List, Callable
 
 from pydantic import Field, field_validator
 from pydantic.dataclasses import dataclass
 
 from . import env
+from . import defaults
 
 
 def options(*args, **kwargs) -> dict:
-    """
-    Utility function to add extra parameters to fields
+    """Utility function to add extra parameters to fields.
 
-    This function will add extra parameters to to a Field in the Config
-    class.  Specifically it handles adding the necessary keys to support
-    generating the CLI options from the configuration.  This unifies the
+    This function will add extra parameters to a Field in the Config
+    class. Specifically it handles adding the necessary keys to support
+    generating the CLI options from the configuration. This unifies the
     parameter descriptions and default values for consistency.
 
     Args:
-        *args: Positional arguments to be added to the CLI command line option
-        **kwargs: Optional arguments to be added to the CLI command line option
+        *args: Positional arguments to be added to the CLI command line option.
+        **kwargs: Optional arguments to be added to the CLI command line option.
 
     Returns:
-        dict: A Python dict object to be added to the Field function
-            signature
-
-    Raises:
-        None
+        dict: A Python dict object to be added to the Field function signature.
     """
     return {
         "x-itential-mcp-cli-enabled": True,
@@ -45,21 +40,20 @@ def options(*args, **kwargs) -> dict:
 
 
 def validate_tool_name(tool_name: str) -> str:
-    """
-    Validate that a tool name follows the required naming convention.
+    """Validate that a tool name follows the required naming convention.
 
     Tool names must start with a letter and only contain letters, numbers,
     and underscores. This ensures compatibility with Python function naming
     and prevents injection attacks.
 
     Args:
-        tool_name (str): The tool name to validate
+        tool_name: The tool name to validate.
 
     Returns:
-        str: The validated tool name
+        The validated tool name.
 
     Raises:
-        ValueError: If the tool name does not match the required pattern
+        ValueError: If the tool name does not match the required pattern.
     """
     if not tool_name:
         raise ValueError("Tool name cannot be empty")
@@ -72,6 +66,10 @@ def validate_tool_name(tool_name: str) -> str:
         )
 
     return tool_name
+
+
+def default_factory(f, key) -> Callable:
+    return partial(f, key, getattr(defaults, key))
 
 
 @dataclass(frozen=True)
@@ -93,17 +91,16 @@ class Tool(object):
     @field_validator("tool_name")
     @classmethod
     def validate_tool_name_field(cls, v: str) -> str:
-        """
-        Validate tool_name field using the validate_tool_name function.
+        """Validate tool_name field using the validate_tool_name function.
 
         Args:
-            v (str): The tool_name value to validate
+            v: The tool_name value to validate.
 
         Returns:
-            str: The validated tool_name
+            The validated tool_name.
 
         Raises:
-            ValueError: If the tool_name is invalid
+            ValueError: If the tool_name is invalid.
         """
         return validate_tool_name(v)
 
@@ -119,52 +116,97 @@ class EndpointTool(Tool):
 class Config(object):
     server_transport: Literal["stdio", "sse", "http"] = Field(
         description="The MCP server transport to use",
-        default="stdio",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_TRANSPORT",
+        ),
         json_schema_extra=options(
-            "--transport", choices=("stdio", "sse", "http"), metavar="<value>"
+            "--transport",
+            choices=("stdio", "sse", "http"),
+            metavar="<value>"
         ),
     )
 
     server_host: str = Field(
         description="Address to listen for connections on",
-        default="127.0.0.1",
-        json_schema_extra=options("--host", metavar="<host>"),
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_HOST",
+        ),
+        json_schema_extra=options(
+            "--host",
+            metavar="<host>"
+        ),
     )
 
     server_port: int = Field(
         description="Port to listen for connections on",
-        default=8000,
-        json_schema_extra=options("--port", metavar="<port>", type=int),
+        default_factory=default_factory(
+            env.getint,
+            "ITENTIAL_MCP_SERVER_PORT",
+        ),
+        json_schema_extra=options(
+            "--port",
+            metavar="<port>",
+            type=int
+        ),
     )
 
     server_path: str = Field(
         description="URI path used to accept requests from",
-        default="/mcp",
-        json_schema_extra=options("--path", metavar="<path>"),
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_PATH"
+        ),
+        json_schema_extra=options(
+            "--path",
+            metavar="<path>"
+        ),
     )
 
     server_log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(
         description="Logging level for verbose output",
-        default="INFO",
-        json_schema_extra=options("--log-level", metavar="<level>"),
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_LOG_LEVEL"
+        ),
+        json_schema_extra=options(
+            "--log-level",
+            metavar="<level>"
+        ),
     )
 
     server_include_tags: str | None = Field(
         description="Include tools that match at least on tag",
-        default=None,
-        json_schema_extra=options("--include-tags", metavar="<tags>"),
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_INCLUDE_TAGS"
+        ),
+        json_schema_extra=options(
+            "--include-tags",
+            metavar="<tags>"
+        ),
     )
 
     server_exclude_tags: str | None = Field(
         description="Exclude any tool that matches one of these tags",
-        default="experimental,beta",
-        json_schema_extra=options("--exclude-tags", metavar="<tags>"),
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_EXCLUDE_TAGS",
+        ),
+        json_schema_extra=options(
+            "--exclude-tags",
+            metavar="<tags>"
+        ),
     )
 
     server_tools_path: str | None = Field(
-        description = "Custom path to load tools from",
-        default = None,
-        json_schema_extra = options(
+        description="Custom path to load tools from",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_TOOLS_PATH"
+        ),
+        json_schema_extra=options(
             "--tools-path",
             metavar="<path>",
         )
@@ -172,13 +214,22 @@ class Config(object):
 
     platform_host: str = Field(
         description="The host addres of the Itential Platform server",
-        default="localhost",
-        json_schema_extra=options("--platform-host", metavar="<host>"),
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_PLATFORM_HOST",
+        ),
+        json_schema_extra=options(
+            "--platform-host",
+            metavar="<host>"
+        ),
     )
 
     platform_port: int = Field(
         description="The port to use when connecting to Itential Platform",
-        default=0,
+        default_factory=default_factory(
+            env.getint,
+            "ITENTIAL_MCP_PLATFORM_PORT"
+        ),
         json_schema_extra=options(
             "--platform-port",
             type=int,
@@ -188,46 +239,86 @@ class Config(object):
 
     platform_disable_tls: bool = Field(
         description="Disable using TLS to connect to the server",
-        default=False,
-        json_schema_extra=options("--platform-disable-tls", action="store_true"),
+        default_factory=default_factory(
+            env.getbool,
+            "ITENTIAL_MCP_PLATFORM_DISABLE_TLS"
+        ),
+        json_schema_extra=options(
+            "--platform-disable-tls",
+            action="store_true"
+        ),
     )
 
     platform_disable_verify: bool = Field(
         description="Disable certificate verification",
-        default=False,
-        json_schema_extra=options("--platform-disable-verify", action="store_true"),
+        default_factory=default_factory(
+            env.getbool,
+            "ITENTIAL_MCP_PLATFORM_DISABLE_VERIFY"
+        ),
+        json_schema_extra=options(
+            "--platform-disable-verify",
+            action="store_true"
+        ),
     )
 
     platform_user: str = Field(
         description="Username to use when authenticating to the server",
-        default="admin",
-        json_schema_extra=options("--platform-user", metavar="<user>"),
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_PLATFORM_USER"
+        ),
+        json_schema_extra=options(
+            "--platform-user",
+            metavar="<user>"
+        ),
     )
 
     platform_password: str = Field(
         description="Password to use when authenticating to the server",
-        default="admin",
-        json_schema_extra=options("--platform-password", metavar="<password>"),
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_PLATFORM_PASSWORD"
+        ),
+        json_schema_extra=options(
+            "--platform-password",
+            metavar="<password>"
+        ),
     )
 
     platform_client_id: str | None = Field(
         description="Client ID to use when authenticating using OAuth",
-        default=None,
-        json_schema_extra=options("--platform-client-id", metavar="<client_id>"),
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_PLATFORM_CLIENT_ID"
+        ),
+        json_schema_extra=options(
+            "--platform-client-id",
+            metavar="<client_id>"
+        ),
     )
 
     platform_client_secret: str | None = Field(
         description="Client secret to use when authenticating using OAuth",
-        default=None,
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_PLATFORM_CLIENT_SECRET"
+        ),
         json_schema_extra=options(
-            "--platform-client-secret", metavar="<client_secret>"
+            "--platform-client-secret",
+            metavar="<client_secret>"
         ),
     )
 
     platform_timeout: int = Field(
         description="Sets the timeout in seconds when communciating with the server",
-        default=30,
-        json_schema_extra=options("--platform-timeout", metavar="<secs>"),
+        default_factory=default_factory(
+            env.getint,
+            "ITENTIAL_MCP_PLATFORM_TIMEOUT"
+        ),
+        json_schema_extra=options(
+            "--platform-timeout",
+            metavar="<secs>"
+        ),
     )
 
     tools: List[Tool] = Field(
@@ -279,6 +370,14 @@ class Config(object):
         }
 
     def _coerce_to_set(self, value) -> list:
+        """Convert comma-separated string to a set of trimmed strings.
+
+        Args:
+            value: Comma-separated string to convert.
+
+        Returns:
+            Set of trimmed string elements.
+        """
         items = set()
         for ele in value.split(","):
             items.add(ele.strip())
@@ -286,24 +385,20 @@ class Config(object):
 
 
 def _get_tools_from_env() -> dict:
-    """
-    Parse tool configuration from environment variables.
+    """Parse tool configuration from environment variables.
 
     Parses environment variables with the pattern ITENTIAL_MCP_TOOL_<tool_name>_<key>
     and returns a nested dictionary structure organized by tool name.
 
     Expected format: ITENTIAL_MCP_TOOL_<tool_name>_<key>=<value>
 
-    Args:
-        None
-
     Returns:
-        dict: Nested dictionary where keys are tool names and values are
-            dictionaries of configuration key-value pairs for each tool.
-            Example: {"my_tool": {"name": "value", "type": "endpoint"}}
+        Nested dictionary where keys are tool names and values are
+        dictionaries of configuration key-value pairs for each tool.
+        Example: {"my_tool": {"name": "value", "type": "endpoint"}}
 
     Raises:
-        ValueError: If environment variable format is invalid or missing required parts
+        ValueError: If environment variable format is invalid or missing required parts.
     """
     tool_config = {}
     prefix = "ITENTIAL_MCP_TOOL_"
@@ -339,24 +434,18 @@ def _get_tools_from_env() -> dict:
 
 @lru_cache(maxsize=None)
 def get() -> Config:
-    """
-    Return the configuration instance
+    """Return the configuration instance.
 
     This function will load the configuration and return an instance of
-    Config.  This function is cached and is safe to call multiple times.
+    Config. This function is cached and is safe to call multiple times.
     The configuration is loaded only once and the cached Config instance
     is returned with every call.
 
-    Args:
-        None
-
     Returns:
-        Conig: An instance of Config that represents the application
-            configuration
+        An instance of Config that represents the application configuration.
 
     Raises:
-        FileNotFoundError: If a configuration file is specified but not found
-            this exception is raised
+        FileNotFoundError: If a configuration file is specified but not found.
     """
     conf_file = env.getstr("ITENTIAL_MCP_CONFIG")
 
@@ -418,11 +507,5 @@ def get() -> Config:
 
     if tools:
         data["tools"] = tools
-
-    for item in fields(Config):
-        envkey = f"ITENTIAL_MCP_{item.name}".upper()
-        if envkey in os.environ:
-            value = ", ".join(os.environ[envkey].split(","))
-            data[item.name] = value
 
     return Config(**data)
