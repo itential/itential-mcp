@@ -10,11 +10,10 @@ import ipsdk
 from ipsdk.platform import AsyncPlatform
 from ipsdk.connection import Response
 
-from fastmcp.utilities import logging
-
 from . import config
 from . import response
 from . import exceptions
+from . import logging
 
 
 class PlatformClient(object):
@@ -79,8 +78,6 @@ class PlatformClient(object):
             AttributeError: If a service module lacks a Service class.
             Exception: If service instantiation fails.
         """
-        logger = logging.get_logger(__name__)
-
         services_path = pathlib.Path(__file__).resolve().parent / "services"
 
         # Early return if services directory doesn't exist
@@ -113,7 +110,7 @@ class PlatformClient(object):
                 setattr(self, service_instance.name, service_instance)
 
             except (ImportError, AttributeError, Exception):
-                logger.warning(f"error loading client service: {module_name}")
+                logging.warning(f"error loading client service: {module_name}")
                 continue
 
     async def _make_response(self, res: Response) -> response.Response:

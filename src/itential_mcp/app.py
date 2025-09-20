@@ -11,6 +11,8 @@ from collections.abc import Sequence
 
 from . import commands
 from . import cli
+from . import env
+from . import logging
 
 
 LEGACY_ENV_VARS = frozenset((
@@ -104,6 +106,11 @@ def parse_args(args: Sequence) -> None:
     )
 
     args = parser.parse_args(args=args)
+
+    if hasattr(args, "server_log_level"):
+        if args.server_log_level is not None:
+            propagate = env.getbool("ITENTIAL_MCP_SERVER_LOGGING_PROPAGATION", False)
+            logging.set_level(args.server_log_level, propagate)
 
     if args.help or args.command is None:
         parser.print_app_help()
