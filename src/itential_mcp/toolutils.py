@@ -74,7 +74,7 @@ def get_json_schema(fn: Callable) -> str:
     return ret.model_json_schema()
 
 
-def itertools(path: str=None) -> Iterator[Tuple[Callable, Sequence]]:
+def itertools(path: str) -> Iterator[Tuple[Callable, Sequence]]:
     """
     Iterate through all discovered tools
 
@@ -84,8 +84,7 @@ def itertools(path: str=None) -> Iterator[Tuple[Callable, Sequence]]:
     them to the instance of mcp as a tool.
 
     Args:
-        path (str): The path to look for tools in.  If the argument is null
-            the standard `tools` folder is searched.
+        path (str): The path to look for tools in.
 
     Returns:
         tuple: The list of functions and associated tags
@@ -93,8 +92,6 @@ def itertools(path: str=None) -> Iterator[Tuple[Callable, Sequence]]:
     Raises:
         None
     """
-    path = path or os.path.join(os.path.dirname(os.path.realpath(__file__)), "tools")
-
     # Get a list of all files in the directory
     module_files = [f[:-3] for f in os.listdir(path) if f.endswith(".py") and f != "__init__.py"]
 

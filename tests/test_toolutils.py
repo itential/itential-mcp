@@ -144,10 +144,10 @@ def decorated_function():
         """Test that itertools ignores modules starting with underscore"""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a module starting with underscore
-            test_module_content = '''
+            test_module_content = """
 def should_be_ignored():
     return "ignored"
-'''
+"""
 
             ignored_module_path = os.path.join(temp_dir, "_ignored_module.py")
             with open(ignored_module_path, "w") as f:
@@ -162,10 +162,10 @@ def should_be_ignored():
         """Test that itertools ignores __init__.py files"""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create __init__.py
-            init_content = '''
+            init_content = """
 def init_function():
     return "init"
-'''
+"""
 
             init_path = os.path.join(temp_dir, "__init__.py")
             with open(init_path, "w") as f:
@@ -199,39 +199,44 @@ def local_function():
             func, _ = tools[0]
             assert func.__name__ == "local_function"
 
-    def test_itertools_default_path(self):
-        """Test itertools uses default tools path when none provided"""
+    def test_itertools_with_explicit_path(self):
+        """Test itertools with explicit path parameter"""
         # Test with a simple temp directory that exists
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create the expected tools directory
             tools_dir = os.path.join(temp_dir, "tools")
             os.makedirs(tools_dir)
 
-            test_module_content = '''
-def default_path_function():
-    return "default"
-'''
+            test_module_content = """
+def explicit_path_function():
+    return "explicit"
+"""
 
-            test_module_path = os.path.join(tools_dir, "default_module.py")
+            test_module_path = os.path.join(tools_dir, "explicit_module.py")
             with open(test_module_path, "w") as f:
                 f.write(test_module_content)
 
-            # Test with explicit path - this ensures the default path logic works
-            # even if we can't easily mock the __file__ resolution
+            # Test with explicit path
             tools = list(itertools(tools_dir))
 
             assert len(tools) == 1
             func, _ = tools[0]
-            assert func.__name__ == "default_path_function"
+            assert func.__name__ == "explicit_path_function"
+
+    def test_itertools_path_parameter_required(self):
+        """Test itertools requires path parameter"""
+        # This test verifies the function signature change
+        with pytest.raises(TypeError):
+            list(itertools())  # Should fail without path parameter
 
 
 class TestDisplayFunctions:
     """Test the display functions"""
 
     @pytest.mark.asyncio
-    @patch('itential_mcp.toolutils.terminal.getcols', return_value=80)
-    @patch('itential_mcp.toolutils.itertools')
-    @patch('builtins.print')
+    @patch("itential_mcp.toolutils.terminal.getcols", return_value=80)
+    @patch("itential_mcp.toolutils.itertools")
+    @patch("builtins.print")
     async def test_display_tools(self, mock_print, mock_itertools, mock_getcols):
         """Test display_tools function"""
         # Mock function with docstring
@@ -255,10 +260,12 @@ class TestDisplayFunctions:
         assert "DESCRIPTION" in str(header_call)
 
     @pytest.mark.asyncio
-    @patch('itential_mcp.toolutils.terminal.getcols', return_value=40)
-    @patch('itential_mcp.toolutils.itertools')
-    @patch('builtins.print')
-    async def test_display_tools_long_description_truncation(self, mock_print, mock_itertools, mock_getcols):
+    @patch("itential_mcp.toolutils.terminal.getcols", return_value=40)
+    @patch("itential_mcp.toolutils.itertools")
+    @patch("builtins.print")
+    async def test_display_tools_long_description_truncation(
+        self, mock_print, mock_itertools, mock_getcols
+    ):
         """Test that long descriptions are truncated"""
         mock_func = MagicMock()
         mock_func.__name__ = "tool"
@@ -269,15 +276,17 @@ class TestDisplayFunctions:
         await display_tools()
 
         # Check that description was truncated (should contain "...")
-        tool_line_calls = [call for call in mock_print.call_args_list if "tool" in str(call)]
+        tool_line_calls = [
+            call for call in mock_print.call_args_list if "tool" in str(call)
+        ]
         assert len(tool_line_calls) > 0
         # At least one call should contain the truncated description
         found_truncation = any("..." in str(call) for call in tool_line_calls)
         assert found_truncation
 
     @pytest.mark.asyncio
-    @patch('itential_mcp.toolutils.itertools')
-    @patch('builtins.print')
+    @patch("itential_mcp.toolutils.itertools")
+    @patch("builtins.print")
     async def test_display_tags(self, mock_print, mock_itertools):
         """Test display_tags function"""
         mock_func1 = MagicMock()
@@ -297,11 +306,13 @@ class TestDisplayFunctions:
 
         # Check that all unique tags were printed in sorted order
         expected_tags = sorted(["tag1", "tag2", "shared", "alpha", "beta"])
-        tag_calls = mock_print.call_args_list[1:-1]  # Exclude header and final empty line
+        tag_calls = mock_print.call_args_list[
+            1:-1
+        ]  # Exclude header and final empty line
 
         printed_tags = []
         for call in tag_calls:
-            #call_str = str(call)
+            # call_str = str(call)
             # Extract the tag from the call (it's the first argument)
             if call.args:
                 printed_tags.append(call.args[0])
@@ -311,8 +322,8 @@ class TestDisplayFunctions:
             assert tag in printed_tags
 
     @pytest.mark.asyncio
-    @patch('itential_mcp.toolutils.itertools')
-    @patch('builtins.print')
+    @patch("itential_mcp.toolutils.itertools")
+    @patch("builtins.print")
     async def test_display_tags_empty(self, mock_print, mock_itertools):
         """Test display_tags with no tools"""
         mock_itertools.return_value = []
@@ -325,8 +336,8 @@ class TestDisplayFunctions:
         assert "TAGS" in str(header_call)
 
     @pytest.mark.asyncio
-    @patch('itential_mcp.toolutils.itertools')
-    @patch('builtins.print')
+    @patch("itential_mcp.toolutils.itertools")
+    @patch("builtins.print")
     async def test_display_tools_empty(self, mock_print, mock_itertools):
         """Test display_tools with no tools"""
         mock_itertools.return_value = []
