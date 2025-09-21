@@ -31,3 +31,6 @@ jobs:
 
       - name: Run the permerge target
         run: make premerge
+
+      - name: Run coverage check with 95% threshold
+        run: uv run pytest --cov=itential_mcp --cov-report=term --cov-fail-under=95 tests/
