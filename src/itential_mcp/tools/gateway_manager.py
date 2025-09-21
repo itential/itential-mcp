@@ -1,11 +1,15 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+import json
+
 from typing import Annotated
 
 from pydantic import Field
 
 from fastmcp import Context
+
+from itential_mcp import jsonutils
 
 from itential_mcp.models import gateway_manager as models
 
@@ -117,11 +121,8 @@ async def run_service(
 
     Args:
         ctx (Context): The FastMCP Context object
-
         name (str): The name of the service to run
-
         cluster (str): The name of the cluster that owns the service
-
         input_params (dict): Optional input parameters to pass to the service
 
     Returns:
@@ -138,6 +139,18 @@ async def run_service(
         Exception: If there is an error running the service on Gateway Manager
     """
     await ctx.info("inside run_service(...)")
+
     client = ctx.request_context.lifespan_context.get("client")
-    data = await client.run_service(name, cluster, input_params)
-    return models.RunServiceResponse(**data["result"])
+
+    res = await client.gateway_manager.run_service(name, cluster, input_params)
+
+    if "error" in res:
+        raise ValueError(res["error"]["data"])
+
+    try:
+        stdout_json = jsonutils.loads(res["result"]["stdout"])
+        res["result"]["stdout"] = stdout_json
+    except json.JSONDecodeError:
+        pass
+
+    return models.RunServiceResponse(**res["result"])

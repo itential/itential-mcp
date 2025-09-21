@@ -210,6 +210,7 @@ async def new(cfg: config.Config) -> FastMCP:
     logging.info("Creating dynamic bindings for tools")
     async for fn, kwargs in bindings.iterbindings(cfg):
         srv.tool(fn, **kwargs)
+        logging.debug(f"Successfully added tool: {kwargs['name']}")
     logging.info("Dynamic tool bindings is now complete")
 
     return srv

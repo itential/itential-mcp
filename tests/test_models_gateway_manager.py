@@ -566,7 +566,7 @@ class TestRunServiceResponse:
             RunServiceResponse()
         
         errors = exc_info.value.errors()
-        required_fields = {"stdout", "stderr", "return_code", "start_time", "end_time", "elapsed_time"}
+        required_fields = {"return_code", "start_time", "end_time", "elapsed_time"}
         missing_fields = {error["loc"][0] for error in errors if error["type"] == "missing"}
         
         assert required_fields == missing_fields

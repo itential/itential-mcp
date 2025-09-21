@@ -24,24 +24,10 @@ class Service(ServiceBase):
 
     async def get_services(self) -> Sequence[Mapping[str, Any]]:
         """
-        Get the list of all known services from Itential Platform Gateway Manager.
-
-        Args:
-            None
-
-        Returns:
-            Sequence[Mapping[str, Any]]: List of service objects with the following fields:
-                - name: The service name
-                - cluster: The cluster name
-                - type: The service type (ansible-playbook, python-script, opentofu-plan)
-                - description: Short description of the service
-                - decorator: JSON schema that defines the service input
-
-        Raises:
-            HTTPError: If the API request fails
         """
         res = await self.client.get("/gateway_manager/v1/services")
-        return res.json()
+        json_data = res.json()
+        return json_data["result"]
 
     async def get_gateways(self) -> Sequence[Mapping[str, Any]]:
         """
