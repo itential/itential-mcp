@@ -3,6 +3,7 @@
 
 import os
 import inspect
+import pathlib
 import importlib.util
 
 from typing import Any, Callable, Iterator, Tuple, Sequence
@@ -143,8 +144,9 @@ async def display_tools():
     """
     tools = {}
     maxlen = 0
+    path = pathlib.Path(__file__).parent / "tools"
 
-    for f, _ in itertools():
+    for f, _ in itertools(path):
         if len(f.__name__) > maxlen:
             maxlen = len(f.__name__)
         tools[f.__name__] = f.__doc__
@@ -185,7 +187,9 @@ async def display_tags():
     print("TAGS")
 
     tags = set()
-    for _, t in itertools():
+    path = pathlib.Path(__file__).parent / "tools"
+
+    for _, t in itertools(path):
         tags = tags.union(t)
 
     for ele in sorted(list(tags)):
