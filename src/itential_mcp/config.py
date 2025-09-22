@@ -80,7 +80,7 @@ class Tool(object):
 
     tool_name: str = Field(description="The tool name that is exposed")
 
-    type: Literal["endpoint"] = Field(description="The tool type")
+    type: Literal["endpoint", "service"] = Field(description="The tool type")
 
     description: str = Field(description="Description of this tool", default=None)
 
@@ -109,6 +109,12 @@ class Tool(object):
 class EndpointTool(Tool):
     automation: str = Field(
         description="The name of the automation the trigger is associated with"
+    )
+
+@dataclass(frozen=True)
+class ServiceTool(Tool):
+    cluster: str = Field(
+        description="The cluster where the Gateway service resides"
     )
 
 
