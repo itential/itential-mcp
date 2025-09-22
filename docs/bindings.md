@@ -1,18 +1,24 @@
-# Endpoint Tools Configuration
+# Tool Bindings Configuration
 
-Endpoint tools provide a way to dynamically expose Itential Platform workflow triggers as MCP tools through configuration files. This allows you to create custom tools that execute specific workflows without writing code.
+Tool bindings provide ways to dynamically expose Itential Platform automation capabilities as MCP tools through configuration files. This allows you to create custom tools that execute workflows or external services without writing code.
 
 ## Overview
 
-Endpoint tools work by:
+**Endpoint tools** work by:
 1. Reading tool definitions from configuration files
-2. Looking up workflow triggers in Itential Platform
+2. Looking up workflow endpoint triggers in Itential Platform
 3. Creating dynamic MCP tools that execute those workflows
 4. Automatically injecting tool configurations into function calls
 
+**Service tools** work by:
+1. Reading tool definitions from configuration files
+2. Looking up services in Itential Platform Gateway Manager
+3. Creating dynamic MCP tools that execute those services
+4. Automatically injecting tool configurations and input parameters into service calls
+
 ## Configuration Methods
 
-Endpoint tools can be configured using two methods:
+Both endpoint tools and service tools can be configured using two methods:
 1. **Configuration files** - Using INI format files
 2. **Environment variables** - Using environment variables with a specific naming pattern
 
@@ -20,9 +26,9 @@ Both methods can be used together, with environment variables taking precedence 
 
 ## Configuration File Format
 
-Endpoint tools are defined in configuration files using INI format. Each tool is configured in a section with the prefix `tool:` followed by the tool name.
+Tools are defined in configuration files using INI format. Each tool is configured in a section with the prefix `tool:` followed by the tool name.
 
-### Basic Structure
+### Endpoint Tools
 
 ```ini
 [tool:my-workflow-tool]
@@ -33,7 +39,7 @@ description = Execute my custom workflow
 tags = custom,workflow
 ```
 
-### Required Fields
+#### Required Fields for Endpoint Tools
 
 | Field | Description |
 |-------|-------------|
@@ -41,7 +47,26 @@ tags = custom,workflow
 | `name` | The name of the trigger in Itential Platform |
 | `automation` | The name of the automation containing the trigger |
 
-### Optional Fields
+### Service Tools
+
+```ini
+[tool:my-service-tool]
+type = service
+name = my-service-name
+cluster = my-cluster-name
+description = Execute my external service
+tags = custom,service
+```
+
+#### Required Fields for Service Tools
+
+| Field | Description |
+|-------|-------------|
+| `type` | Must be set to `service` for service tools |
+| `name` | The name of the service in Itential Platform Gateway Manager |
+| `cluster` | The name of the cluster containing the service |
+
+### Optional Fields (Both Tool Types)
 
 | Field | Description | Default |
 |-------|-------------|---------|
@@ -50,7 +75,7 @@ tags = custom,workflow
 
 ## Environment Variable Configuration
 
-As an alternative to configuration files, endpoint tools can be configured using environment variables. This method is particularly useful for containerized deployments, CI/CD pipelines, and environments where managing configuration files is challenging.
+As an alternative to configuration files, both endpoint and service tools can be configured using environment variables. This method is particularly useful for containerized deployments, CI/CD pipelines, and environments where managing configuration files is challenging.
 
 ### Environment Variable Format
 
@@ -58,10 +83,10 @@ Environment variables follow the pattern: `ITENTIAL_MCP_TOOL_<tool_name>_<proper
 
 Where:
 - `<tool_name>` is the name of your tool (alphanumeric and underscores only)
-- `<property>` is the configuration property (type, name, automation, etc.)
+- `<property>` is the configuration property (type, name, automation, cluster, etc.)
 - `<value>` is the property value
 
-### Basic Example
+### Endpoint Tool Example
 
 ```bash
 # Define a provisioning tool via environment variables
@@ -72,7 +97,7 @@ export ITENTIAL_MCP_TOOL_PROVISION_DEVICE_DESCRIPTION="Provision a new network d
 export ITENTIAL_MCP_TOOL_PROVISION_DEVICE_TAGS="provisioning,network,device"
 ```
 
-This creates a tool equivalent to:
+This creates an endpoint tool equivalent to:
 ```ini
 [tool:provision_device]
 type = endpoint
@@ -82,25 +107,47 @@ description = Provision a new network device with standard configuration
 tags = provisioning,network,device
 ```
 
+### Service Tool Example
+
+```bash
+# Define a service tool via environment variables
+export ITENTIAL_MCP_TOOL_RUN_PLAYBOOK_TYPE=service
+export ITENTIAL_MCP_TOOL_RUN_PLAYBOOK_NAME="network-config-playbook"
+export ITENTIAL_MCP_TOOL_RUN_PLAYBOOK_CLUSTER="ansible-cluster"
+export ITENTIAL_MCP_TOOL_RUN_PLAYBOOK_DESCRIPTION="Execute Ansible playbook for network configuration"
+export ITENTIAL_MCP_TOOL_RUN_PLAYBOOK_TAGS="ansible,configuration,service"
+```
+
+This creates a service tool equivalent to:
+```ini
+[tool:run_playbook]
+type = service
+name = network-config-playbook
+cluster = ansible-cluster
+description = Execute Ansible playbook for network configuration
+tags = ansible,configuration,service
+```
+
 ### Multiple Tools Example
 
 ```bash
-# Provisioning tool
+# Endpoint tool for provisioning
 export ITENTIAL_MCP_TOOL_PROVISION_DEVICE_TYPE=endpoint
 export ITENTIAL_MCP_TOOL_PROVISION_DEVICE_NAME="Provision Network Device"
 export ITENTIAL_MCP_TOOL_PROVISION_DEVICE_AUTOMATION="Device Management"
 
-# Compliance tool
+# Endpoint tool for compliance
 export ITENTIAL_MCP_TOOL_CHECK_COMPLIANCE_TYPE=endpoint
 export ITENTIAL_MCP_TOOL_CHECK_COMPLIANCE_NAME="Security Compliance Check"
 export ITENTIAL_MCP_TOOL_CHECK_COMPLIANCE_AUTOMATION="Compliance Automation"
 export ITENTIAL_MCP_TOOL_CHECK_COMPLIANCE_TAGS="compliance,security,audit"
 
-# Backup tool
-export ITENTIAL_MCP_TOOL_BACKUP_CONFIG_TYPE=endpoint
-export ITENTIAL_MCP_TOOL_BACKUP_CONFIG_NAME="Backup Device Configuration"
-export ITENTIAL_MCP_TOOL_BACKUP_CONFIG_AUTOMATION="Backup Operations"
-export ITENTIAL_MCP_TOOL_BACKUP_CONFIG_DESCRIPTION="Create backup of device configurations"
+# Service tool for running scripts
+export ITENTIAL_MCP_TOOL_RUN_SCRIPT_TYPE=service
+export ITENTIAL_MCP_TOOL_RUN_SCRIPT_NAME="backup-script"
+export ITENTIAL_MCP_TOOL_RUN_SCRIPT_CLUSTER="python-cluster"
+export ITENTIAL_MCP_TOOL_RUN_SCRIPT_DESCRIPTION="Execute Python backup script"
+export ITENTIAL_MCP_TOOL_RUN_SCRIPT_TAGS="backup,python,service"
 ```
 
 ### Docker Compose Example
@@ -123,14 +170,26 @@ services:
 
       # Endpoint tools
       ITENTIAL_MCP_TOOL_PROVISION_DEVICE_TYPE: endpoint
-      ITENTIAL_MCP_TOOL_PROVISION_DEVICE_name: "Provision Network Device"
-      ITENTIAL_MCP_TOOL_PROVISION_DEVICE_automation: "Device Management"
-      ITENTIAL_MCP_TOOL_PROVISION_DEVICE_description: "Provision new network devices"
+      ITENTIAL_MCP_TOOL_PROVISION_DEVICE_NAME: "Provision Network Device"
+      ITENTIAL_MCP_TOOL_PROVISION_DEVICE_AUTOMATION: "Device Management"
+      ITENTIAL_MCP_TOOL_PROVISION_DEVICE_DESCRIPTION: "Provision new network devices"
 
       ITENTIAL_MCP_TOOL_COMPLIANCE_CHECK_TYPE: endpoint
       ITENTIAL_MCP_TOOL_COMPLIANCE_CHECK_NAME: "Security Compliance Check"
       ITENTIAL_MCP_TOOL_COMPLIANCE_CHECK_AUTOMATION: "Compliance Automation"
       ITENTIAL_MCP_TOOL_COMPLIANCE_CHECK_TAGS: "compliance,security"
+
+      # Service tools
+      ITENTIAL_MCP_TOOL_RUN_PLAYBOOK_TYPE: service
+      ITENTIAL_MCP_TOOL_RUN_PLAYBOOK_NAME: "network-config-playbook"
+      ITENTIAL_MCP_TOOL_RUN_PLAYBOOK_CLUSTER: "ansible-cluster"
+      ITENTIAL_MCP_TOOL_RUN_PLAYBOOK_DESCRIPTION: "Execute network configuration playbooks"
+      ITENTIAL_MCP_TOOL_RUN_PLAYBOOK_TAGS: "ansible,automation,service"
+
+      ITENTIAL_MCP_TOOL_BACKUP_SCRIPT_TYPE: service
+      ITENTIAL_MCP_TOOL_BACKUP_SCRIPT_NAME: "device-backup"
+      ITENTIAL_MCP_TOOL_BACKUP_SCRIPT_CLUSTER: "python-cluster"
+      ITENTIAL_MCP_TOOL_BACKUP_SCRIPT_TAGS: "backup,python,service"
     ports:
       - "8000:8000"
 ```
@@ -143,15 +202,26 @@ kind: ConfigMap
 metadata:
   name: itential-mcp-config
 data:
-  # Tool configurations
+  # Endpoint tool configurations
   ITENTIAL_MCP_TOOL_PROVISION_DEVICE_TYPE: "endpoint"
-  ITENTIAL_MCP_TOOL_PROVISION_DEVICE_name: "Provision Network Device"
-  ITENTIAL_MCP_TOOL_PROVISION_DEVICE_automation: "Device Management"
-  ITENTIAL_MCP_TOOL_PROVISION_DEVICE_description: "Provision new network devices"
+  ITENTIAL_MCP_TOOL_PROVISION_DEVICE_NAME: "Provision Network Device"
+  ITENTIAL_MCP_TOOL_PROVISION_DEVICE_AUTOMATION: "Device Management"
+  ITENTIAL_MCP_TOOL_PROVISION_DEVICE_DESCRIPTION: "Provision new network devices"
 
   ITENTIAL_MCP_TOOL_BACKUP_CONFIG_TYPE: "endpoint"
   ITENTIAL_MCP_TOOL_BACKUP_CONFIG_NAME: "Backup Device Configuration"
   ITENTIAL_MCP_TOOL_BACKUP_CONFIG_AUTOMATION: "Backup Operations"
+
+  # Service tool configurations
+  ITENTIAL_MCP_TOOL_RUN_PLAYBOOK_TYPE: "service"
+  ITENTIAL_MCP_TOOL_RUN_PLAYBOOK_NAME: "network-config-playbook"
+  ITENTIAL_MCP_TOOL_RUN_PLAYBOOK_CLUSTER: "ansible-cluster"
+  ITENTIAL_MCP_TOOL_RUN_PLAYBOOK_DESCRIPTION: "Execute network configuration playbooks"
+
+  ITENTIAL_MCP_TOOL_PYTHON_SCRIPT_TYPE: "service"
+  ITENTIAL_MCP_TOOL_PYTHON_SCRIPT_NAME: "device-backup"
+  ITENTIAL_MCP_TOOL_PYTHON_SCRIPT_CLUSTER: "python-cluster"
+  ITENTIAL_MCP_TOOL_PYTHON_SCRIPT_TAGS: "backup,python,service"
 
 ---
 apiVersion: apps/v1
@@ -240,34 +310,53 @@ name = Security Compliance Check
 automation = Compliance Automation
 description = Run security compliance checks across network devices
 tags = compliance,security,audit
+
+# Service tool for running Ansible playbooks
+[tool:run-playbook]
+type = service
+name = network-config-playbook
+cluster = ansible-cluster
+description = Execute Ansible playbooks for network configuration
+tags = ansible,automation,service
+
+# Service tool for running Python scripts
+[tool:backup-script]
+type = service
+name = device-backup-script
+cluster = python-cluster
+description = Execute Python script for device configuration backup
+tags = backup,python,script,service
 ```
 
 ## How It Works
 
 ### 1. Configuration Parsing
 
-The MCP server reads the configuration file at startup and identifies all `tool:*` sections. For each section with `type = endpoint`, it creates an `EndpointTool` configuration object.
+The MCP server reads the configuration file at startup and identifies all `tool:*` sections. For each section:
+- `type = endpoint` creates an `EndpointTool` configuration object
+- `type = service` creates a `ServiceTool` configuration object
 
 ### 2. Dynamic Tool Registration
 
-During server initialization, the bindings system:
+During server initialization, the bindings system handles each tool type differently:
 
+**For Endpoint Tools:**
 1. Looks up the specified automation in Itential Platform
 2. Finds the trigger by name within that automation
 3. Retrieves the trigger's JSON schema for input validation
 4. Creates a dynamic MCP tool function
 5. Registers the tool with the MCP server
 
-### 3. Tool Execution
+**For Service Tools:**
+1. Looks up the specified service in Itential Platform Gateway Manager
+2. Finds the service by name within the specified cluster
+3. Retrieves the service's JSON schema (decorator) for input validation
+4. Creates a dynamic MCP tool function
+5. Registers the tool with the MCP server
 
-When a client calls the endpoint tool:
+## Requirements
 
-1. The DynamicToolInjectionMiddleware injects the tool configuration
-2. The endpoint binding retrieves the trigger details from Platform
-3. The tool delegates to the operations manager to start the workflow
-4. The workflow execution result is returned to the client
-
-## Trigger Requirements
+### Endpoint Tool Requirements
 
 For endpoint tools to work properly, the Itential Platform automation must have:
 
@@ -277,9 +366,20 @@ For endpoint tools to work properly, the Itential Platform automation must have:
    - An associated JSON schema defining expected input parameters
    - A route name for API access
 
+### Service Tool Requirements
+
+For service tools to work properly, the Itential Platform Gateway Manager must have:
+
+1. **A cluster** - A named cluster containing the service
+2. **A service** - A specific service within that cluster with:
+   - A unique name matching the `name` field in configuration
+   - A service type (ansible-playbook, python-script, opentofu-plan, etc.)
+   - An associated JSON schema (decorator) defining expected input parameters
+   - The service must be enabled and available for execution
+
 ## Tags
 
-Tags control tool visibility and can be used for filtering. Endpoint tools automatically get these tags:
+Tags control tool visibility and can be used for filtering. Both endpoint and service tools automatically get these tags:
 
 - `bindings` - Added to all dynamically created tools
 - The tool's `name` value from configuration
@@ -288,14 +388,21 @@ Tags control tool visibility and can be used for filtering. Endpoint tools autom
 Example with tag filtering:
 ```ini
 [server]
-include_tags = provisioning,backup
+include_tags = provisioning,backup,service
 exclude_tags = experimental
 
 [tool:device-backup]
+type = endpoint
 tags = backup,production
-# This tool will be included
+# This endpoint tool will be included
+
+[tool:run-script]
+type = service
+tags = service,python
+# This service tool will be included
 
 [tool:experimental-feature]
+type = endpoint
 tags = experimental
 # This tool will be excluded
 ```
@@ -304,23 +411,53 @@ tags = experimental
 
 Common configuration errors and solutions:
 
-### Automation Not Found
+### Endpoint Tool Errors
+
+**Automation Not Found:**
 ```
 Error: automation 'My Automation' could not be found
 ```
 **Solution**: Verify the automation name exactly matches what's in Itential Platform.
 
-### Trigger Not Found
+**Trigger Not Found:**
 ```
 Error: trigger 'My Trigger' could not be found
 ```
 **Solution**: Check that the trigger name matches exactly and exists within the specified automation.
 
-### Invalid Configuration
+**Missing Automation Field:**
 ```
 Error: tool configuration missing required field 'automation'
 ```
-**Solution**: Ensure all required fields are present in the tool configuration section.
+**Solution**: Ensure all required fields (type, name, automation) are present in the endpoint tool configuration.
+
+### Service Tool Errors
+
+**Cluster Not Found:**
+```
+Error: cluster 'My Cluster' could not be found
+```
+**Solution**: Verify the cluster name exactly matches what's configured in Itential Platform Gateway Manager.
+
+**Service Not Found:**
+```
+Error: service 'My Service' could not be found in cluster 'My Cluster'
+```
+**Solution**: Check that the service name matches exactly and exists within the specified cluster.
+
+**Missing Cluster Field:**
+```
+Error: tool configuration missing required field 'cluster'
+```
+**Solution**: Ensure all required fields (type, name, cluster) are present in the service tool configuration.
+
+### General Configuration Errors
+
+**Invalid Tool Type:**
+```
+Error: invalid tool type 'invalid-type'. Must be 'endpoint' or 'service'
+```
+**Solution**: Set the `type` field to either `endpoint` or `service`.
 
 ## Best Practices
 
@@ -377,12 +514,12 @@ Always include meaningful descriptions that explain:
 
 ## Integration with Existing Tools
 
-Endpoint tools work alongside the standard MCP tools. You can mix and match:
+Both endpoint tools and service tools work alongside the standard MCP tools. You can mix and match:
 
 ```ini
 [server]
-# Include both standard operations tools and custom endpoint tools
-include_tags = operations,bindings,custom-workflows
+# Include standard operations tools, custom endpoint tools, and service tools
+include_tags = operations,bindings,custom-workflows,services
 exclude_tags = experimental
 
 [tool:custom-provisioning]
@@ -390,11 +527,18 @@ type = endpoint
 name = Custom Device Provisioning
 automation = Network Provisioning
 tags = custom-workflows
+
+[tool:ansible-playbook]
+type = service
+name = network-config-playbook
+cluster = ansible-cluster
+tags = services,ansible
 ```
 
 This configuration would provide access to:
 - Standard operations manager tools (tagged with `operations`)
-- Your custom endpoint tool (tagged with `bindings` and `custom-workflows`)
+- Your custom endpoint tools (tagged with `bindings` and `custom-workflows`)
+- Your custom service tools (tagged with `bindings` and `services`)
 - All other default tools
 
 ## Troubleshooting
@@ -408,8 +552,11 @@ log_level = DEBUG
 ### Verify Platform Connectivity
 Test your platform connection settings using the standard tools first:
 ```python
-# Test with get_workflows tool to verify connectivity
+# Test with get_workflows tool to verify endpoint connectivity
 await get_workflows(ctx)
+
+# Test with get_services tool to verify Gateway Manager connectivity
+await get_services(ctx)
 ```
 
 ### Check Tool Registration
@@ -417,6 +564,9 @@ Look for log messages during startup:
 ```
 INFO: Registering dynamic tool: provision_network_device
 INFO: Tool tags: dynamic,Provision Network Device,provisioning,network
+
+INFO: Registering dynamic tool: run_ansible_playbook
+INFO: Tool tags: dynamic,network-config-playbook,ansible,service
 ```
 
 ### Debug Environment Variables
@@ -465,10 +615,20 @@ ITENTIAL_MCP_TOOL_MYTOOL_DESCRIPTION=""
 ## Security Considerations
 
 ### Authentication
-Endpoint tools use the same platform authentication as other MCP tools. Ensure your service account has appropriate permissions for the workflows being exposed.
+Both endpoint tools and service tools use the same platform authentication as other MCP tools:
 
-## Access Control
+- **Endpoint tools** require permissions to execute workflows and automations in Itential Platform
+- **Service tools** require permissions to execute services through Itential Platform Gateway Manager
+
+Ensure your service account has appropriate permissions for the workflows and services being exposed.
+
+### Access Control
 Use MCP tag filtering to control which tools are exposed to specific clients or environments.
+
+### Service vs Endpoint Security
+- **Endpoint tools** execute within the Itential Platform environment and follow its security model
+- **Service tools** execute external services (Ansible, Python scripts, etc.) which may have different security implications
+- Consider the trust level of external service execution when exposing service tools
 
 ### Environment Variable Security
 When using environment variables:

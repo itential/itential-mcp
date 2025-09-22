@@ -210,24 +210,26 @@ class RunServiceResponse(BaseModel):
     """
 
     stdout: Annotated[
-        str,
+        str | dict | None,
         Field(
             description=inspect.cleandoc(
                 """
                 The output sent to stdout
                 """
-            )
+            ),
+            default=None
         )
     ]
 
     stderr: Annotated[
-        str,
+        str | None,
         Field(
             description=inspect.cleandoc(
                 """
                 The output sent to stderr
                 """
-            )
+            ),
+            default=None
         )
     ]
 
