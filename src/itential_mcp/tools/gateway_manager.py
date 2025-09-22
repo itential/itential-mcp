@@ -1,8 +1,6 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-import json
-
 from typing import Annotated
 
 from pydantic import Field
@@ -10,6 +8,7 @@ from pydantic import Field
 from fastmcp import Context
 
 from itential_mcp import jsonutils
+from itential_mcp.exceptions import ValidationException
 
 from itential_mcp.models import gateway_manager as models
 
@@ -150,7 +149,7 @@ async def run_service(
     try:
         stdout_json = jsonutils.loads(res["result"]["stdout"])
         res["result"]["stdout"] = stdout_json
-    except json.JSONDecodeError:
+    except ValidationException:
         pass
 
     return models.RunServiceResponse(**res["result"])
