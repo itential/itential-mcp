@@ -109,7 +109,7 @@ class TestBindToTool:
         assert callable(fn)
         assert kwargs["name"] == "test_tool_name"
         assert kwargs["exclude_args"] == ("_tool_config",)
-        assert kwargs["tags"] == ["bindings", "test-tool", "tag1", "tag2"]
+        assert kwargs["tags"] == ["bindings", "test_tool_name", "tag1", "tag2"]
 
     @patch("itential_mcp.bindings._import_binding")
     @pytest.mark.asyncio
@@ -135,7 +135,7 @@ class TestBindToTool:
         assert callable(fn)
         assert kwargs["name"] == "test_tool_name"
         assert kwargs["exclude_args"] == ("_tool_config",)
-        assert kwargs["tags"] == ["bindings", "test-tool"]
+        assert kwargs["tags"] == ["bindings", "test_tool_name"]
 
     @patch("itential_mcp.bindings._import_binding")
     @pytest.mark.asyncio
@@ -335,7 +335,7 @@ class TestBindingsIntegration:
         assert callable(bound_fn)
         assert bound_kwargs["name"] == "test_workflow"
         assert bound_kwargs["exclude_args"] == ("_tool_config",)
-        assert bound_kwargs["tags"] == ["bindings", "test-workflow", "workflow", "automation"]
+        assert bound_kwargs["tags"] == ["bindings", "test_workflow", "workflow", "automation"]
 
         # Verify the endpoint module was called correctly
         mock_endpoint_module.new.assert_called_once_with(
