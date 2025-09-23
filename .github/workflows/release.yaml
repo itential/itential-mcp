@@ -1,9 +1,9 @@
 # .github/workflows/release.yml
-# This workflow will create a new release and upload it to PyPI.  It will run
-# whenever a new tag is merged into the repository.  It builds the application
-# and pushes it to PyPI.
+# This workflow will create a new release, publish it to GitHub releases, and upload it to PyPI.
+# It will run whenever a new tag is merged into the repository. It builds the application
+# and pushes it to both GitHub releases and PyPI.
 ---
-name: Deploy package to PyPI
+name: Release and Deploy package
 
 on:
   push:
@@ -36,7 +36,22 @@ jobs:
       - name: Build package
         run: uv run python -m build
 
-      - name: Publish to PyPI or TestPyPI
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ steps.version.outputs.version }}
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+
+      - name: Publish to PyPI
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
