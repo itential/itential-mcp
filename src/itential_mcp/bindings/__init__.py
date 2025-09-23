@@ -81,7 +81,7 @@ async def bind_to_tool(
 
     kwargs["description"] = description
 
-    tags = f"bindings,{tool.name}"
+    tags = f"bindings,{tool.tool_name}"
 
     if tool.tags is not None:
         tags = f"{tags},{tool.tags}"
