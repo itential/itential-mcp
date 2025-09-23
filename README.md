@@ -1,9 +1,10 @@
 <div align="left">
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![PyPI version](https://badge.fury.io/py/ipsdk.svg)](https://badge.fury.io/py/ipsdk)
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/itential/itential-mcp)
-[![Code Style](https://img.shields.io/badge/code%20style-ruff-black)](https://github.com/charliermarsh/ruff)
+[![Coverage](https://img.shields.io/badge/coverage-95%25-green)](https://github.com/itential/ipsdk)
 
 </div>
 
@@ -53,7 +54,7 @@ Build automation workflows, integrate with external systems, manage application 
 ### Tested Python Versions
 This project is automatically tested against the following Python versions:
 - Python 3.10
-- Python 3.11  
+- Python 3.11
 - Python 3.12
 - Python 3.13
 
