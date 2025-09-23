@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-09-23
+
+### Added
+- Service bindings and JSON utilities (#194)
+- Comprehensive logging module (#193)
+- Tools extensibility with --tools-path (#191)
+- Expose workflow tool (#187)
+- Comprehensive command templates support with models, services, and enhanced testing (#169)
+- Comprehensive compliance plans support with models and enhanced testing (#168)
+- Configuration Manager with models, comprehensive documentation, and tests (#164)
+
+### Changed
+- Modernize path handling using pathlib (#196)
+- Enforce 95% test coverage threshold (#195)
+- Enhance config system with defaults (#192)
+- Consolidate Automation Studio models and tools structure (#186)
+- Simplify device groups implementation and improve docstrings (#184)
+- Improve gateway manager implementation and add missing docstrings (#183)
+- Improve docstrings in configuration manager tools (#182)
+- Improve command templates formatting and add missing docstrings (#181)
+- Simplify adapters service implementation and fix docstring typo (#180)
+- Remove cache module and simplify server architecture (#172)
+- Default bindings tag is now `bindings` (#171)
+- Move account_id_to_username to operations_manager as private function (#170)
+- Configuration Manager service enhancements (#167)
+- Device management models and comprehensive testing (#166)
+- Updated tags docs with all available tags (#160)
+- Optimize _get_tools_from_env function and add comprehensive test coverage (#162)
+
+### Fixed
+- Correct exception handling in run_service (#197)
+- Update adapter service to return raw data and align tests (#188)
+- Updates response type hint to reference ipsdk (#179)
+- TextFSM Template Validation Issues (#178)
+- Describe job pydantic issue (#175)
+- Device.deviceType and Device.status to optional (#174)
+- Pydantic validation in runner.py and gateway_manager.py (#173)
+- Import statements for tools importing models (#165)
+- Automation lookup in bindings endpoint (#161)
+
+### Testing
+- Add comprehensive test coverage for operations_manager tools (#189)
+- Automation Studio Integration with TextFSM & Enhanced Command Templates (#176)
+- Add comprehensive unit tests for services/workflow_engine module (#163)
+
 ## [0.5.0] - 2025-09-09
 
 ### Added
