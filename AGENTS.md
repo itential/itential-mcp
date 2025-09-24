@@ -96,6 +96,34 @@ conneting Itential Plaform to AI agents.
 - Coverage reports generated in `htmlcov/`
 - All tests must pass before merging (`make premerge`)
 
+## Pull Request Labels
+
+This project uses Release Drafter to automatically generate release notes. To ensure proper categorization of changes, please use the following labels on your pull requests:
+
+### Change Type Labels
+- `feature`, `enhancement` - New features and enhancements
+- `fix`, `bug`, `bugfix` - Bug fixes and corrections
+- `chore`, `dependencies`, `refactor` - Maintenance, dependency updates, and refactoring
+- `documentation`, `docs` - Documentation changes
+- `security` - Security fixes and improvements
+- `breaking`, `breaking-change` - Breaking changes that require major version bump
+
+### Version Impact
+- `major` - Breaking changes (increments major version)
+- `minor` - New features (increments minor version)  
+- `patch` - Bug fixes and maintenance (increments patch version)
+
+### Auto-Labeling
+The Release Drafter will automatically apply labels based on:
+- **Branch names**: `feature/`, `fix/`, `chore/` prefixes
+- **File changes**: Documentation files, dependency files
+- **PR titles**: Keywords like "feat", "fix", "chore"
+
+### Excluded Labels
+These labels will be excluded from release notes:
+- `skip-changelog` - Explicitly exclude from changelog
+- `duplicate`, `question`, `invalid`, `wontfix` - Issues that don't represent changes
+
 ## Dependencies
 
 - **FastMCP**: Model Context Protocol framework
