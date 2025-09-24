@@ -253,6 +253,8 @@ async def run() -> int:
     try:
         cfg = config.get()
 
+        logging.set_level(cfg.server_log_level)
+
         mcp = await new(cfg)
 
         kwargs = {
@@ -265,7 +267,6 @@ async def run() -> int:
                 {
                     "host": cfg.server.get("host"),
                     "port": cfg.server.get("port"),
-                    #"log_level": cfg.server.get("log_level"),
                 }
             )
 
