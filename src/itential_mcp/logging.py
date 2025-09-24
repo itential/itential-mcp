@@ -17,15 +17,7 @@ from typing import Literal
 
 from . import metadata
 
-# Configure global logging
 logging_message_format = "%(asctime)s: [%(name)s] %(levelname)s: %(message)s"
-
-# Create a console handler and set it to output to stderr (default for logging)
-# console_handler = logging.StreamHandler(sys.stderr)
-# console_handler.setFormatter(logging.Formatter(logging_message_format))
-
-# Configure the root logger
-# logging.basicConfig(handlers=[console_handler], format=logging_message_format)
 logging.getLogger(metadata.name).setLevel(100)
 
 # Add the FATAL logging level
@@ -144,8 +136,10 @@ def set_level(lvl: int, propagate: bool = False) -> None:
         None
     """
     logger = get_logger()
+
     logger.setLevel(lvl)
     logger.propagate = False
+
     logger.log(logging.INFO, f"{metadata.name} version {metadata.version}")
     logger.log(logging.INFO, f"Logging level set to {lvl}")
 
@@ -388,16 +382,15 @@ def initialize() -> None:
     Returns:
         None
     """
-    for name in logging.Logger.manager.loggerDict:
-        for logger in _get_loggers():
-            handlers = logger.handlers[:]
-            for handler in handlers:
-                logger.removeHandler(handler)
-                handler.close()
+    for logger in _get_loggers():
+        handlers = logger.handlers[:]
+        for handler in handlers:
+            logger.removeHandler(handler)
+            handler.close()
 
-            stream_handler = logging.StreamHandler(sys.stderr)
-            stream_handler.setFormatter(logging.Formatter(logging_message_format))
+        stream_handler = logging.StreamHandler(sys.stderr)
+        stream_handler.setFormatter(logging.Formatter(logging_message_format))
 
-            logger.addHandler(stream_handler)
-            logger.setLevel(100)
-            logger.propagate = False
+        logger.addHandler(stream_handler)
+        logger.setLevel(100)
+        logger.propagate = False
