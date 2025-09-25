@@ -197,8 +197,19 @@ def _get_arguments_from_config() -> Sequence[Tuple[str, Sequence, Mapping]]:
         attrs = ele.default.json_schema_extra
         if attrs and attrs.get("x-itential-mcp-cli-enabled"):
             helpstr = ele.default.description
+
+            if hasattr(config.Config, ele.name):
+                attr = getattr(config.Config, ele.name)
+                if hasattr(attr, "default_factory"):
+                    default_value = getattr(config.Config, ele.name).default_factory()
+                elif hasattr(attr, "default"):
+                    default_value = getattr(config.Config, ele.name).default
+            else:
+                default_value = "UNKNOWN"
+
             if helpstr is not None:
-                helpstr += f" (default={ele.default.default})"
+                helpstr += f" (default={default_value})"
+
             else:
                 helpstr = "NO HELP AVAILABLE!!"
 
