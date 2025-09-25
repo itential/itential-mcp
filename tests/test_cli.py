@@ -264,7 +264,7 @@ class TestGetArgumentsFromConfig:
         assert result[0][0] == "server_host"
         assert result[0][1] == ["--host"]
         assert result[0][2]["dest"] == "server_host"
-        assert result[0][2]["help"] == "Server host address (default=localhost)"
+        assert result[0][2]["help"] == "Server host address (default=127.0.0.1)"
         assert result[0][2]["type"] is str
 
     @patch('itential_mcp.cli.fields')
