@@ -24,6 +24,9 @@ logging.getLogger(metadata.name).setLevel(100)
 logging.FATAL = 90
 logging.addLevelName(logging.FATAL, "FATAL")
 
+logging.NONE = logging.FATAL + 10
+logging.addLevelName(logging.NONE, "NONE")
+
 # Logging level constants that wrap stdlib logging module constants
 NOTSET = logging.NOTSET
 DEBUG = logging.DEBUG
@@ -32,6 +35,7 @@ WARNING = logging.WARNING
 ERROR = logging.ERROR
 CRITICAL = logging.CRITICAL
 FATAL = logging.FATAL
+NONE = logging.NONE
 
 
 def log(lvl: int, msg: str) -> None:
@@ -136,6 +140,9 @@ def set_level(lvl: int, propagate: bool = False) -> None:
         None
     """
     logger = get_logger()
+
+    if lvl == "NONE":
+        lvl = NONE
 
     logger.setLevel(lvl)
     logger.propagate = False
@@ -392,5 +399,5 @@ def initialize() -> None:
         stream_handler.setFormatter(logging.Formatter(logging_message_format))
 
         logger.addHandler(stream_handler)
-        logger.setLevel(100)
+        logger.setLevel(NONE)
         logger.propagate = False
