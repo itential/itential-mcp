@@ -2,9 +2,9 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 import inspect
-from typing import Annotated, Literal, List, Optional, Dict
+from typing import Annotated, Literal, List, Optional, Dict, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class ServiceStatus(BaseModel):
@@ -434,7 +434,7 @@ class ServerVersions(BaseModel):
     acorn: Annotated[str, Field(description="Acorn JavaScript parser version")]
     ada: Annotated[str, Field(description="Ada URL parser version")]
     ares: Annotated[str, Field(description="c-ares DNS resolver version")]
-    base64: Annotated[str, Field(description="Base64 encoding library version")]
+    base64: Annotated[Optional[str], Field(description="Base64 encoding library version", default=None)]
     brotli: Annotated[str, Field(description="Brotli compression library version")]
     cjs_module_lexer: Annotated[str, Field(alias="cjs_module_lexer", description="CommonJS module lexer version")]
     cldr: Annotated[str, Field(description="Unicode CLDR data version")]
@@ -443,8 +443,8 @@ class ServerVersions(BaseModel):
     modules: Annotated[str, Field(description="Node.js ABI version")]
     napi: Annotated[str, Field(description="Node-API version")]
     nghttp2: Annotated[str, Field(description="HTTP/2 library version")]
-    nghttp3: Annotated[str, Field(description="HTTP/3 library version")]
-    ngtcp2: Annotated[str, Field(description="QUIC library version")]
+    nghttp3: Annotated[Optional[str], Field(description="HTTP/3 library version", default=None)]
+    ngtcp2: Annotated[Optional[str], Field(description="QUIC library version", default=None)]
     openssl: Annotated[str, Field(description="OpenSSL cryptographic library version")]
     simdutf: Annotated[str, Field(description="SIMD UTF validation library version")]
     tz: Annotated[str, Field(description="Timezone data version")]
@@ -629,7 +629,7 @@ class LoggerConfig(BaseModel):
     ]
 
     syslog: Annotated[
-        str,
+        Union[str, Dict],
         Field(
             description=inspect.cleandoc(
                 """
@@ -638,6 +638,14 @@ class LoggerConfig(BaseModel):
             )
         )
     ]
+
+    @field_validator('syslog', mode='before')
+    @classmethod
+    def convert_empty_dict_to_string(cls, value):
+        """Convert empty dict to empty string for syslog field."""
+        if isinstance(value, dict) and not value:
+            return ""
+        return value
 
 
 class ApplicationInfo(BaseModel):
