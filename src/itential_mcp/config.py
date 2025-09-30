@@ -170,7 +170,7 @@ class Config(object):
         ),
     )
 
-    server_log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(
+    server_log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "NONE"] = Field(
         description="Logging level for verbose output",
         default_factory=default_factory(
             env.getstr,
