@@ -26,8 +26,8 @@ class TestServerDefaults:
         assert defaults.ITENTIAL_MCP_SERVER_PATH == "/mcp"
 
     def test_server_log_level_default(self):
-        """Test that server log level defaults to INFO."""
-        assert defaults.ITENTIAL_MCP_SERVER_LOG_LEVEL == "INFO"
+        """Test that server log level defaults to NONE."""
+        assert defaults.ITENTIAL_MCP_SERVER_LOG_LEVEL == "NONE"
 
     def test_server_include_tags_default(self):
         """Test that server include tags defaults to None."""
@@ -227,7 +227,7 @@ class TestDefaultValueRanges:
     def test_server_log_level_is_valid_option(self):
         """Test that server log level is a valid logging level."""
         log_level = defaults.ITENTIAL_MCP_SERVER_LOG_LEVEL
-        valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+        valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "DISABLED", "NONE"]
         assert log_level in valid_levels, f"Invalid log level: {log_level}"
 
     def test_server_path_starts_with_slash(self):
