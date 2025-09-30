@@ -110,7 +110,8 @@ def parse_args(args: Sequence) -> None:
     if hasattr(args, "server_log_level"):
         if args.server_log_level is not None:
             propagate = env.getbool("ITENTIAL_MCP_SERVER_LOGGING_PROPAGATION", False)
-            logging.set_level(args.server_log_level, propagate)
+            logging.set_level(args.server_log_level.upper(), propagate)
+            setattr(args, "server_log_level", args.server_log_level.upper())
 
     if args.help or args.command is None:
         parser.print_app_help()

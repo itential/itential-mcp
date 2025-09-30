@@ -313,7 +313,7 @@ class TestConfigDefaults:
         assert cfg.server_host == "127.0.0.1"
         assert cfg.server_port == 8000
         assert cfg.server_path == "/mcp"
-        assert cfg.server_log_level == "INFO"
+        assert cfg.server_log_level == "NONE"
         assert cfg.server_include_tags is None
         assert cfg.server_exclude_tags == "experimental,beta"
 
