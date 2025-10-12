@@ -5,6 +5,7 @@ from typing import Annotated
 from pydantic import Field
 
 from fastmcp import Context
+from itential_mcp import jsonutils
 from itential_mcp.models import command_templates as models
 
 
@@ -213,7 +214,7 @@ async def create_command_template(
     name: Annotated[str, Field(
         description="Name for the command template"
     )],
-    commands: Annotated[list[dict], Field(
+    commands: Annotated[list[dict] | str, Field(
         description="List of commands with their validation rules"
     )],
     project: Annotated[str | None, Field(
@@ -321,6 +322,10 @@ async def create_command_template(
 
     client = ctx.request_context.lifespan_context.get("client")
 
+    # Parse commands if it's a JSON string
+    if isinstance(commands, str):
+        commands = jsonutils.loads(commands)
+
     data = await client.mop.create_command_template(
         name=name,
         commands=commands,
@@ -341,7 +346,7 @@ async def update_command_template(
     name: Annotated[str, Field(
         description="Name of the command template to update"
     )],
-    commands: Annotated[list[dict], Field(
+    commands: Annotated[list[dict] | str, Field(
         description="List of commands with their validation rules"
     )],
     project: Annotated[str | None, Field(
@@ -448,6 +453,10 @@ async def update_command_template(
     await ctx.info("inside update_command_template(...)")
 
     client = ctx.request_context.lifespan_context.get("client")
+
+    # Parse commands if it's a JSON string
+    if isinstance(commands, str):
+        commands = jsonutils.loads(commands)
 
     data = await client.mop.update_command_template(
         name=name,

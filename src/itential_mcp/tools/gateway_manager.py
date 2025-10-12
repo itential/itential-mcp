@@ -8,6 +8,7 @@ from pydantic import Field
 from fastmcp import Context
 
 from itential_mcp import jsonutils
+from itential_mcp import exceptions
 
 from itential_mcp.models import gateway_manager as models
 
@@ -149,10 +150,12 @@ async def run_service(
     if "error" in res:
         raise ValueError(res["error"]["data"])
 
+    # Attempt to parse stdout as JSON, but keep raw string if parsing fails
     try:
         stdout_json = jsonutils.loads(res["result"]["stdout"])
         res["result"]["stdout"] = stdout_json
-    except Exception:
+    except (exceptions.ValidationException, ValueError, TypeError):
+        # Not valid JSON, keep as raw string
         pass
 
     return models.RunServiceResponse(**res["result"])
