@@ -7,6 +7,7 @@ from pydantic import Field
 
 from fastmcp import Context
 
+from itential_mcp import jsonutils
 from itential_mcp.models import configuration_manager as models
 
 
@@ -20,7 +21,7 @@ async def render_template(
     template: Annotated[str, Field(
         description="The Jinja2 template string"
     )],
-    variables: Annotated[dict, Field(
+    variables: Annotated[dict | str | None, Field(
         description="Zero or more variables to associate with this template",
         default=None,
     )],
@@ -45,6 +46,11 @@ async def render_template(
     """
     await ctx.info("inside render_template()")
     client = ctx.request_context.lifespan_context.get("client")
+    
+    # Parse variables if it's a JSON string
+    if isinstance(variables, str):
+        variables = jsonutils.loads(variables)
+    
     data = client.configuration_manager.render_template(
         template=template, variables=variables
     )
