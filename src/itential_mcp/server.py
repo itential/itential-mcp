@@ -197,7 +197,7 @@ async def new(cfg: config.Config) -> FastMCP:
             try:
                 schema = toolutils.get_json_schema(f)
                 if schema["type"] == "object":
-                    kwargs["output_schema"] = toolutils.get_json_schema(f)
+                    kwargs["output_schema"] = schema
 
             except ValueError:
                 # tool does not have an output_schema defined
