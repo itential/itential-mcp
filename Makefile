@@ -66,4 +66,4 @@ premerge: clean lint security test
 # Build a container image that include the MCP server.  The server will start
 # when the container is run and can be configured using environment variables
 container:
-	${CONTAINER_RUNTIME} build ${PWD} --file Containerfile --tag ${CONTAINER_TAG}
+	${CONTAINER_RUNTIME} buildx build ${PWD} --file Containerfile --tag ${CONTAINER_TAG} --platform linux/amd64,linux/arm64
