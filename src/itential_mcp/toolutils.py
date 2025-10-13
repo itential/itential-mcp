@@ -69,7 +69,8 @@ def get_json_schema(fn: Callable) -> str:
 
     ret = hints.get("return", Any)
 
-    if not issubclass(ret, BaseModel):
+    # Check if ret is actually a class before using issubclass
+    if not inspect.isclass(ret) or not issubclass(ret, BaseModel):
         raise ValueError("tool functions must subclass BaseModel")
 
     return ret.model_json_schema()
