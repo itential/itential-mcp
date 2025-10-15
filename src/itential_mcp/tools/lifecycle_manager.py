@@ -11,6 +11,7 @@ from fastmcp import Context
 
 from itential_mcp import exceptions
 from itential_mcp import errors
+from itential_mcp import jsonutils
 from itential_mcp.models import lifecycle_manager as models
 
 
@@ -314,7 +315,7 @@ async def run_action(
         description="The instance description",
         default=None
     )],
-    input_params: Annotated[dict, Field(
+    input_params: Annotated[dict | str | None, Field(
         description="The input parameters for the action",
         default=None
     )],
@@ -353,6 +354,10 @@ async def run_action(
     await ctx.info("inside run_action(...)")
 
     client = ctx.request_context.lifespan_context.get("client")
+
+    # Parse input_params if it's a JSON string
+    if isinstance(input_params, str):
+        input_params = jsonutils.loads(input_params)
 
     try:
         json_data = await client.lifecycle_manager.run_action(

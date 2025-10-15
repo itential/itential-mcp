@@ -9,6 +9,7 @@ from fastmcp import Context
 
 from itential_mcp import timeutils
 from itential_mcp import exceptions
+from itential_mcp import jsonutils
 
 from itential_mcp.models import operations_manager as models
 
@@ -132,7 +133,7 @@ async def start_workflow(
         Field(description="The name of the API endpoint used to start the workflow"),
     ],
     data: Annotated[
-        dict | None,
+        dict | str | None,
         Field(
             description="Data to include in the request body when calling the route",
             default=None,
@@ -174,6 +175,10 @@ async def start_workflow(
     await ctx.info("inside start_workflow(...)")
 
     client = ctx.request_context.lifespan_context.get("client")
+
+    # Parse data if it's a JSON string
+    if isinstance(data, str):
+        data = jsonutils.loads(data)
 
     res = await client.operations_manager.start_workflow(route_name, data)
 
