@@ -9,6 +9,7 @@ from fastmcp import Context
 
 from itential_mcp import exceptions
 from itential_mcp import errors
+from itential_mcp import jsonutils
 
 from itential_mcp.models import configuration_manager as models
 
@@ -72,7 +73,7 @@ async def create_golden_config_tree(
         description="The configuration template associated with the base node",
         default=None,
     )],
-    variables: Annotated[dict | None, Field(
+    variables: Annotated[dict | str | None, Field(
         description="The variables associated with this Golden Config tree",
         default=None,
     )]
@@ -103,6 +104,10 @@ async def create_golden_config_tree(
     await ctx.info("inside create_golden_config_tree(...)")
 
     client = ctx.request_context.lifespan_context.get("client")
+
+    # Parse variables if it's a JSON string
+    if isinstance(variables, str):
+        variables = jsonutils.loads(variables)
 
     try:
         res = await client.configuration_manager.create_golden_config_tree(

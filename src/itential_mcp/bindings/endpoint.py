@@ -12,6 +12,7 @@ from fastmcp import Context
 from itential_mcp import config
 from itential_mcp import client
 from itential_mcp import exceptions
+from itential_mcp import jsonutils
 
 from itential_mcp.tools import operations_manager
 
@@ -70,7 +71,7 @@ async def _get_trigger(platform_client: client.PlatformClient, t: config.Endpoin
 async def start_workflow(
     ctx: Context,
     _tool_config: config.EndpointTool | None = None,
-    data: dict | None = None,
+    data: dict | str | None = None,
 ) -> BaseModel:
     """Start a workflow using the configured endpoint trigger.
 
@@ -94,6 +95,10 @@ async def start_workflow(
     platform_client = ctx.request_context.lifespan_context.get("client")
 
     trigger = await _get_trigger(platform_client, _tool_config)
+
+    # Parse data if it's a JSON string
+    if isinstance(data, str):
+        data = jsonutils.loads(data)
 
     return await operations_manager.start_workflow(
         ctx, route_name=trigger["routeName"], data=data

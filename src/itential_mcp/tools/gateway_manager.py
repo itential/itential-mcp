@@ -8,7 +8,7 @@ from pydantic import Field
 from fastmcp import Context
 
 from itential_mcp import jsonutils
-from itential_mcp.exceptions import ValidationException
+from itential_mcp import exceptions
 
 from itential_mcp.models import gateway_manager as models
 
@@ -110,7 +110,7 @@ async def run_service(
     cluster: Annotated[str, Field(
         description="The name of the cluster where the service lives"
     )],
-    input_params: Annotated[dict, Field(
+    input_params: Annotated[dict | str | None, Field(
         description="Optional input parameters to pass to the service",
         default=None
     )]
@@ -141,15 +141,21 @@ async def run_service(
 
     client = ctx.request_context.lifespan_context.get("client")
 
+    # Parse input_params if it's a JSON string
+    if isinstance(input_params, str):
+        input_params = jsonutils.loads(input_params)
+
     res = await client.gateway_manager.run_service(name, cluster, input_params)
 
     if "error" in res:
         raise ValueError(res["error"]["data"])
 
+    # Attempt to parse stdout as JSON, but keep raw string if parsing fails
     try:
         stdout_json = jsonutils.loads(res["result"]["stdout"])
         res["result"]["stdout"] = stdout_json
-    except ValidationException:
+    except (exceptions.ValidationException, ValueError, TypeError):
+        # Not valid JSON, keep as raw string
         pass
 
     return models.RunServiceResponse(**res["result"])

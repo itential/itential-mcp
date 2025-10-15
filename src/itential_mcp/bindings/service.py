@@ -12,6 +12,7 @@ from fastmcp import Context
 from itential_mcp import config
 from itential_mcp import client
 from itential_mcp import exceptions
+from itential_mcp import jsonutils
 
 from itential_mcp.tools import gateway_manager
 
@@ -44,7 +45,7 @@ async def _get_service(platform_client: client.PlatformClient, t: config.Endpoin
 async def run_service(
     ctx: Context,
     _tool_config: config.Tool | None = None,
-    input_params: dict| None = None
+    input_params: dict | str | None = None
 ) -> BaseModel:
     """Execute a service on the Itential Platform using the configured tool settings.
 
@@ -67,6 +68,10 @@ async def run_service(
 
     service_name = service["service_metadata"]["name"]
     cluster = service["service_metadata"]["location"]
+
+    # Parse input_params if it's a JSON string
+    if isinstance(input_params, str):
+        input_params = jsonutils.loads(input_params)
 
     return await gateway_manager.run_service(
         ctx, name=service_name, cluster=cluster, input_params=input_params
