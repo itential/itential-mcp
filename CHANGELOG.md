@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2025-10-17
+
+### Added
+- Multi-architecture container build support (#220)
+- NONE log level option (#213)
+- ai-assistant-configs examples (#209)
+
+### Changed
+- Bump astral-sh/setup-uv from 6 to 7 (#221)
+- Added capability to parse out string inputs to handle Claude behavior (#218)
+
+### Fixed
+- Added logic to avoid tag overwrite (#222)
+- Avoid redundant JSON schema generation in output_schema assignment (#219)
+- Added a type check before calling issubclass() (#217)
+- Health model validation errors for Node.js versions and syslog field (#212)
+- Correct CLI default values (#208)
+
 ## [0.6.1] - 2025-09-24
 
 ### Fixed
