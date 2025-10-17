@@ -383,3 +383,62 @@ async def run_action(
         job_id=json_data["data"]["jobId"],
         status=json_data["data"]["status"],
     )
+
+
+async def get_action_executions(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    resource_name: Annotated[str, Field(
+        description="The Lifecycle Manager resource name"
+    )],
+    instance_name: Annotated[str, Field(
+        description="The instance name"
+    )],
+) -> list[dict]:
+    """
+    Get action execution history from Lifecycle Manager filtered by resource and instance.
+
+    Retrieves the history of action executions performed in the Lifecycle Manager,
+    including details about action runs, their status, timestamps, and associated
+    resources and instances. Filters results by resource name and instance name
+    using starts-with search logic.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+        resource_name (str): The Lifecycle Manager resource name to filter by.
+            Returns only action executions for resources whose name starts with this value.
+        instance_name (str): The instance name to filter by. Returns only action
+            executions for instances whose name starts with this value.
+
+    Returns:
+        list[dict]: List of action execution objects with fields as returned
+            by the API, including:
+            - Action execution details
+            - Resource and instance information
+            - Status and timing information
+            - Any other fields provided by the API
+
+    Raises:
+        Exception: If there is an error retrieving action executions from the platform
+
+    Examples:
+        # Get executions for a specific resource
+        get_action_executions(ctx, resource_name="MyResource", instance_name="")
+        
+        # Get executions for a specific instance
+        get_action_executions(ctx, resource_name="", instance_name="prod-instance")
+        
+        # Get executions for both resource and instance
+        get_action_executions(ctx, resource_name="MyResource", instance_name="prod")
+    """
+    await ctx.info("inside get_action_executions(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    res = await client.lifecycle_manager.get_action_executions(
+        resource_name=resource_name,
+        instance_name=instance_name
+    )
+
+    return res
