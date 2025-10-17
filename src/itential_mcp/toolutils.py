@@ -104,15 +104,17 @@ def itertools(path: str) -> Iterator[Tuple[Callable, Sequence]]:
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
 
-            # create a new tags set for the module and add any tags
-            # that have been configured using the `__tags__` variable
-            tags = set()
+            # Get module-level tags once (these apply to all functions in the module)
+            module_tags = set()
             if hasattr(module, "__tags__"):
-                tags = tags.union(module.__tags__)
+                module_tags = set(module.__tags__)
 
             # Inspect the module to retreive all of the functions.
             for name, f in inspect.getmembers(module, inspect.isfunction):
                 if not name.startswith("_") and f.__module__ == module_name:
+                    # Create a NEW tags set for THIS function (prevents tag pollution)
+                    tags = module_tags.copy()
+
                     # add the function name to the set of tags
                     tags.add(name)
 
