@@ -396,8 +396,8 @@ class Service(ServiceBase):
 
     async def get_action_executions(
         self,
-        resource_name: str,
-        instance_name: str
+        resource_name: str | None = None,
+        instance_name: str | None = None
     ) -> Sequence[Mapping[str, Any]]:
         """Get action executions from Lifecycle Manager filtered by resource and instance.
 
