@@ -395,7 +395,7 @@ async def get_action_executions(
     instance_name: Annotated[str, Field(
         description="The instance name"
     )],
-) -> list[dict]:
+) -> models.GetActionExecutionsResponse:
     """
     Get action execution history from Lifecycle Manager filtered by resource and instance.
 
@@ -412,12 +412,21 @@ async def get_action_executions(
             executions for instances whose name starts with this value.
 
     Returns:
-        list[dict]: List of action execution objects with fields as returned
-            by the API, including:
-            - Action execution details
-            - Resource and instance information
-            - Status and timing information
-            - Any other fields provided by the API
+        models.GetActionExecutionsResponse: List of action execution objects with the following fields:
+            - id: Unique identifier for this action execution
+            - model_name: Name of the resource model
+            - instance_name: Name of the resource instance
+            - action_name: Name of the action that was executed
+            - action_type: Type of action (create, update, delete)
+            - start_time: ISO 8601 timestamp when execution started
+            - end_time: ISO 8601 timestamp when execution completed
+            - initiator_name: Username of the initiator
+            - job_id: Job ID associated with this execution
+            - status: Current status (complete, error, canceled, running, etc.)
+            - progress: Progress information for various execution stages
+            - errors: List of errors that occurred during execution
+            - initial_instance_data: Data before the action was executed
+            - final_instance_data: Data after the action was executed
 
     Raises:
         Exception: If there is an error retrieving action executions from the platform
@@ -436,9 +445,18 @@ async def get_action_executions(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    res = await client.lifecycle_manager.get_action_executions(
+    data = await client.lifecycle_manager.get_action_executions(
         resource_name=resource_name,
         instance_name=instance_name
     )
 
-    return res
+    results = []
+
+    for ele in data:
+        results.append(
+            models.ActionExecutionElement(
+                **ele
+            )
+        )
+
+    return models.GetActionExecutionsResponse(root=results)

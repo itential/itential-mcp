@@ -420,3 +420,405 @@ class RunActionResponse(BaseModel):
     ]
 
 
+class ActionExecutionError(BaseModel):
+    """Represents an error that occurred during action execution.
+
+    Attributes:
+        message: Error message describing what went wrong.
+        timestamp: ISO 8601 timestamp when the error occurred.
+        origin: The component where the error originated.
+        metadata: Additional error metadata and context.
+        step_id: Optional identifier for the step where error occurred.
+    """
+
+    message: Annotated[
+        str,
+        Field(
+            description = inspect.cleandoc(
+                """
+                Error message describing what went wrong
+                """
+            )
+        )
+    ]
+
+    timestamp: Annotated[
+        str,
+        Field(
+            description = inspect.cleandoc(
+                """
+                ISO 8601 timestamp when the error occurred
+                """
+            )
+        )
+    ]
+
+    origin: Annotated[
+        str,
+        Field(
+            description = inspect.cleandoc(
+                """
+                The component where the error originated
+                """
+            )
+        )
+    ]
+
+    metadata: Annotated[
+        Mapping[str, Any] | str | None,
+        Field(
+            description = inspect.cleandoc(
+                """
+                Additional error metadata and context
+                """
+            ),
+            default = None
+        )
+    ]
+
+    step_id: Annotated[
+        str | None,
+        Field(
+            description = inspect.cleandoc(
+                """
+                Identifier for the step where error occurred
+                """
+            ),
+            default = None,
+            alias = "stepId"
+        )
+    ]
+
+
+class ActionExecutionProgressComponent(BaseModel):
+    """Represents progress information for a component in action execution.
+
+    Attributes:
+        progress_type: The type of progress being tracked.
+        status: Current status of this component.
+        error: Error information if the component failed.
+        id: Unique identifier for this progress component.
+        component_name: Name of the component being tracked.
+        component_id: ID of the component being tracked.
+        end_time: ISO 8601 timestamp when component completed.
+        job_id: Optional job ID if this component triggered a job.
+    """
+
+    progress_type: Annotated[
+        str,
+        Field(
+            description = inspect.cleandoc(
+                """
+                The type of progress being tracked
+                """
+            ),
+            alias = "progressType"
+        )
+    ]
+
+    status: Annotated[
+        str,
+        Field(
+            description = inspect.cleandoc(
+                """
+                Current status of this component
+                """
+            )
+        )
+    ]
+
+    error: Annotated[
+        Mapping[str, Any] | None,
+        Field(
+            description = inspect.cleandoc(
+                """
+                Error information if the component failed
+                """
+            ),
+            default = None
+        )
+    ]
+
+    id: Annotated[
+        str,
+        Field(
+            description = inspect.cleandoc(
+                """
+                Unique identifier for this progress component
+                """
+            ),
+            alias = "_id"
+        )
+    ]
+
+    component_name: Annotated[
+        str,
+        Field(
+            description = inspect.cleandoc(
+                """
+                Name of the component being tracked
+                """
+            ),
+            alias = "componentName"
+        )
+    ]
+
+    component_id: Annotated[
+        str,
+        Field(
+            description = inspect.cleandoc(
+                """
+                ID of the component being tracked
+                """
+            ),
+            alias = "componentId"
+        )
+    ]
+
+    end_time: Annotated[
+        str | None,
+        Field(
+            description = inspect.cleandoc(
+                """
+                ISO 8601 timestamp when component completed
+                """
+            ),
+            default = None,
+            alias = "endTime"
+        )
+    ]
+
+    job_id: Annotated[
+        str | None,
+        Field(
+            description = inspect.cleandoc(
+                """
+                Job ID if this component triggered a job
+                """
+            ),
+            default = None,
+            alias = "jobId"
+        )
+    ]
+
+
+class ActionExecutionElement(BaseModel):
+    """Represents a single action execution record from Lifecycle Manager.
+
+    This model captures comprehensive information about an action execution
+    including metadata, timing, status, errors, and data changes.
+
+    Attributes:
+        id: Unique identifier for this action execution.
+        model_name: Name of the resource model.
+        instance_id: ID of the resource instance.
+        instance_name: Name of the resource instance.
+        action_name: Name of the action that was executed.
+        action_type: Type of action (create, update, delete).
+        start_time: ISO 8601 timestamp when execution started.
+        end_time: ISO 8601 timestamp when execution completed.
+        initiator: User ID who initiated the action.
+        job_id: Optional job ID associated with this execution.
+        status: Current status of the execution.
+        errors: List of errors that occurred during execution.
+        initial_instance_data: Data before the action was executed.
+        final_instance_data: Data after the action was executed.
+    """
+
+    id: Annotated[
+        str,
+        Field(
+            description = inspect.cleandoc(
+                """
+                Unique identifier for this action execution
+                """
+            ),
+            alias = "_id",
+            exclude = True
+        )
+    ]
+
+    model_name: Annotated[
+        str,
+        Field(
+            description = inspect.cleandoc(
+                """
+                Name of the resource model
+                """
+            ),
+            alias = "modelName"
+        )
+    ]
+
+    instance_id: Annotated[
+        str,
+        Field(
+            description = inspect.cleandoc(
+                """
+                ID of the resource instance
+                """
+            ),
+            alias = "instanceId",
+            exclude = True
+        )
+    ]
+
+    instance_name: Annotated[
+        str,
+        Field(
+            description = inspect.cleandoc(
+                """
+                Name of the resource instance
+                """
+            ),
+            alias = "instanceName"
+        )
+    ]
+
+    action_name: Annotated[
+        str,
+        Field(
+            description = inspect.cleandoc(
+                """
+                Name of the action that was executed
+                """
+            ),
+            alias = "actionName"
+        )
+    ]
+
+    action_type: Annotated[
+        str | None,
+        Field(
+            description = inspect.cleandoc(
+                """
+                Type of action (create, update, delete)
+                """
+            ),
+            default = None,
+            alias = "actionType"
+        )
+    ]
+
+    start_time: Annotated[
+        str,
+        Field(
+            description = inspect.cleandoc(
+                """
+                ISO 8601 timestamp when execution started
+                """
+            ),
+            alias = "startTime"
+        )
+    ]
+
+    end_time: Annotated[
+        str | None,
+        Field(
+            description = inspect.cleandoc(
+                """
+                ISO 8601 timestamp when execution completed
+                """
+            ),
+            default = None,
+            alias = "endTime"
+        )
+    ]
+
+    initiator: Annotated[
+        str,
+        Field(
+            description = inspect.cleandoc(
+                """
+                User ID who initiated the action
+                """
+            )
+        )
+    ]
+
+    job_id: Annotated[
+        str | None,
+        Field(
+            description = inspect.cleandoc(
+                """
+                Job ID associated with this execution
+                """
+            ),
+            default = None,
+            alias = "jobId"
+        )
+    ]
+
+    status: Annotated[
+        str,
+        Field(
+            description = inspect.cleandoc(
+                """
+                Current status of the execution (complete, error, canceled, running, etc.)
+                """
+            )
+        )
+    ]
+
+    errors: Annotated[
+        List[ActionExecutionError],
+        Field(
+            description = inspect.cleandoc(
+                """
+                List of errors that occurred during execution
+                """
+            ),
+            default_factory = list
+        )
+    ]
+
+    initial_instance_data: Annotated[
+        Mapping[str, Any] | List[str] | None,
+        Field(
+            description = inspect.cleandoc(
+                """
+                Data before the action was executed
+                """
+            ),
+            default = None,
+            alias = "initialInstanceData"
+        )
+    ]
+
+    final_instance_data: Annotated[
+        Mapping[str, Any] | List[str] | None,
+        Field(
+            description = inspect.cleandoc(
+                """
+                Data after the action was executed
+                """
+            ),
+            default = None,
+            alias = "finalInstanceData"
+        )
+    ]
+
+
+class GetActionExecutionsResponse(RootModel):
+    """Response model for action execution history endpoints.
+
+    This root model wraps a list of action execution elements, providing a
+    standardized response format for API endpoints that return action execution
+    history from the lifecycle manager.
+
+    Attributes:
+        root: A list of ActionExecutionElement objects representing the
+            execution history of lifecycle actions.
+    """
+
+    root: Annotated[
+        List[ActionExecutionElement],
+        Field(
+            description = inspect.cleandoc(
+                """
+                A list of action execution records from the lifecycle manager
+                """
+            ),
+            default_factory = list
+        )
+    ]
