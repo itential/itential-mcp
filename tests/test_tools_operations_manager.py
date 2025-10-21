@@ -290,7 +290,7 @@ class TestGetJobs:
 
     @pytest.mark.asyncio
     async def test_get_jobs_validation_error(self, mock_context):
-        """Test get_jobs fails due to missing _id field in JobElement constructor"""
+        """Test get_jobs succeeds with valid job data"""
         mock_data = [
             {
                 "_id": "job-123",
@@ -301,18 +301,18 @@ class TestGetJobs:
         ]
         mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_jobs.return_value = mock_data
 
-        # The source code has a bug - it doesn't pass _id to JobElement constructor
-        with pytest.raises(ValidationError) as exc_info:
-            await operations_manager.get_jobs(mock_context, None, None)
+        result = await operations_manager.get_jobs(mock_context, None, None)
 
-        errors = exc_info.value.errors()
-        assert len(errors) == 1
-        assert errors[0]["type"] == "missing"
-        assert errors[0]["loc"] == ("_id",)
+        assert isinstance(result, GetJobsResponse)
+        assert len(result.root) == 1
+        assert result.root[0].object_id == "job-123"
+        assert result.root[0].name == "Test Job"
+        assert result.root[0].description == "A test job"
+        assert result.root[0].status == "complete"
 
     @pytest.mark.asyncio
     async def test_get_jobs_with_filters_validation_error(self, mock_context):
-        """Test get_jobs with name and project filters fails due to missing _id"""
+        """Test get_jobs with name and project filters succeeds"""
         mock_data = [
             {
                 "_id": "job-123",
@@ -323,11 +323,14 @@ class TestGetJobs:
         ]
         mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_jobs.return_value = mock_data
 
-        # The source code has a bug - it doesn't pass _id to JobElement constructor
-        with pytest.raises(ValidationError):
-            await operations_manager.get_jobs(
-                mock_context, name="test-workflow", project="test-project"
-            )
+        result = await operations_manager.get_jobs(
+            mock_context, name="test-workflow", project="test-project"
+        )
+
+        assert isinstance(result, GetJobsResponse)
+        assert len(result.root) == 1
+        assert result.root[0].object_id == "job-123"
+        assert result.root[0].name == "Filtered Job"
 
         # Verify that the filters were passed to the service
         mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_jobs.assert_called_with(
@@ -910,7 +913,7 @@ class TestGetJobsSuccess:
 
     @pytest.mark.asyncio
     async def test_get_jobs_success(self, mock_context):
-        """Test get_jobs with successful response - but the actual code has a bug"""
+        """Test get_jobs with successful response"""
         mock_data = [
             {
                 "_id": "job-123",
@@ -927,19 +930,22 @@ class TestGetJobsSuccess:
         ]
         mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_jobs.return_value = mock_data
 
-        # This test demonstrates that the current implementation has a bug
-        # The JobElement model expects _id field but the code passes object_id
-        with pytest.raises(ValidationError) as exc_info:
-            await operations_manager.get_jobs(mock_context, None, None)
+        result = await operations_manager.get_jobs(mock_context, None, None)
 
-        errors = exc_info.value.errors()
-        assert len(errors) == 1
-        assert errors[0]["type"] == "missing"
-        assert errors[0]["loc"] == ("_id",)
+        assert isinstance(result, GetJobsResponse)
+        assert len(result.root) == 2
+        assert result.root[0].object_id == "job-123"
+        assert result.root[0].name == "Test Job"
+        assert result.root[0].description == "A test job"
+        assert result.root[0].status == "complete"
+        assert result.root[1].object_id == "job-456"
+        assert result.root[1].name == "Another Job"
+        assert result.root[1].description is None
+        assert result.root[1].status == "running"
 
     @pytest.mark.asyncio
     async def test_get_jobs_with_filters_bug_demonstration(self, mock_context):
-        """Test get_jobs with name and project filters - demonstrates the bug"""
+        """Test get_jobs with name and project filters succeeds"""
         mock_data = [
             {
                 "_id": "job-filtered",
@@ -950,12 +956,16 @@ class TestGetJobsSuccess:
         ]
         mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_jobs.return_value = mock_data
 
-        # This test demonstrates that the current implementation has a bug
-        # The JobElement model expects _id field but the code passes object_id
-        with pytest.raises(ValidationError):
-            await operations_manager.get_jobs(
-                mock_context, name="test-workflow", project="test-project"
-            )
+        result = await operations_manager.get_jobs(
+            mock_context, name="test-workflow", project="test-project"
+        )
+
+        assert isinstance(result, GetJobsResponse)
+        assert len(result.root) == 1
+        assert result.root[0].object_id == "job-filtered"
+        assert result.root[0].name == "Filtered Job"
+        assert result.root[0].description == "A filtered job"
+        assert result.root[0].status == "complete"
 
         # Verify filters were passed correctly to the service
         mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_jobs.assert_called_with(

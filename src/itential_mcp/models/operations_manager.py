@@ -297,11 +297,11 @@ class JobElement(BaseModel):
     ]
 
     status: Annotated[
-        Literal["error", "complete", "running", "cancelled", "incomplete", "paused"],
+        Literal["error", "complete", "running", "canceled", "incomplete", "paused"],
         Field(
             description = inspect.cleandoc(
                 """
-                Current job status (error, complete, running, cancelled, incomplete, paused)
+                Current job status (error, complete, running, canceled, incomplete, paused)
                 """
             )
         )

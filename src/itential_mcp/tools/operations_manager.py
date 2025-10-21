@@ -256,7 +256,7 @@ async def get_jobs(
     for item in data or []:
         job_element = models.JobElement(
             **{
-                "object_id": item.get("_id"),
+                "_id": item.get("_id"),
                 "name": item.get("name"),
                 "description": item.get("description"),
                 "status": item.get("status"),
