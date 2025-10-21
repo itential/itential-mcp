@@ -37,7 +37,8 @@ class TestModule:
             'describe_resource',
             'get_instances',
             'describe_instance',
-            'run_action'
+            'run_action',
+            'get_action_executions'
         ]
         
         for func_name in expected_functions:
@@ -54,7 +55,8 @@ class TestModule:
             lifecycle_manager.describe_resource,
             lifecycle_manager.get_instances,
             lifecycle_manager.describe_instance,
-            lifecycle_manager.run_action
+            lifecycle_manager.run_action,
+            lifecycle_manager.get_action_executions
         ]
         
         for func in async_functions:
@@ -732,6 +734,253 @@ class TestRunAction:
         
         mock_client.lifecycle_manager.run_action.assert_called_once_with(
             "test-resource", "create", None, None, None
+        )
+
+
+class TestGetActionExecutions:
+    """Test the get_action_executions function"""
+
+    @pytest.fixture
+    def mock_context(self):
+        """Create a mock FastMCP context"""
+        context = AsyncMock(spec=Context)
+        context.info = AsyncMock()
+        
+        mock_client = AsyncMock()
+        mock_lifecycle_manager = AsyncMock()
+        mock_client.lifecycle_manager = mock_lifecycle_manager
+        
+        context.request_context.lifespan_context.get.return_value = mock_client
+        
+        return context
+
+    @pytest.mark.asyncio
+    async def test_get_action_executions_success(self, mock_context):
+        """Test get_action_executions with successful response"""
+        from itential_mcp.models.lifecycle_manager import GetActionExecutionsResponse
+        
+        mock_executions_data = [
+            {
+                "_id": "exec1",
+                "modelId": "model123",
+                "modelName": "test-resource",
+                "instanceId": "inst1",
+                "instanceName": "test-instance",
+                "actionId": "action123",
+                "actionName": "create",
+                "actionType": "create",
+                "startTime": "2024-01-01T12:00:00Z",
+                "endTime": "2024-01-01T12:05:00Z",
+                "initiator": "user123",
+                "initiatorName": "test-user",
+                "jobId": "job-123",
+                "status": "complete",
+                "executionType": "individual",
+                "progress": {},
+                "errors": []
+            },
+            {
+                "_id": "exec2",
+                "modelId": "model456",
+                "modelName": "another-resource",
+                "instanceId": "inst2",
+                "instanceName": "another-instance",
+                "actionId": "action456",
+                "actionName": "update",
+                "actionType": "update",
+                "startTime": "2024-01-01T13:00:00Z",
+                "initiator": "user456",
+                "initiatorName": "another-user",
+                "jobId": "job-456",
+                "status": "running",
+                "executionType": "individual",
+                "progress": {},
+                "errors": []
+            }
+        ]
+        
+        mock_client = mock_context.request_context.lifespan_context.get.return_value
+        mock_client.lifecycle_manager.get_action_executions.return_value = mock_executions_data
+
+        result = await lifecycle_manager.get_action_executions(
+            mock_context,
+            resource_name="test-resource",
+            instance_name="test-instance"
+        )
+
+        # Verify result is GetActionExecutionsResponse
+        assert isinstance(result, GetActionExecutionsResponse)
+        assert len(result.root) == 2
+        
+        # Verify model data
+        assert result.root[0].action_name == "create"
+        assert result.root[0].status == "complete"
+        assert result.root[1].action_name == "update"
+        assert result.root[1].status == "running"
+        
+        # Verify service calls
+        mock_context.info.assert_called_once_with("inside get_action_executions(...)")
+        mock_client.lifecycle_manager.get_action_executions.assert_called_once_with(
+            resource_name="test-resource",
+            instance_name="test-instance"
+        )
+
+    @pytest.mark.asyncio
+    async def test_get_action_executions_empty_response(self, mock_context):
+        """Test get_action_executions with empty response"""
+        from itential_mcp.models.lifecycle_manager import GetActionExecutionsResponse
+        
+        mock_client = mock_context.request_context.lifespan_context.get.return_value
+        mock_client.lifecycle_manager.get_action_executions.return_value = []
+
+        result = await lifecycle_manager.get_action_executions(
+            mock_context,
+            resource_name="test-resource",
+            instance_name="test-instance"
+        )
+
+        assert isinstance(result, GetActionExecutionsResponse)
+        assert len(result.root) == 0
+        assert result.root == []
+
+    @pytest.mark.asyncio
+    async def test_get_action_executions_service_exception(self, mock_context):
+        """Test get_action_executions when service raises exception"""
+        mock_client = mock_context.request_context.lifespan_context.get.return_value
+        mock_client.lifecycle_manager.get_action_executions.side_effect = Exception("Service error")
+
+        with pytest.raises(Exception, match="Service error"):
+            await lifecycle_manager.get_action_executions(
+                mock_context,
+                resource_name="test-resource",
+                instance_name="test-instance"
+            )
+
+    @pytest.mark.asyncio
+    async def test_get_action_executions_with_resource_name_filter(self, mock_context):
+        """Test get_action_executions with resource_name filter only"""
+        from itential_mcp.models.lifecycle_manager import GetActionExecutionsResponse
+        
+        mock_executions_data = [
+            {
+                "_id": "exec1",
+                "modelId": "model123",
+                "modelName": "TestResource",
+                "instanceId": "inst1",
+                "instanceName": "test-instance",
+                "actionId": "action123",
+                "actionName": "create",
+                "startTime": "2024-01-01T12:00:00Z",
+                "initiator": "user123",
+                "status": "complete",
+                "executionType": "individual",
+                "progress": {},
+                "errors": []
+            }
+        ]
+        
+        mock_client = mock_context.request_context.lifespan_context.get.return_value
+        mock_client.lifecycle_manager.get_action_executions.return_value = mock_executions_data
+
+        result = await lifecycle_manager.get_action_executions(
+            mock_context,
+            resource_name="TestResource",
+            instance_name=""  # Empty string to skip filtering by instance
+        )
+
+        assert isinstance(result, GetActionExecutionsResponse)
+        assert len(result.root) == 1
+        assert result.root[0].model_name == "TestResource"
+        
+        # Verify the service was called with the correct filters
+        mock_client.lifecycle_manager.get_action_executions.assert_called_once_with(
+            resource_name="TestResource",
+            instance_name=""
+        )
+
+    @pytest.mark.asyncio
+    async def test_get_action_executions_with_instance_name_filter(self, mock_context):
+        """Test get_action_executions with instance_name filter only"""
+        from itential_mcp.models.lifecycle_manager import GetActionExecutionsResponse
+        
+        mock_executions_data = [
+            {
+                "_id": "exec1",
+                "modelId": "model123",
+                "modelName": "TestResource",
+                "instanceId": "inst1",
+                "instanceName": "prod-instance-1",
+                "actionId": "action123",
+                "actionName": "update",
+                "startTime": "2024-01-01T12:00:00Z",
+                "initiator": "user123",
+                "status": "complete",
+                "executionType": "individual",
+                "progress": {},
+                "errors": []
+            }
+        ]
+        
+        mock_client = mock_context.request_context.lifespan_context.get.return_value
+        mock_client.lifecycle_manager.get_action_executions.return_value = mock_executions_data
+
+        result = await lifecycle_manager.get_action_executions(
+            mock_context,
+            resource_name="",  # Empty string to skip filtering by resource
+            instance_name="prod-instance-1"
+        )
+
+        assert isinstance(result, GetActionExecutionsResponse)
+        assert len(result.root) == 1
+        assert result.root[0].instance_name == "prod-instance-1"
+        
+        # Verify the service was called with the correct filters
+        mock_client.lifecycle_manager.get_action_executions.assert_called_once_with(
+            resource_name="",
+            instance_name="prod-instance-1"
+        )
+
+    @pytest.mark.asyncio
+    async def test_get_action_executions_with_both_filters(self, mock_context):
+        """Test get_action_executions with both resource_name and instance_name filters"""
+        from itential_mcp.models.lifecycle_manager import GetActionExecutionsResponse
+        
+        mock_executions_data = [
+            {
+                "_id": "exec1",
+                "modelId": "model123",
+                "modelName": "TestResource",
+                "instanceId": "inst1",
+                "instanceName": "prod-instance-1",
+                "actionId": "action123",
+                "actionName": "create",
+                "startTime": "2024-01-01T12:00:00Z",
+                "initiator": "user123",
+                "status": "complete",
+                "executionType": "individual",
+                "progress": {},
+                "errors": []
+            }
+        ]
+        
+        mock_client = mock_context.request_context.lifespan_context.get.return_value
+        mock_client.lifecycle_manager.get_action_executions.return_value = mock_executions_data
+
+        result = await lifecycle_manager.get_action_executions(
+            mock_context,
+            resource_name="TestResource",
+            instance_name="prod-instance-1"
+        )
+
+        assert isinstance(result, GetActionExecutionsResponse)
+        assert len(result.root) == 1
+        assert result.root[0].model_name == "TestResource"
+        assert result.root[0].instance_name == "prod-instance-1"
+        
+        # Verify the service was called with both filters
+        mock_client.lifecycle_manager.get_action_executions.assert_called_once_with(
+            resource_name="TestResource",
+            instance_name="prod-instance-1"
         )
 
 

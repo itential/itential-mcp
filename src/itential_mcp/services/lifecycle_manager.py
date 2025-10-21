@@ -393,3 +393,121 @@ class Service(ServiceBase):
         )
 
         return res.json()
+
+    async def get_action_executions(
+        self,
+        resource_name: str | None = None,
+        instance_name: str | None = None
+    ) -> Sequence[Mapping[str, Any]]:
+        """Get action executions from Lifecycle Manager filtered by resource and instance.
+
+        Retrieves action execution history using efficient parallel pagination
+        to minimize total retrieval time. Makes parallel API calls in chunks
+        of 100 documents until all action executions are retrieved.
+
+        Filters by resource name and/or instance name using "starts-with" search logic.
+        Empty strings can be provided to skip filtering by that parameter.
+
+        Args:
+            resource_name (str): Filter by Lifecycle Manager resource name (starts-with).
+                Provide empty string to skip filtering by resource name.
+            instance_name (str): Filter by instance name (starts-with).
+                Provide empty string to skip filtering by instance name.
+
+        Returns:
+            Sequence[Mapping[str, Any]]: List of action execution objects with
+                fields as returned by the API
+
+        Raises:
+            Exception: If there is an error retrieving action executions from the platform
+        """
+        limit = 100
+
+        # Build search parameters if filters provided (non-empty strings)
+        params = {"limit": limit, "skip": 0}
+        
+        # Use query parameter format like equals[name] for filtering
+        if resource_name:
+            params["starts-with[modelName]"] = resource_name
+        if instance_name:
+            params["starts-with[instanceName]"] = instance_name
+
+        # Get the first page to determine total count
+        res = await self.client.get(
+            "/lifecycle-manager/action-executions",
+            params=params,
+        )
+
+        data = res.json()
+        total = data["metadata"]["total"]
+
+        # If no action executions, return empty list early
+        if total == 0:
+            return []
+
+        # If we got all data in the first request, return it
+        if total <= limit:
+            return data["data"]
+
+        # Create tasks for parallel retrieval of remaining pages
+        tasks = []
+        results = data["data"]  # Start with first page data
+
+        # Calculate remaining pages and create parallel tasks
+        for skip in range(limit, total, limit):
+            remaining = total - skip
+            current_limit = min(limit, remaining)
+
+            task = self._fetch_page_with_params(
+                "/lifecycle-manager/action-executions",
+                skip,
+                current_limit,
+                resource_name,
+                instance_name
+            )
+            tasks.append(task)
+
+        # Execute all tasks in parallel
+        if tasks:
+            page_results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            # Process results and handle any exceptions
+            for result in page_results:
+                if isinstance(result, Exception):
+                    raise result
+                results.extend(result)
+
+        return results
+
+    async def _fetch_page_with_params(
+        self,
+        endpoint: str,
+        skip: int,
+        limit: int,
+        resource_name: str | None = None,
+        instance_name: str | None = None
+    ) -> Sequence[Mapping[str, Any]]:
+        """Fetch a single page of data with optional search parameters.
+
+        Args:
+            endpoint (str): The API endpoint to fetch data from
+            skip (int): Number of documents to skip
+            limit (int): Maximum number of documents to retrieve
+            resource_name (str | None, optional): Filter by Lifecycle Manager resource name
+            instance_name (str | None, optional): Filter by instance name
+
+        Returns:
+            Sequence[Mapping[str, Any]]: List of objects from this page
+        """
+        params = {"limit": limit, "skip": skip}
+        
+        # Use query parameter format like equals[name] for filtering
+        if resource_name:
+            params["starts-with[modelName]"] = resource_name
+        if instance_name:
+            params["starts-with[instanceName]"] = instance_name
+
+        res = await self.client.get(endpoint, params=params)
+
+        data = res.json()
+        return data["data"]
