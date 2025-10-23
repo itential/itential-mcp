@@ -23,28 +23,38 @@ Build automation workflows, integrate with external systems, manage application 
 ## 📒 Key Features
 
 ### **Core Capabilities**
-- **Advanced Tool Selection**: Filter and control available tools using flexible tagging system
+- **Advanced Tool Selection**: Filter and control available tools using flexible tagging system with 10+ tag groups
 - **Multiple Transport Methods**: stdio, SSE, and HTTP transports for different deployment scenarios
 - **Dynamic Tool Discovery**: Automatically discovers and registers tools without code modifications
 - **Flexible Authentication**: Supports both basic authentication and OAuth 2.0 for Itential Platform
 - **Comprehensive Configuration**: CLI parameters, environment variables, or configuration files
+- **Role-Based Access**: Tailored tool configurations for Platform SREs, Builders, Developers, and Operators
 
-### **Network Automation**
-- **Device Management**: Configure, backup, and monitor network devices
-- **Command Execution**: Run commands and templates across device groups
-- **Compliance Management**: Automated compliance checking and reporting
-- **Golden Configuration**: Template-based configuration management
+### **Network Automation & Device Management**
+- **Device Configuration**: Apply configurations, backup device settings, and retrieve current configurations
+- **Command Execution**: Run single commands or command templates across multiple devices with rule validation
+- **Device Groups**: Create and manage logical device collections for streamlined operations
+- **Compliance Management**: Automated compliance plan execution and detailed reporting
+- **Golden Configuration**: Hierarchical template-based configuration management with version control
 
 ### **Workflow & Orchestration**
-- **Workflow Execution**: Trigger and monitor automation workflows
-- **Operations Management**: Job tracking and lifecycle management
-- **Lifecycle Manager**: CRUD operations for stateful products with state tracking
-- **Service Integration**: Connect with external systems and APIs
+- **Workflow Execution**: Start workflows via API endpoints and monitor execution status
+- **Job Management**: Track workflow jobs with comprehensive status, metrics, and task details
+- **Workflow Exposure**: Convert workflows into REST API endpoints for external consumption
+- **Template Management**: Create, update, and execute Jinja2 and TextFSM templates
+- **Performance Metrics**: Detailed job and task execution metrics for workflow optimization
 
-### **Platform Operations**
-- **Health Monitoring**: Real-time platform and component health metrics
-- **Resource Management**: Adapter and application lifecycle control
-- **Gateway Services**: External service management and orchestration
+### **Platform Operations & Monitoring**
+- **Health Monitoring**: Real-time platform health including system resources, applications, and adapters
+- **Component Lifecycle**: Start, stop, and restart applications and adapters with status monitoring
+- **Integration Management**: Create and manage OpenAPI-based integration models
+- **Gateway Services**: Execute external services (Ansible, Python scripts, OpenTofu) through Gateway Manager
+
+### **Lifecycle & Resource Management**
+- **Resource Models**: Define JSON Schema-based resource structures with lifecycle workflows
+- **Instance Management**: Full CRUD operations on resource instances with state tracking
+- **Action Execution**: Run lifecycle actions with comprehensive execution history
+- **Data Validation**: Schema-based validation for resource data and action parameters
 
 ## 🔍 Requirements
 - Python _3.10_ or higher
@@ -95,21 +105,58 @@ uv run itential-mcp run --transport sse --host 0.0.0.0 --port 8000
 uv run itential-mcp run --include-tags "system,devices" --exclude-tags "experimental"
 ```
 
-### Build Container Image
-Build and run as a container:
+### Container Usage
+
+#### Pull from GitHub Container Registry
+Pull and run the latest release:
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/itential/itential-mcp:latest
+
+# Run with SSE transport
+docker run -p 8000:8000 \
+  --env ITENTIAL_MCP_SERVER_TRANSPORT=sse \
+  --env ITENTIAL_MCP_SERVER_HOST=0.0.0.0 \
+  --env ITENTIAL_MCP_SERVER_PORT=8000 \
+  --env ITENTIAL_MCP_PLATFORM_HOST=your-platform.example.com \
+  --env ITENTIAL_MCP_PLATFORM_USER=your-username \
+  --env ITENTIAL_MCP_PLATFORM_PASSWORD=your-password \
+  ghcr.io/itential/itential-mcp:latest
+
+# Or with OAuth authentication
+docker run -p 8000:8000 \
+  --env ITENTIAL_MCP_SERVER_TRANSPORT=sse \
+  --env ITENTIAL_MCP_SERVER_HOST=0.0.0.0 \
+  --env ITENTIAL_MCP_SERVER_PORT=8000 \
+  --env ITENTIAL_MCP_PLATFORM_HOST=your-platform.example.com \
+  --env ITENTIAL_MCP_PLATFORM_CLIENT_ID=CLIENT_ID \
+  --env ITENTIAL_MCP_PLATFORM_CLIENT_SECRET=CLIENT_SECRET \
+  ghcr.io/itential/itential-mcp:latest
+
+# Run with stdio transport (for MCP clients)
+docker run -i \
+  --env ITENTIAL_MCP_PLATFORM_HOST=your-platform.example.com \
+  --env ITENTIAL_MCP_PLATFORM_USER=your-username \
+  --env ITENTIAL_MCP_PLATFORM_PASSWORD=your-password \
+  ghcr.io/itential/itential-mcp:latest
+```
+
+#### Build Container Image Locally
+Build and run from source:
 
 ```bash
 # Build the container image
 make container
 
-# Run the container with environment variables
+# Run the locally built container
 docker run -p 8000:8000 \
   --env ITENTIAL_MCP_SERVER_TRANSPORT=sse \
   --env ITENTIAL_MCP_SERVER_HOST=0.0.0.0 \
   --env ITENTIAL_MCP_SERVER_PORT=8000 \
-  --env ITENTIAL_MCP_PLATFORM_HOST=URL \
-  --env ITENTIAL_MCP_PLATFORM_CLIENT_ID=CLIENT_ID \
-  --env ITENTIAL_MCP_PLATFORM_CLIENT_SECRET=CLIENT_SECRET \
+  --env ITENTIAL_MCP_PLATFORM_HOST=your-platform.example.com \
+  --env ITENTIAL_MCP_PLATFORM_USER=your-username \
+  --env ITENTIAL_MCP_PLATFORM_PASSWORD=your-password \
   itential-mcp:devel
 ```
 
