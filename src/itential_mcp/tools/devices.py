@@ -14,9 +14,7 @@ __tags__ = ("configuration_manager",)
 
 
 async def get_devices(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
 ) -> models.GetDevicesResponse:
     """
     Get all devices known to Itential Platform.
@@ -30,9 +28,6 @@ async def get_devices(
 
     Returns:
         models.GetDevicesResponse: List of device objects containing device information and metadata
-
-    Raises:
-        Exception: If there is an error retrieving devices from the platform
     """
     await ctx.info("inside get_devices(...)")
     client = ctx.request_context.lifespan_context.get("client")
@@ -41,12 +36,11 @@ async def get_devices(
 
 
 async def get_device_configuration(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the device to retrieve the configuration from"
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[
+        str,
+        Field(description="The name of the device to retrieve the configuration from"),
+    ],
 ) -> models.GetDeviceConfigurationResponse:
     """
     Retrieve the current configuration from a network device.
@@ -67,20 +61,15 @@ async def get_device_configuration(
 
 
 async def backup_device_configuration(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the device to backup"
-    )],
-    description: Annotated[str, Field(
-        description="Short description to attach to the backup",
-        default=None
-    )],
-    notes: Annotated[str, Field(
-        description="Notes to attach to the backup",
-        default=None
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="The name of the device to backup")],
+    description: Annotated[
+        str,
+        Field(description="Short description to attach to the backup", default=None),
+    ],
+    notes: Annotated[
+        str, Field(description="Notes to attach to the backup", default=None)
+    ],
 ) -> models.BackupDeviceConfigurationResponse:
     """
     Create a backup of a device configuration in Itential Platform.
@@ -99,9 +88,6 @@ async def backup_device_configuration(
             - id: Unique identifier for the backup
             - status: Status of the backup operation
             - message: Descriptive message about the operation status
-
-    Raises:
-        Exception: If there is an error creating the device configuration backup
     """
     await ctx.info("inside backup_device_configuration(...)")
     client = ctx.request_context.lifespan_context.get("client")
@@ -112,15 +98,13 @@ async def backup_device_configuration(
 
 
 async def apply_device_configuration(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    device: Annotated[str, Field(
-        description="The name of the device to apply the configuration to"
-    )],
-    config: Annotated[str, Field(
-        description="The configuration to apply to the device"
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    device: Annotated[
+        str, Field(description="The name of the device to apply the configuration to")
+    ],
+    config: Annotated[
+        str, Field(description="The configuration to apply to the device")
+    ],
 ) -> models.ApplyDeviceConfigurationResponse:
     """
     Apply configuration commands to a network device through Itential Platform.
@@ -135,13 +119,13 @@ async def apply_device_configuration(
 
     Returns:
         models.ApplyDeviceConfigurationResponse: Configuration application results and operation status
-
-    Raises:
-        Exception: If there is an error applying the configuration to the device
     """
     await ctx.info("inside apply_device_configuration(...)")
+
     client = ctx.request_context.lifespan_context.get("client")
+
     res = client.configuration_manager.apply_device_configuration(
         device=device, config=config
     )
+
     return models.ApplyDeviceConfigurationResponse(**res)

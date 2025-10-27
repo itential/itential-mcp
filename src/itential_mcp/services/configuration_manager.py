@@ -15,9 +15,9 @@ class Service(ServiceBase):
     Configuration Manager service for managing network device configurations and templates.
 
     This service provides comprehensive functionality for managing Golden Configuration trees,
-    device groups, device management, compliance plans, and template rendering through the
-    Itential Configuration Manager. It enables network operators to create, modify, and deploy
-    configuration templates across network devices with version control, variable substitution,
+    device groups, device management, compliance plans, and template rendering through the 
+    Itential Configuration Manager. It enables network operators to create, modify, and deploy 
+    configuration templates across network devices with version control, variable substitution, 
     and hierarchical organization.
 
     The service supports the following key capabilities:
@@ -323,9 +323,7 @@ class Service(ServiceBase):
         return res.json()
 
     async def create_device_group(
-        self, name: str,
-        devices: list,
-        description: str | None = None
+        self, name: str, devices: list, description: str | None = None
     ) -> dict:
         """
         Create a new device group in the Configuration Manager.
@@ -354,17 +352,14 @@ class Service(ServiceBase):
             if ele["name"] == name:
                 raise ValueError(f"device group {name} already exists")
 
-        body = {
-            "groupName": name,
-            "groupDescription": description,
-            "deviceNames": ",".join(devices)
+        body = {"groupName": name, "groupDescription": description}
 
-        }
+        if devices:
+            body["deviceNames"] = ",".join(devices)
+        else:
+            body["deviceNames"] = ""
 
-        res = await self.client.post(
-            "/configuration_manager/devicegroup",
-            json=body
-        )
+        res = await self.client.post("/configuration_manager/devicegroup", json=body)
 
         return res.json()
 
