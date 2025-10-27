@@ -136,6 +136,38 @@ def test_config_server_tools_path_from_file(tmp_path, monkeypatch):
     assert cfg.server["tools_path"] == test_tools_path
 
 
+def test_auth_config_defaults(monkeypatch):
+    """Test default authentication configuration values."""
+    for key in list(os.environ.keys()):
+        if key.startswith("ITENTIAL_MCP_"):
+            monkeypatch.delenv(key, raising=False)
+
+    cfg = config_module.get()
+
+    assert cfg.auth == {"type": "none"}
+
+
+def test_auth_config_from_env(monkeypatch):
+    """Test authentication configuration derived from environment variables."""
+    for key in list(os.environ.keys()):
+        if key.startswith("ITENTIAL_MCP_"):
+            monkeypatch.delenv(key, raising=False)
+
+    monkeypatch.setenv("ITENTIAL_MCP_SERVER_AUTH_TYPE", "jwt")
+    monkeypatch.setenv("ITENTIAL_MCP_SERVER_AUTH_JWKS_URI", "https://idp.example.com/jwks.json")
+    monkeypatch.setenv("ITENTIAL_MCP_SERVER_AUTH_ISSUER", "https://idp.example.com/")
+    monkeypatch.setenv("ITENTIAL_MCP_SERVER_AUTH_AUDIENCE", "itential-mcp,another-client")
+    monkeypatch.setenv("ITENTIAL_MCP_SERVER_AUTH_REQUIRED_SCOPES", "read:all,write:all")
+
+    cfg = config_module.get()
+    auth = cfg.auth
+
+    assert auth["type"] == "jwt"
+    assert auth["jwks_uri"] == "https://idp.example.com/jwks.json"
+    assert auth["issuer"] == "https://idp.example.com/"
+    assert auth["audience"] == ["itential-mcp", "another-client"]
+    assert auth["required_scopes"] == ["read:all", "write:all"]
+
 class TestValidateToolName:
     """Test cases for validate_tool_name function."""
 
