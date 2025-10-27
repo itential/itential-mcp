@@ -8,7 +8,7 @@ import re
 from functools import lru_cache, partial
 from pathlib import Path
 
-from typing import Literal, List, Callable
+from typing import Literal, List, Callable, Any
 
 from pydantic import Field, field_validator
 from pydantic.dataclasses import dataclass
@@ -218,6 +218,91 @@ class Config(object):
         )
     )
 
+    server_auth_type: Literal["none", "jwt"] = Field(
+        description="Authentication provider type used to secure the MCP server",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_AUTH_TYPE",
+        ),
+        json_schema_extra=options(
+            "--auth-type",
+            choices=("none", "jwt"),
+            metavar="<type>",
+        ),
+    )
+
+    server_auth_jwks_uri: str | None = Field(
+        description="JWKS URI used to dynamically fetch signing keys for JWT validation",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_AUTH_JWKS_URI",
+        ),
+        json_schema_extra=options(
+            "--auth-jwks-uri",
+            metavar="<url>",
+        ),
+    )
+
+    server_auth_public_key: str | None = Field(
+        description="Static PEM encoded public key or shared secret for JWT validation",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_AUTH_PUBLIC_KEY",
+        ),
+        json_schema_extra=options(
+            "--auth-public-key",
+            metavar="<value>",
+        ),
+    )
+
+    server_auth_issuer: str | None = Field(
+        description="Expected JWT issuer claim (iss)",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_AUTH_ISSUER",
+        ),
+        json_schema_extra=options(
+            "--auth-issuer",
+            metavar="<issuer>",
+        ),
+    )
+
+    server_auth_audience: str | None = Field(
+        description="Expected JWT audience claims (comma separated for multiple values)",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_AUTH_AUDIENCE",
+        ),
+        json_schema_extra=options(
+            "--auth-audience",
+            metavar="<audience>",
+        ),
+    )
+
+    server_auth_algorithm: str | None = Field(
+        description="Expected JWT signing algorithm (e.g., RS256, HS256)",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_AUTH_ALGORITHM",
+        ),
+        json_schema_extra=options(
+            "--auth-algorithm",
+            metavar="<algorithm>",
+        ),
+    )
+
+    server_auth_required_scopes: str | None = Field(
+        description="Comma separated list of scopes required on every JWT",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_AUTH_REQUIRED_SCOPES",
+        ),
+        json_schema_extra=options(
+            "--auth-required-scopes",
+            metavar="<scopes>",
+        ),
+    )
+
     platform_host: str = Field(
         description="The host addres of the Itential Platform server",
         default_factory=default_factory(
@@ -336,9 +421,15 @@ class Config(object):
     def server(self) -> dict:
         """Get server configuration as a dictionary.
 
+        Args:
+            None
+
         Returns:
             dict: Server configuration parameters including transport, host, port,
                 path, log level, and tag filtering settings.
+
+        Raises:
+            None.
         """
         return {
             "transport": self.server_transport,
@@ -352,12 +443,60 @@ class Config(object):
         }
 
     @property
+    def auth(self) -> dict[str, Any]:
+        """Get authentication configuration as a dictionary.
+
+        Args:
+            None
+
+        Returns:
+            dict[str, Any]: Authentication configuration including provider type and
+                provider specific settings. Keys with no configured values are omitted.
+
+        Raises:
+            None.
+        """
+        auth_type = (self.server_auth_type or "none").strip().lower()
+
+        audience: str | list[str] | None = None
+        if self.server_auth_audience:
+            values = self._coerce_to_list(self.server_auth_audience)
+            if len(values) == 1:
+                audience = values[0]
+            elif values:
+                audience = values
+
+        required_scopes = (
+            self._coerce_to_list(self.server_auth_required_scopes)
+            if self.server_auth_required_scopes
+            else None
+        )
+
+        data: dict[str, Any] = {
+            "type": auth_type,
+            "jwks_uri": self.server_auth_jwks_uri or None,
+            "public_key": self.server_auth_public_key or None,
+            "issuer": self.server_auth_issuer or None,
+            "audience": audience,
+            "algorithm": self.server_auth_algorithm or None,
+            "required_scopes": required_scopes,
+        }
+
+        return {k: v for k, v in data.items() if v not in (None, "", [])}
+
+    @property
     def platform(self) -> dict:
         """Get platform configuration as a dictionary.
+
+        Args:
+            None
 
         Returns:
             dict: Platform configuration parameters including connection settings,
                 authentication credentials, and timeout values.
+
+        Raises:
+            None.
         """
         return {
             "host": self.platform_host,
@@ -383,11 +522,28 @@ class Config(object):
 
         Returns:
             Set of trimmed string elements.
+
+        Raises:
+            None.
         """
         items = set()
         for ele in value.split(","):
             items.add(ele.strip())
         return items
+
+    def _coerce_to_list(self, value: str) -> list[str]:
+        """Convert comma-separated string to a list of trimmed values.
+
+        Args:
+            value (str): Comma separated string value to parse.
+
+        Returns:
+            list[str]: List of trimmed values, excluding empty entries.
+
+        Raises:
+            None.
+        """
+        return [item.strip() for item in value.split(",") if item.strip()]
 
 
 def _get_tools_from_env() -> dict:

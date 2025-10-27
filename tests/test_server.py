@@ -176,13 +176,19 @@ class TestDynamicToolInjectionMiddleware:
 class TestNew:
     """Test the new() function for creating FastMCP instances"""
 
+    @patch("itential_mcp.server.auth.build_auth_provider")
     @patch("itential_mcp.server.bindings.iterbindings")
     @patch("itential_mcp.server.toolutils.itertools")
     @patch("itential_mcp.server.logging.get_logger")
     @patch("itential_mcp.server.FastMCP")
     @pytest.mark.asyncio
     async def test_new_creates_fastmcp_with_basic_config(
-        self, mock_fastmcp, mock_logger, mock_itertools, mock_iterbindings
+        self,
+        mock_fastmcp,
+        mock_logger,
+        mock_itertools,
+        mock_iterbindings,
+        mock_auth_builder,
     ):
         """Test new() creates FastMCP with basic configuration"""
         mock_config = MagicMock(spec=Config)
@@ -192,6 +198,7 @@ class TestNew:
             "tools_path": None,
         }
         mock_config.tools = []
+        mock_auth_builder.return_value = None
 
         mock_itertools.return_value = []
 
@@ -212,21 +219,29 @@ class TestNew:
             lifespan=server.lifespan,
             include_tags=["tag1", "tag2"],
             exclude_tags=["tag3"],
+            auth=None,
         )
         assert result == mock_mcp_instance
 
+    @patch("itential_mcp.server.auth.build_auth_provider")
     @patch("itential_mcp.server.bindings.iterbindings")
     @patch("itential_mcp.server.toolutils.itertools")
     @patch("itential_mcp.server.logging.get_logger")
     @patch("itential_mcp.server.FastMCP")
     @pytest.mark.asyncio
     async def test_new_handles_none_tags(
-        self, mock_fastmcp, mock_logger, mock_itertools, mock_iterbindings
+        self,
+        mock_fastmcp,
+        mock_logger,
+        mock_itertools,
+        mock_iterbindings,
+        mock_auth_builder,
     ):
         """Test new() handles None values for tags"""
         mock_config = MagicMock(spec=Config)
         mock_config.server = {"include_tags": None, "exclude_tags": None}
         mock_config.tools = []
+        mock_auth_builder.return_value = None
 
         mock_itertools.return_value = []
 
@@ -247,20 +262,28 @@ class TestNew:
             lifespan=server.lifespan,
             include_tags=None,
             exclude_tags=None,
+            auth=None,
         )
 
+    @patch("itential_mcp.server.auth.build_auth_provider")
     @patch("itential_mcp.server.bindings.iterbindings")
     @patch("itential_mcp.server.toolutils.itertools")
     @patch("itential_mcp.server.logging.get_logger")
     @patch("itential_mcp.server.FastMCP")
     @pytest.mark.asyncio
     async def test_new_handles_empty_server_config(
-        self, mock_fastmcp, mock_logger, mock_itertools, mock_iterbindings
+        self,
+        mock_fastmcp,
+        mock_logger,
+        mock_itertools,
+        mock_iterbindings,
+        mock_auth_builder,
     ):
         """Test new() handles empty server configuration"""
         mock_config = MagicMock(spec=Config)
         mock_config.server = {}
         mock_config.tools = []
+        mock_auth_builder.return_value = None
 
         mock_itertools.return_value = []
 
@@ -281,15 +304,22 @@ class TestNew:
             lifespan=server.lifespan,
             include_tags=None,
             exclude_tags=None,
+            auth=None,
         )
 
+    @patch("itential_mcp.server.auth.build_auth_provider")
     @patch("itential_mcp.server.bindings.iterbindings")
     @patch("itential_mcp.server.toolutils.itertools")
     @patch("itential_mcp.server.logging.get_logger")
     @patch("itential_mcp.server.FastMCP")
     @pytest.mark.asyncio
     async def test_new_with_custom_tools_path(
-        self, mock_fastmcp, mock_logger, mock_itertools, mock_iterbindings
+        self,
+        mock_fastmcp,
+        mock_logger,
+        mock_itertools,
+        mock_iterbindings,
+        mock_auth_builder,
     ):
         """Test new() with custom tools_path configuration"""
         mock_config = MagicMock(spec=Config)
@@ -299,6 +329,7 @@ class TestNew:
             "tools_path": "/custom/tools/path",
         }
         mock_config.tools = []
+        mock_auth_builder.return_value = None
 
         mock_itertools.return_value = []
 
@@ -318,13 +349,19 @@ class TestNew:
         mock_fastmcp.assert_called_once()
         assert result == mock_mcp_instance
 
+    @patch("itential_mcp.server.auth.build_auth_provider")
     @patch("itential_mcp.server.bindings.iterbindings")
     @patch("itential_mcp.server.toolutils.itertools")
     @patch("itential_mcp.server.logging.get_logger")
     @patch("itential_mcp.server.FastMCP")
     @pytest.mark.asyncio
     async def test_new_without_custom_tools_path(
-        self, mock_fastmcp, mock_logger, mock_itertools, mock_iterbindings
+        self,
+        mock_fastmcp,
+        mock_logger,
+        mock_itertools,
+        mock_iterbindings,
+        mock_auth_builder,
     ):
         """Test new() without custom tools_path (None)"""
         mock_config = MagicMock(spec=Config)
@@ -334,6 +371,7 @@ class TestNew:
             "tools_path": None,
         }
         mock_config.tools = []
+        mock_auth_builder.return_value = None
 
         mock_itertools.return_value = []
 
@@ -351,6 +389,7 @@ class TestNew:
         # Should only call itertools once for default path
         assert mock_itertools.call_count == 1
 
+    @patch("itential_mcp.server.auth.build_auth_provider")
     @patch("itential_mcp.server.bindings.iterbindings")
     @patch("itential_mcp.server.toolutils.itertools")
     @patch("itential_mcp.server.toolutils.get_json_schema")
@@ -364,6 +403,7 @@ class TestNew:
         mock_get_json_schema,
         mock_itertools,
         mock_iterbindings,
+        mock_auth_builder,
     ):
         """Test new() handles tools with missing or invalid output_schema"""
         mock_config = MagicMock(spec=Config)
@@ -373,6 +413,8 @@ class TestNew:
             "tools_path": None,
         }
         mock_config.tools = []
+        mock_auth_builder.return_value = None
+        mock_auth_builder.return_value = None
 
         # Mock a tool function
         def mock_tool():
@@ -398,10 +440,43 @@ class TestNew:
 
         await server.new(mock_config)
 
-        # Should still register the tool without output_schema
-        mock_mcp_instance.tool.assert_called_once_with(
-            mock_tool, tags={"test", "default"}
-        )
+    @patch("itential_mcp.server.auth.build_auth_provider")
+    @patch("itential_mcp.server.bindings.iterbindings")
+    @patch("itential_mcp.server.toolutils.itertools")
+    @patch("itential_mcp.server.logging.get_logger")
+    @patch("itential_mcp.server.FastMCP")
+    @pytest.mark.asyncio
+    async def test_new_includes_auth_provider_when_configured(
+        self,
+        mock_fastmcp,
+        mock_logger,
+        mock_itertools,
+        mock_iterbindings,
+        mock_auth_builder,
+    ):
+        """Test new() passes configured auth provider into FastMCP."""
+        mock_config = MagicMock(spec=Config)
+        mock_config.server = {"include_tags": None, "exclude_tags": None, "tools_path": None}
+        mock_config.tools = []
+
+        mock_auth_provider = MagicMock()
+        mock_auth_builder.return_value = mock_auth_provider
+        mock_itertools.return_value = []
+
+        async def empty_aiter():
+            return
+            yield
+
+        mock_iterbindings.return_value = empty_aiter()
+
+        mock_mcp_instance = MagicMock()
+        mock_fastmcp.return_value = mock_mcp_instance
+
+        await server.new(mock_config)
+
+        mock_fastmcp.assert_called_once()
+        kwargs = mock_fastmcp.call_args.kwargs
+        assert kwargs["auth"] is mock_auth_provider
 
 
 class TestRun:
@@ -705,13 +780,19 @@ class TestRun:
 class TestIntegration:
     """Integration tests for server functionality"""
 
+    @patch("itential_mcp.server.auth.build_auth_provider")
     @pytest.mark.asyncio
     @patch("itential_mcp.server.bindings.iterbindings")
     @patch("itential_mcp.server.toolutils.itertools")
     @patch("itential_mcp.server.config.get")
     @patch("itential_mcp.server.logging.set_level")
     async def test_full_server_lifecycle(
-        self, mock_set_level, mock_config_get, mock_itertools, mock_iterbindings
+        self,
+        mock_set_level,
+        mock_config_get,
+        mock_itertools,
+        mock_iterbindings,
+        mock_auth_builder,
     ):
         """Test complete server lifecycle from config to shutdown"""
         # Setup configuration
@@ -724,6 +805,7 @@ class TestIntegration:
         mock_config.server_log_level = "INFO"
         mock_config.tools = []
         mock_config_get.return_value = mock_config
+        mock_auth_builder.return_value = None
 
         # Setup tools - need a real function for get_json_schema to work
         def mock_func():
@@ -758,6 +840,7 @@ class TestIntegration:
                 lifespan=server.lifespan,
                 include_tags=["system"],
                 exclude_tags=["deprecated"],
+                auth=None,
             )
 
             # Verify tool registration

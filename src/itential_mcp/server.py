@@ -17,6 +17,7 @@ from fastmcp.server.middleware.logging import LoggingMiddleware
 from fastmcp.server.middleware.timing import DetailedTimingMiddleware
 from fastmcp.server.middleware.error_handling import ErrorHandlingMiddleware
 
+from . import auth
 from . import client
 from . import config
 from . import toolutils
@@ -163,11 +164,14 @@ async def new(cfg: config.Config) -> FastMCP:
     """
     logging.info("Initializing the MCP server instance")
 
+    auth_provider = auth.build_auth_provider(cfg)
+
     # Initialize FastMCP server
     srv = FastMCP(
         name="Itential Platform MCP",
         instructions=inspect.cleandoc(INSTRUCTIONS),
         lifespan=lifespan,
+        auth=auth_provider,
         include_tags=cfg.server.get("include_tags"),
         exclude_tags=cfg.server.get("exclude_tags"),
     )

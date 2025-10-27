@@ -37,6 +37,34 @@ class TestServerDefaults:
         """Test that server exclude tags defaults to experimental,beta."""
         assert defaults.ITENTIAL_MCP_SERVER_EXCLUDE_TAGS == "experimental,beta"
 
+    def test_server_auth_type_default(self):
+        """Test that server auth type defaults to none."""
+        assert defaults.ITENTIAL_MCP_SERVER_AUTH_TYPE == "none"
+
+    def test_server_auth_jwks_uri_default(self):
+        """Test that server auth JWKS URI defaults to None."""
+        assert defaults.ITENTIAL_MCP_SERVER_AUTH_JWKS_URI is None
+
+    def test_server_auth_public_key_default(self):
+        """Test that server auth public key defaults to None."""
+        assert defaults.ITENTIAL_MCP_SERVER_AUTH_PUBLIC_KEY is None
+
+    def test_server_auth_issuer_default(self):
+        """Test that server auth issuer defaults to None."""
+        assert defaults.ITENTIAL_MCP_SERVER_AUTH_ISSUER is None
+
+    def test_server_auth_audience_default(self):
+        """Test that server auth audience defaults to None."""
+        assert defaults.ITENTIAL_MCP_SERVER_AUTH_AUDIENCE is None
+
+    def test_server_auth_algorithm_default(self):
+        """Test that server auth algorithm defaults to None."""
+        assert defaults.ITENTIAL_MCP_SERVER_AUTH_ALGORITHM is None
+
+    def test_server_auth_required_scopes_default(self):
+        """Test that server auth required scopes defaults to None."""
+        assert defaults.ITENTIAL_MCP_SERVER_AUTH_REQUIRED_SCOPES is None
+
 
 class TestPlatformDefaults:
     """Test platform configuration default values."""
@@ -97,6 +125,14 @@ class TestDefaultsModuleStructure:
             "ITENTIAL_MCP_SERVER_LOG_LEVEL",
             "ITENTIAL_MCP_SERVER_INCLUDE_TAGS",
             "ITENTIAL_MCP_SERVER_EXCLUDE_TAGS",
+            "ITENTIAL_MCP_SERVER_TOOLS_PATH",
+            "ITENTIAL_MCP_SERVER_AUTH_TYPE",
+            "ITENTIAL_MCP_SERVER_AUTH_JWKS_URI",
+            "ITENTIAL_MCP_SERVER_AUTH_PUBLIC_KEY",
+            "ITENTIAL_MCP_SERVER_AUTH_ISSUER",
+            "ITENTIAL_MCP_SERVER_AUTH_AUDIENCE",
+            "ITENTIAL_MCP_SERVER_AUTH_ALGORITHM",
+            "ITENTIAL_MCP_SERVER_AUTH_REQUIRED_SCOPES",
         ]
 
         for constant in expected_server_constants:
@@ -159,6 +195,45 @@ class TestDefaultValueTypes:
     def test_server_exclude_tags_is_none_or_string(self):
         """Test that server exclude tags is None or string."""
         value = defaults.ITENTIAL_MCP_SERVER_EXCLUDE_TAGS
+        assert value is None or isinstance(value, str)
+
+    def test_server_tools_path_is_none_or_string(self):
+        """Test that server tools path is None or string."""
+        value = defaults.ITENTIAL_MCP_SERVER_TOOLS_PATH
+        assert value is None or isinstance(value, str)
+
+    def test_server_auth_type_is_string(self):
+        """Test that server auth type is a string."""
+        assert isinstance(defaults.ITENTIAL_MCP_SERVER_AUTH_TYPE, str)
+
+    def test_server_auth_jwks_uri_is_none_or_string(self):
+        """Test that server auth JWKS URI is None or string."""
+        value = defaults.ITENTIAL_MCP_SERVER_AUTH_JWKS_URI
+        assert value is None or isinstance(value, str)
+
+    def test_server_auth_public_key_is_none_or_string(self):
+        """Test that server auth public key is None or string."""
+        value = defaults.ITENTIAL_MCP_SERVER_AUTH_PUBLIC_KEY
+        assert value is None or isinstance(value, str)
+
+    def test_server_auth_issuer_is_none_or_string(self):
+        """Test that server auth issuer is None or string."""
+        value = defaults.ITENTIAL_MCP_SERVER_AUTH_ISSUER
+        assert value is None or isinstance(value, str)
+
+    def test_server_auth_audience_is_none_or_string(self):
+        """Test that server auth audience is None or string."""
+        value = defaults.ITENTIAL_MCP_SERVER_AUTH_AUDIENCE
+        assert value is None or isinstance(value, str)
+
+    def test_server_auth_algorithm_is_none_or_string(self):
+        """Test that server auth algorithm is None or string."""
+        value = defaults.ITENTIAL_MCP_SERVER_AUTH_ALGORITHM
+        assert value is None or isinstance(value, str)
+
+    def test_server_auth_required_scopes_is_none_or_string(self):
+        """Test that server auth required scopes is None or string."""
+        value = defaults.ITENTIAL_MCP_SERVER_AUTH_REQUIRED_SCOPES
         assert value is None or isinstance(value, str)
 
     def test_platform_host_is_string(self):
