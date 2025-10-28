@@ -42,41 +42,42 @@ async def run(tool: str, params: Mapping[str, Any] | None=None) -> None:
 
         ValueError: If there are invalid parameters
     """
-    async with Client(await server.new(config.get())) as client:
-        # Basic server interaction
-        if await client.ping() is False:
-            raise ValueError("ERROR: cannot reach the server")
+    async with server.Server(config.get()) as srv:
+        async with Client(srv.mcp) as client:
+            # Basic server interaction
+            if await client.ping() is False:
+                raise ValueError("ERROR: cannot reach the server")
 
-        tools = {}
+            tools = {}
 
-        res = await client.list_tools_mcp()
+            res = await client.list_tools_mcp()
 
-        for t in res.tools:
-            tools[t.name] = t.inputSchema
+            for t in res.tools:
+                tools[t.name] = t.inputSchema
 
-        kwargs = {
-            "arguments": json.loads(params) if params else None
-        }
+            kwargs = {
+                "arguments": json.loads(params) if params else None
+            }
 
-        if tool not in tools:
-            raise ValueError(f"invalid tool: {tool}")
+            if tool not in tools:
+                raise ValueError(f"invalid tool: {tool}")
 
-        required = tools[tool].get("required") or list()
+            required = tools[tool].get("required") or list()
 
-        if required and set(required).difference((kwargs["arguments"] or {})):
-            for item in required:
-                if kwargs["arguments"] is None or item not in kwargs["arguments"]:
-                    raise ValueError(f"missing required property: {item}")
+            if required and set(required).difference((kwargs["arguments"] or {})):
+                for item in required:
+                    if kwargs["arguments"] is None or item not in kwargs["arguments"]:
+                        raise ValueError(f"missing required property: {item}")
 
-        if kwargs["arguments"]:
-            if set(kwargs["arguments"]).difference(tools[tool]["properties"]):
-                for item in kwargs["arguments"]:
-                    if item not in tools[tool]["properties"]:
-                        raise ValueError(f"invalid argument: {item}")
+            if kwargs["arguments"]:
+                if set(kwargs["arguments"]).difference(tools[tool]["properties"]):
+                    for item in kwargs["arguments"]:
+                        if item not in tools[tool]["properties"]:
+                            raise ValueError(f"invalid argument: {item}")
 
 
-        # Execute operations
-        result = await client.call_tool(tool, **kwargs)
+            # Execute operations
+            result = await client.call_tool(tool, **kwargs)
 
-        data = json.loads(result.content[0].text)
-        print(f"\n{json.dumps(data, indent=4)}")
+            data = json.loads(result.content[0].text)
+            print(f"\n{json.dumps(data, indent=4)}")

@@ -6,7 +6,6 @@ import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 
 from itential_mcp import server
-from itential_mcp.config import Config
 from itential_mcp.client import PlatformClient
 from itential_mcp.middleware.bindings import BindingsMiddleware
 
@@ -174,320 +173,15 @@ class TestBindingsMiddleware:
         assert "_tool_config" not in mock_context.message.arguments
 
 
-class TestNew:
-    """Test the new() function for creating FastMCP instances"""
-
-    @patch("itential_mcp.server.auth.build_auth_provider")
-    @patch("itential_mcp.server.bindings.iterbindings")
-    @patch("itential_mcp.server.toolutils.itertools")
-    @patch("itential_mcp.server.logging.get_logger")
-    @patch("itential_mcp.server.FastMCP")
-    @pytest.mark.asyncio
-    async def test_new_creates_fastmcp_with_basic_config(
-        self,
-        mock_fastmcp,
-        mock_logger,
-        mock_itertools,
-        mock_iterbindings,
-        mock_auth_builder,
-    ):
-        """Test new() creates FastMCP with basic configuration"""
-        mock_config = MagicMock(spec=Config)
-        mock_config.server = {
-            "include_tags": ["tag1", "tag2"],
-            "exclude_tags": ["tag3"],
-            "tools_path": None,
-        }
-        mock_config.tools = []
-        mock_auth_builder.return_value = None
-
-        mock_itertools.return_value = []
-
-        async def empty_aiter():
-            return
-            yield  # unreachable but makes this an async generator
-
-        mock_iterbindings.return_value = empty_aiter()
-
-        mock_mcp_instance = MagicMock()
-        mock_fastmcp.return_value = mock_mcp_instance
-
-        result = await server.new(mock_config)
-
-        mock_fastmcp.assert_called_once_with(
-            name="Itential Platform MCP",
-            instructions=server.inspect.cleandoc(server.INSTRUCTIONS),
-            lifespan=server.lifespan,
-            include_tags=["tag1", "tag2"],
-            exclude_tags=["tag3"],
-            auth=None,
-        )
-        assert result == mock_mcp_instance
-
-    @patch("itential_mcp.server.auth.build_auth_provider")
-    @patch("itential_mcp.server.bindings.iterbindings")
-    @patch("itential_mcp.server.toolutils.itertools")
-    @patch("itential_mcp.server.logging.get_logger")
-    @patch("itential_mcp.server.FastMCP")
-    @pytest.mark.asyncio
-    async def test_new_handles_none_tags(
-        self,
-        mock_fastmcp,
-        mock_logger,
-        mock_itertools,
-        mock_iterbindings,
-        mock_auth_builder,
-    ):
-        """Test new() handles None values for tags"""
-        mock_config = MagicMock(spec=Config)
-        mock_config.server = {"include_tags": None, "exclude_tags": None}
-        mock_config.tools = []
-        mock_auth_builder.return_value = None
-
-        mock_itertools.return_value = []
-
-        async def empty_aiter():
-            return
-            yield  # unreachable but makes this an async generator
-
-        mock_iterbindings.return_value = empty_aiter()
-
-        mock_mcp_instance = MagicMock()
-        mock_fastmcp.return_value = mock_mcp_instance
-
-        await server.new(mock_config)
-
-        mock_fastmcp.assert_called_once_with(
-            name="Itential Platform MCP",
-            instructions=server.inspect.cleandoc(server.INSTRUCTIONS),
-            lifespan=server.lifespan,
-            include_tags=None,
-            exclude_tags=None,
-            auth=None,
-        )
-
-    @patch("itential_mcp.server.auth.build_auth_provider")
-    @patch("itential_mcp.server.bindings.iterbindings")
-    @patch("itential_mcp.server.toolutils.itertools")
-    @patch("itential_mcp.server.logging.get_logger")
-    @patch("itential_mcp.server.FastMCP")
-    @pytest.mark.asyncio
-    async def test_new_handles_empty_server_config(
-        self,
-        mock_fastmcp,
-        mock_logger,
-        mock_itertools,
-        mock_iterbindings,
-        mock_auth_builder,
-    ):
-        """Test new() handles empty server configuration"""
-        mock_config = MagicMock(spec=Config)
-        mock_config.server = {}
-        mock_config.tools = []
-        mock_auth_builder.return_value = None
-
-        mock_itertools.return_value = []
-
-        async def empty_aiter():
-            return
-            yield  # unreachable but makes this an async generator
-
-        mock_iterbindings.return_value = empty_aiter()
-
-        mock_mcp_instance = MagicMock()
-        mock_fastmcp.return_value = mock_mcp_instance
-
-        await server.new(mock_config)
-
-        mock_fastmcp.assert_called_once_with(
-            name="Itential Platform MCP",
-            instructions=server.inspect.cleandoc(server.INSTRUCTIONS),
-            lifespan=server.lifespan,
-            include_tags=None,
-            exclude_tags=None,
-            auth=None,
-        )
-
-    @patch("itential_mcp.server.auth.build_auth_provider")
-    @patch("itential_mcp.server.bindings.iterbindings")
-    @patch("itential_mcp.server.toolutils.itertools")
-    @patch("itential_mcp.server.logging.get_logger")
-    @patch("itential_mcp.server.FastMCP")
-    @pytest.mark.asyncio
-    async def test_new_with_custom_tools_path(
-        self,
-        mock_fastmcp,
-        mock_logger,
-        mock_itertools,
-        mock_iterbindings,
-        mock_auth_builder,
-    ):
-        """Test new() with custom tools_path configuration"""
-        mock_config = MagicMock(spec=Config)
-        mock_config.server = {
-            "include_tags": None,
-            "exclude_tags": None,
-            "tools_path": "/custom/tools/path",
-        }
-        mock_config.tools = []
-        mock_auth_builder.return_value = None
-
-        mock_itertools.return_value = []
-
-        async def empty_aiter():
-            return
-            yield  # unreachable but makes this an async generator
-
-        mock_iterbindings.return_value = empty_aiter()
-
-        mock_mcp_instance = MagicMock()
-        mock_fastmcp.return_value = mock_mcp_instance
-
-        result = await server.new(mock_config)
-
-        # Should call itertools twice - once for default, once for custom path
-        assert mock_itertools.call_count == 2
-        mock_fastmcp.assert_called_once()
-        assert result == mock_mcp_instance
-
-    @patch("itential_mcp.server.auth.build_auth_provider")
-    @patch("itential_mcp.server.bindings.iterbindings")
-    @patch("itential_mcp.server.toolutils.itertools")
-    @patch("itential_mcp.server.logging.get_logger")
-    @patch("itential_mcp.server.FastMCP")
-    @pytest.mark.asyncio
-    async def test_new_without_custom_tools_path(
-        self,
-        mock_fastmcp,
-        mock_logger,
-        mock_itertools,
-        mock_iterbindings,
-        mock_auth_builder,
-    ):
-        """Test new() without custom tools_path (None)"""
-        mock_config = MagicMock(spec=Config)
-        mock_config.server = {
-            "include_tags": None,
-            "exclude_tags": None,
-            "tools_path": None,
-        }
-        mock_config.tools = []
-        mock_auth_builder.return_value = None
-
-        mock_itertools.return_value = []
-
-        async def empty_aiter():
-            return
-            yield  # unreachable but makes this an async generator
-
-        mock_iterbindings.return_value = empty_aiter()
-
-        mock_mcp_instance = MagicMock()
-        mock_fastmcp.return_value = mock_mcp_instance
-
-        await server.new(mock_config)
-
-        # Should only call itertools once for default path
-        assert mock_itertools.call_count == 1
-
-    @patch("itential_mcp.server.auth.build_auth_provider")
-    @patch("itential_mcp.server.bindings.iterbindings")
-    @patch("itential_mcp.server.toolutils.itertools")
-    @patch("itential_mcp.server.toolutils.get_json_schema")
-    @patch("itential_mcp.server.logging.get_logger")
-    @patch("itential_mcp.server.FastMCP")
-    @pytest.mark.asyncio
-    async def test_new_tool_with_missing_output_schema(
-        self,
-        mock_fastmcp,
-        mock_logger,
-        mock_get_json_schema,
-        mock_itertools,
-        mock_iterbindings,
-        mock_auth_builder,
-    ):
-        """Test new() handles tools with missing or invalid output_schema"""
-        mock_config = MagicMock(spec=Config)
-        mock_config.server = {
-            "include_tags": None,
-            "exclude_tags": None,
-            "tools_path": None,
-        }
-        mock_config.tools = []
-        mock_auth_builder.return_value = None
-        mock_auth_builder.return_value = None
-
-        # Mock a tool function
-        def mock_tool():
-            """Test tool function"""
-            pass
-
-        mock_tool.__name__ = "test_tool"
-        mock_itertools.return_value = [(mock_tool, {"test"})]
-
-        # Mock get_json_schema to raise ValueError (missing/invalid schema)
-        mock_get_json_schema.side_effect = ValueError("Missing schema")
-
-        async def empty_aiter():
-            return
-            yield  # unreachable but makes this an async generator
-
-        mock_iterbindings.return_value = empty_aiter()
-
-        mock_mcp_instance = MagicMock()
-        mock_fastmcp.return_value = mock_mcp_instance
-        mock_logger_instance = MagicMock()
-        mock_logger.return_value = mock_logger_instance
-
-        await server.new(mock_config)
-
-    @patch("itential_mcp.server.auth.build_auth_provider")
-    @patch("itential_mcp.server.bindings.iterbindings")
-    @patch("itential_mcp.server.toolutils.itertools")
-    @patch("itential_mcp.server.logging.get_logger")
-    @patch("itential_mcp.server.FastMCP")
-    @pytest.mark.asyncio
-    async def test_new_includes_auth_provider_when_configured(
-        self,
-        mock_fastmcp,
-        mock_logger,
-        mock_itertools,
-        mock_iterbindings,
-        mock_auth_builder,
-    ):
-        """Test new() passes configured auth provider into FastMCP."""
-        mock_config = MagicMock(spec=Config)
-        mock_config.server = {"include_tags": None, "exclude_tags": None, "tools_path": None}
-        mock_config.tools = []
-
-        mock_auth_provider = MagicMock()
-        mock_auth_builder.return_value = mock_auth_provider
-        mock_itertools.return_value = []
-
-        async def empty_aiter():
-            return
-            yield
-
-        mock_iterbindings.return_value = empty_aiter()
-
-        mock_mcp_instance = MagicMock()
-        mock_fastmcp.return_value = mock_mcp_instance
-
-        await server.new(mock_config)
-
-        mock_fastmcp.assert_called_once()
-        kwargs = mock_fastmcp.call_args.kwargs
-        assert kwargs["auth"] is mock_auth_provider
-
 
 class TestRun:
     """Test the run() function for server execution"""
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.new", new_callable=AsyncMock)
+    @patch("itential_mcp.server.Server")
     @patch("itential_mcp.server.config.get")
     @patch("itential_mcp.server.logging.set_level")
-    async def test_run_stdio_transport_success(self, mock_set_level, mock_config_get, mock_new):
+    async def test_run_stdio_transport_success(self, mock_set_level, mock_config_get, mock_server_class):
         """Test successful server run with stdio transport"""
         # Setup mocks
         mock_config = MagicMock()
@@ -495,9 +189,12 @@ class TestRun:
         mock_config.server_log_level = "INFO"
         mock_config_get.return_value = mock_config
 
-        mock_mcp = MagicMock()
-        mock_mcp.run_async = AsyncMock()
-        mock_new.return_value = mock_mcp
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.run = AsyncMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
 
         # Execute
         await server.run()
@@ -505,18 +202,17 @@ class TestRun:
         # Verify
         mock_config_get.assert_called_once()
         mock_set_level.assert_called_once_with("INFO")
-        mock_new.assert_awaited_once_with(mock_config)
-
-        # Check server was run with correct parameters
-        mock_mcp.run_async.assert_called_once_with(transport="stdio", show_banner=False)
+        mock_server_class.assert_called_once_with(mock_config)
+        mock_server_instance.__aenter__.assert_called_once()
+        mock_server_instance.run.assert_called_once()
+        mock_server_instance.__aexit__.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.toolutils.itertools")
-    @patch("itential_mcp.server.new", new_callable=AsyncMock)
+    @patch("itential_mcp.server.Server")
     @patch("itential_mcp.server.config.get")
     @patch("itential_mcp.server.logging.set_level")
     async def test_run_sse_transport_success(
-        self, mock_set_level, mock_config_get, mock_new, mock_itertools
+        self, mock_set_level, mock_config_get, mock_server_class
     ):
         """Test successful server run with SSE transport"""
         mock_config = MagicMock()
@@ -529,26 +225,25 @@ class TestRun:
         mock_config.server_log_level = "INFO"
         mock_config_get.return_value = mock_config
 
-        mock_mcp = MagicMock()
-        mock_mcp.run_async = AsyncMock()
-        mock_new.return_value = mock_mcp
-
-        mock_itertools.return_value = []
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.run = AsyncMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
 
         await server.run()
 
         mock_set_level.assert_called_once_with("INFO")
-        mock_mcp.run_async.assert_called_once_with(
-            transport="sse", host="0.0.0.0", port=8000, show_banner=False
-        )
+        mock_server_class.assert_called_once_with(mock_config)
+        mock_server_instance.run.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.toolutils.itertools")
-    @patch("itential_mcp.server.new", new_callable=AsyncMock)
+    @patch("itential_mcp.server.Server")
     @patch("itential_mcp.server.config.get")
     @patch("itential_mcp.server.logging.set_level")
     async def test_run_http_transport_success(
-        self, mock_set_level, mock_config_get, mock_new, mock_itertools
+        self, mock_set_level, mock_config_get, mock_server_class
     ):
         """Test successful server run with HTTP transport"""
         mock_config = MagicMock()
@@ -562,36 +257,35 @@ class TestRun:
         mock_config.server_log_level = "DEBUG"
         mock_config_get.return_value = mock_config
 
-        mock_mcp = MagicMock()
-        mock_mcp.run_async = AsyncMock()
-        mock_new.return_value = mock_mcp
-
-        mock_itertools.return_value = []
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.run = AsyncMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
 
         await server.run()
 
         mock_set_level.assert_called_once_with("DEBUG")
-        mock_mcp.run_async.assert_called_once_with(
-            transport="http",
-            host="localhost",
-            port=3000,
-            show_banner=False,
-            path="/mcp",
-        )
+        mock_server_class.assert_called_once_with(mock_config)
+        mock_server_instance.run.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.new", new_callable=AsyncMock)
+    @patch("itential_mcp.server.Server")
     @patch("itential_mcp.server.config.get")
     @patch("itential_mcp.server.logging.set_level")
-    async def test_run_tool_registration_failure(self, mock_set_level, mock_config_get, mock_new):
-        """Test server exits when tool registration fails in new()"""
+    async def test_run_tool_registration_failure(self, mock_set_level, mock_config_get, mock_server_class):
+        """Test server exits when tool registration fails in Server context manager"""
         mock_config = MagicMock()
         mock_config.server = {"transport": "stdio"}
         mock_config.server_log_level = "INFO"
         mock_config_get.return_value = mock_config
 
-        # Make new() raise an exception (simulates tool registration failure)
-        mock_new.side_effect = Exception("Tool import failed")
+        # Make Server.__aenter__ raise an exception (simulates tool registration failure)
+        mock_server_instance = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(side_effect=Exception("Tool import failed"))
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
 
         with patch("builtins.print") as mock_print, patch("sys.exit") as mock_exit:
             await server.run()
@@ -603,12 +297,11 @@ class TestRun:
             mock_exit.assert_called_with(1)
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.toolutils.itertools")
-    @patch("itential_mcp.server.new", new_callable=AsyncMock)
+    @patch("itential_mcp.server.Server")
     @patch("itential_mcp.server.config.get")
     @patch("itential_mcp.server.logging.set_level")
     async def test_run_keyboard_interrupt(
-        self, mock_set_level, mock_config_get, mock_new, mock_itertools
+        self, mock_set_level, mock_config_get, mock_server_class
     ):
         """Test server handles KeyboardInterrupt gracefully"""
         mock_config = MagicMock()
@@ -616,11 +309,12 @@ class TestRun:
         mock_config.server_log_level = "INFO"
         mock_config_get.return_value = mock_config
 
-        mock_mcp = MagicMock()
-        mock_mcp.run_async = AsyncMock(side_effect=KeyboardInterrupt())
-        mock_new.return_value = mock_mcp
-
-        mock_itertools.return_value = []
+        # Setup server instance mock to raise KeyboardInterrupt
+        mock_server_instance = MagicMock()
+        mock_server_instance.run = AsyncMock(side_effect=KeyboardInterrupt())
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
 
         with patch("builtins.print") as mock_print, patch("sys.exit") as mock_exit:
             await server.run()
@@ -629,12 +323,11 @@ class TestRun:
             mock_exit.assert_called_with(0)
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.toolutils.itertools")
-    @patch("itential_mcp.server.new", new_callable=AsyncMock)
+    @patch("itential_mcp.server.Server")
     @patch("itential_mcp.server.config.get")
     @patch("itential_mcp.server.logging.set_level")
     async def test_run_unexpected_exception(
-        self, mock_set_level, mock_config_get, mock_new, mock_itertools
+        self, mock_set_level, mock_config_get, mock_server_class
     ):
         """Test server handles unexpected exceptions"""
         mock_config = MagicMock()
@@ -642,11 +335,12 @@ class TestRun:
         mock_config.server_log_level = "INFO"
         mock_config_get.return_value = mock_config
 
-        mock_mcp = MagicMock()
-        mock_mcp.run_async = AsyncMock(side_effect=RuntimeError("Unexpected error"))
-        mock_new.return_value = mock_mcp
-
-        mock_itertools.return_value = []
+        # Setup server instance mock to raise RuntimeError
+        mock_server_instance = MagicMock()
+        mock_server_instance.run = AsyncMock(side_effect=RuntimeError("Unexpected error"))
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
 
         with patch("builtins.print") as mock_print, patch("sys.exit") as mock_exit:
             await server.run()
@@ -657,64 +351,68 @@ class TestRun:
             mock_exit.assert_called_with(1)
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.toolutils.itertools")
-    @patch("itential_mcp.server.new", new_callable=AsyncMock)
+    @patch("itential_mcp.server.Server")
     @patch("itential_mcp.server.config.get")
     @patch("itential_mcp.server.logging.set_level")
-    async def test_run_no_tools_loaded(self, mock_set_level, mock_config_get, mock_new, mock_itertools):
+    async def test_run_no_tools_loaded(self, mock_set_level, mock_config_get, mock_server_class):
         """Test server runs successfully even with no tools"""
         mock_config = MagicMock()
         mock_config.server = {"transport": "stdio"}
         mock_config.server_log_level = "INFO"
         mock_config_get.return_value = mock_config
 
-        mock_mcp = MagicMock()
-        mock_mcp.run_async = AsyncMock()
-        mock_new.return_value = mock_mcp
-
-        # No tools returned
-        mock_itertools.return_value = []
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.run = AsyncMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
 
         await server.run()
 
-        # Should not call mcp.tool since there are no tools
-        mock_mcp.tool.assert_not_called()
-        mock_mcp.run_async.assert_called_once()
+        mock_server_class.assert_called_once_with(mock_config)
+        mock_server_instance.run.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.new", new_callable=AsyncMock)
+    @patch("itential_mcp.server.Server")
     @patch("itential_mcp.server.config.get")
     @patch("itential_mcp.server.logging.set_level")
-    async def test_run_multiple_tools_registration(self, mock_set_level, mock_config_get, mock_new):
-        """Test server properly uses the configured MCP instance from new()"""
+    async def test_run_multiple_tools_registration(self, mock_set_level, mock_config_get, mock_server_class):
+        """Test server properly uses the configured Server instance"""
         mock_config = MagicMock()
         mock_config.server = {"transport": "stdio"}
         mock_config.server_log_level = "INFO"
         mock_config_get.return_value = mock_config
 
-        mock_mcp = MagicMock()
-        mock_mcp.run_async = AsyncMock()
-        mock_new.return_value = mock_mcp
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.run = AsyncMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
 
         await server.run()
 
-        # Verify new() was called with the config and the MCP instance was used
-        mock_new.assert_awaited_once_with(mock_config)
-        mock_mcp.run_async.assert_called_once_with(transport="stdio", show_banner=False)
+        # Verify Server was called with the config and the server instance was used
+        mock_server_class.assert_called_once_with(mock_config)
+        mock_server_instance.run.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.new", new_callable=AsyncMock)
+    @patch("itential_mcp.server.Server")
     @patch("itential_mcp.server.config.get")
     @patch("itential_mcp.server.logging.set_level")
-    async def test_run_partial_tool_failure(self, mock_set_level, mock_config_get, mock_new):
-        """Test that server fails if new() fails due to tool registration issues"""
+    async def test_run_partial_tool_failure(self, mock_set_level, mock_config_get, mock_server_class):
+        """Test that server fails if Server context manager fails due to tool registration issues"""
         mock_config = MagicMock()
         mock_config.server = {"transport": "stdio"}
         mock_config.server_log_level = "INFO"
         mock_config_get.return_value = mock_config
 
-        # Make new() fail with an ImportError (simulating tool import failure)
-        mock_new.side_effect = ImportError("Failed to import third tool")
+        # Make Server.__aenter__ fail with an ImportError (simulating tool import failure)
+        mock_server_instance = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(side_effect=ImportError("Failed to import third tool"))
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
 
         with patch("builtins.print") as mock_print, patch("sys.exit") as mock_exit:
             await server.run()
@@ -726,12 +424,11 @@ class TestRun:
             mock_exit.assert_called_with(1)
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.toolutils.itertools")
-    @patch("itential_mcp.server.new", new_callable=AsyncMock)
+    @patch("itential_mcp.server.Server")
     @patch("itential_mcp.server.config.get")
     @patch("itential_mcp.server.logging.set_level")
     async def test_run_config_variations(
-        self, mock_set_level, mock_config_get, mock_new, mock_itertools
+        self, mock_set_level, mock_config_get, mock_server_class
     ):
         """Test various configuration scenarios"""
         # Test with minimal config
@@ -740,23 +437,24 @@ class TestRun:
         mock_config.server_log_level = "INFO"
         mock_config_get.return_value = mock_config
 
-        mock_mcp = MagicMock()
-        mock_mcp.run_async = AsyncMock()
-        mock_new.return_value = mock_mcp
-
-        mock_itertools.return_value = []
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.run = AsyncMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
 
         await server.run()
 
-        mock_mcp.run_async.assert_called_with(transport="stdio", show_banner=False)
+        mock_server_class.assert_called_once_with(mock_config)
+        mock_server_instance.run.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.toolutils.itertools")
-    @patch("itential_mcp.server.new", new_callable=AsyncMock)
+    @patch("itential_mcp.server.Server")
     @patch("itential_mcp.server.config.get")
     @patch("itential_mcp.server.logging.set_level")
     async def test_run_missing_server_config_keys(
-        self, mock_set_level, mock_config_get, mock_new, mock_itertools
+        self, mock_set_level, mock_config_get, mock_server_class
     ):
         """Test server handles missing configuration keys gracefully"""
         mock_config = MagicMock()
@@ -764,18 +462,17 @@ class TestRun:
         mock_config.server_log_level = "INFO"
         mock_config_get.return_value = mock_config
 
-        mock_mcp = MagicMock()
-        mock_mcp.run_async = AsyncMock()
-        mock_new.return_value = mock_mcp
-
-        mock_itertools.return_value = []
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.run = AsyncMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
 
         await server.run()
 
-        # Should call with None values for missing keys
-        mock_mcp.run_async.assert_called_with(
-            transport="sse", host=None, port=None, show_banner=False
-        )
+        mock_server_class.assert_called_once_with(mock_config)
+        mock_server_instance.run.assert_called_once()
 
 
 class TestIntegration:
