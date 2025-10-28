@@ -40,7 +40,6 @@ run_command or create_resource will indicate your operational scope.
 """
 
 
-
 @asynccontextmanager
 async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
     """
@@ -67,97 +66,128 @@ async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
         pass
 
 
-async def new(cfg: config.Config) -> FastMCP:
-    """Initialize a new FastMCP server instance with Itential Platform integration.
+class Server:
 
-    Creates and configures a FastMCP server with comprehensive Itential Platform
-    integration including tool discovery, middleware setup, and binding registration.
-    The server is configured with tool filtering, error handling, timing, logging,
-    and dynamic tool injection capabilities.
+    def __init__(self, cfg: config.Config):
+        self.config = cfg
+        self.mcp = None
 
-    The function performs the following setup:
-    - Configures FastMCP server with name, instructions, and lifespan management
-    - Adds middleware stack for error handling, timing, logging, and tool injection
-    - Registers all discovered tools from the tools directory with appropriate tags
-    - Registers dynamic tool bindings based on configuration
-    - Sets up JSON schema validation for tool outputs where available
+    async def __aenter__(self):
+        """Async context manager entry point.
 
-    Args:
-        cfg (config.Config): The application configuration containing server settings,
-            tool definitions, and platform connection details.
+        Initializes the server, tools, and bindings when entering the context.
 
-    Returns:
-        FastMCP: Fully configured server instance ready for execution with all
-            tools registered and middleware configured.
+        Returns:
+            Server: The initialized server instance
 
-    Raises:
-        Exception: If tool discovery, binding registration, or server configuration fails.
+        Raises:
+            Exception: If server initialization fails
+        """
+        await self.__init_server__()
+        await self.__init_tools__()
+        await self.__init_bindings__()
+        return self
 
-    Examples:
-        >>> config = config.get()
-        >>> server = await new(config)
-        >>> await server.run_async(transport="stdio")
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit point.
 
-    Note:
-        This function should only be called once during server initialization.
-        Multiple calls may result in duplicate tool registrations.
-    """
-    logging.info("Initializing the MCP server instance")
+        Performs cleanup when exiting the context.
 
-    auth_provider = auth.build_auth_provider(cfg)
+        Args:
+            exc_type: Exception type if an exception occurred
+            exc_val: Exception value if an exception occurred
+            exc_tb: Exception traceback if an exception occurred
 
-    # Initialize FastMCP server
-    srv = FastMCP(
-        name="Itential Platform MCP",
-        instructions=inspect.cleandoc(INSTRUCTIONS),
-        lifespan=lifespan,
-        auth=auth_provider,
-        include_tags=cfg.server.get("include_tags"),
-        exclude_tags=cfg.server.get("exclude_tags"),
-    )
+        Returns:
+            None
+        """
+        # Cleanup code if needed
+        pass
 
-    logger = logging.get_logger()
+    async def __init_server__(self) -> None:
+        """Initialize a new FastMCP server instance with Itential Platform integration."""
+        logging.info("Initializing the MCP server instance")
 
-    srv.add_middleware(ErrorHandlingMiddleware(logger=logger))
-    srv.add_middleware(DetailedTimingMiddleware(logger=logger))
-    srv.add_middleware(LoggingMiddleware(logger=logger, include_payloads=True, max_payload_length=1000))
-    srv.add_middleware(BindingsMiddleware(cfg))
+        auth_provider = auth.build_auth_provider(self.config)
 
-    logging.info("Adding tools to MCP server")
-
-    tool_paths = [pathlib.Path(__file__).parent / "tools"]
-
-    if cfg.server.get("tools_path") is not None:
-        tool_paths.append(
-            pathlib.Path(cfg.server.get("tools_path")).resolve()
+        # Initialize FastMCP server
+        self.mcp = FastMCP(
+            name="Itential Platform MCP",
+            instructions=inspect.cleandoc(INSTRUCTIONS),
+            lifespan=lifespan,
+            auth=auth_provider,
+            include_tags=self.config.server.get("include_tags"),
+            exclude_tags=self.config.server.get("exclude_tags"),
         )
 
-    for ele in tool_paths:
-        logger.info(f"Adding MCP Tools from {ele}")
-        for f, tags in toolutils.itertools(ele):
-            tags.add("default")
-            kwargs = {"tags": tags}
+        logger = logging.get_logger()
 
-            try:
-                schema = toolutils.get_json_schema(f)
-                if schema["type"] == "object":
-                    kwargs["output_schema"] = schema
+        self.mcp.add_middleware(ErrorHandlingMiddleware(logger=logger))
+        self.mcp.add_middleware(DetailedTimingMiddleware(logger=logger))
+        self.mcp.add_middleware(LoggingMiddleware(logger=logger, include_payloads=True, max_payload_length=1000))
+        self.mcp.add_middleware(BindingsMiddleware(self.config))
 
-            except ValueError:
-                # tool does not have an output_schema defined
-                logger.warning(f"tool {f.__name__} has a missing or invalid output_schema")
-                pass
+    async def __init_tools__(self) -> None:
+        """Initialize tools."""
+        logging.info("Adding tools to MCP server")
 
-            srv.tool(f, **kwargs)
-            logging.debug(f"Successfully added tool: {f.__name__}")
+        tool_paths = [pathlib.Path(__file__).parent / "tools"]
 
-    logging.info("Creating dynamic bindings for tools")
-    async for fn, kwargs in bindings.iterbindings(cfg):
-        srv.tool(fn, **kwargs)
-        logging.debug(f"Successfully added tool: {kwargs['name']}")
-    logging.info("Dynamic tool bindings is now complete")
+        if self.config.server.get("tools_path") is not None:
+            tool_paths.append(
+                pathlib.Path(self.config.server.get("tools_path")).resolve()
+            )
 
-    return srv
+        logger = logging.get_logger()
+
+        for ele in tool_paths:
+            logger.info(f"Adding MCP Tools from {ele}")
+            for f, tags in toolutils.itertools(ele):
+                tags.add("default")
+                kwargs = {"tags": tags}
+
+                try:
+                    schema = toolutils.get_json_schema(f)
+                    if schema["type"] == "object":
+                        kwargs["output_schema"] = schema
+
+                except ValueError:
+                    # tool does not have an output_schema defined
+                    logger.warning(f"tool {f.__name__} has a missing or invalid output_schema")
+                    pass
+
+                self.mcp.tool(f, **kwargs)
+                logging.debug(f"Successfully added tool: {f.__name__}")
+
+    async def __init_bindings__(self) -> None:
+        """Initialize bindings."""
+        logging.info("Creating dynamic bindings for tools")
+        async for fn, kwargs in bindings.iterbindings(self.config):
+            self.mcp.tool(fn, **kwargs)
+            logging.debug(f"Successfully added tool: {kwargs['name']}")
+        logging.info("Dynamic tool bindings is now complete")
+
+    async def run(self):
+        """Run the server."""
+        kwargs = {
+            "transport": self.config.server.get("transport"),
+            "show_banner": False
+        }
+
+        if kwargs["transport"] in ("sse", "http"):
+            kwargs.update(
+                {
+                    "host": self.config.server.get("host"),
+                    "port": self.config.server.get("port"),
+                }
+            )
+
+            if kwargs["transport"] == "http":
+                kwargs["path"] = self.config.server.get("path")
+
+        return await self.mcp.run_async(**kwargs)
+
+
 
 
 async def run() -> int:
@@ -199,25 +229,8 @@ async def run() -> int:
 
         logging.set_level(cfg.server_log_level)
 
-        mcp = await new(cfg)
-
-        kwargs = {
-            "transport": cfg.server.get("transport"),
-            "show_banner": False
-        }
-
-        if kwargs["transport"] in ("sse", "http"):
-            kwargs.update(
-                {
-                    "host": cfg.server.get("host"),
-                    "port": cfg.server.get("port"),
-                }
-            )
-
-            if kwargs["transport"] == "http":
-                kwargs["path"] = cfg.server.get("path")
-
-        await mcp.run_async(**kwargs)
+        async with Server(cfg) as srv:
+            await srv.run()
 
     except KeyboardInterrupt:
         print("Shutting down the server")

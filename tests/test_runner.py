@@ -26,16 +26,20 @@ class TestRun:
     @pytest.mark.asyncio
     @patch('sys.stdout', new_callable=StringIO)
     @patch('itential_mcp.runner.Client')
-    @patch('itential_mcp.runner.server.new')
+    @patch('itential_mcp.runner.server.Server')
     @patch('itential_mcp.runner.config.get')
-    async def test_run_basic_tool_no_params(self, mock_config_get, mock_server_new, mock_client_class, mock_stdout):
+    async def test_run_basic_tool_no_params(self, mock_config_get, mock_server_class, mock_client_class, mock_stdout):
         """Test running a tool without parameters"""
         # Setup mocks
         mock_config = MagicMock()
         mock_config_get.return_value = mock_config
         
-        mock_server = MagicMock()
-        mock_server_new.return_value = mock_server
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
         
         mock_client = AsyncMock()
         mock_client.ping.return_value = True
@@ -66,7 +70,7 @@ class TestRun:
         
         # Verify
         mock_config_get.assert_called_once()
-        mock_server_new.assert_called_once_with(mock_config)
+        mock_server_class.assert_called_once_with(mock_config)
         mock_client.ping.assert_called_once()
         mock_client.list_tools_mcp.assert_called_once()
         mock_client.call_tool.assert_called_once_with("test_tool", arguments=None)
@@ -78,16 +82,20 @@ class TestRun:
     @pytest.mark.asyncio
     @patch('sys.stdout', new_callable=StringIO)
     @patch('itential_mcp.runner.Client')
-    @patch('itential_mcp.runner.server.new')
+    @patch('itential_mcp.runner.server.Server')
     @patch('itential_mcp.runner.config.get')
-    async def test_run_tool_with_params(self, mock_config_get, mock_server_new, mock_client_class, mock_stdout):
+    async def test_run_tool_with_params(self, mock_config_get, mock_server_class, mock_client_class, mock_stdout):
         """Test running a tool with parameters"""
         # Setup mocks
         mock_config = MagicMock()
         mock_config_get.return_value = mock_config
         
-        mock_server = MagicMock()
-        mock_server_new.return_value = mock_server
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
         
         mock_client = AsyncMock()
         mock_client.ping.return_value = True
@@ -131,16 +139,20 @@ class TestRun:
 
     @pytest.mark.asyncio
     @patch('itential_mcp.runner.Client')
-    @patch('itential_mcp.runner.server.new')
+    @patch('itential_mcp.runner.server.Server')
     @patch('itential_mcp.runner.config.get')
-    async def test_run_server_ping_failure(self, mock_config_get, mock_server_new, mock_client_class):
+    async def test_run_server_ping_failure(self, mock_config_get, mock_server_class, mock_client_class):
         """Test failure when server ping fails"""
         # Setup mocks
         mock_config = MagicMock()
         mock_config_get.return_value = mock_config
         
-        mock_server = MagicMock()
-        mock_server_new.return_value = mock_server
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
         
         mock_client = AsyncMock()
         mock_client.ping.return_value = False
@@ -158,16 +170,20 @@ class TestRun:
 
     @pytest.mark.asyncio
     @patch('itential_mcp.runner.Client')
-    @patch('itential_mcp.runner.server.new')
+    @patch('itential_mcp.runner.server.Server')
     @patch('itential_mcp.runner.config.get')
-    async def test_run_invalid_tool(self, mock_config_get, mock_server_new, mock_client_class):
+    async def test_run_invalid_tool(self, mock_config_get, mock_server_class, mock_client_class):
         """Test running an invalid/non-existent tool"""
         # Setup mocks
         mock_config = MagicMock()
         mock_config_get.return_value = mock_config
         
-        mock_server = MagicMock()
-        mock_server_new.return_value = mock_server
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
         
         mock_client = AsyncMock()
         mock_client.ping.return_value = True
@@ -194,16 +210,20 @@ class TestRun:
 
     @pytest.mark.asyncio
     @patch('itential_mcp.runner.Client')
-    @patch('itential_mcp.runner.server.new')
+    @patch('itential_mcp.runner.server.Server')
     @patch('itential_mcp.runner.config.get')
-    async def test_run_missing_required_params(self, mock_config_get, mock_server_new, mock_client_class):
+    async def test_run_missing_required_params(self, mock_config_get, mock_server_class, mock_client_class):
         """Test running a tool with missing required parameters"""
         # Setup mocks
         mock_config = MagicMock()
         mock_config_get.return_value = mock_config
         
-        mock_server = MagicMock()
-        mock_server_new.return_value = mock_server
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
         
         mock_client = AsyncMock()
         mock_client.ping.return_value = True
@@ -240,16 +260,20 @@ class TestRun:
 
     @pytest.mark.asyncio
     @patch('itential_mcp.runner.Client')
-    @patch('itential_mcp.runner.server.new')
+    @patch('itential_mcp.runner.server.Server')
     @patch('itential_mcp.runner.config.get')
-    async def test_run_invalid_params(self, mock_config_get, mock_server_new, mock_client_class):
+    async def test_run_invalid_params(self, mock_config_get, mock_server_class, mock_client_class):
         """Test running a tool with invalid parameters"""
         # Setup mocks
         mock_config = MagicMock()
         mock_config_get.return_value = mock_config
         
-        mock_server = MagicMock()
-        mock_server_new.return_value = mock_server
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
         
         mock_client = AsyncMock()
         mock_client.ping.return_value = True
@@ -282,16 +306,20 @@ class TestRun:
     @pytest.mark.asyncio
     @patch('sys.stdout', new_callable=StringIO)
     @patch('itential_mcp.runner.Client')
-    @patch('itential_mcp.runner.server.new')
+    @patch('itential_mcp.runner.server.Server')
     @patch('itential_mcp.runner.config.get')
-    async def test_run_tool_no_required_params(self, mock_config_get, mock_server_new, mock_client_class, mock_stdout):
+    async def test_run_tool_no_required_params(self, mock_config_get, mock_server_class, mock_client_class, mock_stdout):
         """Test running a tool that has no required parameters in schema"""
         # Setup mocks
         mock_config = MagicMock()
         mock_config_get.return_value = mock_config
         
-        mock_server = MagicMock()
-        mock_server_new.return_value = mock_server
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
         
         mock_client = AsyncMock()
         mock_client.ping.return_value = True
@@ -330,16 +358,20 @@ class TestRun:
     @pytest.mark.asyncio
     @patch('sys.stdout', new_callable=StringIO)
     @patch('itential_mcp.runner.Client')
-    @patch('itential_mcp.runner.server.new')
+    @patch('itential_mcp.runner.server.Server')
     @patch('itential_mcp.runner.config.get')
-    async def test_run_multiple_tools_available(self, mock_config_get, mock_server_new, mock_client_class, mock_stdout):
+    async def test_run_multiple_tools_available(self, mock_config_get, mock_server_class, mock_client_class, mock_stdout):
         """Test running a specific tool when multiple tools are available"""
         # Setup mocks
         mock_config = MagicMock()
         mock_config_get.return_value = mock_config
         
-        mock_server = MagicMock()
-        mock_server_new.return_value = mock_server
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
         
         mock_client = AsyncMock()
         mock_client.ping.return_value = True
@@ -378,16 +410,20 @@ class TestRun:
 
     @pytest.mark.asyncio
     @patch('itential_mcp.runner.Client')
-    @patch('itential_mcp.runner.server.new')
+    @patch('itential_mcp.runner.server.Server')
     @patch('itential_mcp.runner.config.get')
-    async def test_run_invalid_json_params(self, mock_config_get, mock_server_new, mock_client_class):
+    async def test_run_invalid_json_params(self, mock_config_get, mock_server_class, mock_client_class):
         """Test running a tool with invalid JSON parameters"""
         # Setup mocks
         mock_config = MagicMock()
         mock_config_get.return_value = mock_config
         
-        mock_server = MagicMock()
-        mock_server_new.return_value = mock_server
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
         
         mock_client = AsyncMock()
         mock_client.ping.return_value = True
@@ -412,16 +448,20 @@ class TestRun:
     @pytest.mark.asyncio
     @patch('sys.stdout', new_callable=StringIO)
     @patch('itential_mcp.runner.Client')
-    @patch('itential_mcp.runner.server.new')
+    @patch('itential_mcp.runner.server.Server')
     @patch('itential_mcp.runner.config.get')
-    async def test_run_complex_result_formatting(self, mock_config_get, mock_server_new, mock_client_class, mock_stdout):
+    async def test_run_complex_result_formatting(self, mock_config_get, mock_server_class, mock_client_class, mock_stdout):
         """Test that complex results are properly formatted in JSON output"""
         # Setup mocks
         mock_config = MagicMock()
         mock_config_get.return_value = mock_config
         
-        mock_server = MagicMock()
-        mock_server_new.return_value = mock_server
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
         
         mock_client = AsyncMock()
         mock_client.ping.return_value = True
@@ -471,16 +511,20 @@ class TestRunEdgeCases:
 
     @pytest.mark.asyncio
     @patch('itential_mcp.runner.Client')
-    @patch('itential_mcp.runner.server.new')
+    @patch('itential_mcp.runner.server.Server')
     @patch('itential_mcp.runner.config.get')
-    async def test_run_empty_tool_list(self, mock_config_get, mock_server_new, mock_client_class):
+    async def test_run_empty_tool_list(self, mock_config_get, mock_server_class, mock_client_class):
         """Test behavior when no tools are available"""
         # Setup mocks
         mock_config = MagicMock()
         mock_config_get.return_value = mock_config
         
-        mock_server = MagicMock()
-        mock_server_new.return_value = mock_server
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
         
         mock_client = AsyncMock()
         mock_client.ping.return_value = True
@@ -500,16 +544,20 @@ class TestRunEdgeCases:
     @pytest.mark.asyncio
     @patch('sys.stdout', new_callable=StringIO)
     @patch('itential_mcp.runner.Client')
-    @patch('itential_mcp.runner.server.new')
+    @patch('itential_mcp.runner.server.Server')
     @patch('itential_mcp.runner.config.get')
-    async def test_run_empty_params_string(self, mock_config_get, mock_server_new, mock_client_class, mock_stdout):
+    async def test_run_empty_params_string(self, mock_config_get, mock_server_class, mock_client_class, mock_stdout):
         """Test running a tool with empty parameters string"""
         # Setup mocks
         mock_config = MagicMock()
         mock_config_get.return_value = mock_config
         
-        mock_server = MagicMock()
-        mock_server_new.return_value = mock_server
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
         
         mock_client = AsyncMock()
         mock_client.ping.return_value = True
@@ -545,16 +593,20 @@ class TestRunIntegration:
     @pytest.mark.asyncio
     @patch('sys.stdout', new_callable=StringIO)
     @patch('itential_mcp.runner.Client')
-    @patch('itential_mcp.runner.server.new')
+    @patch('itential_mcp.runner.server.Server')
     @patch('itential_mcp.runner.config.get')
-    async def test_run_full_workflow(self, mock_config_get, mock_server_new, mock_client_class, mock_stdout):
+    async def test_run_full_workflow(self, mock_config_get, mock_server_class, mock_client_class, mock_stdout):
         """Test the complete workflow from start to finish"""
         # Setup mocks
         mock_config = MagicMock()
         mock_config_get.return_value = mock_config
         
-        mock_server = MagicMock()
-        mock_server_new.return_value = mock_server
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
         
         mock_client = AsyncMock()
         mock_client.ping.return_value = True
@@ -601,7 +653,7 @@ class TestRunIntegration:
         
         # Verify complete flow
         mock_config_get.assert_called_once()
-        mock_server_new.assert_called_once_with(mock_config)
+        mock_server_class.assert_called_once_with(mock_config)
         mock_client.ping.assert_called_once()
         mock_client.list_tools_mcp.assert_called_once()
         
