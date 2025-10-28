@@ -8,6 +8,7 @@ from unittest.mock import patch, MagicMock, AsyncMock
 from itential_mcp import server
 from itential_mcp.config import Config
 from itential_mcp.client import PlatformClient
+from itential_mcp.middleware.bindings import BindingsMiddleware
 
 instructions = """
 Tools for Itential - a network and infrastructure automation and orchestration
@@ -49,15 +50,15 @@ class TestLifespan:
         # Context should be properly cleaned up after exiting
 
 
-class TestDynamicToolInjectionMiddleware:
-    """Test the DynamicToolInjectionMiddleware class"""
+class TestBindingsMiddleware:
+    """Test the BindingsMiddleware class"""
 
     def test_middleware_initialization(self):
-        """Test DynamicToolInjectionMiddleware initializes with config"""
+        """Test BindingsMiddleware initializes with config"""
         mock_config = MagicMock()
         mock_config.tools = [MagicMock()]
 
-        middleware = server.DynamicToolInjectionMiddleware(mock_config)
+        middleware = BindingsMiddleware(mock_config)
 
         assert middleware.config == mock_config
 
@@ -73,7 +74,7 @@ class TestDynamicToolInjectionMiddleware:
         mock_config = MagicMock()
         mock_config.tools = [mock_tool1, mock_tool2]
 
-        middleware = server.DynamicToolInjectionMiddleware(mock_config)
+        middleware = BindingsMiddleware(mock_config)
 
         # Setup context
         mock_context = MagicMock()
@@ -104,7 +105,7 @@ class TestDynamicToolInjectionMiddleware:
         mock_config = MagicMock()
         mock_config.tools = [mock_tool]
 
-        middleware = server.DynamicToolInjectionMiddleware(mock_config)
+        middleware = BindingsMiddleware(mock_config)
 
         # Setup context with non-matching tool name
         mock_context = MagicMock()
@@ -131,7 +132,7 @@ class TestDynamicToolInjectionMiddleware:
         mock_config = MagicMock()
         mock_config.tools = [mock_tool1, mock_tool2]
 
-        middleware = server.DynamicToolInjectionMiddleware(mock_config)
+        middleware = BindingsMiddleware(mock_config)
 
         mock_context = MagicMock()
         mock_context.message.name = "test_tool"
@@ -156,7 +157,7 @@ class TestDynamicToolInjectionMiddleware:
         mock_config = MagicMock()
         mock_config.tools = [mock_tool]
 
-        middleware = server.DynamicToolInjectionMiddleware(mock_config)
+        middleware = BindingsMiddleware(mock_config)
 
         # Setup context with existing arguments
         mock_context = MagicMock()
