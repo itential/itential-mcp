@@ -12,7 +12,6 @@ from typing import Any
 
 from fastmcp import FastMCP
 
-from fastmcp.server.middleware import Middleware, MiddlewareContext
 from fastmcp.server.middleware.logging import LoggingMiddleware
 from fastmcp.server.middleware.timing import DetailedTimingMiddleware
 from fastmcp.server.middleware.error_handling import ErrorHandlingMiddleware
@@ -23,6 +22,8 @@ from . import config
 from . import toolutils
 from . import bindings
 from . import logging
+
+from .middleware.bindings import BindingsMiddleware
 
 
 INSTRUCTIONS = """
@@ -64,67 +65,6 @@ async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
     finally:
         # No cleanup needed for client
         pass
-
-
-class DynamicToolInjectionMiddleware(Middleware):
-    """Middleware for injecting dynamic tool configurations into MCP calls.
-
-    This middleware automatically injects tool configuration objects into
-    the arguments of MCP tool calls when the tool name matches a configured
-    dynamic tool. It adds the configuration as a special `_tool_config` parameter
-    that can be used by the tool implementation, then removes it after execution.
-
-    The middleware enables dynamic tool behavior based on configuration without
-    requiring manual parameter passing from the client.
-
-    Attributes:
-        config (config.Config): The application configuration containing tool definitions.
-    """
-
-    def __init__(self, cfg: config.Config):
-        """Initialize the middleware with configuration.
-
-        Args:
-            cfg (config.Config): The application configuration containing tool definitions.
-
-        Returns:
-            None
-
-        Raises:
-            None
-        """
-        self.config = cfg
-
-    async def on_call_tool(self, context: MiddlewareContext, call_next):
-        """Inject tool configuration into MCP tool calls.
-
-        Automatically adds the `_tool_config` parameter to tool arguments when
-        the tool name matches a configured dynamic tool. The configuration is
-        removed after the tool execution completes.
-
-        Args:
-            context (MiddlewareContext): The middleware context containing the
-                message and other request information.
-            call_next: The next middleware or handler in the chain.
-
-        Returns:
-            Any: The result from the next handler in the middleware chain.
-
-        Raises:
-            Any exceptions from the next handler in the chain.
-        """
-        for t in self.config.tools:
-            if t.tool_name == context.message.name:
-                context.message.arguments["_tool_config"] = t
-
-        res = await call_next(context)
-
-        for t in self.config.tools:
-            if t.tool_name == context.message.name:
-                context.message.arguments.pop("_tool_config", None)
-                break
-
-        return res
 
 
 async def new(cfg: config.Config) -> FastMCP:
@@ -181,7 +121,7 @@ async def new(cfg: config.Config) -> FastMCP:
     srv.add_middleware(ErrorHandlingMiddleware(logger=logger))
     srv.add_middleware(DetailedTimingMiddleware(logger=logger))
     srv.add_middleware(LoggingMiddleware(logger=logger, include_payloads=True, max_payload_length=1000))
-    srv.add_middleware(DynamicToolInjectionMiddleware(cfg))
+    srv.add_middleware(BindingsMiddleware(cfg))
 
     logging.info("Adding tools to MCP server")
 
