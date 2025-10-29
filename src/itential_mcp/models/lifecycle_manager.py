@@ -119,12 +119,13 @@ class Action(BaseModel):
     ]
 
     input_schema: Annotated[
-        Mapping[str, Any],
+        Mapping[str, Any] | List[Any],
         Field(
             description = inspect.cleandoc(
                 """
                 A JSON Schema object that defines the input schema required
-                to successfully run the action.
+                to successfully run the action. Can be either a dictionary
+                or a list depending on the schema structure.
                 """
             )
         )
