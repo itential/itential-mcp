@@ -65,6 +65,25 @@ class Service(ServiceBase):
 
     name: str = "configuration_manager"
 
+    async def get_configuration_parser_names(self) -> list[str]:
+        """
+        Retrieve list of valid device type names from configuration parsers.
+
+        This method fetches the available configuration parser names which represent
+        the valid device types that can be used when creating Golden Configuration trees.
+
+        Returns:
+            list[str]: List of parser names (device types) such as 'cisco-ios',
+                'arista-eos', 'juniper-junos', etc.
+
+        Raises:
+            Exception: If there are API communication failures or server errors
+                during the retrieval process.
+        """
+        res = await self.client.get("/configuration_manager/configurations/parser")
+        data = res.json()
+        return [parser["name"] for parser in data["list"]]
+
     async def get_golden_config_trees(self) -> list[dict]:
         """
         Retrieve all Golden Configuration trees from the Configuration Manager.
@@ -115,9 +134,18 @@ class Service(ServiceBase):
             dict: Created tree object containing tree metadata including ID and name
 
         Raises:
+            ValueError: If the specified device_type is not a valid configuration parser
             ServerException: If there is an error creating the Golden Configuration tree
                 or setting the template/variables
         """
+        # Validate device_type against available parsers
+        valid_device_types = await self.get_configuration_parser_names()
+        if device_type not in valid_device_types:
+            raise ValueError(
+                f"Invalid device_type '{device_type}'. "
+                f"Valid types are: {', '.join(valid_device_types)}"
+            )
+
         try:
             res = await self.client.post(
                 "/configuration_manager/configs",
