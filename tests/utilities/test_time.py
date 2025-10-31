@@ -27,4 +27,3 @@ def test_epoch_to_timestamp_recent():
     ms = int(now.timestamp() * 1000)
     expected = now.strftime("%Y-%m-%dT%H:%M:%SZ")
     assert epoch_to_timestamp(ms) == expected
-

@@ -4,11 +4,10 @@
 import os
 import pytest
 
-from itential_mcp.env import get, getstr, getint, getbool
+from itential_mcp.core.env import get, getstr, getint, getbool
 
 
 class TestEnv:
-
     def test_get_with_existing_key(self):
         os.environ["TEST_KEY"] = "123"
         assert get(int, "TEST_KEY", default="0") == 123
@@ -41,17 +40,20 @@ class TestEnv:
             del os.environ["MISSING_INT"]
         assert getint("MISSING_INT", default="5") == 5
 
-    @pytest.mark.parametrize("value,expected", [
-        ("true", True),
-        ("1", True),
-        ("yes", True),
-        ("on", True),
-        ("false", False),
-        ("0", False),
-        ("off", False),
-        ("", False),
-        (None, False),
-    ])
+    @pytest.mark.parametrize(
+        "value,expected",
+        [
+            ("true", True),
+            ("1", True),
+            ("yes", True),
+            ("on", True),
+            ("false", False),
+            ("0", False),
+            ("off", False),
+            ("", False),
+            (None, False),
+        ],
+    )
     def test_getbool_various_inputs(self, value, expected):
         os.environ["BOOL_KEY"] = value if value is not None else ""
         assert getbool("BOOL_KEY") is expected
@@ -60,4 +62,3 @@ class TestEnv:
         if "MISSING_BOOL" in os.environ:
             del os.environ["MISSING_BOOL"]
         assert getbool("MISSING_BOOL", default="true") is True
-

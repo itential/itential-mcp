@@ -4,7 +4,7 @@
 from typing import Any, Coroutine, Sequence, Mapping, Tuple
 
 from . import server
-from . import metadata
+from .core import metadata
 from .utilities import tool as toolutils
 from . import runner
 
@@ -70,6 +70,7 @@ def tools(args: Any) -> Tuple[Coroutine, Sequence, Mapping]:
         None
     """
     return toolutils.display_tools, None, None
+
 
 def tags(args: Any) -> Tuple[Coroutine, Sequence, Mapping]:
     """

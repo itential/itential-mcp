@@ -4,7 +4,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from itential_mcp import exceptions
+from itential_mcp.core import exceptions
 from itential_mcp.services.applications import Service
 
 
@@ -41,11 +41,11 @@ class TestApplicationsService:
                         {
                             "id": "test-application",
                             "state": "RUNNING",
-                            "version": "1.0.0"
+                            "version": "1.0.0",
                         }
                     ]
                 }
-            ]
+            ],
         }
         mock_client.get.return_value = mock_response
 
@@ -54,10 +54,7 @@ class TestApplicationsService:
         # Verify client was called with correct parameters
         mock_client.get.assert_called_once_with(
             "/health/applications",
-            params={
-                "equals": "test-application",
-                "equalsField": "id"
-            }
+            params={"equals": "test-application", "equalsField": "id"},
         )
 
         # Verify result - should return data["results"][0]
@@ -75,7 +72,9 @@ class TestApplicationsService:
         with pytest.raises(exceptions.NotFoundError) as exc_info:
             await service._get_application_health("nonexistent-application")
 
-        assert "unable to find application nonexistent-application" in str(exc_info.value)
+        assert "unable to find application nonexistent-application" in str(
+            exc_info.value
+        )
 
     @pytest.mark.asyncio
     async def test_get_application_health_multiple_results(self, service, mock_client):
@@ -86,8 +85,8 @@ class TestApplicationsService:
             "total": 2,
             "results": [
                 {"results": [{"id": "app1", "state": "RUNNING"}]},
-                {"results": [{"id": "app2", "state": "STOPPED"}]}
-            ]
+                {"results": [{"id": "app2", "state": "STOPPED"}]},
+            ],
         }
         mock_client.get.return_value = mock_response
 
@@ -113,10 +112,8 @@ class TestStartApplication:
     @pytest.mark.asyncio
     async def test_start_application_already_running(self, service):
         """Test starting an application that's already running"""
-        with patch.object(service, '_get_application_health') as mock_health:
-            mock_health.return_value = {
-                "results": [{"state": "RUNNING"}]
-            }
+        with patch.object(service, "_get_application_health") as mock_health:
+            mock_health.return_value = {"results": [{"state": "RUNNING"}]}
 
             result = await service.start_application("test-application", 10)
 
@@ -128,18 +125,20 @@ class TestStartApplication:
     @pytest.mark.asyncio
     async def test_start_application_from_stopped_success(self, service):
         """Test successfully starting a stopped application"""
-        with patch.object(service, '_get_application_health') as mock_health:
+        with patch.object(service, "_get_application_health") as mock_health:
             # First call returns STOPPED, second returns RUNNING
             mock_health.side_effect = [
                 {"results": [{"state": "STOPPED"}]},
-                {"results": [{"state": "RUNNING"}]}
+                {"results": [{"state": "RUNNING"}]},
             ]
 
-            with patch('asyncio.sleep', new_callable=AsyncMock):
+            with patch("asyncio.sleep", new_callable=AsyncMock):
                 result = await service.start_application("test-application", 10)
 
             # Should call PUT to start application
-            service.client.put.assert_called_once_with("/applications/test-application/start")
+            service.client.put.assert_called_once_with(
+                "/applications/test-application/start"
+            )
 
             # Should check health twice (initial + after start)
             assert mock_health.call_count == 2
@@ -150,7 +149,7 @@ class TestStartApplication:
     @pytest.mark.asyncio
     async def test_start_application_timeout(self, service):
         """Test application start timeout scenario"""
-        with patch.object(service, '_get_application_health') as mock_health:
+        with patch.object(service, "_get_application_health") as mock_health:
             # Always return STOPPED (never transitions to RUNNING)
             mock_health.side_effect = [
                 {"results": [{"state": "STOPPED"}]},  # Initial state
@@ -158,7 +157,7 @@ class TestStartApplication:
                 {"results": [{"state": "STOPPED"}]},  # Still stopped...
             ]
 
-            with patch('asyncio.sleep', new_callable=AsyncMock) as mock_sleep:
+            with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
                 with pytest.raises(exceptions.TimeoutExceededError):
                     await service.start_application("test-application", 2)
 
@@ -168,10 +167,8 @@ class TestStartApplication:
     @pytest.mark.asyncio
     async def test_start_application_dead_state(self, service):
         """Test starting an application in DEAD state"""
-        with patch.object(service, '_get_application_health') as mock_health:
-            mock_health.return_value = {
-                "results": [{"state": "DEAD"}]
-            }
+        with patch.object(service, "_get_application_health") as mock_health:
+            mock_health.return_value = {"results": [{"state": "DEAD"}]}
 
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.start_application("test-application", 10)
@@ -182,10 +179,8 @@ class TestStartApplication:
     @pytest.mark.asyncio
     async def test_start_application_deleted_state(self, service):
         """Test starting an application in DELETED state"""
-        with patch.object(service, '_get_application_health') as mock_health:
-            mock_health.return_value = {
-                "results": [{"state": "DELETED"}]
-            }
+        with patch.object(service, "_get_application_health") as mock_health:
+            mock_health.return_value = {"results": [{"state": "DELETED"}]}
 
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.start_application("test-application", 10)
@@ -211,10 +206,8 @@ class TestStopApplication:
     @pytest.mark.asyncio
     async def test_stop_application_already_stopped(self, service):
         """Test stopping an application that's already stopped"""
-        with patch.object(service, '_get_application_health') as mock_health:
-            mock_health.return_value = {
-                "results": [{"state": "STOPPED"}]
-            }
+        with patch.object(service, "_get_application_health") as mock_health:
+            mock_health.return_value = {"results": [{"state": "STOPPED"}]}
 
             result = await service.stop_application("test-application", 10)
 
@@ -226,18 +219,20 @@ class TestStopApplication:
     @pytest.mark.asyncio
     async def test_stop_application_from_running_success(self, service):
         """Test successfully stopping a running application"""
-        with patch.object(service, '_get_application_health') as mock_health:
+        with patch.object(service, "_get_application_health") as mock_health:
             # First call returns RUNNING, second returns STOPPED
             mock_health.side_effect = [
                 {"results": [{"state": "RUNNING"}]},
-                {"results": [{"state": "STOPPED"}]}
+                {"results": [{"state": "STOPPED"}]},
             ]
 
-            with patch('asyncio.sleep', new_callable=AsyncMock):
+            with patch("asyncio.sleep", new_callable=AsyncMock):
                 result = await service.stop_application("test-application", 10)
 
             # Should call PUT to stop application
-            service.client.put.assert_called_once_with("/applications/test-application/stop")
+            service.client.put.assert_called_once_with(
+                "/applications/test-application/stop"
+            )
 
             # Should return the final health data
             assert result["results"][0]["state"] == "STOPPED"
@@ -261,18 +256,20 @@ class TestRestartApplication:
     @pytest.mark.asyncio
     async def test_restart_application_from_running_success(self, service):
         """Test successfully restarting a running application"""
-        with patch.object(service, '_get_application_health') as mock_health:
+        with patch.object(service, "_get_application_health") as mock_health:
             # First call returns RUNNING, second returns RUNNING after restart
             mock_health.side_effect = [
                 {"results": [{"state": "RUNNING"}]},
-                {"results": [{"state": "RUNNING"}]}
+                {"results": [{"state": "RUNNING"}]},
             ]
 
-            with patch('asyncio.sleep', new_callable=AsyncMock):
+            with patch("asyncio.sleep", new_callable=AsyncMock):
                 result = await service.restart_application("test-application", 10)
 
             # Should call PUT to restart application
-            service.client.put.assert_called_once_with("/applications/test-application/restart")
+            service.client.put.assert_called_once_with(
+                "/applications/test-application/restart"
+            )
 
             # Should return the final health data
             assert result["results"][0]["state"] == "RUNNING"
@@ -280,10 +277,8 @@ class TestRestartApplication:
     @pytest.mark.asyncio
     async def test_restart_application_stopped_state(self, service):
         """Test restarting an application in STOPPED state"""
-        with patch.object(service, '_get_application_health') as mock_health:
-            mock_health.return_value = {
-                "results": [{"state": "STOPPED"}]
-            }
+        with patch.object(service, "_get_application_health") as mock_health:
+            mock_health.return_value = {"results": [{"state": "STOPPED"}]}
 
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.restart_application("test-application", 10)
@@ -311,6 +306,7 @@ class TestServiceIntegration:
     async def test_service_inherits_from_servicebase(self, service):
         """Test that Service properly inherits from ServiceBase"""
         from itential_mcp.services import ServiceBase
+
         assert isinstance(service, ServiceBase)
 
     @pytest.mark.asyncio
@@ -320,18 +316,18 @@ class TestServiceIntegration:
 
         # Check start_application signature
         start_sig = inspect.signature(service.start_application)
-        assert 'name' in start_sig.parameters
-        assert 'timeout' in start_sig.parameters
+        assert "name" in start_sig.parameters
+        assert "timeout" in start_sig.parameters
 
         # Check stop_application signature
         stop_sig = inspect.signature(service.stop_application)
-        assert 'name' in stop_sig.parameters
-        assert 'timeout' in stop_sig.parameters
+        assert "name" in stop_sig.parameters
+        assert "timeout" in stop_sig.parameters
 
         # Check restart_application signature
         restart_sig = inspect.signature(service.restart_application)
-        assert 'name' in restart_sig.parameters
-        assert 'timeout' in restart_sig.parameters
+        assert "name" in restart_sig.parameters
+        assert "timeout" in restart_sig.parameters
 
 
 class TestErrorHandling:
@@ -392,7 +388,7 @@ class TestEdgeCases:
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "total": 1,
-            "results": [{"results": [{"state": "RUNNING"}]}]
+            "results": [{"results": [{"state": "RUNNING"}]}],
         }
         mock_client.get.return_value = mock_response
 
@@ -400,11 +396,7 @@ class TestEdgeCases:
 
         # Verify the special name was used correctly in the API call
         mock_client.get.assert_called_with(
-            "/health/applications",
-            params={
-                "equals": special_name,
-                "equalsField": "id"
-            }
+            "/health/applications", params={"equals": special_name, "equalsField": "id"}
         )
 
     @pytest.mark.asyncio
@@ -415,7 +407,7 @@ class TestEdgeCases:
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "total": 1,
-            "results": [{"results": [{"state": "RUNNING"}]}]
+            "results": [{"results": [{"state": "RUNNING"}]}],
         }
         mock_client.get.return_value = mock_response
 
@@ -423,9 +415,5 @@ class TestEdgeCases:
 
         # Verify Unicode name was handled correctly
         mock_client.get.assert_called_with(
-            "/health/applications",
-            params={
-                "equals": unicode_name,
-                "equalsField": "id"
-            }
+            "/health/applications", params={"equals": unicode_name, "equalsField": "id"}
         )

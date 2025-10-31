@@ -2,9 +2,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 
-
-
-from itential_mcp import exceptions
+from itential_mcp.core import exceptions
 
 
 from itential_mcp.services import ServiceBase
@@ -13,7 +11,7 @@ from itential_mcp.services import ServiceBase
 class Service(ServiceBase):
     """
     Integration models service for Itential Platform.
-    
+
     This service provides methods for managing integration models, which define
     API specifications for external systems and services that can be integrated
     with Itential Platform. Integration models are based on OpenAPI specifications
@@ -33,14 +31,13 @@ class Service(ServiceBase):
         Returns:
             dict: API response containing integration models data with the following structure:
                 - integrationModels: List of integration model objects
-                
+
         Raises:
             ConnectionException: If there is an error connecting to the platform
             AuthenticationException: If authentication credentials are invalid
         """
         res = await self.client.get("/integration-models")
         return res.json()
-
 
     async def create_integration_model(self, model: dict) -> dict:
         """
@@ -76,14 +73,8 @@ class Service(ServiceBase):
             if ele["versionId"] == model_id:
                 raise exceptions.AlreadyExistsError(f"model {model_id} already exists")
 
-        await self.client.put(
-            "/integration-models/validation",
-            json={"model": model}
-        )
+        await self.client.put("/integration-models/validation", json={"model": model})
 
-        res = await self.client.post(
-            "/integration-models",
-            json={"model": model}
-        )
+        res = await self.client.post("/integration-models", json={"model": model})
 
         return res.json()

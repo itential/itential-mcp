@@ -33,7 +33,7 @@ class TestHealthService:
                 "services": [{"service": "redis", "status": "running"}],
                 "timestamp": 1757004595716,
                 "apps": "running",
-                "adapters": "running"
+                "adapters": "running",
             }
         }
 
@@ -57,17 +57,19 @@ class TestHealthService:
                 "freemem": 53953363968,
                 "totalmem": 67111694336,
                 "loadavg": [0.15, 0.22, 0.25],
-                "cpus": [{
-                    "model": "Intel(R) Core(TM) i7-12700H CPU @ 2.30GHz",
-                    "speed": 4015,
-                    "times": {
-                        "user": 52081020,
-                        "nice": 26850,
-                        "sys": 18688410,
-                        "idle": 4564187990,
-                        "irq": 7986130
+                "cpus": [
+                    {
+                        "model": "Intel(R) Core(TM) i7-12700H CPU @ 2.30GHz",
+                        "speed": 4015,
+                        "times": {
+                            "user": 52081020,
+                            "nice": 26850,
+                            "sys": 18688410,
+                            "idle": 4564187990,
+                            "irq": 7986130,
+                        },
                     }
-                }]
+                ],
             }
         }
 
@@ -93,19 +95,19 @@ class TestHealthService:
                     "node": "20.3.0",
                     "acorn": "8.8.2",
                     "ada": "2.5.0",
-                    "v8": "11.3.244.8-node.9"
+                    "v8": "11.3.244.8-node.9",
                 },
                 "memoryUsage": {
                     "rss": 469671936,
                     "heapTotal": 158703616,
                     "heapUsed": 147501584,
                     "external": 50291978,
-                    "arrayBuffers": 46521129
+                    "arrayBuffers": 46521129,
                 },
                 "cpuUsage": {"user": 3815108692, "system": 621631048},
                 "uptime": 2083622.963931177,
                 "pid": 1,
-                "dependencies": {"@itential/service": "3.1.12"}
+                "dependencies": {"@itential/service": "3.1.12"},
             }
         }
 
@@ -122,33 +124,31 @@ class TestHealthService:
     async def test_get_applications_health_success(self):
         """Test get_applications_health returns applications data successfully."""
         expected_data = {
-            "results": [{
-                "id": "TestApp",
-                "package_id": "@itential/test-app",
-                "version": "1.0.0",
-                "type": "Application",
-                "description": "Test application",
-                "routePrefix": "test-app",
-                "state": "RUNNING",
-                "connection": None,
-                "uptime": 1000.0,
-                "memoryUsage": {
-                    "rss": 100000000,
-                    "heapTotal": 50000000,
-                    "heapUsed": 40000000,
-                    "external": 5000000,
-                    "arrayBuffers": 4000000
-                },
-                "cpuUsage": {"user": 1000000, "system": 500000},
-                "pid": 123,
-                "logger": {
-                    "console": "info",
-                    "file": "info",
-                    "syslog": "warning"
-                },
-                "timestamp": 1757004595716,
-                "prevUptime": 999.0
-            }]
+            "results": [
+                {
+                    "id": "TestApp",
+                    "package_id": "@itential/test-app",
+                    "version": "1.0.0",
+                    "type": "Application",
+                    "description": "Test application",
+                    "routePrefix": "test-app",
+                    "state": "RUNNING",
+                    "connection": None,
+                    "uptime": 1000.0,
+                    "memoryUsage": {
+                        "rss": 100000000,
+                        "heapTotal": 50000000,
+                        "heapUsed": 40000000,
+                        "external": 5000000,
+                        "arrayBuffers": 4000000,
+                    },
+                    "cpuUsage": {"user": 1000000, "system": 500000},
+                    "pid": 123,
+                    "logger": {"console": "info", "file": "info", "syslog": "warning"},
+                    "timestamp": 1757004595716,
+                    "prevUptime": 999.0,
+                }
+            ]
         }
 
         mock_response = MagicMock()
@@ -164,33 +164,31 @@ class TestHealthService:
     async def test_get_adapters_health_success(self):
         """Test get_adapters_health returns adapters data successfully."""
         expected_data = {
-            "results": [{
-                "id": "TestAdapter",
-                "package_id": "@itential/test-adapter",
-                "version": "1.0.0",
-                "type": "Adapter",
-                "description": "Test adapter",
-                "routePrefix": "test-adapter",
-                "state": "RUNNING",
-                "connection": {"state": "ONLINE"},
-                "uptime": 2000.0,
-                "memoryUsage": {
-                    "rss": 150000000,
-                    "heapTotal": 70000000,
-                    "heapUsed": 60000000,
-                    "external": 8000000,
-                    "arrayBuffers": 7000000
-                },
-                "cpuUsage": {"user": 2000000, "system": 1000000},
-                "pid": 456,
-                "logger": {
-                    "console": "info",
-                    "file": "info",
-                    "syslog": "warning"
-                },
-                "timestamp": 1757004595716,
-                "prevUptime": 1999.0
-            }]
+            "results": [
+                {
+                    "id": "TestAdapter",
+                    "package_id": "@itential/test-adapter",
+                    "version": "1.0.0",
+                    "type": "Adapter",
+                    "description": "Test adapter",
+                    "routePrefix": "test-adapter",
+                    "state": "RUNNING",
+                    "connection": {"state": "ONLINE"},
+                    "uptime": 2000.0,
+                    "memoryUsage": {
+                        "rss": 150000000,
+                        "heapTotal": 70000000,
+                        "heapUsed": 60000000,
+                        "external": 8000000,
+                        "arrayBuffers": 7000000,
+                    },
+                    "cpuUsage": {"user": 2000000, "system": 1000000},
+                    "pid": 456,
+                    "logger": {"console": "info", "file": "info", "syslog": "warning"},
+                    "timestamp": 1757004595716,
+                    "prevUptime": 1999.0,
+                }
+            ]
         }
 
         mock_response = MagicMock()
@@ -212,7 +210,7 @@ class TestHealthService:
                 "services": [],
                 "timestamp": 1757004595716,
                 "apps": "running",
-                "adapters": "running"
+                "adapters": "running",
             }
         }
 
@@ -246,8 +244,8 @@ class TestHealthService:
                             "nice": 26850,
                             "sys": 18688410,
                             "idle": 4564187990,
-                            "irq": 7986130
-                        }
+                            "irq": 7986130,
+                        },
                     },
                     {
                         "model": "Intel(R) Core(TM) i7-12700H CPU @ 2.30GHz",
@@ -257,10 +255,10 @@ class TestHealthService:
                             "nice": 26851,
                             "sys": 18688411,
                             "idle": 4564187991,
-                            "irq": 7986131
-                        }
-                    }
-                ]
+                            "irq": 7986131,
+                        },
+                    },
+                ],
             }
         }
 
@@ -324,13 +322,13 @@ class TestHealthService:
                         "heapTotal": 50000000,
                         "heapUsed": 40000000,
                         "external": 5000000,
-                        "arrayBuffers": 4000000
+                        "arrayBuffers": 4000000,
                     },
                     "cpuUsage": {"user": 1000000, "system": 500000},
                     "pid": 123,
                     "logger": {"console": "info", "file": "info", "syslog": "warning"},
                     "timestamp": 1757004595716,
-                    "prevUptime": 999.0
+                    "prevUptime": 999.0,
                 },
                 {
                     "id": "App2",
@@ -347,14 +345,14 @@ class TestHealthService:
                         "heapTotal": 40000000,
                         "heapUsed": 30000000,
                         "external": 4000000,
-                        "arrayBuffers": 3000000
+                        "arrayBuffers": 3000000,
                     },
                     "cpuUsage": {"user": 800000, "system": 400000},
                     "pid": 124,
                     "logger": {"console": "debug", "file": "debug", "syslog": "info"},
                     "timestamp": 1757004595716,
-                    "prevUptime": 499.0
-                }
+                    "prevUptime": 499.0,
+                },
             ]
         }
 
@@ -390,13 +388,13 @@ class TestHealthService:
                         "heapTotal": 70000000,
                         "heapUsed": 60000000,
                         "external": 8000000,
-                        "arrayBuffers": 7000000
+                        "arrayBuffers": 7000000,
                     },
                     "cpuUsage": {"user": 2000000, "system": 1000000},
                     "pid": 456,
                     "logger": {"console": "info", "file": "info", "syslog": "warning"},
                     "timestamp": 1757004595716,
-                    "prevUptime": 1999.0
+                    "prevUptime": 1999.0,
                 },
                 {
                     "id": "Adapter2",
@@ -413,14 +411,14 @@ class TestHealthService:
                         "heapTotal": 60000000,
                         "heapUsed": 50000000,
                         "external": 6000000,
-                        "arrayBuffers": 5000000
+                        "arrayBuffers": 5000000,
                     },
                     "cpuUsage": {"user": 1500000, "system": 750000},
                     "pid": 457,
                     "logger": {"console": "debug", "file": "debug", "syslog": "info"},
                     "timestamp": 1757004595716,
-                    "prevUptime": 1499.0
-                }
+                    "prevUptime": 1499.0,
+                },
             ]
         }
 
@@ -449,19 +447,19 @@ class TestHealthService:
                     "node": "20.3.0",
                     "acorn": "8.8.2",
                     "ada": "2.5.0",
-                    "v8": "11.3.244.8-node.9"
+                    "v8": "11.3.244.8-node.9",
                 },
                 "memoryUsage": {
                     "rss": 469671936,
                     "heapTotal": 158703616,
                     "heapUsed": 147501584,
                     "external": 50291978,
-                    "arrayBuffers": 46521129
+                    "arrayBuffers": 46521129,
                 },
                 "cpuUsage": {"user": 3815108692, "system": 621631048},
                 "uptime": 2083622.963931177,
                 "pid": 1,
-                "dependencies": {}
+                "dependencies": {},
             }
         }
 
@@ -558,14 +556,14 @@ class TestHealthService:
     async def test_service_inherits_from_service_base(self):
         """Test that Service class correctly inherits from ServiceBase."""
         from itential_mcp.services import ServiceBase
-        
+
         assert isinstance(self.health_service, ServiceBase)
-        assert hasattr(self.health_service, 'client')
+        assert hasattr(self.health_service, "client")
         assert self.health_service.client == self.mock_client
 
     def test_service_class_attributes(self):
         """Test Service class has correct attributes."""
-        assert hasattr(Service, 'name')
+        assert hasattr(Service, "name")
         assert Service.name == "health"
 
     @pytest.mark.asyncio
@@ -580,11 +578,11 @@ class TestHealthService:
                     {"service": "redis", "status": "running"},
                     {"service": "mongo", "status": "running"},
                     {"service": "rabbitmq", "status": "degraded"},
-                    {"service": "elasticsearch", "status": "stopped"}
+                    {"service": "elasticsearch", "status": "stopped"},
                 ],
                 "timestamp": 1757004595716,
                 "apps": "degraded",
-                "adapters": "running"
+                "adapters": "running",
             }
         }
 
@@ -607,10 +605,10 @@ class TestHealthService:
                 "arch": "arm64",
                 "release": "Ubuntu 22.04.3 LTS",
                 "uptime": 0.0,  # Just started
-                "freemem": 0,   # No free memory
+                "freemem": 0,  # No free memory
                 "totalmem": 8589934592,  # 8GB
                 "loadavg": [0.0, 0.0, 0.0],  # No load
-                "cpus": []  # No CPU info available
+                "cpus": [],  # No CPU info available
             }
         }
 
@@ -658,14 +656,14 @@ class TestHealthService:
                     "uv": "1.45.0",
                     "uvwasi": "0.0.18",
                     "v8": "11.3.244.8-node.9",
-                    "zlib": "1.2.13.1-motley"
+                    "zlib": "1.2.13.1-motley",
                 },
                 "memoryUsage": {
                     "rss": 469671936,
                     "heapTotal": 158703616,
                     "heapUsed": 147501584,
                     "external": 50291978,
-                    "arrayBuffers": 46521129
+                    "arrayBuffers": 46521129,
                 },
                 "cpuUsage": {"user": 3815108692, "system": 621631048},
                 "uptime": 2083622.963931177,
@@ -673,8 +671,8 @@ class TestHealthService:
                 "dependencies": {
                     "@itential/service": "3.1.12",
                     "@itential/automation-gateway": "4.2.1",
-                    "@itential/app-workflow-manager": "2.5.3"
-                }
+                    "@itential/app-workflow-manager": "2.5.3",
+                },
             }
         }
 

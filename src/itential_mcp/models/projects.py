@@ -51,7 +51,7 @@ class GetProjectsElement(BaseModel):
                 Project description
                 """
             ),
-            default=None
+            default=None,
         ),
     ]
 
@@ -120,23 +120,23 @@ class DescribeProjectComponent(BaseModel):
     type: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The type of component
                 """
             )
-        )
+        ),
     ]
 
     folder: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The folder path containing the component
                 """
             )
-        )
+        ),
     ]
 
 
@@ -155,10 +155,10 @@ class DescribeProjectResponse(GetProjectsElement):
     components: Annotated[
         List[DescribeProjectComponent],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 List of components contained in the project
                 """
             )
-        )
+        ),
     ]

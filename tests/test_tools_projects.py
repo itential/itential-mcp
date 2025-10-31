@@ -47,11 +47,11 @@ class TestAutomationStudioProjects:
                     "createdBy": {
                         "_id": "67c856baabe686cf9cb78b2d",
                         "provenance": "Okta SAML",
-                        "username": "joksan.flores@itential.com"
+                        "username": "joksan.flores@itential.com",
                     },
                     "created": "2025-08-18T15:47:52.956Z",
                     "lastUpdated": "2025-08-26T15:24:30.873Z",
-                    "iid": 97
+                    "iid": 97,
                 },
                 {
                     "_id": "6824fa53eeefcae9174e2140",
@@ -63,16 +63,16 @@ class TestAutomationStudioProjects:
                     },
                     "created": "2025-01-01T00:00:00.000Z",
                     "lastUpdated": "2025-01-01T00:00:00.000Z",
-                    "iid": 98
-                }
+                    "iid": 98,
+                },
             ],
             "metadata": {
                 "skip": 0,
                 "limit": 100,
                 "total": 29,
                 "nextPageSkip": None,
-                "previousPageSkip": None
-            }
+                "previousPageSkip": None,
+            },
         }
 
     @pytest.fixture
@@ -94,27 +94,34 @@ class TestAutomationStudioProjects:
                         "document": {
                             "name": "Application Provisioning",
                             "tasks": {},
-                            "transitions": {}
-                        }
+                            "transitions": {},
+                        },
                     }
-                ]
-            }
+                ],
+            },
         }
 
     @pytest.mark.asyncio
-    async def test_get_projects_success(self, mock_context, mock_client, mock_response, sample_projects_response):
+    async def test_get_projects_success(
+        self, mock_context, mock_client, mock_response, sample_projects_response
+    ):
         """Test successful retrieval of projects."""
         mock_context.request_context.lifespan_context.get.return_value = mock_client
         # Service should return raw data, not response object
-        mock_client.automation_studio.get_projects = AsyncMock(return_value=sample_projects_response["data"])
+        mock_client.automation_studio.get_projects = AsyncMock(
+            return_value=sample_projects_response["data"]
+        )
 
         result = await get_projects(mock_context)
 
         assert len(result.root) == 2
-        assert result.root[0].name == "Application Infra Provisioning - Python + Infoblox + CMDB"
+        assert (
+            result.root[0].name
+            == "Application Infra Provisioning - Python + Infoblox + CMDB"
+        )
         assert result.root[0].id == "68a34b28f7a1e4d40186b6aa"
         assert result.root[0].description == ""
-        
+
         # Test second project
         assert result.root[1].id == "6824fa53eeefcae9174e2140"
 
@@ -122,7 +129,9 @@ class TestAutomationStudioProjects:
         mock_context.info.assert_called_once_with("inside get_projects(...)")
 
     @pytest.mark.asyncio
-    async def test_get_projects_empty_response(self, mock_context, mock_client, mock_response):
+    async def test_get_projects_empty_response(
+        self, mock_context, mock_client, mock_response
+    ):
         """Test handling of empty projects response."""
         mock_context.request_context.lifespan_context.get.return_value = mock_client
         # Service should return raw data (empty list), not response object
@@ -133,36 +142,57 @@ class TestAutomationStudioProjects:
         assert len(result.root) == 0
 
     @pytest.mark.asyncio
-    async def test_describe_project_success(self, mock_context, mock_client, mock_response, sample_project_export_response):
+    async def test_describe_project_success(
+        self, mock_context, mock_client, mock_response, sample_project_export_response
+    ):
         """Test successful project description."""
         mock_context.request_context.lifespan_context.get.return_value = mock_client
         # Service should return raw data, not response object
-        mock_client.automation_studio.describe_project = AsyncMock(return_value=sample_project_export_response["data"])
+        mock_client.automation_studio.describe_project = AsyncMock(
+            return_value=sample_project_export_response["data"]
+        )
 
-        result = await describe_project(mock_context, "Application Infra Provisioning - Python + Infoblox + CMDB")
+        result = await describe_project(
+            mock_context, "Application Infra Provisioning - Python + Infoblox + CMDB"
+        )
 
         assert result.id == "68a34b28f7a1e4d40186b6aa"
-        assert result.name == "Application Infra Provisioning - Python + Infoblox + CMDB"
+        assert (
+            result.name == "Application Infra Provisioning - Python + Infoblox + CMDB"
+        )
         assert result.description == ""
         assert len(result.components) == 1
         assert result.components[0].type == "workflow"
 
-        mock_client.automation_studio.describe_project.assert_called_once_with(name="Application Infra Provisioning - Python + Infoblox + CMDB")
+        mock_client.automation_studio.describe_project.assert_called_once_with(
+            name="Application Infra Provisioning - Python + Infoblox + CMDB"
+        )
         mock_context.info.assert_called_once_with("inside describe_project(...)")
 
     @pytest.mark.asyncio
-    async def test_describe_project_filters_data_correctly(self, mock_context, mock_client, mock_response):
+    async def test_describe_project_filters_data_correctly(
+        self, mock_context, mock_client, mock_response
+    ):
         """Test that describe_project filters data to only required fields."""
         mock_context.request_context.lifespan_context.get.return_value = mock_client
         # Service should return raw data, not response object
-        mock_client.automation_studio.describe_project = AsyncMock(return_value={
-            "_id": "test-id",
-            "name": "Test Project",
-            "description": "Test Description", 
-            "components": [{"name": ": workflow-name", "type": "workflow", "reference": "ref-123", "folder": "/workflows"}],
-            "extra_field": "should_not_be_included",
-            "another_field": "also_not_included"
-        })
+        mock_client.automation_studio.describe_project = AsyncMock(
+            return_value={
+                "_id": "test-id",
+                "name": "Test Project",
+                "description": "Test Description",
+                "components": [
+                    {
+                        "name": ": workflow-name",
+                        "type": "workflow",
+                        "reference": "ref-123",
+                        "folder": "/workflows",
+                    }
+                ],
+                "extra_field": "should_not_be_included",
+                "another_field": "also_not_included",
+            }
+        )
 
         result = await describe_project(mock_context, "Test Project")
 
@@ -174,15 +204,19 @@ class TestAutomationStudioProjects:
         # Extra fields are filtered out by the model
 
     @pytest.mark.asyncio
-    async def test_describe_project_handles_missing_data(self, mock_context, mock_client, mock_response):
+    async def test_describe_project_handles_missing_data(
+        self, mock_context, mock_client, mock_response
+    ):
         """Test handling of missing data in project export response."""
         mock_context.request_context.lifespan_context.get.return_value = mock_client
         # Service should return raw data with minimal required fields
-        mock_client.automation_studio.describe_project = AsyncMock(return_value={
-            "_id": "minimal-project-id",
-            "name": "Minimal Project",
-            "components": []
-        })
+        mock_client.automation_studio.describe_project = AsyncMock(
+            return_value={
+                "_id": "minimal-project-id",
+                "name": "Minimal Project",
+                "components": [],
+            }
+        )
 
         result = await describe_project(mock_context, "Missing Project")
 
@@ -192,32 +226,36 @@ class TestAutomationStudioProjects:
         assert result.components == []
 
     @pytest.mark.asyncio
-    async def test_get_projects_handles_incomplete_creator_data(self, mock_context, mock_client, mock_response):
+    async def test_get_projects_handles_incomplete_creator_data(
+        self, mock_context, mock_client, mock_response
+    ):
         """Test handling of projects with incomplete creator information."""
         mock_context.request_context.lifespan_context.get.return_value = mock_client
         # Service should return raw data, not response object
-        mock_client.automation_studio.get_projects = AsyncMock(return_value=[
+        mock_client.automation_studio.get_projects = AsyncMock(
+            return_value=[
                 {
                     "_id": "test-id-1",
                     "name": "Project with Complete Creator",
-                    "description": "Test project"
+                    "description": "Test project",
                 },
                 {
                     "_id": "test-id-2",
                     "name": "Project with Incomplete Creator",
-                    "description": "Test project"
-                }
-            ])
+                    "description": "Test project",
+                },
+            ]
+        )
 
         result = await get_projects(mock_context)
 
         assert len(result.root) == 2
-        
+
         # Test simplified project data structure
         assert result.root[0].id == "test-id-1"
         assert result.root[0].name == "Project with Complete Creator"
         assert result.root[0].description == "Test project"
-        
+
         assert result.root[1].id == "test-id-2"
         assert result.root[1].name == "Project with Incomplete Creator"
         assert result.root[1].description == "Test project"

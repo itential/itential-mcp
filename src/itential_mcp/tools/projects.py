@@ -16,9 +16,7 @@ __tags__ = ("automation_studio",)
 
 
 async def get_projects(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
 ) -> models.GetProjectsResponse:
     """Get all Automation Studio projects from Itential Platform.
 
@@ -45,22 +43,20 @@ async def get_projects(
     results = []
 
     for ele in res:
-        results.append(models.GetProjectsElement(
-            id = ele.get("_id"),
-            name = ele.get("name"),
-            description = ele.get("description")
-        ))
+        results.append(
+            models.GetProjectsElement(
+                id=ele.get("_id"),
+                name=ele.get("name"),
+                description=ele.get("description"),
+            )
+        )
 
     return models.GetProjectsResponse(root=results)
 
 
 async def describe_project(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the project to describe"
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="The name of the project to describe")],
 ) -> models.DescribeProjectResponse:
     """Get detailed information about a specific Automation Studio project.
 
@@ -93,16 +89,18 @@ async def describe_project(
     for ele in data["components"]:
         match = re.search(r":\s*(.*)", ele["name"])
         component_name = match.group(1).strip()
-        components.append(models.DescribeProjectComponent(
-            id = ele.get("reference"),
-            type = ele.get("type"),
-            folder = ele.get("folder"),
-            name = component_name
-        ))
+        components.append(
+            models.DescribeProjectComponent(
+                id=ele.get("reference"),
+                type=ele.get("type"),
+                folder=ele.get("folder"),
+                name=component_name,
+            )
+        )
 
     return models.DescribeProjectResponse(
-        id = data.get("_id"),
-        name = data.get("name"),
-        description = data.get("description"),
-        components=components
+        id=data.get("_id"),
+        name=data.get("name"),
+        description=data.get("description"),
+        components=components,
     )

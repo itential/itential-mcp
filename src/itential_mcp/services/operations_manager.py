@@ -3,7 +3,7 @@
 
 from typing import Literal, Mapping, Any
 
-from itential_mcp import exceptions
+from itential_mcp.core import exceptions
 from itential_mcp.utilities import string as stringutils
 
 from itential_mcp.services import ServiceBase
@@ -85,11 +85,7 @@ class Service(ServiceBase):
 
         return results
 
-    async def start_workflow(
-        self,
-        route_name: str,
-        data: dict | None = None
-    ) -> dict:
+    async def start_workflow(self, route_name: str, data: dict | None = None) -> dict:
         """
         Execute a workflow by triggering its API endpoint.
 
@@ -135,11 +131,7 @@ class Service(ServiceBase):
 
         return res.json().get("data")
 
-    async def get_jobs(
-        self,
-        name: str,
-        project: str | None = None
-    ) -> list[dict]:
+    async def get_jobs(self, name: str, project: str | None = None) -> list[dict]:
         """
         Retrieve jobs from Itential Platform operations manager.
 
@@ -235,10 +227,7 @@ class Service(ServiceBase):
 
         return results
 
-    async def describe_job(
-        self,
-        object_id: str
-    ) -> dict:
+    async def describe_job(self, object_id: str) -> dict:
         """
         Retrieve detailed information about a specific job.
 
@@ -280,12 +269,7 @@ class Service(ServiceBase):
         res = await self.client.get(f"/operations-manager/jobs/{object_id}")
         return res.json()["data"]
 
-    async def start_job(
-        self,
-        workflow: str,
-        description: str,
-        variables: dict
-    ) -> dict:
+    async def start_job(self, workflow: str, description: str, variables: dict) -> dict:
         """Start a job execution directly using workflow name.
 
         This method initiates a job execution by directly specifying the workflow
@@ -352,7 +336,7 @@ class Service(ServiceBase):
         name: str,
         component_type: Literal["workflows", "ucm_compliance_plan"],
         component_name: str | None = None,
-        description: str | None = None
+        description: str | None = None,
     ) -> Mapping[str, Any]:
         """Create a new automation in the Operations Manager.
 
@@ -386,10 +370,7 @@ class Service(ServiceBase):
             Exception: If there is an error creating the automation in the
                 Operations Manager.
         """
-        body = {
-            "name": name,
-            "componentType": component_type
-        }
+        body = {"name": name, "componentType": component_type}
 
         if description:
             body["description"] = description
@@ -398,30 +379,26 @@ class Service(ServiceBase):
             if component_type == "workflows":
                 res = await self.client.get(
                     "/automation-studio/workflows",
-                    params={"equals[name]": component_name}
+                    params={"equals[name]": component_name},
                 )
                 json_data = res.json()
 
                 if json_data["total"] != 1:
-                    raise exceptions.NotFoundError(f"workflow {component_name} not found")
+                    raise exceptions.NotFoundError(
+                        f"workflow {component_name} not found"
+                    )
 
                 body["componentId"] = json_data["items"][0]["_id"]
 
             elif component_type == "ucm_compliance_plan":
                 pass
 
-        res = await self.client.post(
-            "/operations-manager/automations",
-            json=body
-        )
+        res = await self.client.post("/operations-manager/automations", json=body)
 
         return res.json()["data"]
 
     async def create_manual_trigger(
-        self,
-        name: str,
-        automation_id: str,
-        description: str | None = None
+        self, name: str, automation_id: str, description: str | None = None
     ) -> Mapping[str, Any]:
         """Create a manual trigger for an automation.
 
@@ -456,13 +433,10 @@ class Service(ServiceBase):
             "name": name,
             "type": "manual",
             "description": description,
-            "enabled": True
+            "enabled": True,
         }
 
-        res = await self.client.post(
-            "/operations-manager/triggers",
-            json=body
-        )
+        res = await self.client.post("/operations-manager/triggers", json=body)
 
         return res.json()["data"]
 
@@ -472,7 +446,7 @@ class Service(ServiceBase):
         automation_id: str,
         route_name: str,
         schema: dict | None = None,
-        description: str | None = None
+        description: str | None = None,
     ) -> Mapping[str, Any]:
         """Create an API endpoint trigger for an automation.
 
@@ -518,28 +492,21 @@ class Service(ServiceBase):
             "routeName": route_name,
             "description": description,
             "enabled": True,
-            "schema": schema
+            "schema": schema,
         }
 
         if not schema:
             body["schema"] = {
                 "type": "object",
                 "properties": {},
-                "additionalProperties": True
+                "additionalProperties": True,
             }
 
-
-        res = await self.client.post(
-            "/operations-manager/triggers",
-            json=body
-        )
+        res = await self.client.post("/operations-manager/triggers", json=body)
 
         return res.json()["data"]
 
-    async def delete_automation(
-        self,
-        automation_id: str
-    ) -> Mapping[str, str]:
+    async def delete_automation(self, automation_id: str) -> Mapping[str, str]:
         """Delete an automation from the Operations Manager.
 
         This method removes an automation object from the Operations Manager. When

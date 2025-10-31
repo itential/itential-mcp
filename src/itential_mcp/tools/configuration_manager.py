@@ -15,16 +15,15 @@ __tags__ = ("configuration_manager",)
 
 
 async def render_template(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    template: Annotated[str, Field(
-        description="The Jinja2 template string"
-    )],
-    variables: Annotated[dict | str | None, Field(
-        description="Zero or more variables to associate with this template",
-        default=None,
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    template: Annotated[str, Field(description="The Jinja2 template string")],
+    variables: Annotated[
+        dict | str | None,
+        Field(
+            description="Zero or more variables to associate with this template",
+            default=None,
+        ),
+    ],
 ) -> models.RenderTemplateResponse:
     """
     Render a Jinja2 template with provided variables.
@@ -46,11 +45,11 @@ async def render_template(
     """
     await ctx.info("inside render_template()")
     client = ctx.request_context.lifespan_context.get("client")
-    
+
     # Parse variables if it's a JSON string
     if isinstance(variables, str):
         variables = jsonutils.loads(variables)
-    
+
     data = client.configuration_manager.render_template(
         template=template, variables=variables
     )

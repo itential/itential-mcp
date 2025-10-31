@@ -5,7 +5,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from itential_mcp.services.operations_manager import Service
-from itential_mcp import exceptions
+from itential_mcp.core import exceptions
 from ipsdk.platform import AsyncPlatform
 
 

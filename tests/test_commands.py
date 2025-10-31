@@ -7,7 +7,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from itential_mcp import commands, server, metadata, runner
+from itential_mcp import commands, server, runner
+from itential_mcp.core import metadata
 from itential_mcp.utilities import tool as toolutils
 
 
@@ -16,7 +17,7 @@ class TestRunCommand:
 
     def test_run_function_exists(self):
         """Test that the run function exists and is callable"""
-        assert hasattr(commands, 'run')
+        assert hasattr(commands, "run")
         assert callable(commands.run)
 
     def test_run_returns_correct_tuple(self):
@@ -32,16 +33,7 @@ class TestRunCommand:
 
     def test_run_with_various_args(self):
         """Test run function with different argument types"""
-        test_cases = [
-            None,
-            {},
-            "test",
-            [],
-            Mock(),
-            object(),
-            42,
-            True
-        ]
+        test_cases = [None, {}, "test", [], Mock(), object(), 42, True]
 
         for args in test_cases:
             result = commands.run(args)
@@ -53,10 +45,10 @@ class TestRunCommand:
         params = list(sig.parameters.keys())
 
         assert len(params) == 1
-        assert params[0] == 'args'
+        assert params[0] == "args"
 
         # Check parameter type annotation
-        param = sig.parameters['args']
+        param = sig.parameters["args"]
         assert param.annotation == commands.Any
 
     def test_run_function_docstring(self):
@@ -91,7 +83,7 @@ class TestVersionCommand:
 
     def test_version_function_exists(self):
         """Test that the version function exists and is callable"""
-        assert hasattr(commands, 'version')
+        assert hasattr(commands, "version")
         assert callable(commands.version)
 
     def test_version_returns_correct_tuple(self):
@@ -107,16 +99,7 @@ class TestVersionCommand:
 
     def test_version_with_various_args(self):
         """Test version function with different argument types"""
-        test_cases = [
-            None,
-            {},
-            "test",
-            [],
-            Mock(),
-            object(),
-            42,
-            True
-        ]
+        test_cases = [None, {}, "test", [], Mock(), object(), 42, True]
 
         for args in test_cases:
             result = commands.version(args)
@@ -128,10 +111,10 @@ class TestVersionCommand:
         params = list(sig.parameters.keys())
 
         assert len(params) == 1
-        assert params[0] == 'args'
+        assert params[0] == "args"
 
         # Check parameter type annotation
-        param = sig.parameters['args']
+        param = sig.parameters["args"]
         assert param.annotation == commands.Any
 
     def test_version_function_docstring(self):
@@ -158,7 +141,7 @@ class TestToolsCommand:
 
     def test_tools_function_exists(self):
         """Test that the tools function exists and is callable"""
-        assert hasattr(commands, 'tools')
+        assert hasattr(commands, "tools")
         assert callable(commands.tools)
 
     def test_tools_returns_correct_tuple(self):
@@ -174,16 +157,7 @@ class TestToolsCommand:
 
     def test_tools_with_various_args(self):
         """Test tools function with different argument types"""
-        test_cases = [
-            None,
-            {},
-            "test",
-            [],
-            Mock(),
-            object(),
-            42,
-            True
-        ]
+        test_cases = [None, {}, "test", [], Mock(), object(), 42, True]
 
         for args in test_cases:
             result = commands.tools(args)
@@ -195,10 +169,10 @@ class TestToolsCommand:
         params = list(sig.parameters.keys())
 
         assert len(params) == 1
-        assert params[0] == 'args'
+        assert params[0] == "args"
 
         # Check parameter type annotation
-        param = sig.parameters['args']
+        param = sig.parameters["args"]
         assert param.annotation == commands.Any
 
     def test_tools_function_docstring(self):
@@ -225,7 +199,7 @@ class TestTagsCommand:
 
     def test_tags_function_exists(self):
         """Test that the tags function exists and is callable"""
-        assert hasattr(commands, 'tags')
+        assert hasattr(commands, "tags")
         assert callable(commands.tags)
 
     def test_tags_returns_correct_tuple(self):
@@ -241,16 +215,7 @@ class TestTagsCommand:
 
     def test_tags_with_various_args(self):
         """Test tags function with different argument types"""
-        test_cases = [
-            None,
-            {},
-            "test",
-            [],
-            Mock(),
-            object(),
-            42,
-            True
-        ]
+        test_cases = [None, {}, "test", [], Mock(), object(), 42, True]
 
         for args in test_cases:
             result = commands.tags(args)
@@ -262,10 +227,10 @@ class TestTagsCommand:
         params = list(sig.parameters.keys())
 
         assert len(params) == 1
-        assert params[0] == 'args'
+        assert params[0] == "args"
 
         # Check parameter type annotation
-        param = sig.parameters['args']
+        param = sig.parameters["args"]
         assert param.annotation == commands.Any
 
     def test_tags_function_docstring(self):
@@ -292,7 +257,7 @@ class TestCallCommand:
 
     def test_call_function_exists(self):
         """Test that the call function exists and is callable"""
-        assert hasattr(commands, 'call')
+        assert hasattr(commands, "call")
         assert callable(commands.call)
 
     def test_call_returns_correct_tuple_structure(self):
@@ -338,7 +303,7 @@ class TestCallCommand:
         test_cases = [
             ("simple_tool", None),
             ("complex-tool-name", '{"param": "value"}'),
-            ("tool_with_underscores", '{}'),
+            ("tool_with_underscores", "{}"),
             ("Tool123", '{"num": 123}'),
             ("", ""),
         ]
@@ -360,10 +325,10 @@ class TestCallCommand:
         params = list(sig.parameters.keys())
 
         assert len(params) == 1
-        assert params[0] == 'args'
+        assert params[0] == "args"
 
         # Check parameter type annotation
-        param = sig.parameters['args']
+        param = sig.parameters["args"]
         assert param.annotation == commands.Any
 
     def test_call_function_docstring(self):
@@ -389,6 +354,7 @@ class TestCallCommand:
 
     def test_call_args_attribute_access(self):
         """Test that call function properly accesses args attributes"""
+
         # Test with realistic argparse.Namespace-like object
         class MockArgs:
             def __init__(self, tool, params):
@@ -406,10 +372,10 @@ class TestModuleStructure:
 
     def test_module_imports(self):
         """Test that all required modules are imported"""
-        assert hasattr(commands, 'server')
-        assert hasattr(commands, 'metadata')
-        assert hasattr(commands, 'toolutils')
-        assert hasattr(commands, 'runner')
+        assert hasattr(commands, "server")
+        assert hasattr(commands, "metadata")
+        assert hasattr(commands, "toolutils")
+        assert hasattr(commands, "runner")
 
         assert commands.server == server
         assert commands.metadata == metadata
@@ -418,7 +384,7 @@ class TestModuleStructure:
 
     def test_module_functions_exist(self):
         """Test that all expected command functions exist"""
-        expected_functions = ['run', 'version', 'tools', 'tags', 'call']
+        expected_functions = ["run", "version", "tools", "tags", "call"]
 
         for func_name in expected_functions:
             assert hasattr(commands, func_name)
@@ -427,15 +393,21 @@ class TestModuleStructure:
     def test_module_typing_imports(self):
         """Test that typing imports are available"""
         # These should be imported from typing module
-        assert hasattr(commands, 'Any')
-        assert hasattr(commands, 'Coroutine')
-        assert hasattr(commands, 'Sequence')
-        assert hasattr(commands, 'Mapping')
-        assert hasattr(commands, 'Tuple')
+        assert hasattr(commands, "Any")
+        assert hasattr(commands, "Coroutine")
+        assert hasattr(commands, "Sequence")
+        assert hasattr(commands, "Mapping")
+        assert hasattr(commands, "Tuple")
 
     def test_all_functions_have_consistent_signature(self):
         """Test that all command functions have the same signature pattern"""
-        functions = [commands.run, commands.version, commands.tools, commands.tags, commands.call]
+        functions = [
+            commands.run,
+            commands.version,
+            commands.tools,
+            commands.tags,
+            commands.call,
+        ]
 
         for func in functions:
             sig = inspect.signature(func)
@@ -443,15 +415,21 @@ class TestModuleStructure:
 
             # All should have exactly one parameter named 'args'
             assert len(params) == 1
-            assert params[0] == 'args'
+            assert params[0] == "args"
 
             # All should have Any type annotation for args parameter
-            param = sig.parameters['args']
+            param = sig.parameters["args"]
             assert param.annotation == commands.Any
 
     def test_all_functions_return_tuple(self):
         """Test that all command functions return tuples"""
-        functions = [commands.run, commands.version, commands.tools, commands.tags, commands.call]
+        functions = [
+            commands.run,
+            commands.version,
+            commands.tools,
+            commands.tags,
+            commands.call,
+        ]
         args = Mock()
         args.tool = "test"
         args.params = None
@@ -463,7 +441,13 @@ class TestModuleStructure:
 
     def test_functions_are_not_coroutines(self):
         """Test that command functions themselves are not coroutines"""
-        functions = [commands.run, commands.version, commands.tools, commands.tags, commands.call]
+        functions = [
+            commands.run,
+            commands.version,
+            commands.tools,
+            commands.tags,
+            commands.call,
+        ]
 
         for func in functions:
             assert not asyncio.iscoroutinefunction(func)
@@ -492,6 +476,7 @@ class TestCommandsIntegration:
 
     def test_run_with_realistic_args(self):
         """Test run with realistic argument structure"""
+
         class MockArgs:
             def __init__(self):
                 self.transport = "stdio"
@@ -508,6 +493,7 @@ class TestCommandsIntegration:
 
     def test_call_with_realistic_args(self):
         """Test call with realistic argument structure"""
+
         class MockArgs:
             def __init__(self):
                 self.tool = "get_platform_info"
@@ -517,7 +503,10 @@ class TestCommandsIntegration:
         result = commands.call(args)
 
         assert result[0] == runner.run
-        assert result[1] == ("get_platform_info", '{"include_version": true, "format": "json"}')
+        assert result[1] == (
+            "get_platform_info",
+            '{"include_version": true, "format": "json"}',
+        )
         assert result[2] is None
 
     def test_all_commands_can_be_called_multiple_times(self):
@@ -526,7 +515,13 @@ class TestCommandsIntegration:
         args.tool = "test_tool"
         args.params = "{}"
 
-        functions = [commands.run, commands.version, commands.tools, commands.tags, commands.call]
+        functions = [
+            commands.run,
+            commands.version,
+            commands.tools,
+            commands.tags,
+            commands.call,
+        ]
 
         for func in functions:
             # Call multiple times
@@ -552,7 +547,13 @@ class TestCommandsIntegration:
             call_result = commands.call(args)
 
             # All should return 3-element tuples
-            for result in [run_result, version_result, tools_result, tags_result, call_result]:
+            for result in [
+                run_result,
+                version_result,
+                tools_result,
+                tags_result,
+                call_result,
+            ]:
                 assert len(result) == 3
                 assert callable(result[0])
 
@@ -561,7 +562,12 @@ class TestCommandsIntegration:
         edge_cases = [None, 0, "", [], {}, False, True, object()]
 
         # These functions don't access args attributes
-        simple_functions = [commands.run, commands.version, commands.tools, commands.tags]
+        simple_functions = [
+            commands.run,
+            commands.version,
+            commands.tools,
+            commands.tags,
+        ]
 
         for args in edge_cases:
             for func in simple_functions:
