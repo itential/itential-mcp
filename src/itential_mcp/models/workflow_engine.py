@@ -60,7 +60,7 @@ class JobMetricElement(BaseModel):
                 The name of the workflow
                 """
             ),
-            default = None
+            default=None,
         ),
     ]
 
@@ -226,7 +226,7 @@ class TaskMetricElement(BaseModel):
                 The task identifier in the workflow
                 """
             ),
-            default = None
+            default=None,
         ),
     ]
 
@@ -283,7 +283,7 @@ class TaskMetricElement(BaseModel):
                 The name of the workflow the task is part of
                 """
             ),
-            default = None
+            default=None,
         ),
     ]
 

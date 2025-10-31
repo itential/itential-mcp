@@ -2,7 +2,6 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 
-
 def tostr(s: str | None) -> str:
     """Convert a value to a string representation.
 
@@ -99,12 +98,12 @@ def is_valid_url_path(path: str) -> bool:
         return False
 
     # Check each path segment
-    segments = path.split('/')
+    segments = path.split("/")
     for segment in segments[1:]:  # Skip first empty segment
         # Segment can be empty (double slashes are technically valid)
         if segment:
             # Check for reserved characters that need encoding
-            if any(char in segment for char in ['?', '#']):
+            if any(char in segment for char in ["?", "#"]):
                 return False
 
     return True

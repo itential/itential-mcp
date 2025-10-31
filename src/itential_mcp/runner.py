@@ -11,7 +11,7 @@ from itential_mcp import config
 from itential_mcp import server
 
 
-async def run(tool: str, params: Mapping[str, Any] | None=None) -> None:
+async def run(tool: str, params: Mapping[str, Any] | None = None) -> None:
     """
     Run the specified tool and return the results
 
@@ -55,9 +55,7 @@ async def run(tool: str, params: Mapping[str, Any] | None=None) -> None:
             for t in res.tools:
                 tools[t.name] = t.inputSchema
 
-            kwargs = {
-                "arguments": json.loads(params) if params else None
-            }
+            kwargs = {"arguments": json.loads(params) if params else None}
 
             if tool not in tools:
                 raise ValueError(f"invalid tool: {tool}")
@@ -74,7 +72,6 @@ async def run(tool: str, params: Mapping[str, Any] | None=None) -> None:
                     for item in kwargs["arguments"]:
                         if item not in tools[tool]["properties"]:
                             raise ValueError(f"invalid argument: {item}")
-
 
             # Execute operations
             result = await client.call_tool(tool, **kwargs)

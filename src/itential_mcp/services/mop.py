@@ -70,9 +70,7 @@ class Service(ServiceBase):
         return res.json()
 
     async def describe_command_template(
-        self,
-        name: str,
-        project: str | None = None
+        self, name: str, project: str | None = None
     ) -> Dict[str, Any]:
         """
         Get detailed information about a specific command template.
@@ -99,18 +97,15 @@ class Service(ServiceBase):
             template_name = f"@{project_id}: {name}"
 
         res = await self.client.get(f"/mop/listATemplate/{template_name}")
-        
+
         data = res.json()
         if not data:
             raise ValueError(f"Command template '{name}' not found")
-        
+
         return data[0]
 
     async def run_command_template(
-        self,
-        name: str,
-        devices: List[str],
-        project: str | None = None
+        self, name: str, devices: List[str], project: str | None = None
     ) -> Dict[str, Any]:
         """
         Execute a command template against specified devices with rule evaluation.
@@ -150,11 +145,7 @@ class Service(ServiceBase):
 
         return res.json()
 
-    async def run_command(
-        self,
-        cmd: str,
-        devices: List[str]
-    ) -> List[Dict[str, Any]]:
+    async def run_command(self, cmd: str, devices: List[str]) -> List[Dict[str, Any]]:
         """
         Run a single command against multiple devices.
 
@@ -188,7 +179,7 @@ class Service(ServiceBase):
         description: str | None = None,
         os: str = "",
         pass_rule: bool = True,
-        ignore_warnings: bool = False
+        ignore_warnings: bool = False,
     ) -> Dict[str, Any]:
         """
         Create a new command template in Itential Platform.
@@ -234,7 +225,7 @@ class Service(ServiceBase):
                 "created": int(time.time() * 1000),  # Current timestamp in milliseconds
                 "createdBy": "system",  # This should be replaced with actual user
                 "lastUpdated": int(time.time() * 1000),
-                "lastUpdatedBy": "system"
+                "lastUpdatedBy": "system",
             }
         }
 
@@ -252,7 +243,7 @@ class Service(ServiceBase):
         description: str | None = None,
         os: str = "",
         pass_rule: bool = True,
-        ignore_warnings: bool = False
+        ignore_warnings: bool = False,
     ) -> Dict[str, Any]:
         """
         Update an existing command template in Itential Platform.
@@ -301,7 +292,7 @@ class Service(ServiceBase):
                 "created": existing_template.get("created"),
                 "createdBy": existing_template.get("createdBy"),
                 "lastUpdated": int(time.time() * 1000),
-                "lastUpdatedBy": "system"
+                "lastUpdatedBy": "system",
             }
         }
 

@@ -39,7 +39,7 @@ class TestTransformationsService:
             "type": "JSONtoJSON",
             "input": {"type": "object"},
             "output": {"type": "object"},
-            "map": {"field1": "field2"}
+            "map": {"field1": "field2"},
         }
 
         # Mock response data
@@ -103,7 +103,7 @@ class TestTransformationsService:
         expected_transformation = {
             "_id": transformation_id,
             "name": "Unicode Test Transformation",
-            "description": "测试转换"
+            "description": "测试转换",
         }
 
         mock_response = MagicMock()
@@ -117,12 +117,14 @@ class TestTransformationsService:
         assert result == expected_transformation
 
     @pytest.mark.asyncio
-    async def test_describe_transformation_special_characters(self, service, mock_client):
+    async def test_describe_transformation_special_characters(
+        self, service, mock_client
+    ):
         """Test transformation description with special characters in ID"""
         transformation_id = "transformation-123_test@domain.com"
         expected_transformation = {
             "_id": transformation_id,
-            "name": "Special Chars Transformation"
+            "name": "Special Chars Transformation",
         }
 
         mock_response = MagicMock()
@@ -141,7 +143,7 @@ class TestTransformationsService:
         transformation_id = "namespace/transformation-123"
         expected_transformation = {
             "_id": transformation_id,
-            "name": "Namespaced Transformation"
+            "name": "Namespaced Transformation",
         }
 
         mock_response = MagicMock()
@@ -178,11 +180,17 @@ class TestTransformationTypes:
             "_id": transformation_id,
             "name": "JSON to JSON Transformation",
             "type": "JSONtoJSON",
-            "input": {"type": "object", "properties": {"input_field": {"type": "string"}}},
-            "output": {"type": "object", "properties": {"output_field": {"type": "string"}}},
+            "input": {
+                "type": "object",
+                "properties": {"input_field": {"type": "string"}},
+            },
+            "output": {
+                "type": "object",
+                "properties": {"output_field": {"type": "string"}},
+            },
             "map": {"output_field": "input_field"},
             "hardcodedValues": {},
-            "conditional": {}
+            "conditional": {},
         }
 
         mock_response = MagicMock()
@@ -205,8 +213,11 @@ class TestTransformationTypes:
             "name": "Template Transformation",
             "type": "template",
             "template": "Hello {{ name }}, your ID is {{ id }}",
-            "input": {"type": "object", "properties": {"name": {"type": "string"}, "id": {"type": "string"}}},
-            "output": {"type": "string"}
+            "input": {
+                "type": "object",
+                "properties": {"name": {"type": "string"}, "id": {"type": "string"}},
+            },
+            "output": {"type": "string"},
         }
 
         mock_response = MagicMock()
@@ -229,7 +240,7 @@ class TestTransformationTypes:
             "type": "javascript",
             "script": "return input.toUpperCase();",
             "input": {"type": "string"},
-            "output": {"type": "string"}
+            "output": {"type": "string"},
         }
 
         mock_response = MagicMock()
@@ -262,6 +273,7 @@ class TestServiceIntegration:
     async def test_service_inherits_from_servicebase(self, service):
         """Test that Service properly inherits from ServiceBase"""
         from itential_mcp.services import ServiceBase
+
         assert isinstance(service, ServiceBase)
 
     @pytest.mark.asyncio
@@ -271,10 +283,10 @@ class TestServiceIntegration:
 
         # Check describe_transformation signature
         describe_sig = inspect.signature(service.describe_transformation)
-        assert 'transformation_id' in describe_sig.parameters
+        assert "transformation_id" in describe_sig.parameters
 
         # Verify parameter type annotation
-        transformation_id_param = describe_sig.parameters['transformation_id']
+        transformation_id_param = describe_sig.parameters["transformation_id"]
         assert transformation_id_param.annotation is str
 
     @pytest.mark.asyncio
@@ -284,11 +296,12 @@ class TestServiceIntegration:
 
         # Get all public methods (not starting with _)
         public_methods = [
-            method for method in dir(service)
-            if not method.startswith('_') and callable(getattr(service, method))
+            method
+            for method in dir(service)
+            if not method.startswith("_") and callable(getattr(service, method))
         ]
 
-        for method_name in ['describe_transformation']:
+        for method_name in ["describe_transformation"]:
             if method_name in public_methods:
                 method = getattr(service, method_name)
                 assert inspect.iscoroutinefunction(method)
@@ -366,6 +379,7 @@ class TestErrorHandling:
     async def test_network_timeout_error(self, service, mock_client):
         """Test handling of network timeout errors"""
         import asyncio
+
         mock_client.get.side_effect = asyncio.TimeoutError("Request timed out")
 
         with pytest.raises(asyncio.TimeoutError):
@@ -419,23 +433,19 @@ class TestEdgeCases:
                         "properties": {
                             "deep": {
                                 "type": "object",
-                                "properties": {
-                                    "value": {"type": "string"}
-                                }
+                                "properties": {"value": {"type": "string"}},
                             }
-                        }
+                        },
                     }
-                }
+                },
             },
-            "map": {
-                "output.result": "nested.deep.value"
-            },
+            "map": {"output.result": "nested.deep.value"},
             "conditionals": [
                 {
                     "condition": "nested.deep.value !== null",
-                    "map": {"status": "processed"}
+                    "map": {"status": "processed"},
                 }
-            ]
+            ],
         }
 
         mock_response = MagicMock()
@@ -446,7 +456,12 @@ class TestEdgeCases:
 
         # Should preserve complex data structures
         assert result == complex_transformation
-        assert result["input"]["properties"]["nested"]["properties"]["deep"]["properties"]["value"]["type"] == "string"
+        assert (
+            result["input"]["properties"]["nested"]["properties"]["deep"]["properties"][
+                "value"
+            ]["type"]
+            == "string"
+        )
         assert result["map"]["output.result"] == "nested.deep.value"
 
     @pytest.mark.asyncio
@@ -459,7 +474,7 @@ class TestEdgeCases:
             "description": None,
             "template": None,
             "script": None,
-            "tags": []
+            "tags": [],
         }
 
         mock_response = MagicMock()
@@ -475,10 +490,15 @@ class TestEdgeCases:
         assert result["script"] is None
 
     @pytest.mark.asyncio
-    async def test_transformation_id_with_url_encoding_chars(self, service, mock_client):
+    async def test_transformation_id_with_url_encoding_chars(
+        self, service, mock_client
+    ):
         """Test transformation ID with characters that need URL encoding"""
         transformation_id = "transformation with spaces & special chars!"
-        expected_transformation = {"_id": transformation_id, "name": "URL Encoded Transformation"}
+        expected_transformation = {
+            "_id": transformation_id,
+            "name": "URL Encoded Transformation",
+        }
 
         mock_response = MagicMock()
         mock_response.json.return_value = expected_transformation
@@ -582,16 +602,21 @@ class TestPerformanceConsiderations:
         """Test concurrent describe_transformation calls"""
         import asyncio
 
-        transformation_ids = ["transformation-1", "transformation-2", "transformation-3"]
-        
+        transformation_ids = [
+            "transformation-1",
+            "transformation-2",
+            "transformation-3",
+        ]
+
         call_count = [0]
+
         def create_response(*args, **kwargs):
             call_count[0] += 1
             transformation_id = f"transformation-{call_count[0]}"
             response = MagicMock()
             response.json.return_value = {
-                "_id": transformation_id, 
-                "name": f"Transformation {call_count[0]}"
+                "_id": transformation_id,
+                "name": f"Transformation {call_count[0]}",
             }
             return response
 
@@ -619,7 +644,7 @@ class TestPerformanceConsiderations:
     async def test_large_transformation_response(self, service, mock_client):
         """Test handling of large transformation responses"""
         transformation_id = "large-transformation"
-        
+
         # Create a large transformation with many fields
         large_transformation = {
             "_id": transformation_id,
@@ -629,13 +654,17 @@ class TestPerformanceConsiderations:
             "output": {"type": "object", "properties": {}},
             "map": {},
             "hardcodedValues": {},
-            "conditionals": []
+            "conditionals": [],
         }
-        
+
         # Add many properties to simulate large response
         for i in range(1000):
-            large_transformation["input"]["properties"][f"field_{i}"] = {"type": "string"}
-            large_transformation["output"]["properties"][f"out_field_{i}"] = {"type": "string"}
+            large_transformation["input"]["properties"][f"field_{i}"] = {
+                "type": "string"
+            }
+            large_transformation["output"]["properties"][f"out_field_{i}"] = {
+                "type": "string"
+            }
             large_transformation["map"][f"out_field_{i}"] = f"field_{i}"
 
         mock_response = MagicMock()

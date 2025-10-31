@@ -3,7 +3,7 @@
 
 from typing import Mapping, Any, List, Literal
 
-from itential_mcp import exceptions
+from itential_mcp.core import exceptions
 
 from itential_mcp.services import ServiceBase
 
@@ -35,10 +35,7 @@ class Service(ServiceBase):
 
     name: str = "automation_studio"
 
-    async def _describe_workflow(
-        self,
-        params: dict | None = None
-    ) -> Mapping[str, Any]:
+    async def _describe_workflow(self, params: dict | None = None) -> Mapping[str, Any]:
         """Internal helper method for retrieving workflow details from Automation Studio.
 
         This private method handles the common workflow retrieval logic used by both
@@ -59,10 +56,7 @@ class Service(ServiceBase):
             NotFoundError: If no workflow is found or if multiple workflows match
                 the query parameters.
         """
-        res = await self.client.get(
-            "/automation-studio/workflows",
-            params=params
-        )
+        res = await self.client.get("/automation-studio/workflows", params=params)
 
         data = res.json()
 
@@ -71,10 +65,7 @@ class Service(ServiceBase):
 
         return data["items"][0]
 
-    async def describe_workflow_with_id(
-        self,
-        workflow_id: str
-    ) -> Mapping[str, Any]:
+    async def describe_workflow_with_id(self, workflow_id: str) -> Mapping[str, Any]:
         """
         Describe an Automation Studio workflow
 
@@ -98,15 +89,9 @@ class Service(ServiceBase):
             NotFoundError: If the workflow could not be found on
                 the server
         """
-        return await self._describe_workflow(
-            params={"equals[_id]": workflow_id}
-        )
+        return await self._describe_workflow(params={"equals[_id]": workflow_id})
 
-
-    async def describe_workflow_with_name(
-        self,
-        name: str
-    ) -> Mapping[str, Any]:
+    async def describe_workflow_with_name(self, name: str) -> Mapping[str, Any]:
         """Describe an Automation Studio workflow by name.
 
         This method retrieves a specific workflow from the Automation Studio
@@ -129,9 +114,7 @@ class Service(ServiceBase):
             NotFoundError: If the workflow with the specified name could not be
                 found on the server.
         """
-        return await self._describe_workflow(
-            params={"equals[name]": name}
-        )
+        return await self._describe_workflow(params={"equals[name]": name})
 
     async def _get_templates(
         self,
@@ -187,10 +170,8 @@ class Service(ServiceBase):
 
         return results
 
-
     async def get_templates(
-        self,
-        template_type: Literal["textfsm", "jinaj2"] | None = None
+        self, template_type: Literal["textfsm", "jinaj2"] | None = None
     ) -> Mapping[str, Any]:
         """Get all templates from Automation Studio.
 
@@ -221,11 +202,8 @@ class Service(ServiceBase):
             params = {"equals[type]": template_type}
         return await self._get_templates(params=params)
 
-
     async def describe_template(
-        self,
-        name: str,
-        project: str | None = None
+        self, name: str, project: str | None = None
     ) -> Mapping[str, Any]:
         """Get detailed information about a specific template from Automation Studio.
 
@@ -267,7 +245,7 @@ class Service(ServiceBase):
         description: str | None = None,
         command: str | None = None,
         template: str | None = None,
-        data: str | None = None
+        data: str | None = None,
     ) -> Mapping[str, str]:
         """Create a new template in Automation Studio.
 
@@ -304,23 +282,21 @@ class Service(ServiceBase):
             Exception: If there is an error creating the template in the
                 Automation Studio API.
         """
-        body  = {
+        body = {
             "name": name,
             "type": template_type,
             "group": group,
             "description": description or "",
             "command": command or "",
             "template": template or "",
-            "data": data or ""
+            "data": data or "",
         }
 
         res = await self.client.post(
-            "/automation-studio/templates",
-            json={"template": body}
+            "/automation-studio/templates", json={"template": body}
         )
 
         return res.json()["created"]
-
 
     async def update_template(
         self,
@@ -329,7 +305,7 @@ class Service(ServiceBase):
         description: str | None = None,
         command: str | None = None,
         template: str | None = None,
-        data: str | None = None
+        data: str | None = None,
     ) -> Mapping[str, str]:
         """Update an existing template in Automation Studio.
 
@@ -366,14 +342,14 @@ class Service(ServiceBase):
             Exception: If there is an error updating the template in the
                 Automation Studio API.
         """
-        body  = {
+        body = {
             "name": name,
             "group": None,
             "type": None,
             "description": description or "",
             "command": command or "",
             "template": template or "",
-            "data": data or ""
+            "data": data or "",
         }
 
         existing = await self.describe_template(name=name, project=project)
@@ -383,8 +359,7 @@ class Service(ServiceBase):
                 body[key] = existing[key]
 
         res = await self.client.put(
-            f"/automation-studio/templates/{existing['_id']}",
-            json={"update": body}
+            f"/automation-studio/templates/{existing['_id']}", json={"update": body}
         )
 
         return res.json()["updated"]
@@ -463,8 +438,7 @@ class Service(ServiceBase):
                 from the Automation Studio API.
         """
         res = await self.client.get(
-            "/automation-studio/projects",
-            params={"equals[name]": name}
+            "/automation-studio/projects", params={"equals[name]": name}
         )
 
         json_data = res.json()

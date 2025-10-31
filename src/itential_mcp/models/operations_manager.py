@@ -28,60 +28,60 @@ class WorkflowElement(BaseModel):
     name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Workflow name (use this as the identifier for workflow operations)
                 """
             )
-        )
+        ),
     ]
 
     description: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Workflow description
                 """
             ),
-            default = None
-        )
+            default=None,
+        ),
     ]
 
     input_schema: Annotated[
         Mapping[str, Any] | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Input schema for workflow parameters (JSON Schema draft-07 format)
                 """
             ),
-            default = None
-        )
+            default=None,
+        ),
     ]
 
     route_name: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 API route name for triggering the workflow (use with start_workflow)
                 """
             ),
-            default = None
-        )
+            default=None,
+        ),
     ]
 
     last_executed: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 ISO 8601 timestamp of last execution (null if never executed)
                 """
             ),
-            default = None
-        )
+            default=None,
+        ),
     ]
 
 
@@ -101,13 +101,13 @@ class GetWorkflowsResponse(RootModel):
     root: Annotated[
         List[WorkflowElement],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 List of workflow objects with workflow metadata and configuration
                 """
             ),
-            default_factory = list
-        )
+            default_factory=list,
+        ),
     ]
 
 
@@ -127,37 +127,37 @@ class JobMetrics(BaseModel):
     start_time: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The time when the job execution was started.
                 """
             ),
-            default = None
-        )
+            default=None,
+        ),
     ]
 
     end_time: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The time when the job execution completed (if finished).
                 """
             ),
-            default = None
-        )
+            default=None,
+        ),
     ]
 
     user: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Username of the user who initiated the job execution
                 """
             ),
-            default = None
-        )
+            default=None,
+        ),
     ]
 
 
@@ -181,68 +181,68 @@ class StartWorkflowResponse(BaseModel):
     object_id: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Unique job identifier (use with describe_job for monitoring)
                 """
             )
-        )
+        ),
     ]
 
     name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Workflow name that was executed
                 """
             )
-        )
+        ),
     ]
 
     description: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Workflow description
                 """
             ),
-            default = None
-        )
+            default=None,
+        ),
     ]
 
     tasks: Annotated[
         Mapping[str, Any],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Complete set of tasks to be executed in the workflow
                 """
             )
-        )
+        ),
     ]
 
     status: Annotated[
         Literal["error", "complete", "running", "canceled", "incomplete", "paused"],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Current job status (error, complete, running, canceled, incomplete, paused)
                 """
             )
-        )
+        ),
     ]
 
     metrics: Annotated[
         JobMetrics,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Job execution metrics including start_time, end_time, and user
                 """
             )
-        )
+        ),
     ]
 
 
@@ -265,46 +265,46 @@ class JobElement(BaseModel):
         str,
         Field(
             alias="_id",
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Unique job identifier
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Job name
                 """
             )
-        )
+        ),
     ]
 
     description: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Job description
                 """
             ),
-            default = None
-        )
+            default=None,
+        ),
     ]
 
     status: Annotated[
         Literal["error", "complete", "running", "canceled", "incomplete", "paused"],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Current job status (error, complete, running, canceled, incomplete, paused)
                 """
             )
-        )
+        ),
     ]
 
 
@@ -324,13 +324,13 @@ class GetJobsResponse(RootModel):
     root: Annotated[
         List[JobElement],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 List of job objects with job metadata and status
                 """
             ),
-            default_factory = list
-        )
+            default_factory=list,
+        ),
     ]
 
 
@@ -357,93 +357,94 @@ class DescribeJobResponse(BaseModel):
         str,
         Field(
             alias="_id",
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Unique job identifier
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Job name
                 """
             )
-        )
+        ),
     ]
 
     description: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Job description
                 """
             ),
-            default = None
-        )
+            default=None,
+        ),
     ]
 
     job_type: Annotated[
         str,
         Field(
             alias="type",
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Job type (automation, resource:action, resource:compliance)
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     tasks: Annotated[
         Mapping[str, Any],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Complete set of tasks executed
                 """
             )
-        )
+        ),
     ]
 
     status: Annotated[
         Literal["error", "complete", "running", "canceled", "incomplete", "paused"],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Current job status (error, complete, running, canceled,
                 incomplete, paused)
                 """
             )
-        )
+        ),
     ]
 
     metrics: Annotated[
         Mapping[str, Any],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Job execution metrics including start time, end time, and account
                 """
             )
-        )
+        ),
     ]
 
     updated: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Last update timestamp
                 """
             )
-        )
+        ),
     ]
+
 
 class ExposeWorkflowResponse(BaseModel):
     """Response model for workflow exposure endpoints.
@@ -459,10 +460,10 @@ class ExposeWorkflowResponse(BaseModel):
     message: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The status of the expose operation
                 """
             )
-        )
+        ),
     ]

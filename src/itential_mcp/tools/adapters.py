@@ -14,9 +14,7 @@ __tags__ = ("adapters",)
 
 
 async def get_adapters(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
 ) -> models.GetAdaptersResponse:
     """
     Get all adapters configured on the Itential Platform instance.
@@ -51,16 +49,11 @@ async def get_adapters(
 
 
 async def start_adapter(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the adapter to start"
-    )],
-    timeout: Annotated[int, Field(
-        description="Timeout waiting for adapter to start",
-        default=10
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="The name of the adapter to start")],
+    timeout: Annotated[
+        int, Field(description="Timeout waiting for adapter to start", default=10)
+    ],
 ) -> models.StartAdapterResponse:
     """
     Start an adapter on Itential Platform.
@@ -94,16 +87,11 @@ async def start_adapter(
 
 
 async def stop_adapter(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the adapter to stop"
-    )],
-    timeout: Annotated[int, Field(
-        description="Timeout waiting for adapter to stop",
-        default=10
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="The name of the adapter to stop")],
+    timeout: Annotated[
+        int, Field(description="Timeout waiting for adapter to stop", default=10)
+    ],
 ) -> models.StopAdapterResponse:
     """
     Stop an adapter on Itential Platform.
@@ -137,16 +125,11 @@ async def stop_adapter(
 
 
 async def restart_adapter(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the adapter to restart"
-    )],
-    timeout: Annotated[int, Field(
-        description="Timeout waiting for adapter to restart",
-        default=10
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="The name of the adapter to restart")],
+    timeout: Annotated[
+        int, Field(description="Timeout waiting for adapter to restart", default=10)
+    ],
 ) -> models.RestartAdapterResponse:
     """
     Restart an adapter on Itential Platform.

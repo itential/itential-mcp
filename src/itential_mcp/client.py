@@ -12,8 +12,8 @@ from ipsdk.connection import Response
 
 from . import config
 from . import response
-from . import exceptions
-from . import logging
+from .core import exceptions
+from .core import logging
 
 
 class PlatformClient(object):

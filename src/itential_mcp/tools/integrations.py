@@ -7,7 +7,7 @@ from pydantic import Field
 
 from fastmcp import Context
 
-from itential_mcp import exceptions
+from itential_mcp.core import exceptions
 from itential_mcp.models import integrations as models
 
 
@@ -15,9 +15,7 @@ __tags__ = ("integrations",)
 
 
 async def get_integration_models(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
 ) -> models.GetIntegrationModelsResponse:
     """
     Get all integration models from Itential Platform.
@@ -58,12 +56,8 @@ async def get_integration_models(
 
 
 async def create_integration_model(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    model: Annotated[dict, Field(
-        description="OpenAPI specification"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    model: Annotated[dict, Field(description="OpenAPI specification")],
 ) -> models.CreateIntegrationModelResponse:
     """
     Create a new integration model on Itential Platform from an OpenAPI specification.

@@ -9,9 +9,9 @@ the future.
 from fastmcp.server.auth.auth import AuthProvider
 from fastmcp.server.auth.providers.jwt import JWTVerifier
 
-from . import logging
+from .core import logging
 from .config import Config
-from .exceptions import ConfigurationException
+from .core.exceptions import ConfigurationException
 
 
 def build_auth_provider(cfg: Config) -> AuthProvider | None:

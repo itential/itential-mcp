@@ -58,7 +58,7 @@ class TestDevice:
         }
 
         device = Device(**device_data)
-        
+
         assert device.name == "router-1"
         assert device.host == "192.168.1.1"
         assert device.deviceType is None

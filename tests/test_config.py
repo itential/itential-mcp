@@ -154,9 +154,13 @@ def test_auth_config_from_env(monkeypatch):
             monkeypatch.delenv(key, raising=False)
 
     monkeypatch.setenv("ITENTIAL_MCP_SERVER_AUTH_TYPE", "jwt")
-    monkeypatch.setenv("ITENTIAL_MCP_SERVER_AUTH_JWKS_URI", "https://idp.example.com/jwks.json")
+    monkeypatch.setenv(
+        "ITENTIAL_MCP_SERVER_AUTH_JWKS_URI", "https://idp.example.com/jwks.json"
+    )
     monkeypatch.setenv("ITENTIAL_MCP_SERVER_AUTH_ISSUER", "https://idp.example.com/")
-    monkeypatch.setenv("ITENTIAL_MCP_SERVER_AUTH_AUDIENCE", "itential-mcp,another-client")
+    monkeypatch.setenv(
+        "ITENTIAL_MCP_SERVER_AUTH_AUDIENCE", "itential-mcp,another-client"
+    )
     monkeypatch.setenv("ITENTIAL_MCP_SERVER_AUTH_REQUIRED_SCOPES", "read:all,write:all")
 
     cfg = config_module.get()
@@ -167,6 +171,7 @@ def test_auth_config_from_env(monkeypatch):
     assert auth["issuer"] == "https://idp.example.com/"
     assert auth["audience"] == ["itential-mcp", "another-client"]
     assert auth["required_scopes"] == ["read:all", "write:all"]
+
 
 class TestValidateToolName:
     """Test cases for validate_tool_name function."""

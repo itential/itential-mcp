@@ -48,9 +48,7 @@ async def _get_job_metrics(
 
 
 async def get_job_metrics(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
 ) -> models.GetJobMetricsResponse:
     """
     Get aggregate job metrics from the Workflow Engine.
@@ -77,12 +75,10 @@ async def get_job_metrics(
 
 
 async def get_job_metrics_for_workflow(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the workflow to get the job metrics for"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[
+        str, Field(description="The name of the workflow to get the job metrics for")
+    ],
 ) -> models.GetJobMetricsResponse:
     """
     Get the job metrics for the specified workflow from Workflow Engine.
@@ -149,9 +145,7 @@ async def _get_task_metrics(
 
 
 async def get_task_metrics(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
 ) -> models.GetTaskMetricsResponse:
     """
     Get all aggregate task metrics from the Workflow Engine.
@@ -179,12 +173,10 @@ async def get_task_metrics(
 
 
 async def get_task_metrics_for_workflow(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the workflow to retrieve task metrics for"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[
+        str, Field(description="The name of the workflow to retrieve task metrics for")
+    ],
 ) -> models.GetTaskMetricsResponse:
     """
     Get all task metrics for the specified workflow from Workflow Engine.
@@ -218,12 +210,11 @@ async def get_task_metrics_for_workflow(
 
 
 async def get_task_metrics_for_app(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the application to retrieve task metrics for"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[
+        str,
+        Field(description="The name of the application to retrieve task metrics for"),
+    ],
 ) -> models.GetTaskMetricsResponse:
     """
     Get all task metrics for the specified application from Workflow Engine.
@@ -257,12 +248,10 @@ async def get_task_metrics_for_app(
 
 
 async def get_task_metrics_for_task(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the task to retrieve task metrics for"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[
+        str, Field(description="The name of the task to retrieve task metrics for")
+    ],
 ) -> models.GetTaskMetricsResponse:
     """
     Get all task metrics for the named task from Workflow Engine.

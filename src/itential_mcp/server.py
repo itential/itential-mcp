@@ -21,7 +21,7 @@ from . import client
 from . import config
 from .utilities import tool as toolutils
 from . import bindings
-from . import logging
+from .core import logging
 
 from .middleware.bindings import BindingsMiddleware
 
@@ -67,7 +67,6 @@ async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
 
 
 class Server:
-
     def __init__(self, cfg: config.Config):
         self.config = cfg
         self.mcp = None
@@ -124,7 +123,11 @@ class Server:
 
         self.mcp.add_middleware(ErrorHandlingMiddleware(logger=logger))
         self.mcp.add_middleware(DetailedTimingMiddleware(logger=logger))
-        self.mcp.add_middleware(LoggingMiddleware(logger=logger, include_payloads=True, max_payload_length=1000))
+        self.mcp.add_middleware(
+            LoggingMiddleware(
+                logger=logger, include_payloads=True, max_payload_length=1000
+            )
+        )
         self.mcp.add_middleware(BindingsMiddleware(self.config))
 
     async def __init_tools__(self) -> None:
@@ -153,7 +156,9 @@ class Server:
 
                 except ValueError:
                     # tool does not have an output_schema defined
-                    logger.warning(f"tool {f.__name__} has a missing or invalid output_schema")
+                    logger.warning(
+                        f"tool {f.__name__} has a missing or invalid output_schema"
+                    )
                     pass
 
                 self.mcp.tool(f, **kwargs)
@@ -171,7 +176,7 @@ class Server:
         """Run the server."""
         kwargs = {
             "transport": self.config.server.get("transport"),
-            "show_banner": False
+            "show_banner": False,
         }
 
         if kwargs["transport"] in ("sse", "http"):
@@ -186,8 +191,6 @@ class Server:
                 kwargs["path"] = self.config.server.get("path")
 
         return await self.mcp.run_async(**kwargs)
-
-
 
 
 async def run() -> int:

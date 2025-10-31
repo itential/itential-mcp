@@ -173,7 +173,6 @@ class TestBindingsMiddleware:
         assert "_tool_config" not in mock_context.message.arguments
 
 
-
 class TestRun:
     """Test the run() function for server execution"""
 
@@ -181,7 +180,9 @@ class TestRun:
     @patch("itential_mcp.server.Server")
     @patch("itential_mcp.server.config.get")
     @patch("itential_mcp.server.logging.set_level")
-    async def test_run_stdio_transport_success(self, mock_set_level, mock_config_get, mock_server_class):
+    async def test_run_stdio_transport_success(
+        self, mock_set_level, mock_config_get, mock_server_class
+    ):
         """Test successful server run with stdio transport"""
         # Setup mocks
         mock_config = MagicMock()
@@ -274,7 +275,9 @@ class TestRun:
     @patch("itential_mcp.server.Server")
     @patch("itential_mcp.server.config.get")
     @patch("itential_mcp.server.logging.set_level")
-    async def test_run_tool_registration_failure(self, mock_set_level, mock_config_get, mock_server_class):
+    async def test_run_tool_registration_failure(
+        self, mock_set_level, mock_config_get, mock_server_class
+    ):
         """Test server exits when tool registration fails in Server context manager"""
         mock_config = MagicMock()
         mock_config.server = {"transport": "stdio"}
@@ -283,7 +286,9 @@ class TestRun:
 
         # Make Server.__aenter__ raise an exception (simulates tool registration failure)
         mock_server_instance = MagicMock()
-        mock_server_instance.__aenter__ = AsyncMock(side_effect=Exception("Tool import failed"))
+        mock_server_instance.__aenter__ = AsyncMock(
+            side_effect=Exception("Tool import failed")
+        )
         mock_server_instance.__aexit__ = AsyncMock(return_value=None)
         mock_server_class.return_value = mock_server_instance
 
@@ -337,7 +342,9 @@ class TestRun:
 
         # Setup server instance mock to raise RuntimeError
         mock_server_instance = MagicMock()
-        mock_server_instance.run = AsyncMock(side_effect=RuntimeError("Unexpected error"))
+        mock_server_instance.run = AsyncMock(
+            side_effect=RuntimeError("Unexpected error")
+        )
         mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
         mock_server_instance.__aexit__ = AsyncMock(return_value=None)
         mock_server_class.return_value = mock_server_instance
@@ -354,7 +361,9 @@ class TestRun:
     @patch("itential_mcp.server.Server")
     @patch("itential_mcp.server.config.get")
     @patch("itential_mcp.server.logging.set_level")
-    async def test_run_no_tools_loaded(self, mock_set_level, mock_config_get, mock_server_class):
+    async def test_run_no_tools_loaded(
+        self, mock_set_level, mock_config_get, mock_server_class
+    ):
         """Test server runs successfully even with no tools"""
         mock_config = MagicMock()
         mock_config.server = {"transport": "stdio"}
@@ -377,7 +386,9 @@ class TestRun:
     @patch("itential_mcp.server.Server")
     @patch("itential_mcp.server.config.get")
     @patch("itential_mcp.server.logging.set_level")
-    async def test_run_multiple_tools_registration(self, mock_set_level, mock_config_get, mock_server_class):
+    async def test_run_multiple_tools_registration(
+        self, mock_set_level, mock_config_get, mock_server_class
+    ):
         """Test server properly uses the configured Server instance"""
         mock_config = MagicMock()
         mock_config.server = {"transport": "stdio"}
@@ -401,7 +412,9 @@ class TestRun:
     @patch("itential_mcp.server.Server")
     @patch("itential_mcp.server.config.get")
     @patch("itential_mcp.server.logging.set_level")
-    async def test_run_partial_tool_failure(self, mock_set_level, mock_config_get, mock_server_class):
+    async def test_run_partial_tool_failure(
+        self, mock_set_level, mock_config_get, mock_server_class
+    ):
         """Test that server fails if Server context manager fails due to tool registration issues"""
         mock_config = MagicMock()
         mock_config.server = {"transport": "stdio"}
@@ -410,7 +423,9 @@ class TestRun:
 
         # Make Server.__aenter__ fail with an ImportError (simulating tool import failure)
         mock_server_instance = MagicMock()
-        mock_server_instance.__aenter__ = AsyncMock(side_effect=ImportError("Failed to import third tool"))
+        mock_server_instance.__aenter__ = AsyncMock(
+            side_effect=ImportError("Failed to import third tool")
+        )
         mock_server_instance.__aexit__ = AsyncMock(return_value=None)
         mock_server_class.return_value = mock_server_instance
 
@@ -547,4 +562,6 @@ class TestIntegration:
             )
 
             # Verify server was started
-            mock_mcp.run_async.assert_called_once_with(transport="stdio", show_banner=False)
+            mock_mcp.run_async.assert_called_once_with(
+                transport="stdio", show_banner=False
+            )

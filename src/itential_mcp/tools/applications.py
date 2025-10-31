@@ -14,9 +14,7 @@ __tags__ = ("applications",)
 
 
 async def get_applications(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
 ) -> models.GetApplicationsResponse:
     """
     Get all applications configured on the Itential Platform instance.
@@ -56,16 +54,11 @@ async def get_applications(
 
 
 async def start_application(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the application to start"
-    )],
-    timeout: Annotated[int, Field(
-        description="Timeout waiting for application to start",
-        default=10
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="The name of the application to start")],
+    timeout: Annotated[
+        int, Field(description="Timeout waiting for application to start", default=10)
+    ],
 ) -> models.StartApplicationResponse:
     """
     Start an application on Itential Platform.
@@ -95,23 +88,15 @@ async def start_application(
     await ctx.info("inside start_application(...)")
     client = ctx.request_context.lifespan_context.get("client")
     data = client.applications.start_application(name, timeout)
-    return models.StartApplicationResponse(
-        name=data["id"],
-        state=data["state"]
-    )
+    return models.StartApplicationResponse(name=data["id"], state=data["state"])
 
 
 async def stop_application(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the application to stop"
-    )],
-    timeout: Annotated[int, Field(
-        description="Timeout waiting for application to stop",
-        default=10
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="The name of the application to stop")],
+    timeout: Annotated[
+        int, Field(description="Timeout waiting for application to stop", default=10)
+    ],
 ) -> models.StopApplicationResponse:
     """
     Stop an application on Itential Platform.
@@ -141,23 +126,15 @@ async def stop_application(
     await ctx.info("inside stop_application(...)")
     client = ctx.request_context.lifespan_context.get("client")
     data = await client.applications.stop_application(name=name, timeout=timeout)
-    return models.StopApplicationResponse(
-        name=data["id"],
-        state=data["state"]
-    )
+    return models.StopApplicationResponse(name=data["id"], state=data["state"])
 
 
 async def restart_application(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the application to restart"
-    )],
-    timeout: Annotated[int, Field(
-        description="Timeout waiting for application to restart",
-        default=10
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="The name of the application to restart")],
+    timeout: Annotated[
+        int, Field(description="Timeout waiting for application to restart", default=10)
+    ],
 ) -> models.RestartApplicationResponse:
     """
     Restart an application on Itential Platform.
@@ -188,7 +165,4 @@ async def restart_application(
     await ctx.info("inside restart_application(...)")
     client = ctx.request_context.lifespan_context.get("client")
     data = await client.applications.restart_application(name=name, timeout=timeout)
-    return models.RestartApplicationResponse(
-        name=data["id"],
-        state=data["state"]
-    )
+    return models.RestartApplicationResponse(name=data["id"], state=data["state"])

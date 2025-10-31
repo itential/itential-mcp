@@ -721,7 +721,7 @@ class TestExposeWorkflow:
         }
 
         # Mock endpoint trigger failure
-        from itential_mcp import exceptions
+        from itential_mcp.core import exceptions
 
         mock_context.request_context.lifespan_context.get.return_value.operations_manager.create_endpoint_trigger.side_effect = Exception(
             "Trigger creation failed"

@@ -26,56 +26,56 @@ class GetAdaptersElement(BaseModel):
     name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The name of the adapter
                 """
             )
-        )
+        ),
     ]
 
     package: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The NodeJS package name for the adapter
                 """
             )
-        )
+        ),
     ]
 
     version: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The adapter version
                 """
             )
-        )
+        ),
     ]
 
-    description:  Annotated[
+    description: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Short description of the adapter
                 """
             )
-        )
+        ),
     ]
 
     state: Annotated[
         Literal["DEAD", "STOPPED", "RUNNING", "DELETED"],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Opreational state (DEAD, STOPPED, RUNNING, DELETED)
                 """
             )
-        )
+        ),
     ]
 
 
@@ -92,13 +92,13 @@ class GetAdaptersResponse(RootModel):
     root: Annotated[
         List[GetAdaptersElement],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 A list of elements where each element represents a configured
                 adapter from the server
                 """
             )
-        )
+        ),
     ]
 
 
@@ -116,24 +116,25 @@ class StartAdapterResponse(BaseModel):
     name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The name of the adapter
                 """
             )
-        )
+        ),
     ]
 
     state: Annotated[
         Literal["DEAD", "STOPPED", "RUNNING", "DELETED"],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Opreational state (DEAD, STOPPED, RUNNING, DELETED)
                 """
             )
-        )
+        ),
     ]
+
 
 class StopAdapterResponse(BaseModel):
     """Response model for the stop adapter API operation.
@@ -149,25 +150,24 @@ class StopAdapterResponse(BaseModel):
     name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The name of the adapter
                 """
             )
-        )
+        ),
     ]
 
     state: Annotated[
         Literal["DEAD", "STOPPED", "RUNNING", "DELETED"],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Opreational state (DEAD, STOPPED, RUNNING, DELETED)
                 """
             )
-        )
+        ),
     ]
-
 
 
 class RestartAdapterResponse(BaseModel):
@@ -184,23 +184,21 @@ class RestartAdapterResponse(BaseModel):
     name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The name of the adapter
                 """
             )
-        )
+        ),
     ]
 
     state: Annotated[
         Literal["DEAD", "STOPPED", "RUNNING", "DELETED"],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Opreational state (DEAD, STOPPED, RUNNING, DELETED)
                 """
             )
-        )
+        ),
     ]
-
-

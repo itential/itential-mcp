@@ -23,24 +23,24 @@ class GetResourcesElement(BaseModel):
     name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The name of the resource model
                 """
             )
-        )
+        ),
     ]
 
     description: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
-            """
+            description=inspect.cleandoc(
+                """
             Short description of the resource model.
             """
             ),
-        default = None
-        )
+            default=None,
+        ),
     ]
 
 
@@ -59,14 +59,14 @@ class GetResourcesResponse(RootModel):
     root: Annotated[
         List[GetResourcesElement],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 A list of elements where each element represents a configured
                 resource model from the server
                 """
             ),
-            default_factory = list
-        )
+            default_factory=list,
+        ),
     ]
 
 
@@ -80,6 +80,7 @@ class CreateResourceResponse(BaseModel):
         Currently a placeholder model that can be extended with specific
         response fields as needed by the API implementation.
     """
+
     pass
 
 
@@ -99,36 +100,36 @@ class Action(BaseModel):
     name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The configured name of the action
                 """
             )
-        )
+        ),
     ]
 
     type: Annotated[
         Literal["create", "update", "delete"],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The type of action to be performed.
                 """
             )
-        )
+        ),
     ]
 
     input_schema: Annotated[
         Mapping[str, Any] | List[Any],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 A JSON Schema object that defines the input schema required
                 to successfully run the action. Can be either a dictionary
                 or a list depending on the schema structure.
                 """
             )
-        )
+        ),
     ]
 
 
@@ -149,37 +150,37 @@ class DescribeResourceResponse(BaseModel):
     name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The name of the resource model
                 """
             )
-        )
+        ),
     ]
 
     description: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Short description of the resource model
                 """
             ),
-            default = None
-        )
+            default=None,
+        ),
     ]
 
     actions: Annotated[
         List[Action],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 List of elements where each element represents an action that
                 can be invoked for a resource model instance
                 """
             ),
-            default_factory = list
-        )
+            default_factory=list,
+        ),
     ]
 
 
@@ -198,34 +199,34 @@ class LastAction(BaseModel):
     name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The name of the last action performed on the instance
                 """
             )
-        )
+        ),
     ]
 
     type: Annotated[
         Literal["create", "update", "delete"],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The type of the last action performed
                 """
             )
-        )
+        ),
     ]
 
     status: Annotated[
         Literal["running", "error", "complete", "canceled", "paused"],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The status of the last action performed
                 """
             )
-        )
+        ),
     ]
 
 
@@ -245,46 +246,46 @@ class GetInstancesElement(BaseModel):
     name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The name of the resource instance
                 """
             )
-        )
+        ),
     ]
 
     description: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Short description of the resource instance
                 """
             ),
-            default = None
-        )
+            default=None,
+        ),
     ]
 
     instance_data: Annotated[
         Mapping[str, Any] | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Data object associated with this instance
                 """
             )
-        )
+        ),
     ]
 
     last_action: Annotated[
         LastAction,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Information about the last action performed on this instance
                 """
             )
-        )
+        ),
     ]
 
 
@@ -303,14 +304,14 @@ class GetInstancesResponse(RootModel):
     root: Annotated[
         List[GetInstancesElement],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 A list of elements where each element represents a resource
                 instance from the server
                 """
             ),
-            default_factory = list
-        )
+            default_factory=list,
+        ),
     ]
 
 
@@ -329,36 +330,36 @@ class DescribeInstanceResponse(BaseModel):
     description: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Short description of the instance
                 """
             ),
-            default = None
-        )
+            default=None,
+        ),
     ]
 
     instance_data: Annotated[
         Mapping[str, Any],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Data about the instance
                 """
             ),
-            default = None
-        )
+            default=None,
+        ),
     ]
 
     last_action: Annotated[
         LastAction,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Information about the last action performed on the instance
                 """
             )
-        )
+        ),
     ]
 
 
@@ -378,46 +379,46 @@ class RunActionResponse(BaseModel):
     message: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Status message about the action
                 """
             ),
-            default = None
-        )
+            default=None,
+        ),
     ]
 
     start_time: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The time the action was started on the server
                 """
             )
-        )
+        ),
     ]
 
     job_id: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Id used to get status updates using describe_job tool
                 """
             )
-        )
+        ),
     ]
 
     status: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The current status of the action
                 """
             )
-        )
+        ),
     ]
 
 
@@ -435,59 +436,59 @@ class ActionExecutionError(BaseModel):
     message: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Error message describing what went wrong
                 """
             )
-        )
+        ),
     ]
 
     timestamp: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 ISO 8601 timestamp when the error occurred
                 """
             )
-        )
+        ),
     ]
 
     origin: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The component where the error originated
                 """
             )
-        )
+        ),
     ]
 
     metadata: Annotated[
         Mapping[str, Any] | str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Additional error metadata and context
                 """
             ),
-            default = None
-        )
+            default=None,
+        ),
     ]
 
     step_id: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Identifier for the step where error occurred
                 """
             ),
-            default = None,
-            alias = "stepId"
-        )
+            default=None,
+            alias="stepId",
+        ),
     ]
 
 
@@ -508,98 +509,98 @@ class ActionExecutionProgressComponent(BaseModel):
     progress_type: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The type of progress being tracked
                 """
             ),
-            alias = "progressType"
-        )
+            alias="progressType",
+        ),
     ]
 
     status: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Current status of this component
                 """
             )
-        )
+        ),
     ]
 
     error: Annotated[
         Mapping[str, Any] | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Error information if the component failed
                 """
             ),
-            default = None
-        )
+            default=None,
+        ),
     ]
 
     id: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Unique identifier for this progress component
                 """
             ),
-            alias = "_id"
-        )
+            alias="_id",
+        ),
     ]
 
     component_name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Name of the component being tracked
                 """
             ),
-            alias = "componentName"
-        )
+            alias="componentName",
+        ),
     ]
 
     component_id: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 ID of the component being tracked
                 """
             ),
-            alias = "componentId"
-        )
+            alias="componentId",
+        ),
     ]
 
     end_time: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 ISO 8601 timestamp when component completed
                 """
             ),
-            default = None,
-            alias = "endTime"
-        )
+            default=None,
+            alias="endTime",
+        ),
     ]
 
     job_id: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Job ID if this component triggered a job
                 """
             ),
-            default = None,
-            alias = "jobId"
-        )
+            default=None,
+            alias="jobId",
+        ),
     ]
 
 
@@ -629,174 +630,174 @@ class ActionExecutionElement(BaseModel):
     id: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Unique identifier for this action execution
                 """
             ),
-            alias = "_id",
-            exclude = True
-        )
+            alias="_id",
+            exclude=True,
+        ),
     ]
 
     model_name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Name of the resource model
                 """
             ),
-            alias = "modelName"
-        )
+            alias="modelName",
+        ),
     ]
 
     instance_id: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 ID of the resource instance
                 """
             ),
-            alias = "instanceId",
-            exclude = True
-        )
+            alias="instanceId",
+            exclude=True,
+        ),
     ]
 
     instance_name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Name of the resource instance
                 """
             ),
-            alias = "instanceName"
-        )
+            alias="instanceName",
+        ),
     ]
 
     action_name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Name of the action that was executed
                 """
             ),
-            alias = "actionName"
-        )
+            alias="actionName",
+        ),
     ]
 
     action_type: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Type of action (create, update, delete)
                 """
             ),
-            default = None,
-            alias = "actionType"
-        )
+            default=None,
+            alias="actionType",
+        ),
     ]
 
     start_time: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 ISO 8601 timestamp when execution started
                 """
             ),
-            alias = "startTime"
-        )
+            alias="startTime",
+        ),
     ]
 
     end_time: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 ISO 8601 timestamp when execution completed
                 """
             ),
-            default = None,
-            alias = "endTime"
-        )
+            default=None,
+            alias="endTime",
+        ),
     ]
 
     initiator: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 User ID who initiated the action
                 """
             )
-        )
+        ),
     ]
 
     job_id: Annotated[
         str | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Job ID associated with this execution
                 """
             ),
-            default = None,
-            alias = "jobId"
-        )
+            default=None,
+            alias="jobId",
+        ),
     ]
 
     status: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Current status of the execution (complete, error, canceled, running, etc.)
                 """
             )
-        )
+        ),
     ]
 
     errors: Annotated[
         List[ActionExecutionError],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 List of errors that occurred during execution
                 """
             ),
-            default_factory = list
-        )
+            default_factory=list,
+        ),
     ]
 
     initial_instance_data: Annotated[
         Mapping[str, Any] | List[str] | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Data before the action was executed
                 """
             ),
-            default = None,
-            alias = "initialInstanceData"
-        )
+            default=None,
+            alias="initialInstanceData",
+        ),
     ]
 
     final_instance_data: Annotated[
         Mapping[str, Any] | List[str] | None,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Data after the action was executed
                 """
             ),
-            default = None,
-            alias = "finalInstanceData"
-        )
+            default=None,
+            alias="finalInstanceData",
+        ),
     ]
 
 
@@ -815,11 +816,11 @@ class GetActionExecutionsResponse(RootModel):
     root: Annotated[
         List[ActionExecutionElement],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 A list of action execution records from the lifecycle manager
                 """
             ),
-            default_factory = list
-        )
+            default_factory=list,
+        ),
     ]

@@ -64,7 +64,6 @@ class GetTemplatesElement(BaseModel):
     ]
 
 
-
 class GetTemplatesResponse(RootModel):
     """Response model for template retrieval operations.
 
@@ -107,7 +106,7 @@ class DescribeTemplateResponse(GetTemplatesElement):
     Attributes:
         Inherits all attributes from GetTemplatesElement (name, description, type)
         plus the following additional fields:
-        
+
         group (str): The group the template is currently part of for organizational
             purposes within the Automation Studio.
         command (str): The command sent to the device to generate the source text
@@ -127,7 +126,7 @@ class DescribeTemplateResponse(GetTemplatesElement):
                 The group the template is currently part of
                 """
             )
-        )
+        ),
     ]
 
     command: Annotated[
@@ -138,7 +137,7 @@ class DescribeTemplateResponse(GetTemplatesElement):
                 The command send to the device to generate the source text
                 """
             )
-        )
+        ),
     ]
 
     template: Annotated[
@@ -149,7 +148,7 @@ class DescribeTemplateResponse(GetTemplatesElement):
                 The template used to generate the final output
                 """
             )
-        )
+        ),
     ]
 
     data: Annotated[
@@ -160,8 +159,8 @@ class DescribeTemplateResponse(GetTemplatesElement):
                 Sample data used to test the template
                 """
             ),
-            default=None
-        )
+            default=None,
+        ),
     ]
 
 

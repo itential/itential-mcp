@@ -25,46 +25,46 @@ class GetIntegrationModelsElement(BaseModel):
     id: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Unique identifier assigned by Itential Platform
                 """
             )
-        )
+        ),
     ]
 
     title: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Model title from the OpenAPI spec info block
                 """
             )
-        )
+        ),
     ]
 
     version: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Model version from the OpenAPI spec info block
                 """
             )
-        )
+        ),
     ]
 
     description: Annotated[
         Optional[str],
         Field(
             default=None,
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Optional model description
                 """
-            )
-        )
+            ),
+        ),
     ]
 
 
@@ -81,13 +81,13 @@ class GetIntegrationModelsResponse(RootModel):
     root: Annotated[
         List[GetIntegrationModelsElement],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 A list of elements where each element represents an integration
                 model from the server
                 """
             )
-        )
+        ),
     ]
 
 
@@ -105,21 +105,21 @@ class CreateIntegrationModelResponse(BaseModel):
     status: Annotated[
         Literal["OK", "CREATED"],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Operation status (OK or CREATED)
                 """
             )
-        )
+        ),
     ]
 
     message: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Descriptive message about the operation
                 """
             )
-        )
+        ),
     ]
