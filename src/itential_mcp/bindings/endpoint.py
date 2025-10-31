@@ -12,7 +12,7 @@ from fastmcp import Context
 from itential_mcp import config
 from itential_mcp import client
 from itential_mcp import exceptions
-from itential_mcp import jsonutils
+from itential_mcp.utilities import json as jsonutils
 
 from itential_mcp.tools import operations_manager
 

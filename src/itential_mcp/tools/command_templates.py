@@ -5,7 +5,7 @@ from typing import Annotated
 from pydantic import Field
 
 from fastmcp import Context
-from itential_mcp import jsonutils
+from itential_mcp.utilities import json as jsonutils
 from itential_mcp.models import command_templates as models
 
 

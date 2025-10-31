@@ -4,7 +4,7 @@
 from typing import Literal, Mapping, Any
 
 from itential_mcp import exceptions
-from itential_mcp import stringutils
+from itential_mcp.utilities import string as stringutils
 
 from itential_mcp.services import ServiceBase
 

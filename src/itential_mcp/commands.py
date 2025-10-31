@@ -5,7 +5,7 @@ from typing import Any, Coroutine, Sequence, Mapping, Tuple
 
 from . import server
 from . import metadata
-from . import toolutils
+from .utilities import tool as toolutils
 from . import runner
 
 
