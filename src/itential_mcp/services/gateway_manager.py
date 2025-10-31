@@ -23,8 +23,7 @@ class Service(ServiceBase):
     name: str = "gateway_manager"
 
     async def get_services(self) -> Sequence[Mapping[str, Any]]:
-        """
-        """
+        """ """
         res = await self.client.get("/gateway_manager/v1/services")
         json_data = res.json()
         return json_data["result"]
@@ -51,10 +50,7 @@ class Service(ServiceBase):
         return res.json()
 
     async def run_service(
-        self,
-        name: str,
-        cluster: str,
-        input_params: dict | None = None
+        self, name: str, cluster: str, input_params: dict | None = None
     ) -> Mapping[str, Any]:
         """
         Run an existing service using the optional input parameters.
@@ -86,9 +82,6 @@ class Service(ServiceBase):
         if input_params:
             body["params"] = input_params
 
-        res = await self.client.post(
-            "/gateway_manager/v1/services/run",
-            json=body
-        )
+        res = await self.client.post("/gateway_manager/v1/services/run", json=body)
 
         return res.json()

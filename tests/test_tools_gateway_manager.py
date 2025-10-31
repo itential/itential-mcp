@@ -13,7 +13,7 @@ from itential_mcp.models.gateway_manager import (
     GetServicesResponse,
     GatewayElement,
     GetGatewaysResponse,
-    RunServiceResponse
+    RunServiceResponse,
 )
 
 
@@ -64,10 +64,10 @@ class TestGetServices(TestGatewayManagerTools):
                             "type": "object",
                             "properties": {
                                 "backup_path": {"type": "string"},
-                                "retention_days": {"type": "integer", "default": 7}
+                                "retention_days": {"type": "integer", "default": 7},
                             },
-                            "required": ["backup_path"]
-                        }
+                            "required": ["backup_path"],
+                        },
                     }
                 },
                 {
@@ -81,10 +81,13 @@ class TestGetServices(TestGatewayManagerTools):
                             "properties": {
                                 "app_name": {"type": "string"},
                                 "version": {"type": "string"},
-                                "environment": {"type": "string", "enum": ["dev", "staging", "prod"]}
+                                "environment": {
+                                    "type": "string",
+                                    "enum": ["dev", "staging", "prod"],
+                                },
                             },
-                            "required": ["app_name", "version", "environment"]
-                        }
+                            "required": ["app_name", "version", "environment"],
+                        },
                     }
                 },
                 {
@@ -97,11 +100,11 @@ class TestGetServices(TestGatewayManagerTools):
                             "type": "object",
                             "properties": {
                                 "terraform_config": {"type": "string"},
-                                "apply": {"type": "boolean", "default": False}
-                            }
-                        }
+                                "apply": {"type": "boolean", "default": False},
+                            },
+                        },
                     }
-                }
+                },
             ]
         }
 
@@ -165,7 +168,7 @@ class TestGetServices(TestGatewayManagerTools):
                         "location": "single-cluster",
                         "type": "custom-script",
                         "description": "Single service test",
-                        "decorator": {}
+                        "decorator": {},
                     }
                 }
             ]
@@ -195,22 +198,26 @@ class TestGetServices(TestGatewayManagerTools):
                                 "config": {
                                     "type": "object",
                                     "properties": {
-                                        "timeout": {"type": "integer", "minimum": 1, "maximum": 3600},
-                                        "retries": {"type": "integer", "default": 3}
-                                    }
+                                        "timeout": {
+                                            "type": "integer",
+                                            "minimum": 1,
+                                            "maximum": 3600,
+                                        },
+                                        "retries": {"type": "integer", "default": 3},
+                                    },
                                 },
                                 "hosts": {
                                     "type": "array",
                                     "items": {"type": "string"},
-                                    "minItems": 1
+                                    "minItems": 1,
                                 },
                                 "variables": {
                                     "type": "object",
-                                    "additionalProperties": True
-                                }
+                                    "additionalProperties": True,
+                                },
                             },
-                            "required": ["hosts"]
-                        }
+                            "required": ["hosts"],
+                        },
                     }
                 }
             ]
@@ -229,7 +236,9 @@ class TestGetServices(TestGatewayManagerTools):
     @pytest.mark.asyncio
     async def test_get_services_client_error(self):
         """Test get_services when client raises an exception."""
-        self.mock_client.gateway_manager.get_services.side_effect = Exception("Gateway Manager connection failed")
+        self.mock_client.gateway_manager.get_services.side_effect = Exception(
+            "Gateway Manager connection failed"
+        )
 
         with pytest.raises(Exception, match="Gateway Manager connection failed"):
             await get_services(self.mock_context)
@@ -254,29 +263,29 @@ class TestGetGateways(TestGatewayManagerTools):
                     "cluster_id": "prod-cluster-01",
                     "description": "Production environment gateway",
                     "connection_status": "connected",
-                    "enabled": True
+                    "enabled": True,
                 },
                 {
                     "gateway_name": "staging-gateway",
                     "cluster_id": "staging-cluster-01",
                     "description": "Staging environment gateway",
                     "connection_status": "disconnected",
-                    "enabled": True
+                    "enabled": True,
                 },
                 {
                     "gateway_name": "development-gateway",
                     "cluster_id": "dev-cluster-01",
                     "description": "Development environment gateway",
                     "connection_status": "connecting",
-                    "enabled": False
+                    "enabled": False,
                 },
                 {
                     "gateway_name": "test-gateway",
                     "cluster_id": "test-cluster-01",
                     "description": "Test environment gateway",
                     "connection_status": "error",
-                    "enabled": True
-                }
+                    "enabled": True,
+                },
             ]
         }
 
@@ -346,7 +355,7 @@ class TestGetGateways(TestGatewayManagerTools):
                     "cluster_id": "solo-cluster",
                     "description": "Single gateway test",
                     "connection_status": "connected",
-                    "enabled": True
+                    "enabled": True,
                 }
             ]
         }
@@ -368,22 +377,22 @@ class TestGetGateways(TestGatewayManagerTools):
                     "cluster_id": "cluster-1",
                     "description": "Connected gateway",
                     "connection_status": "connected",
-                    "enabled": True
+                    "enabled": True,
                 },
                 {
                     "gateway_name": "disconnected-gw",
                     "cluster_id": "cluster-2",
                     "description": "Disconnected gateway",
                     "connection_status": "disconnected",
-                    "enabled": False
+                    "enabled": False,
                 },
                 {
                     "gateway_name": "error-gw",
                     "cluster_id": "cluster-3",
                     "description": "Gateway with error",
                     "connection_status": "error",
-                    "enabled": True
-                }
+                    "enabled": True,
+                },
             ]
         }
         self.mock_client.get_gateways.return_value = mock_data
@@ -401,7 +410,9 @@ class TestGetGateways(TestGatewayManagerTools):
     @pytest.mark.asyncio
     async def test_get_gateways_client_error(self):
         """Test get_gateways when client raises an exception."""
-        self.mock_client.get_gateways.side_effect = Exception("Failed to fetch gateways")
+        self.mock_client.get_gateways.side_effect = Exception(
+            "Failed to fetch gateways"
+        )
 
         with pytest.raises(Exception, match="Failed to fetch gateways"):
             await get_gateways(self.mock_context)
@@ -421,12 +432,14 @@ class TestRunService(TestGatewayManagerTools):
         """Create mock successful run service data."""
         return {
             "result": {
-                "stdout": json.dumps({"status": "success", "message": "Service executed successfully"}),
+                "stdout": json.dumps(
+                    {"status": "success", "message": "Service executed successfully"}
+                ),
                 "stderr": "",
                 "return_code": 0,
                 "start_time": "2025-01-22T10:00:00.000Z",
                 "end_time": "2025-01-22T10:00:05.500Z",
-                "elapsed_time": 5.5
+                "elapsed_time": 5.5,
             }
         }
 
@@ -440,7 +453,7 @@ class TestRunService(TestGatewayManagerTools):
                 "return_code": 0,
                 "start_time": "2025-01-22T10:00:00.000Z",
                 "end_time": "2025-01-22T10:00:02.250Z",
-                "elapsed_time": 2.25
+                "elapsed_time": 2.25,
             }
         }
 
@@ -462,7 +475,7 @@ class TestRunService(TestGatewayManagerTools):
             self.mock_context,
             name="test-service",
             cluster="test-cluster",
-            input_params={"param1": "value1"}
+            input_params={"param1": "value1"},
         )
 
         # Verify context info was called
@@ -495,7 +508,7 @@ class TestRunService(TestGatewayManagerTools):
             self.mock_context,
             name="no-param-service",
             cluster="test-cluster",
-            input_params=None
+            input_params=None,
         )
 
         # Verify client method was called with None for input_params
@@ -519,7 +532,7 @@ class TestRunService(TestGatewayManagerTools):
             self.mock_context,
             name="json-service",
             cluster="json-cluster",
-            input_params={"format": "json"}
+            input_params={"format": "json"},
         )
 
         # Verify client method was called
@@ -550,7 +563,7 @@ class TestRunService(TestGatewayManagerTools):
                 "return_code": 0,
                 "start_time": "2025-01-22T10:00:00.000Z",
                 "end_time": "2025-01-22T10:00:01.000Z",
-                "elapsed_time": 1.0
+                "elapsed_time": 1.0,
             }
         }
         self.mock_client.gateway_manager.run_service.return_value = mock_data
@@ -559,7 +572,7 @@ class TestRunService(TestGatewayManagerTools):
             self.mock_context,
             name="invalid-json-service",
             cluster="test-cluster",
-            input_params=None
+            input_params=None,
         )
 
         # stdout should remain as string since JSON parsing failed
@@ -572,12 +585,15 @@ class TestRunService(TestGatewayManagerTools):
         mock_data = self.create_mock_run_service_error_data()
         self.mock_client.gateway_manager.run_service.return_value = mock_data
 
-        with pytest.raises(ValueError, match="Service execution failed: Connection timeout to target host"):
+        with pytest.raises(
+            ValueError,
+            match="Service execution failed: Connection timeout to target host",
+        ):
             await run_service(
                 self.mock_context,
                 name="failing-service",
                 cluster="test-cluster",
-                input_params={"timeout": 30}
+                input_params={"timeout": 30},
             )
 
         # Verify client method was still called
@@ -590,12 +606,14 @@ class TestRunService(TestGatewayManagerTools):
         """Test service run that completes but returns non-zero exit code."""
         mock_data = {
             "result": {
-                "stdout": json.dumps({"status": "partial_failure", "errors": ["non-critical errors"]}),
+                "stdout": json.dumps(
+                    {"status": "partial_failure", "errors": ["non-critical errors"]}
+                ),
                 "stderr": "Warning: Some operations failed\nError: Critical component unavailable",
                 "return_code": 1,
                 "start_time": "2025-01-22T10:00:00.000Z",
                 "end_time": "2025-01-22T10:00:15.000Z",
-                "elapsed_time": 15.0
+                "elapsed_time": 15.0,
             }
         }
         self.mock_client.gateway_manager.run_service.return_value = mock_data
@@ -604,7 +622,7 @@ class TestRunService(TestGatewayManagerTools):
             self.mock_context,
             name="partial-failure-service",
             cluster="test-cluster",
-            input_params=None
+            input_params=None,
         )
 
         assert isinstance(result, RunServiceResponse)
@@ -620,21 +638,10 @@ class TestRunService(TestGatewayManagerTools):
     async def test_run_service_with_complex_parameters(self):
         """Test service run with complex input parameters."""
         complex_params = {
-            "configuration": {
-                "timeout": 300,
-                "retry_count": 3,
-                "parallel_jobs": 5
-            },
+            "configuration": {"timeout": 300, "retry_count": 3, "parallel_jobs": 5},
             "targets": ["host1.example.com", "host2.example.com"],
-            "options": {
-                "verbose": True,
-                "dry_run": False,
-                "backup_before": True
-            },
-            "metadata": {
-                "user": "automation",
-                "reason": "scheduled_maintenance"
-            }
+            "options": {"verbose": True, "dry_run": False, "backup_before": True},
+            "metadata": {"user": "automation", "reason": "scheduled_maintenance"},
         }
 
         mock_data = self.create_mock_run_service_success_data()
@@ -644,7 +651,7 @@ class TestRunService(TestGatewayManagerTools):
             self.mock_context,
             name="complex-service",
             cluster="production-cluster",
-            input_params=complex_params
+            input_params=complex_params,
         )
 
         # Verify client was called with complex parameters
@@ -661,14 +668,13 @@ class TestRunService(TestGatewayManagerTools):
     @pytest.mark.asyncio
     async def test_run_service_client_exception(self):
         """Test run_service when client raises an exception."""
-        self.mock_client.gateway_manager.run_service.side_effect = Exception("Gateway communication error")
+        self.mock_client.gateway_manager.run_service.side_effect = Exception(
+            "Gateway communication error"
+        )
 
         with pytest.raises(Exception, match="Gateway communication error"):
             await run_service(
-                self.mock_context,
-                name="service",
-                cluster="cluster",
-                input_params=None
+                self.mock_context, name="service", cluster="cluster", input_params=None
             )
 
         # Verify context info was still called
@@ -684,7 +690,7 @@ class TestRunService(TestGatewayManagerTools):
                 "return_code": 0,
                 "start_time": "2025-01-22T10:00:00.000Z",
                 "end_time": "2025-01-22T10:00:00.100Z",
-                "elapsed_time": 0.1
+                "elapsed_time": 0.1,
             }
         }
         self.mock_client.gateway_manager.run_service.return_value = mock_data
@@ -693,7 +699,7 @@ class TestRunService(TestGatewayManagerTools):
             self.mock_context,
             name="silent-service",
             cluster="test-cluster",
-            input_params=None
+            input_params=None,
         )
 
         assert isinstance(result, RunServiceResponse)
@@ -710,8 +716,8 @@ class TestRunService(TestGatewayManagerTools):
             "messages": [
                 "操作成功完成 ✅",
                 "Процесс завершен успешно",
-                "Opération réussie 🎉"
-            ]
+                "Opération réussie 🎉",
+            ],
         }
         mock_data = {
             "result": {
@@ -720,7 +726,7 @@ class TestRunService(TestGatewayManagerTools):
                 "return_code": 0,
                 "start_time": "2025-01-22T10:00:00.000Z",
                 "end_time": "2025-01-22T10:00:03.000Z",
-                "elapsed_time": 3.0
+                "elapsed_time": 3.0,
             }
         }
         self.mock_client.gateway_manager.run_service.return_value = mock_data
@@ -729,7 +735,7 @@ class TestRunService(TestGatewayManagerTools):
             self.mock_context,
             name="unicode-service",
             cluster="international-cluster",
-            input_params=None
+            input_params=None,
         )
 
         assert isinstance(result, RunServiceResponse)
@@ -749,7 +755,7 @@ class TestGatewayManagerToolsModule:
         """Test that the module has correct tags attribute."""
         from itential_mcp.tools import gateway_manager
 
-        assert hasattr(gateway_manager, '__tags__')
+        assert hasattr(gateway_manager, "__tags__")
         assert gateway_manager.__tags__ == ("gateway_manager",)
 
     def test_all_functions_are_async(self):
@@ -760,7 +766,7 @@ class TestGatewayManagerToolsModule:
         functions_to_test = [
             gateway_manager.get_services,
             gateway_manager.get_gateways,
-            gateway_manager.run_service
+            gateway_manager.run_service,
         ]
 
         for func in functions_to_test:
@@ -774,17 +780,17 @@ class TestGatewayManagerToolsModule:
         # Test get_services signature
         sig = inspect.signature(gateway_manager.get_services)
         params = list(sig.parameters.keys())
-        assert params == ['ctx']
+        assert params == ["ctx"]
 
         # Test get_gateways signature
         sig = inspect.signature(gateway_manager.get_gateways)
         params = list(sig.parameters.keys())
-        assert params == ['ctx']
+        assert params == ["ctx"]
 
         # Test run_service signature
         sig = inspect.signature(gateway_manager.run_service)
         params = list(sig.parameters.keys())
-        assert params == ['ctx', 'name', 'cluster', 'input_params']
+        assert params == ["ctx", "name", "cluster", "input_params"]
 
     def test_function_docstrings_exist(self):
         """Test that all functions have proper docstrings."""
@@ -793,25 +799,35 @@ class TestGatewayManagerToolsModule:
         functions_to_test = [
             gateway_manager.get_services,
             gateway_manager.get_gateways,
-            gateway_manager.run_service
+            gateway_manager.run_service,
         ]
 
         for func in functions_to_test:
             assert func.__doc__ is not None, f"{func.__name__} should have docstring"
-            assert len(func.__doc__.strip()) > 0, f"{func.__name__} docstring should not be empty"
+            assert len(func.__doc__.strip()) > 0, (
+                f"{func.__name__} docstring should not be empty"
+            )
 
             # Check for required docstring sections
             docstring = func.__doc__
-            assert "Args:" in docstring, f"{func.__name__} docstring should have Args section"
-            assert "Returns:" in docstring, f"{func.__name__} docstring should have Returns section"
-            assert "Raises:" in docstring, f"{func.__name__} docstring should have Raises section"
+            assert "Args:" in docstring, (
+                f"{func.__name__} docstring should have Args section"
+            )
+            assert "Returns:" in docstring, (
+                f"{func.__name__} docstring should have Returns section"
+            )
+            assert "Raises:" in docstring, (
+                f"{func.__name__} docstring should have Raises section"
+            )
 
     def test_function_return_type_annotations(self):
         """Test that all functions have proper return type annotations."""
         import inspect
         from itential_mcp.tools import gateway_manager
         from itential_mcp.models.gateway_manager import (
-            GetServicesResponse, GetGatewaysResponse, RunServiceResponse
+            GetServicesResponse,
+            GetGatewaysResponse,
+            RunServiceResponse,
         )
 
         # Test get_services return annotation
@@ -835,7 +851,9 @@ class TestGatewayManagerErrorHandling:
         self.mock_context = AsyncMock(spec=Context)
         self.mock_context.info = AsyncMock()
         self.mock_client = MagicMock()
-        self.mock_context.request_context.lifespan_context.get.return_value = self.mock_client
+        self.mock_context.request_context.lifespan_context.get.return_value = (
+            self.mock_client
+        )
 
     @pytest.mark.asyncio
     async def test_get_services_missing_service_metadata(self):
@@ -844,15 +862,15 @@ class TestGatewayManagerErrorHandling:
             "result": [
                 {
                     # Missing service_metadata key
-                    "metadata": {
-                        "name": "broken-service"
-                    }
+                    "metadata": {"name": "broken-service"}
                 }
             ]
         }
 
         self.mock_client.gateway_manager = MagicMock()
-        self.mock_client.gateway_manager.get_services = AsyncMock(return_value=mock_data)
+        self.mock_client.gateway_manager.get_services = AsyncMock(
+            return_value=mock_data
+        )
 
         with pytest.raises(KeyError):
             await get_services(self.mock_context)

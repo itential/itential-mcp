@@ -13,8 +13,7 @@ from . import config
 
 
 class Parser(argparse.ArgumentParser):
-
-    def print_app_help(self, file: IO | None=None) -> None:
+    def print_app_help(self, file: IO | None = None) -> None:
         """
         Print help for the root application
 
@@ -54,12 +53,16 @@ class Parser(argparse.ArgumentParser):
             if len(value.option_strings) == 1:
                 print(f"{' ':<6}{value.option_strings[0]:<16}{helpstr}", file=file)
             else:
-                print(f"{' ':<2}{', '.join(value.option_strings):<20}{helpstr}", file=file)
+                print(
+                    f"{' ':<2}{', '.join(value.option_strings):<20}{helpstr}", file=file
+                )
 
-        print("\nUse \"itential-mcp <COMMAND> --help\" for more information about a command.\n", file=file)
+        print(
+            '\nUse "itential-mcp <COMMAND> --help" for more information about a command.\n',
+            file=file,
+        )
 
-
-    def print_help(self, file: IO | None=None) -> None:
+    def print_help(self, file: IO | None = None) -> None:
         """
         Print hep for an application command
 
@@ -114,7 +117,9 @@ class Parser(argparse.ArgumentParser):
 
                     if len(option) > 21:
                         n = terminal.getcols()
-                        helpstr = [helpstr[i:i+n] for i in range(0, len(helpstr), n)]
+                        helpstr = [
+                            helpstr[i : i + n] for i in range(0, len(helpstr), n)
+                        ]
                         print(f"{' ':6}{option:<22}", file=file)
                         for s in helpstr:
                             print(f"{' ':28}{s}", file=file)
@@ -125,7 +130,9 @@ class Parser(argparse.ArgumentParser):
                     option = f"{', '.join(v.option_strings)} {v.metavar.upper()}"
                     if len(option) > 15:
                         n = terminal.getcols()
-                        helpstr = [helpstr[i:i+n] for i in range(0, len(helpstr), n)]
+                        helpstr = [
+                            helpstr[i : i + n] for i in range(0, len(helpstr), n)
+                        ]
                         print(f"{' ':<6}{option:<22}", file=file)
                         for s in helpstr:
                             print(f"{' ':28}{s}", file=file)
@@ -145,7 +152,7 @@ class Parser(argparse.ArgumentParser):
 
                 if len(option) > 15:
                     n = terminal.getcols()
-                    helpstr = [helpstr[i:i+n] for i in range(0, len(helpstr), n)]
+                    helpstr = [helpstr[i : i + n] for i in range(0, len(helpstr), n)]
                     print(f"{' ':6}{option:<22}", file=file)
                     for s in helpstr:
                         print(f"{' ':28}{s}", file=file)
@@ -154,20 +161,25 @@ class Parser(argparse.ArgumentParser):
 
             else:
                 if value.metavar is not None:
-                    option = f"{', '.join(value.option_strings)} {value.metavar.upper()}"
+                    option = (
+                        f"{', '.join(value.option_strings)} {value.metavar.upper()}"
+                    )
                 else:
-                    option = ', '.join(value.option_strings)
+                    option = ", ".join(value.option_strings)
 
                 if len(option) > 15:
                     n = terminal.getcols()
-                    helpstr = [helpstr[i:i+n] for i in range(0, len(helpstr), n)]
+                    helpstr = [helpstr[i : i + n] for i in range(0, len(helpstr), n)]
                     print(f"{' ':6}{option:<22}", file=file)
                     for s in helpstr:
                         print(f"{' ':28}{s}", file=file)
                 else:
                     print(f"{' ':6}{option:<22}{helpstr}", file=file)
 
-        print("\nUse \"itential-mcp <COMMAND> --help\" for more information about a command.\n", file=file)
+        print(
+            '\nUse "itential-mcp <COMMAND> --help" for more information about a command.\n',
+            file=file,
+        )
 
 
 @lru_cache(maxsize=None)
@@ -213,10 +225,7 @@ def _get_arguments_from_config() -> Sequence[Tuple[str, Sequence, Mapping]]:
             else:
                 helpstr = "NO HELP AVAILABLE!!"
 
-            kwargs = {
-                "dest": ele.name,
-                "help": helpstr
-            }
+            kwargs = {"dest": ele.name, "help": helpstr}
 
             kwargs.update(attrs.get("x-itential-mcp-options") or {})
             posargs = attrs.get("x-itential-mcp-arguments")
@@ -246,7 +255,7 @@ def add_platform_group(cmd: argparse.ArgumentParser):
     # Itential Platform arguments
     platform_group = cmd.add_argument_group(
         "Itential Platform Options",
-        "Configuration options for connecting to Itential Platform API"
+        "Configuration options for connecting to Itential Platform API",
     )
 
     for ele, posargs, kwargs in _get_arguments_from_config():
@@ -273,8 +282,7 @@ def add_server_group(cmd: argparse.ArgumentParser):
     """
     # MCP Server arguments
     server_group = cmd.add_argument_group(
-        "MCP Server Options",
-        "Configuration options for the MCP Server instance"
+        "MCP Server Options", "Configuration options for the MCP Server instance"
     )
 
     for ele, posargs, kwargs in _get_arguments_from_config():

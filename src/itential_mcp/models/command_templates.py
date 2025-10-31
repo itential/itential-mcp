@@ -591,7 +591,7 @@ class CreateCommandTemplateResponse(BaseModel):
                 """
                 Number of templates inserted
                 """
-            )
+            ),
         ),
     ]
 
@@ -603,7 +603,7 @@ class CreateCommandTemplateResponse(BaseModel):
                 """
                 Mapping of inserted template IDs
                 """
-            )
+            ),
         ),
     ]
 
@@ -740,7 +740,7 @@ class UpdateCommandTemplateResponse(BaseModel):
                 """
                 Number of documents modified
                 """
-            )
+            ),
         ),
     ]
 
@@ -752,7 +752,7 @@ class UpdateCommandTemplateResponse(BaseModel):
                 """
                 ID of upserted document (if any)
                 """
-            )
+            ),
         ),
     ]
 
@@ -764,7 +764,7 @@ class UpdateCommandTemplateResponse(BaseModel):
                 """
                 Number of documents upserted
                 """
-            )
+            ),
         ),
     ]
 
@@ -776,6 +776,6 @@ class UpdateCommandTemplateResponse(BaseModel):
                 """
                 Number of documents matched
                 """
-            )
+            ),
         ),
     ]

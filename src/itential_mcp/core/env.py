@@ -7,10 +7,10 @@ from typing import Callable, Any
 
 from functools import partial
 
-from .utilities import string as stringutils
+from ..utilities import string as stringutils
 
 
-def get(f: Callable, key: str, default: Any | None=None) -> Any:
+def get(f: Callable, key: str, default: Any | None = None) -> Any:
     """
     Get the value for key from the current environment
 

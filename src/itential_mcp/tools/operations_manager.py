@@ -8,7 +8,7 @@ from pydantic import Field
 from fastmcp import Context
 
 from itential_mcp.utilities import time as timeutils
-from itential_mcp import exceptions
+from itential_mcp.core import exceptions
 from itential_mcp.utilities import json as jsonutils
 
 from itential_mcp.models import operations_manager as models
@@ -313,33 +313,44 @@ async def describe_job(
         }
     )
 
+
 async def expose_workflow(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object",
-    )],
-    name: Annotated[str, Field(
-        description="The name of the workflow to expose",
-    )],
-    route_name: Annotated[str | None, Field(
-        description="The API route name to assign to this endpoint",
-        default=None
-    )],
-    project: Annotated[str | None, Field(
-        description="The project where the workflow resides",
-        default=None
-    )],
-    endpoint_name: Annotated[str | None, Field(
-        description="Set the name for the trigger endpoint",
-        default=None
-    )],
-    endpoint_description: Annotated[str | None, Field(
-        description="Set a description on the endpoint trigger",
-        default=None
-    )],
-    endpoint_schema: Annotated[dict | None, Field(
-        description="Set the request schemd for the endpoint trigger",
-        default=None
-    )]
+    ctx: Annotated[
+        Context,
+        Field(
+            description="The FastMCP Context object",
+        ),
+    ],
+    name: Annotated[
+        str,
+        Field(
+            description="The name of the workflow to expose",
+        ),
+    ],
+    route_name: Annotated[
+        str | None,
+        Field(
+            description="The API route name to assign to this endpoint", default=None
+        ),
+    ],
+    project: Annotated[
+        str | None,
+        Field(description="The project where the workflow resides", default=None),
+    ],
+    endpoint_name: Annotated[
+        str | None,
+        Field(description="Set the name for the trigger endpoint", default=None),
+    ],
+    endpoint_description: Annotated[
+        str | None,
+        Field(description="Set a description on the endpoint trigger", default=None),
+    ],
+    endpoint_schema: Annotated[
+        dict | None,
+        Field(
+            description="Set the request schemd for the endpoint trigger", default=None
+        ),
+    ],
 ) -> models.ExposeWorkflowResponse:
     """Expose a workflow as an API endpoint.
 
@@ -387,7 +398,7 @@ async def expose_workflow(
         name=automation_name,
         component_type="workflows",
         component_name=workflow_name,
-        description="auto-created by itential-mcp"
+        description="auto-created by itential-mcp",
     )
 
     automation_id = res["_id"]
@@ -402,13 +413,12 @@ async def expose_workflow(
             automation_id=automation_id,
             description=endpoint_description or "auto-created by itential-mcp",
             route_name=route_name or name.replace(" ", "_"),
-            schema=endpoint_schema
+            schema=endpoint_schema,
         )
 
     except Exception as exc:
         await client.operations_manager.delete_automation(automation_id)
         raise exceptions.ConfigurationException(f"failed to expose workflow: {exc}")
-
 
     return models.ExposeWorkflowResponse(
         message=f"Successfully exposed workflow `{name}` with route `{route_name}`"

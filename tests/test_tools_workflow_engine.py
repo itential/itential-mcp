@@ -90,7 +90,7 @@ class TestWorkflowEngineTools:
         # Assert
         assert isinstance(result, GetJobMetricsResponse)
         assert len(result.root) == 2
-        
+
         # Check first job metric
         job1 = result.root[0]
         assert isinstance(job1, JobMetricElement)
@@ -98,15 +98,17 @@ class TestWorkflowEngineTools:
         assert job1.workflow == {"name": "test-workflow"}
         assert job1.jobs_complete == 25
         assert job1.total_run_time == 3600.5
-        
+
         # Check second job metric
         job2 = result.root[1]
         assert job2.object_id == "job-metric-456"
         assert job2.workflow == {"name": "production-workflow"}
         assert job2.jobs_complete == 50
-        
+
         # Verify API call was made correctly
-        self.mock_client.workflow_engine.get_job_metrics.assert_called_once_with(params=None)
+        self.mock_client.workflow_engine.get_job_metrics.assert_called_once_with(
+            params=None
+        )
 
     @pytest.mark.asyncio
     async def test_get_job_metrics_for_workflow_success(self):
@@ -121,13 +123,15 @@ class TestWorkflowEngineTools:
         # Assert
         assert isinstance(result, GetJobMetricsResponse)
         assert len(result.root) == 2
-        
+
         # Verify API call was made with correct params
         expected_params = {
             "containsField": "workflow.name",
-            "contains": "test-workflow"
+            "contains": "test-workflow",
         }
-        self.mock_client.workflow_engine.get_job_metrics.assert_called_once_with(params=expected_params)
+        self.mock_client.workflow_engine.get_job_metrics.assert_called_once_with(
+            params=expected_params
+        )
 
     @pytest.mark.asyncio
     async def test_get_task_metrics_success(self):
@@ -142,7 +146,7 @@ class TestWorkflowEngineTools:
         # Assert
         assert isinstance(result, GetTaskMetricsResponse)
         assert len(result.root) == 2
-        
+
         # Check first task metric
         task1 = result.root[0]
         assert isinstance(task1, TaskMetricElement)
@@ -151,15 +155,17 @@ class TestWorkflowEngineTools:
         assert task1.name == "test-task"
         assert task1.app == "test-app"
         assert task1.workflow == {"name": "test-workflow"}
-        
+
         # Check second task metric
         task2 = result.root[1]
         assert task2.task_id == "task-456"
         assert task2.task_type == "manual"
         assert task2.name == "approval-task"
-        
+
         # Verify API call was made correctly
-        self.mock_client.workflow_engine.get_task_metrics.assert_called_once_with(params=None)
+        self.mock_client.workflow_engine.get_task_metrics.assert_called_once_with(
+            params=None
+        )
 
     @pytest.mark.asyncio
     async def test_get_task_metrics_for_workflow_success(self):
@@ -174,13 +180,12 @@ class TestWorkflowEngineTools:
         # Assert
         assert isinstance(result, GetTaskMetricsResponse)
         assert len(result.root) == 2
-        
+
         # Verify API call was made with correct params
-        expected_params = {
-            "equalsField": "workflow.name",
-            "equals": "test-workflow"
-        }
-        self.mock_client.workflow_engine.get_task_metrics.assert_called_once_with(params=expected_params)
+        expected_params = {"equalsField": "workflow.name", "equals": "test-workflow"}
+        self.mock_client.workflow_engine.get_task_metrics.assert_called_once_with(
+            params=expected_params
+        )
 
     @pytest.mark.asyncio
     async def test_get_task_metrics_for_app_success(self):
@@ -195,13 +200,12 @@ class TestWorkflowEngineTools:
         # Assert
         assert isinstance(result, GetTaskMetricsResponse)
         assert len(result.root) == 2
-        
+
         # Verify API call was made with correct params
-        expected_params = {
-            "equalsField": "app",
-            "equals": "test-app"
-        }
-        self.mock_client.workflow_engine.get_task_metrics.assert_called_once_with(params=expected_params)
+        expected_params = {"equalsField": "app", "equals": "test-app"}
+        self.mock_client.workflow_engine.get_task_metrics.assert_called_once_with(
+            params=expected_params
+        )
 
     @pytest.mark.asyncio
     async def test_get_task_metrics_for_task_success(self):
@@ -216,13 +220,12 @@ class TestWorkflowEngineTools:
         # Assert
         assert isinstance(result, GetTaskMetricsResponse)
         assert len(result.root) == 2
-        
+
         # Verify API call was made with correct params
-        expected_params = {
-            "equalsField": "name",
-            "equals": "test-task"
-        }
-        self.mock_client.workflow_engine.get_task_metrics.assert_called_once_with(params=expected_params)
+        expected_params = {"equalsField": "name", "equals": "test-task"}
+        self.mock_client.workflow_engine.get_task_metrics.assert_called_once_with(
+            params=expected_params
+        )
 
     @pytest.mark.asyncio
     async def test_get_job_metrics_empty_response(self):
@@ -274,7 +277,7 @@ class TestWorkflowEngineTools:
                 "workflow": None,  # This should be filtered out
             },
         ]
-        
+
         self.mock_client.workflow_engine.get_task_metrics.return_value = mock_data
 
         # Act
@@ -282,7 +285,9 @@ class TestWorkflowEngineTools:
 
         # Assert
         assert isinstance(result, GetTaskMetricsResponse)
-        assert len(result.root) == 2  # Both should be included since workflow field is optional
+        assert (
+            len(result.root) == 2
+        )  # Both should be included since workflow field is optional
         assert result.root[0].task_id == "task-123"
         assert result.root[0].workflow == {"name": "test-workflow"}
         assert result.root[1].task_id == "task-456"
@@ -306,7 +311,7 @@ class TestWorkflowEngineTools:
                 "metrics": [{}],
                 "jobsComplete": 20,
                 "totalRunTime": 200.0,
-            }
+            },
         ]
 
         self.mock_client.workflow_engine.get_job_metrics.return_value = mock_data
@@ -319,9 +324,11 @@ class TestWorkflowEngineTools:
         assert len(result.root) == 2
         assert result.root[0].object_id == "job-1"
         assert result.root[1].object_id == "job-2"
-        
+
         # Verify API call was made
-        self.mock_client.workflow_engine.get_job_metrics.assert_called_once_with(params=None)
+        self.mock_client.workflow_engine.get_job_metrics.assert_called_once_with(
+            params=None
+        )
 
     @pytest.mark.asyncio
     async def test_get_task_metrics_pagination(self):
@@ -343,7 +350,7 @@ class TestWorkflowEngineTools:
                 "metrics": [{}],
                 "app": "app-2",
                 "workflow": {"name": "wf-2"},
-            }
+            },
         ]
 
         self.mock_client.workflow_engine.get_task_metrics.return_value = mock_data
@@ -356,9 +363,11 @@ class TestWorkflowEngineTools:
         assert len(result.root) == 2
         assert result.root[0].task_id == "task-1"
         assert result.root[1].task_id == "task-2"
-        
+
         # Verify API call was made
-        self.mock_client.workflow_engine.get_task_metrics.assert_called_once_with(params=None)
+        self.mock_client.workflow_engine.get_task_metrics.assert_called_once_with(
+            params=None
+        )
 
     @pytest.mark.asyncio
     async def test_context_debug_called(self):

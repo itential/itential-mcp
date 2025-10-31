@@ -7,8 +7,8 @@ from pydantic import Field
 
 from fastmcp import Context
 
-from itential_mcp import exceptions
-from itential_mcp import errors
+from itential_mcp.core import exceptions
+from itential_mcp.core import errors
 from itential_mcp.utilities import json as jsonutils
 
 from itential_mcp.models import configuration_manager as models
@@ -18,9 +18,7 @@ __tags__ = ("configuration_manager",)
 
 
 async def get_golden_config_trees(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
 ) -> models.GetGoldenConfigTreesResponse:
     """
     Get all Golden Configuration trees from Itential Platform.
@@ -60,23 +58,28 @@ async def get_golden_config_trees(
 
 
 async def create_golden_config_tree(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the Golden Configuration tree to create"
-    )],
-    device_type: Annotated[str, Field(
-        description="The configuration device type associated with this tree"
-    )],
-    template: Annotated[str | None, Field(
-        description="The configuration template associated with the base node",
-        default=None,
-    )],
-    variables: Annotated[dict | str | None, Field(
-        description="The variables associated with this Golden Config tree",
-        default=None,
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[
+        str, Field(description="The name of the Golden Configuration tree to create")
+    ],
+    device_type: Annotated[
+        str,
+        Field(description="The configuration device type associated with this tree"),
+    ],
+    template: Annotated[
+        str | None,
+        Field(
+            description="The configuration template associated with the base node",
+            default=None,
+        ),
+    ],
+    variables: Annotated[
+        dict | str | None,
+        Field(
+            description="The variables associated with this Golden Config tree",
+            default=None,
+        ),
+    ],
 ) -> models.CreateGoldenConfigTreeResponse:
     """
     Create a new Golden Configuration tree on Itential Platform.
@@ -122,26 +125,25 @@ async def create_golden_config_tree(
 
 
 async def add_golden_config_node(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    tree_name: Annotated[str, Field(
-        description="The name of the Golden Configuration tree to create"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the new node to add"
-    )],
-    version: Annotated[str, Field(
-        description="The version of the tree to add the node to", default="initial"
-    )],
-    path: Annotated[str, Field(
-        description="The parent path",
-        default="base"
-    )],
-    template: Annotated[str, Field(
-        description="The configuration template associated with this node",
-        default=None,
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    tree_name: Annotated[
+        str, Field(description="The name of the Golden Configuration tree to create")
+    ],
+    name: Annotated[str, Field(description="The name of the new node to add")],
+    version: Annotated[
+        str,
+        Field(
+            description="The version of the tree to add the node to", default="initial"
+        ),
+    ],
+    path: Annotated[str, Field(description="The parent path", default="base")],
+    template: Annotated[
+        str,
+        Field(
+            description="The configuration template associated with this node",
+            default=None,
+        ),
+    ],
 ) -> models.AddGoldenConfigNodeResponse:
     """
     Add a new node to an existing Golden Configuration tree.

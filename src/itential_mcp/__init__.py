@@ -14,7 +14,7 @@ and includes version information from package metadata.
 
 from importlib.metadata import version
 
-from . import logging
+from .core import logging
 
 from .app import run
 

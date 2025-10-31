@@ -13,7 +13,7 @@ from typing import Literal, List, Callable, Any
 from pydantic import Field, field_validator
 from pydantic.dataclasses import dataclass
 
-from . import env
+from .core import env
 from . import defaults
 
 
@@ -111,11 +111,10 @@ class EndpointTool(Tool):
         description="The name of the automation the trigger is associated with"
     )
 
+
 @dataclass(frozen=True)
 class ServiceTool(Tool):
-    cluster: str = Field(
-        description="The cluster where the Gateway service resides"
-    )
+    cluster: str = Field(description="The cluster where the Gateway service resides")
 
 
 @dataclass(frozen=True)
@@ -127,9 +126,7 @@ class Config(object):
             "ITENTIAL_MCP_SERVER_TRANSPORT",
         ),
         json_schema_extra=options(
-            "--transport",
-            choices=("stdio", "sse", "http"),
-            metavar="<value>"
+            "--transport", choices=("stdio", "sse", "http"), metavar="<value>"
         ),
     )
 
@@ -139,10 +136,7 @@ class Config(object):
             env.getstr,
             "ITENTIAL_MCP_SERVER_HOST",
         ),
-        json_schema_extra=options(
-            "--host",
-            metavar="<host>"
-        ),
+        json_schema_extra=options("--host", metavar="<host>"),
     )
 
     server_port: int = Field(
@@ -151,47 +145,27 @@ class Config(object):
             env.getint,
             "ITENTIAL_MCP_SERVER_PORT",
         ),
-        json_schema_extra=options(
-            "--port",
-            metavar="<port>",
-            type=int
-        ),
+        json_schema_extra=options("--port", metavar="<port>", type=int),
     )
 
     server_path: str = Field(
         description="URI path used to accept requests from",
-        default_factory=default_factory(
-            env.getstr,
-            "ITENTIAL_MCP_SERVER_PATH"
-        ),
-        json_schema_extra=options(
-            "--path",
-            metavar="<path>"
-        ),
+        default_factory=default_factory(env.getstr, "ITENTIAL_MCP_SERVER_PATH"),
+        json_schema_extra=options("--path", metavar="<path>"),
     )
 
-    server_log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "NONE"] = Field(
+    server_log_level: Literal[
+        "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "NONE"
+    ] = Field(
         description="Logging level for verbose output",
-        default_factory=default_factory(
-            env.getstr,
-            "ITENTIAL_MCP_SERVER_LOG_LEVEL"
-        ),
-        json_schema_extra=options(
-            "--log-level",
-            metavar="<level>"
-        ),
+        default_factory=default_factory(env.getstr, "ITENTIAL_MCP_SERVER_LOG_LEVEL"),
+        json_schema_extra=options("--log-level", metavar="<level>"),
     )
 
     server_include_tags: str | None = Field(
         description="Include tools that match at least on tag",
-        default_factory=default_factory(
-            env.getstr,
-            "ITENTIAL_MCP_SERVER_INCLUDE_TAGS"
-        ),
-        json_schema_extra=options(
-            "--include-tags",
-            metavar="<tags>"
-        ),
+        default_factory=default_factory(env.getstr, "ITENTIAL_MCP_SERVER_INCLUDE_TAGS"),
+        json_schema_extra=options("--include-tags", metavar="<tags>"),
     )
 
     server_exclude_tags: str | None = Field(
@@ -200,22 +174,16 @@ class Config(object):
             env.getstr,
             "ITENTIAL_MCP_SERVER_EXCLUDE_TAGS",
         ),
-        json_schema_extra=options(
-            "--exclude-tags",
-            metavar="<tags>"
-        ),
+        json_schema_extra=options("--exclude-tags", metavar="<tags>"),
     )
 
     server_tools_path: str | None = Field(
         description="Custom path to load tools from",
-        default_factory=default_factory(
-            env.getstr,
-            "ITENTIAL_MCP_SERVER_TOOLS_PATH"
-        ),
+        default_factory=default_factory(env.getstr, "ITENTIAL_MCP_SERVER_TOOLS_PATH"),
         json_schema_extra=options(
             "--tools-path",
             metavar="<path>",
-        )
+        ),
     )
 
     server_auth_type: Literal["none", "jwt"] = Field(
@@ -309,18 +277,12 @@ class Config(object):
             env.getstr,
             "ITENTIAL_MCP_PLATFORM_HOST",
         ),
-        json_schema_extra=options(
-            "--platform-host",
-            metavar="<host>"
-        ),
+        json_schema_extra=options("--platform-host", metavar="<host>"),
     )
 
     platform_port: int = Field(
         description="The port to use when connecting to Itential Platform",
-        default_factory=default_factory(
-            env.getint,
-            "ITENTIAL_MCP_PLATFORM_PORT"
-        ),
+        default_factory=default_factory(env.getint, "ITENTIAL_MCP_PLATFORM_PORT"),
         json_schema_extra=options(
             "--platform-port",
             type=int,
@@ -331,85 +293,51 @@ class Config(object):
     platform_disable_tls: bool = Field(
         description="Disable using TLS to connect to the server",
         default_factory=default_factory(
-            env.getbool,
-            "ITENTIAL_MCP_PLATFORM_DISABLE_TLS"
+            env.getbool, "ITENTIAL_MCP_PLATFORM_DISABLE_TLS"
         ),
-        json_schema_extra=options(
-            "--platform-disable-tls",
-            action="store_true"
-        ),
+        json_schema_extra=options("--platform-disable-tls", action="store_true"),
     )
 
     platform_disable_verify: bool = Field(
         description="Disable certificate verification",
         default_factory=default_factory(
-            env.getbool,
-            "ITENTIAL_MCP_PLATFORM_DISABLE_VERIFY"
+            env.getbool, "ITENTIAL_MCP_PLATFORM_DISABLE_VERIFY"
         ),
-        json_schema_extra=options(
-            "--platform-disable-verify",
-            action="store_true"
-        ),
+        json_schema_extra=options("--platform-disable-verify", action="store_true"),
     )
 
     platform_user: str = Field(
         description="Username to use when authenticating to the server",
-        default_factory=default_factory(
-            env.getstr,
-            "ITENTIAL_MCP_PLATFORM_USER"
-        ),
-        json_schema_extra=options(
-            "--platform-user",
-            metavar="<user>"
-        ),
+        default_factory=default_factory(env.getstr, "ITENTIAL_MCP_PLATFORM_USER"),
+        json_schema_extra=options("--platform-user", metavar="<user>"),
     )
 
     platform_password: str = Field(
         description="Password to use when authenticating to the server",
-        default_factory=default_factory(
-            env.getstr,
-            "ITENTIAL_MCP_PLATFORM_PASSWORD"
-        ),
-        json_schema_extra=options(
-            "--platform-password",
-            metavar="<password>"
-        ),
+        default_factory=default_factory(env.getstr, "ITENTIAL_MCP_PLATFORM_PASSWORD"),
+        json_schema_extra=options("--platform-password", metavar="<password>"),
     )
 
     platform_client_id: str | None = Field(
         description="Client ID to use when authenticating using OAuth",
-        default_factory=default_factory(
-            env.getstr,
-            "ITENTIAL_MCP_PLATFORM_CLIENT_ID"
-        ),
-        json_schema_extra=options(
-            "--platform-client-id",
-            metavar="<client_id>"
-        ),
+        default_factory=default_factory(env.getstr, "ITENTIAL_MCP_PLATFORM_CLIENT_ID"),
+        json_schema_extra=options("--platform-client-id", metavar="<client_id>"),
     )
 
     platform_client_secret: str | None = Field(
         description="Client secret to use when authenticating using OAuth",
         default_factory=default_factory(
-            env.getstr,
-            "ITENTIAL_MCP_PLATFORM_CLIENT_SECRET"
+            env.getstr, "ITENTIAL_MCP_PLATFORM_CLIENT_SECRET"
         ),
         json_schema_extra=options(
-            "--platform-client-secret",
-            metavar="<client_secret>"
+            "--platform-client-secret", metavar="<client_secret>"
         ),
     )
 
     platform_timeout: int = Field(
         description="Sets the timeout in seconds when communciating with the server",
-        default_factory=default_factory(
-            env.getint,
-            "ITENTIAL_MCP_PLATFORM_TIMEOUT"
-        ),
-        json_schema_extra=options(
-            "--platform-timeout",
-            metavar="<secs>"
-        ),
+        default_factory=default_factory(env.getint, "ITENTIAL_MCP_PLATFORM_TIMEOUT"),
+        json_schema_extra=options("--platform-timeout", metavar="<secs>"),
     )
 
     tools: List[Tool] = Field(
@@ -438,8 +366,12 @@ class Config(object):
             "path": self.server_path,
             "tools_path": self.server_tools_path,
             "log_level": self.server_log_level,
-            "include_tags": self._coerce_to_set(self.server_include_tags) if self.server_include_tags else None,
-            "exclude_tags": self._coerce_to_set(self.server_exclude_tags) if self.server_exclude_tags else None,
+            "include_tags": self._coerce_to_set(self.server_include_tags)
+            if self.server_include_tags
+            else None,
+            "exclude_tags": self._coerce_to_set(self.server_exclude_tags)
+            if self.server_exclude_tags
+            else None,
         }
 
     @property

@@ -58,6 +58,7 @@ warning = partial(log, logging.WARNING)
 error = partial(log, logging.ERROR)
 critical = partial(log, logging.CRITICAL)
 
+
 def exception(exc: Exception) -> None:
     """
     Log an exception error

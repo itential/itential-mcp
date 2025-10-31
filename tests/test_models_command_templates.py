@@ -16,7 +16,11 @@ class TestCommandTemplate:
             _id="template_123",
             name="test_template",
             description="Test command template",
-            namespace={"type": "project", "_id": "test_project", "name": "Test Project"},
+            namespace={
+                "type": "project",
+                "_id": "test_project",
+                "name": "Test Project",
+            },
             passRule=True,
         )
 
@@ -364,20 +368,16 @@ class TestCreateCommandTemplateRequest:
                 "command": "show version",
                 "passRule": True,
                 "rules": [
-                    {
-                        "rule": "Version 16.12",
-                        "eval": "contains",
-                        "severity": "error"
-                    }
-                ]
+                    {"rule": "Version 16.12", "eval": "contains", "severity": "error"}
+                ],
             }
         ]
-        
+
         request = models.CreateCommandTemplateRequest(
             name="test_template",
             commands=commands,
             description="Test template",
-            project="Test Project"
+            project="Test Project",
         )
 
         assert request.name == "test_template"
@@ -398,30 +398,35 @@ class TestCreateCommandTemplateRequest:
                     {
                         "rule": "<!type!><!interface!>.<!subInterface!>.*\\s+.*(down|up)",
                         "eval": "RegEx",
-                        "severity": "error"
+                        "severity": "error",
                     }
-                ]
+                ],
             }
         ]
-        
+
         request = models.CreateCommandTemplateRequest(
             name="interface_check",
             commands=commands,
-            description="Interface status check with regex"
+            description="Interface status check with regex",
         )
 
         assert request.name == "interface_check"
-        assert request.commands[0]["command"] == "show interfaces <!type!> <!interface!>.<!subInterface!>"
+        assert (
+            request.commands[0]["command"]
+            == "show interfaces <!type!> <!interface!>.<!subInterface!>"
+        )
         assert request.commands[0]["rules"][0]["eval"] == "RegEx"
-        assert request.commands[0]["rules"][0]["rule"] == "<!type!><!interface!>.<!subInterface!>.*\\s+.*(down|up)"
+        assert (
+            request.commands[0]["rules"][0]["rule"]
+            == "<!type!><!interface!>.<!subInterface!>.*\\s+.*(down|up)"
+        )
 
     def test_create_command_template_request_defaults(self):
         """Test CreateCommandTemplateRequest with default values."""
         commands = [{"command": "show version", "passRule": True, "rules": []}]
-        
+
         request = models.CreateCommandTemplateRequest(
-            name="minimal_template",
-            commands=commands
+            name="minimal_template", commands=commands
         )
 
         assert request.name == "minimal_template"
@@ -451,13 +456,13 @@ class TestCreateCommandTemplateResponse:
                     "created": 1757610875214,
                     "createdBy": "test@example.com",
                     "lastUpdated": 1757610875484,
-                    "lastUpdatedBy": "test@example.com"
+                    "lastUpdatedBy": "test@example.com",
                 }
             ],
             "insertedCount": 1,
-            "insertedIds": {"0": "testcmd"}
+            "insertedIds": {"0": "testcmd"},
         }
-        
+
         response = models.CreateCommandTemplateResponse(**response_data)
 
         assert response.result == {"ok": 1, "n": 1}
@@ -476,20 +481,12 @@ class TestUpdateCommandTemplateRequest:
             {
                 "command": "show ip interface brief",
                 "passRule": True,
-                "rules": [
-                    {
-                        "rule": "up",
-                        "eval": "contains",
-                        "severity": "error"
-                    }
-                ]
+                "rules": [{"rule": "up", "eval": "contains", "severity": "error"}],
             }
         ]
-        
+
         request = models.UpdateCommandTemplateRequest(
-            name="existing_template",
-            commands=commands,
-            description="Updated template"
+            name="existing_template", commands=commands, description="Updated template"
         )
 
         assert request.name == "existing_template"
@@ -511,9 +508,9 @@ class TestUpdateCommandTemplateResponse:
             "modifiedCount": 1,
             "upsertedId": None,
             "upsertedCount": 0,
-            "matchedCount": 1
+            "matchedCount": 1,
         }
-        
+
         response = models.UpdateCommandTemplateResponse(**response_data)
 
         assert response.acknowledged is True

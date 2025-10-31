@@ -16,15 +16,10 @@ __tags__ = ("automation_studio",)
 
 
 async def get_templates(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
     template_type: Annotated[
         Literal["textfsm", "jinja2"] | None,
-        Field(
-            description="Retrieve only templates of this type",
-            default=None
-        )
+        Field(description="Retrieve only templates of this type", default=None),
     ],
 ) -> List[Mapping[str, Any]]:
     """Get all templates from Automation Studio.
@@ -74,16 +69,14 @@ async def get_templates(
 
 
 async def describe_template(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the template to describe"
-    )],
-    project: Annotated[str | None, Field(
-        description="The name of the project the template resides in ",
-        default=None
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="The name of the template to describe")],
+    project: Annotated[
+        str | None,
+        Field(
+            description="The name of the project the template resides in ", default=None
+        ),
+    ],
 ) -> Mapping[str, Any]:
     """Get detailed information about a specific template from Automation Studio.
 
@@ -111,9 +104,7 @@ async def describe_template(
     """
     await ctx.info("inside get_templates(...)")
     client = ctx.request_context.lifespan_context.get("client")
-    res = await client.automation_studio.describe_template(
-        name=name, project=project
-    )
+    res = await client.automation_studio.describe_template(name=name, project=project)
     return models.DescribeTemplateResponse(
         name=res.get("name"),
         description=res.get("description"),
@@ -121,44 +112,44 @@ async def describe_template(
         group=res.get("group"),
         command=res.get("command"),
         template=res.get("template"),
-        data=res.get("data")
+        data=res.get("data"),
     )
 
 
 async def create_template(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the template to create"
-    )],
-    template_type: Annotated[Literal["textfsm", "jinja2"], Field(
-        description="Type of template to create"
-    )],
-    group: Annotated[str, Field(
-        description="The gorup this template belongs to"
-    )],
-    project: Annotated[str, Field(
-        description=inspect.cleandoc(
-            """
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="The name of the template to create")],
+    template_type: Annotated[
+        Literal["textfsm", "jinja2"], Field(description="Type of template to create")
+    ],
+    group: Annotated[str, Field(description="The gorup this template belongs to")],
+    project: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
             The name of the project where this template should be created.
             The available projects can be found using get_projects
             """
+            ),
+            default=None,
         ),
-        default=None
-    )],
-    command: Annotated[str, Field(
-        description="The CLI command to be run on the target device",
-        default=None
-    )],
-    template: Annotated[str, Field(
-        description="The template text uesd to generate the output",
-        default=None
-    )],
-    data: Annotated[str, Field(
-        description="Sample data used to test the template",
-        default=None
-    )]
+    ],
+    command: Annotated[
+        str,
+        Field(
+            description="The CLI command to be run on the target device", default=None
+        ),
+    ],
+    template: Annotated[
+        str,
+        Field(
+            description="The template text uesd to generate the output", default=None
+        ),
+    ],
+    data: Annotated[
+        str, Field(description="Sample data used to test the template", default=None)
+    ],
 ) -> Mapping[str, Any]:
     """Create a new template in Automation Studio.
 
@@ -205,7 +196,7 @@ async def create_template(
         project=project,
         command=command,
         template=template,
-        data=data
+        data=data,
     )
 
     return models.CreateTemplateResponse(
@@ -215,38 +206,40 @@ async def create_template(
         group=res.get("group"),
         command=res.get("command"),
         template=res.get("template"),
-        data=res.get("data")
+        data=res.get("data"),
     )
 
 
 async def update_template(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the template to update"
-    )],
-    project: Annotated[str, Field(
-        description=inspect.cleandoc(
-            """
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="The name of the template to update")],
+    project: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
             The name of the project where this template resides.  The
             available projects can be found using get_projects
             """
+            ),
+            default=None,
         ),
-        default=None
-    )],
-    command: Annotated[str, Field(
-        description="The CLI command to be run on the target device",
-        default=None
-    )],
-    template: Annotated[str, Field(
-        description="The template text uesd to generate the output",
-        default=None
-    )],
-    data: Annotated[str, Field(
-        description="Sample data used to test the template",
-        default=None
-    )]
+    ],
+    command: Annotated[
+        str,
+        Field(
+            description="The CLI command to be run on the target device", default=None
+        ),
+    ],
+    template: Annotated[
+        str,
+        Field(
+            description="The template text uesd to generate the output", default=None
+        ),
+    ],
+    data: Annotated[
+        str, Field(description="Sample data used to test the template", default=None)
+    ],
 ) -> Mapping[str, Any]:
     """Update an existing template in Automation Studio.
 
@@ -286,11 +279,7 @@ async def update_template(
     await ctx.info("inside update_template(...)")
     client = ctx.request_context.lifespan_context.get("client")
     res = await client.automation_studio.update_template(
-        name=name,
-        project=project,
-        command=command,
-        template=template,
-        data=data
+        name=name, project=project, command=command, template=template, data=data
     )
 
     return models.UpdateTemplateResponse(
@@ -300,5 +289,5 @@ async def update_template(
         type=res.get("type"),
         command=res.get("command"),
         template=res.get("template"),
-        data=res.get("data")
+        data=res.get("data"),
     )

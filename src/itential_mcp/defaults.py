@@ -26,11 +26,15 @@ ITENTIAL_MCP_SERVER_EXCLUDE_TAGS = "experimental,beta"  # Tool tags to exclude
 ITENTIAL_MCP_SERVER_TOOLS_PATH = None  # Custom path to load additional tools from
 ITENTIAL_MCP_SERVER_AUTH_TYPE = "none"  # Authentication provider type
 ITENTIAL_MCP_SERVER_AUTH_JWKS_URI = None  # JWKS URI for JWT validation
-ITENTIAL_MCP_SERVER_AUTH_PUBLIC_KEY = None  # Static public key or shared secret for JWT validation
+ITENTIAL_MCP_SERVER_AUTH_PUBLIC_KEY = (
+    None  # Static public key or shared secret for JWT validation
+)
 ITENTIAL_MCP_SERVER_AUTH_ISSUER = None  # Expected JWT issuer
 ITENTIAL_MCP_SERVER_AUTH_AUDIENCE = None  # Expected JWT audience(s)
 ITENTIAL_MCP_SERVER_AUTH_ALGORITHM = None  # Expected JWT signing algorithm
-ITENTIAL_MCP_SERVER_AUTH_REQUIRED_SCOPES = None  # Comma separated list of required scopes
+ITENTIAL_MCP_SERVER_AUTH_REQUIRED_SCOPES = (
+    None  # Comma separated list of required scopes
+)
 
 # Platform Configuration Defaults
 ITENTIAL_MCP_PLATFORM_HOST = "localhost"  # Itential Platform server hostname

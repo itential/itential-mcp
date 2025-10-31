@@ -3,7 +3,7 @@
 
 import asyncio
 
-from itential_mcp import exceptions
+from itential_mcp.core import exceptions
 
 from itential_mcp.services import ServiceBase
 
@@ -52,11 +52,7 @@ class Service(ServiceBase):
             and requires the adapter name to be case-sensitive.
         """
         res = await self.client.get(
-            "/health/adapters",
-            params={
-                "equals": name,
-                "equalsField": "id"
-            }
+            "/health/adapters", params={"equals": name, "equalsField": "id"}
         )
 
         data = res.json()
@@ -179,7 +175,6 @@ class Service(ServiceBase):
             raise exceptions.TimeoutExceededError()
 
         return data["results"][0]
-
 
     async def restart_adapter(self, name, timeout):
         """

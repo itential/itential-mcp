@@ -52,15 +52,21 @@ class TestGetServices:
                 "cluster": "cluster-1",
                 "type": "ansible-playbook",
                 "description": "Test Ansible playbook service",
-                "decorator": {"type": "object", "properties": {"param1": {"type": "string"}}}
+                "decorator": {
+                    "type": "object",
+                    "properties": {"param1": {"type": "string"}},
+                },
             },
             {
                 "name": "test-service-2",
                 "cluster": "cluster-2",
                 "type": "python-script",
                 "description": "Test Python script service",
-                "decorator": {"type": "object", "properties": {"param2": {"type": "integer"}}}
-            }
+                "decorator": {
+                    "type": "object",
+                    "properties": {"param2": {"type": "integer"}},
+                },
+            },
         ]
 
         # Mock response data
@@ -135,15 +141,15 @@ class TestGetGateways:
                 "cluster": "cluster-1",
                 "description": "Primary gateway",
                 "status": "connected",
-                "enabled": True
+                "enabled": True,
             },
             {
                 "name": "gateway-2",
                 "cluster": "cluster-2",
                 "description": "Secondary gateway",
                 "status": "disconnected",
-                "enabled": False
-            }
+                "enabled": False,
+            },
         ]
 
         # Mock response data
@@ -221,7 +227,7 @@ class TestRunService:
             "return_code": 0,
             "start_time": "2025-01-01T10:00:00Z",
             "end_time": "2025-01-01T10:05:00Z",
-            "elapsed_time": 300
+            "elapsed_time": 300,
         }
 
         # Mock response data
@@ -232,13 +238,9 @@ class TestRunService:
         result = await service.run_service(service_name, cluster_name)
 
         # Verify client was called with correct parameters
-        expected_body = {
-            "serviceName": service_name,
-            "clusterId": cluster_name
-        }
+        expected_body = {"serviceName": service_name, "clusterId": cluster_name}
         mock_client.post.assert_called_once_with(
-            "/gateway_manager/v1/services/run",
-            json=expected_body
+            "/gateway_manager/v1/services/run", json=expected_body
         )
 
         # Verify result
@@ -257,7 +259,7 @@ class TestRunService:
             "return_code": 0,
             "start_time": "2025-01-01T10:00:00Z",
             "end_time": "2025-01-01T10:05:00Z",
-            "elapsed_time": 300
+            "elapsed_time": 300,
         }
 
         # Mock response data
@@ -271,11 +273,10 @@ class TestRunService:
         expected_body = {
             "serviceName": service_name,
             "clusterId": cluster_name,
-            "params": input_params
+            "params": input_params,
         }
         mock_client.post.assert_called_once_with(
-            "/gateway_manager/v1/services/run",
-            json=expected_body
+            "/gateway_manager/v1/services/run", json=expected_body
         )
 
         # Verify result
@@ -296,13 +297,9 @@ class TestRunService:
         await service.run_service(service_name, cluster_name, None)
 
         # Verify client was called without params in body
-        expected_body = {
-            "serviceName": service_name,
-            "clusterId": cluster_name
-        }
+        expected_body = {"serviceName": service_name, "clusterId": cluster_name}
         mock_client.post.assert_called_once_with(
-            "/gateway_manager/v1/services/run",
-            json=expected_body
+            "/gateway_manager/v1/services/run", json=expected_body
         )
 
     @pytest.mark.asyncio
@@ -321,13 +318,9 @@ class TestRunService:
         await service.run_service(service_name, cluster_name, input_params)
 
         # Verify client was called without params because empty dict is falsy
-        expected_body = {
-            "serviceName": service_name,
-            "clusterId": cluster_name
-        }
+        expected_body = {"serviceName": service_name, "clusterId": cluster_name}
         mock_client.post.assert_called_once_with(
-            "/gateway_manager/v1/services/run",
-            json=expected_body
+            "/gateway_manager/v1/services/run", json=expected_body
         )
 
     @pytest.mark.asyncio
@@ -341,7 +334,7 @@ class TestRunService:
             "return_code": 1,
             "start_time": "2025-01-01T10:00:00Z",
             "end_time": "2025-01-01T10:01:00Z",
-            "elapsed_time": 60
+            "elapsed_time": 60,
         }
 
         # Mock response data
@@ -382,17 +375,10 @@ class TestRunService:
         input_params = {
             "config": {
                 "environment": "production",
-                "settings": {
-                    "timeout": 300,
-                    "retries": 3
-                }
+                "settings": {"timeout": 300, "retries": 3},
             },
             "targets": ["device1", "device2"],
-            "variables": {
-                "var1": "value1",
-                "var2": None,
-                "var3": True
-            }
+            "variables": {"var1": "value1", "var2": None, "var3": True},
         }
         expected_result = {"return_code": 0}
 
@@ -407,11 +393,10 @@ class TestRunService:
         expected_body = {
             "serviceName": service_name,
             "clusterId": cluster_name,
-            "params": input_params
+            "params": input_params,
         }
         mock_client.post.assert_called_once_with(
-            "/gateway_manager/v1/services/run",
-            json=expected_body
+            "/gateway_manager/v1/services/run", json=expected_body
         )
 
 
@@ -434,6 +419,7 @@ class TestServiceIntegration:
     async def test_service_inherits_from_servicebase(self, service):
         """Test that Service properly inherits from ServiceBase"""
         from itential_mcp.services import ServiceBase
+
         assert isinstance(service, ServiceBase)
 
     @pytest.mark.asyncio
@@ -451,9 +437,9 @@ class TestServiceIntegration:
 
         # Check run_service signature
         run_service_sig = inspect.signature(service.run_service)
-        assert 'name' in run_service_sig.parameters
-        assert 'cluster' in run_service_sig.parameters
-        assert 'input_params' in run_service_sig.parameters
+        assert "name" in run_service_sig.parameters
+        assert "cluster" in run_service_sig.parameters
+        assert "input_params" in run_service_sig.parameters
 
     @pytest.mark.asyncio
     async def test_all_methods_are_async(self, service):
@@ -462,11 +448,12 @@ class TestServiceIntegration:
 
         # Get all public methods (not starting with _)
         public_methods = [
-            method for method in dir(service)
-            if not method.startswith('_') and callable(getattr(service, method))
+            method
+            for method in dir(service)
+            if not method.startswith("_") and callable(getattr(service, method))
         ]
 
-        for method_name in ['get_services', 'get_gateways', 'run_service']:
+        for method_name in ["get_services", "get_gateways", "run_service"]:
             if method_name in public_methods:
                 method = getattr(service, method_name)
                 assert inspect.iscoroutinefunction(method)
@@ -485,7 +472,9 @@ class TestServiceIntegration:
         assert isinstance(services_result, Sequence)
 
         # Test get_gateways return type
-        mock_response.json.return_value = [{"name": "gateway"}]  # get_gateways returns direct response
+        mock_response.json.return_value = [
+            {"name": "gateway"}
+        ]  # get_gateways returns direct response
         gateways_result = await service.get_gateways()
         assert isinstance(gateways_result, Sequence)
 
@@ -526,13 +515,9 @@ class TestEdgeCases:
         await service.run_service(service_name, cluster_name)
 
         # Verify Unicode names were handled correctly
-        expected_body = {
-            "serviceName": service_name,
-            "clusterId": cluster_name
-        }
+        expected_body = {"serviceName": service_name, "clusterId": cluster_name}
         mock_client.post.assert_called_with(
-            "/gateway_manager/v1/services/run",
-            json=expected_body
+            "/gateway_manager/v1/services/run", json=expected_body
         )
 
     @pytest.mark.asyncio
@@ -549,13 +534,9 @@ class TestEdgeCases:
         await service.run_service(service_name, cluster_name)
 
         # Should handle special characters correctly
-        expected_body = {
-            "serviceName": service_name,
-            "clusterId": cluster_name
-        }
+        expected_body = {"serviceName": service_name, "clusterId": cluster_name}
         mock_client.post.assert_called_with(
-            "/gateway_manager/v1/services/run",
-            json=expected_body
+            "/gateway_manager/v1/services/run", json=expected_body
         )
 
     @pytest.mark.asyncio
@@ -572,13 +553,9 @@ class TestEdgeCases:
         await service.run_service(service_name, cluster_name)
 
         # Should handle empty strings (though may fail on server side)
-        expected_body = {
-            "serviceName": service_name,
-            "clusterId": cluster_name
-        }
+        expected_body = {"serviceName": service_name, "clusterId": cluster_name}
         mock_client.post.assert_called_with(
-            "/gateway_manager/v1/services/run",
-            json=expected_body
+            "/gateway_manager/v1/services/run", json=expected_body
         )
 
     @pytest.mark.asyncio
@@ -595,13 +572,9 @@ class TestEdgeCases:
         await service.run_service(service_name, cluster_name)
 
         # Should handle long names
-        expected_body = {
-            "serviceName": service_name,
-            "clusterId": cluster_name
-        }
+        expected_body = {"serviceName": service_name, "clusterId": cluster_name}
         mock_client.post.assert_called_with(
-            "/gateway_manager/v1/services/run",
-            json=expected_body
+            "/gateway_manager/v1/services/run", json=expected_body
         )
 
     @pytest.mark.asyncio
@@ -631,7 +604,7 @@ class TestEdgeCases:
         tasks = [
             service.get_services(),
             service.get_gateways(),
-            service.run_service("test-service", "test-cluster")
+            service.run_service("test-service", "test-cluster"),
         ]
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -664,7 +637,10 @@ class TestDocumentation:
 
     def test_methods_have_docstrings(self, service):
         """Test that all methods have proper documentation"""
-        methods = ['get_gateways', 'run_service']  # get_services has empty docstring currently
+        methods = [
+            "get_gateways",
+            "run_service",
+        ]  # get_services has empty docstring currently
         for method_name in methods:
             method = getattr(service, method_name)
             assert method.__doc__ is not None
@@ -672,7 +648,10 @@ class TestDocumentation:
 
     def test_docstrings_contain_required_sections(self, service):
         """Test that method docstrings contain required sections"""
-        methods = ['get_gateways', 'run_service']  # get_services has empty docstring currently
+        methods = [
+            "get_gateways",
+            "run_service",
+        ]  # get_services has empty docstring currently
         for method_name in methods:
             method = getattr(service, method_name)
             docstring = method.__doc__

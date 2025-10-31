@@ -13,37 +13,36 @@ def mock_platform_client():
     """Mock PlatformClient for testing."""
     platform_client = AsyncMock(spec=client.PlatformClient)
     platform_client.client = AsyncMock()
-    
+
     # Mock the response structure for different API calls
     def mock_get(url, params=None):
         mock_response = MagicMock()  # Use MagicMock instead of AsyncMock for response
-        
+
         if "/operations-manager/automations" in url:
             # Return automation data
             mock_response.json.return_value = {
                 "metadata": {"total": 1},
-                "data": [{
-                    "_id": "test-automation-id",
-                    "name": "test-automation"
-                }]
+                "data": [{"_id": "test-automation-id", "name": "test-automation"}],
             }
         elif "/operations-manager/triggers" in url:
             # Return trigger data
             mock_response.json.return_value = {
                 "metadata": {"total": 1},
-                "data": [{
-                    "_id": "test-trigger-id",
-                    "name": "test-tool",
-                    "description": "Test trigger description",
-                    "schema": {"type": "object", "properties": {}},
-                    "routeName": "test-route"
-                }]
+                "data": [
+                    {
+                        "_id": "test-trigger-id",
+                        "name": "test-tool",
+                        "description": "Test trigger description",
+                        "schema": {"type": "object", "properties": {}},
+                        "routeName": "test-route",
+                    }
+                ],
             }
-        
+
         return mock_response
-    
+
     platform_client.client.get.side_effect = mock_get
-    
+
     return platform_client
 
 
@@ -92,7 +91,11 @@ class TestBindToTool:
     @patch("itential_mcp.bindings._import_binding")
     @pytest.mark.asyncio
     async def test_bind_to_tool_success_with_tags(
-        self, mock_import_binding, mock_tool_config, mock_platform_client, mock_endpoint_module
+        self,
+        mock_import_binding,
+        mock_tool_config,
+        mock_platform_client,
+        mock_endpoint_module,
     ):
         """Test successful tool binding with custom tags."""
         # Setup
@@ -280,35 +283,36 @@ class TestBindingsIntegration:
 
         mock_platform_client_instance = AsyncMock()
         mock_platform_client_instance.client = AsyncMock()
-        
+
         # Mock the response structure for different API calls
         def mock_get(url, params=None):
-            mock_response = MagicMock()  # Use MagicMock instead of AsyncMock for response
-            
+            mock_response = (
+                MagicMock()
+            )  # Use MagicMock instead of AsyncMock for response
+
             if "/operations-manager/automations" in url:
                 # Return automation data
                 mock_response.json.return_value = {
                     "metadata": {"total": 1},
-                    "data": [{
-                        "_id": "test-automation-id",
-                        "name": "test-automation"
-                    }]
+                    "data": [{"_id": "test-automation-id", "name": "test-automation"}],
                 }
             elif "/operations-manager/triggers" in url:
                 # Return trigger data
                 mock_response.json.return_value = {
                     "metadata": {"total": 1},
-                    "data": [{
-                        "_id": "test-trigger-id",
-                        "name": "test-workflow",
-                        "description": "Test workflow description",
-                        "schema": {"type": "object", "properties": {}},
-                        "routeName": "test-workflow-route"
-                    }]
+                    "data": [
+                        {
+                            "_id": "test-trigger-id",
+                            "name": "test-workflow",
+                            "description": "Test workflow description",
+                            "schema": {"type": "object", "properties": {}},
+                            "routeName": "test-workflow-route",
+                        }
+                    ],
                 }
-            
+
             return mock_response
-        
+
         mock_platform_client_instance.client.get.side_effect = mock_get
         mock_platform_client_class.return_value = mock_platform_client_instance
 
@@ -335,7 +339,12 @@ class TestBindingsIntegration:
         assert callable(bound_fn)
         assert bound_kwargs["name"] == "test_workflow"
         assert bound_kwargs["exclude_args"] == ("_tool_config",)
-        assert bound_kwargs["tags"] == ["bindings", "test_workflow", "workflow", "automation"]
+        assert bound_kwargs["tags"] == [
+            "bindings",
+            "test_workflow",
+            "workflow",
+            "automation",
+        ]
 
         # Verify the endpoint module was called correctly
         mock_endpoint_module.new.assert_called_once_with(

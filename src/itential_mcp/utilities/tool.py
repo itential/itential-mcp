@@ -42,9 +42,11 @@ def tags(*tag_list) -> Callable:
     Raises:
         None
     """
+
     def decorator(func):
         setattr(func, "tags", list(tag_list))
         return func
+
     return decorator
 
 
@@ -95,12 +97,16 @@ def itertools(path: str) -> Iterator[Tuple[Callable, Sequence]]:
         None
     """
     # Get a list of all files in the directory
-    module_files = [f[:-3] for f in os.listdir(path) if f.endswith(".py") and f != "__init__.py"]
+    module_files = [
+        f[:-3] for f in os.listdir(path) if f.endswith(".py") and f != "__init__.py"
+    ]
 
     # Import the modules, add them to globals and mcp
     for module_name in module_files:
         if not module_name.startswith("_"):
-            spec = importlib.util.spec_from_file_location(module_name, os.path.join(path, f"{module_name}.py"))
+            spec = importlib.util.spec_from_file_location(
+                module_name, os.path.join(path, f"{module_name}.py")
+            )
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
 

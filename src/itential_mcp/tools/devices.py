@@ -14,9 +14,7 @@ __tags__ = ("configuration_manager",)
 
 
 async def get_devices(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
 ) -> models.GetDevicesResponse:
     """
     Get all devices known to Itential Platform.
@@ -41,12 +39,11 @@ async def get_devices(
 
 
 async def get_device_configuration(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the device to retrieve the configuration from"
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[
+        str,
+        Field(description="The name of the device to retrieve the configuration from"),
+    ],
 ) -> models.GetDeviceConfigurationResponse:
     """
     Retrieve the current configuration from a network device.
@@ -67,20 +64,15 @@ async def get_device_configuration(
 
 
 async def backup_device_configuration(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the device to backup"
-    )],
-    description: Annotated[str, Field(
-        description="Short description to attach to the backup",
-        default=None
-    )],
-    notes: Annotated[str, Field(
-        description="Notes to attach to the backup",
-        default=None
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="The name of the device to backup")],
+    description: Annotated[
+        str,
+        Field(description="Short description to attach to the backup", default=None),
+    ],
+    notes: Annotated[
+        str, Field(description="Notes to attach to the backup", default=None)
+    ],
 ) -> models.BackupDeviceConfigurationResponse:
     """
     Create a backup of a device configuration in Itential Platform.
@@ -112,15 +104,13 @@ async def backup_device_configuration(
 
 
 async def apply_device_configuration(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    device: Annotated[str, Field(
-        description="The name of the device to apply the configuration to"
-    )],
-    config: Annotated[str, Field(
-        description="The configuration to apply to the device"
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    device: Annotated[
+        str, Field(description="The name of the device to apply the configuration to")
+    ],
+    config: Annotated[
+        str, Field(description="The configuration to apply to the device")
+    ],
 ) -> models.ApplyDeviceConfigurationResponse:
     """
     Apply configuration commands to a network device through Itential Platform.

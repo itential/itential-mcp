@@ -10,8 +10,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from itential_mcp import logging as itential_logging
-from itential_mcp import metadata
+from itential_mcp.core import logging as itential_logging
+from itential_mcp.core import metadata
 
 
 class TestBasicLogging:
@@ -44,7 +44,7 @@ class TestBasicLogging:
         assert callable(itential_logging.exception)
         assert callable(itential_logging.fatal)
 
-    @patch("itential_mcp.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.getLogger")
     def test_log_function(self, mock_get_logger):
         """Test the basic log function"""
         mock_logger = Mock()
@@ -55,7 +55,7 @@ class TestBasicLogging:
         mock_get_logger.assert_called_once_with(metadata.name)
         mock_logger.log.assert_called_once_with(logging.INFO, "test message")
 
-    @patch("itential_mcp.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.getLogger")
     def test_debug_function(self, mock_get_logger):
         """Test the debug function"""
         mock_logger = Mock()
@@ -65,7 +65,7 @@ class TestBasicLogging:
         mock_get_logger.assert_called_once_with(metadata.name)
         mock_logger.log.assert_called_once_with(logging.DEBUG, "debug message")
 
-    @patch("itential_mcp.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.getLogger")
     def test_info_function(self, mock_get_logger):
         """Test the info function"""
         mock_logger = Mock()
@@ -75,7 +75,7 @@ class TestBasicLogging:
         mock_get_logger.assert_called_once_with(metadata.name)
         mock_logger.log.assert_called_once_with(logging.INFO, "info message")
 
-    @patch("itential_mcp.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.getLogger")
     def test_warning_function(self, mock_get_logger):
         """Test the warning function"""
         mock_logger = Mock()
@@ -85,7 +85,7 @@ class TestBasicLogging:
         mock_get_logger.assert_called_once_with(metadata.name)
         mock_logger.log.assert_called_once_with(logging.WARNING, "warning message")
 
-    @patch("itential_mcp.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.getLogger")
     def test_error_function(self, mock_get_logger):
         """Test the error function"""
         mock_logger = Mock()
@@ -95,7 +95,7 @@ class TestBasicLogging:
         mock_get_logger.assert_called_once_with(metadata.name)
         mock_logger.log.assert_called_once_with(logging.ERROR, "error message")
 
-    @patch("itential_mcp.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.getLogger")
     def test_critical_function(self, mock_get_logger):
         """Test the critical function"""
         mock_logger = Mock()
@@ -105,7 +105,7 @@ class TestBasicLogging:
         mock_get_logger.assert_called_once_with(metadata.name)
         mock_logger.log.assert_called_once_with(logging.CRITICAL, "critical message")
 
-    @patch("itential_mcp.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.getLogger")
     def test_exception_function(self, mock_get_logger):
         """Test the exception function"""
         mock_logger = Mock()
@@ -119,7 +119,7 @@ class TestBasicLogging:
 
     @patch("sys.exit")
     @patch("builtins.print")
-    @patch("itential_mcp.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.getLogger")
     def test_fatal_function(self, mock_get_logger, mock_print, mock_exit):
         """Test the fatal function"""
         mock_logger = Mock()
@@ -136,7 +136,7 @@ class TestBasicLogging:
 class TestSetLevel:
     """Test cases for set_level function"""
 
-    @patch("itential_mcp.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.getLogger")
     def test_set_level_basic(self, mock_get_logger):
         """Test setting logging level"""
         mock_logger = Mock()
@@ -150,7 +150,7 @@ class TestSetLevel:
         # Verify the logger.log method was called for the two info messages
         assert mock_logger.log.call_count == 2
 
-    @patch("itential_mcp.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.getLogger")
     def test_set_level_with_propagate(self, mock_get_logger):
         """Test setting logging level with propagation"""
         mock_logger = Mock()
@@ -174,7 +174,7 @@ class TestSetLevel:
 class TestConsoleOutput:
     """Test cases for console output functions"""
 
-    @patch("itential_mcp.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.getLogger")
     def test_set_console_output_stderr(self, mock_get_logger):
         """Test setting console output to stderr"""
         mock_logger = Mock()
@@ -190,7 +190,7 @@ class TestConsoleOutput:
         mock_logger.addHandler.assert_called_once()
         mock_logger.log.assert_called_once()
 
-    @patch("itential_mcp.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.getLogger")
     def test_set_console_output_stdout(self, mock_get_logger):
         """Test setting console output to stdout"""
         mock_logger = Mock()
@@ -211,7 +211,7 @@ class TestConsoleOutput:
         with pytest.raises(ValueError, match="stream must be 'stdout' or 'stderr'"):
             itential_logging.set_console_output("invalid")
 
-    @patch("itential_mcp.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.getLogger")
     def test_set_console_output_no_existing_handlers(self, mock_get_logger):
         """Test setting console output when no existing handlers"""
         mock_logger = Mock()
@@ -228,7 +228,7 @@ class TestConsoleOutput:
 class TestStdoutHandler:
     """Test cases for add_stdout_handler function"""
 
-    @patch("itential_mcp.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.getLogger")
     def test_add_stdout_handler_basic(self, mock_get_logger):
         """Test adding stdout handler with default settings"""
         mock_logger = Mock()
@@ -242,8 +242,8 @@ class TestStdoutHandler:
             logging.INFO, "Stdout logging handler added"
         )
 
-    @patch("itential_mcp.logging.logging.getLogger")
-    @patch("itential_mcp.logging.logging.StreamHandler")
+    @patch("itential_mcp.core.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.StreamHandler")
     def test_add_stdout_handler_with_level(self, mock_stream_handler, mock_get_logger):
         """Test adding stdout handler with custom level"""
         mock_logger = Mock()
@@ -258,9 +258,9 @@ class TestStdoutHandler:
         mock_handler.setFormatter.assert_called_once()
         mock_logger.addHandler.assert_called_once_with(mock_handler)
 
-    @patch("itential_mcp.logging.logging.getLogger")
-    @patch("itential_mcp.logging.logging.StreamHandler")
-    @patch("itential_mcp.logging.logging.Formatter")
+    @patch("itential_mcp.core.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.StreamHandler")
+    @patch("itential_mcp.core.logging.logging.Formatter")
     def test_add_stdout_handler_with_format(
         self, mock_formatter, mock_stream_handler, mock_get_logger
     ):
@@ -282,7 +282,7 @@ class TestStdoutHandler:
 class TestStderrHandler:
     """Test cases for add_stderr_handler function"""
 
-    @patch("itential_mcp.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.getLogger")
     def test_add_stderr_handler_basic(self, mock_get_logger):
         """Test adding stderr handler with default settings"""
         mock_logger = Mock()
@@ -296,8 +296,8 @@ class TestStderrHandler:
             logging.INFO, "Stderr logging handler added"
         )
 
-    @patch("itential_mcp.logging.logging.getLogger")
-    @patch("itential_mcp.logging.logging.StreamHandler")
+    @patch("itential_mcp.core.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.StreamHandler")
     def test_add_stderr_handler_with_level(self, mock_stream_handler, mock_get_logger):
         """Test adding stderr handler with custom level"""
         mock_logger = Mock()
@@ -312,9 +312,9 @@ class TestStderrHandler:
         mock_handler.setFormatter.assert_called_once()
         mock_logger.addHandler.assert_called_once_with(mock_handler)
 
-    @patch("itential_mcp.logging.logging.getLogger")
-    @patch("itential_mcp.logging.logging.StreamHandler")
-    @patch("itential_mcp.logging.logging.Formatter")
+    @patch("itential_mcp.core.logging.logging.getLogger")
+    @patch("itential_mcp.core.logging.logging.StreamHandler")
+    @patch("itential_mcp.core.logging.logging.Formatter")
     def test_add_stderr_handler_with_format(
         self, mock_formatter, mock_stream_handler, mock_get_logger
     ):

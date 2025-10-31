@@ -36,8 +36,7 @@ def _import_binding(module_name: str) -> ModuleType:
     path = os.path.dirname(os.path.realpath(__file__))
 
     spec = importlib.util.spec_from_file_location(
-        module_name,
-        os.path.join(path, f"{module_name}.py")
+        module_name, os.path.join(path, f"{module_name}.py")
     )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -46,8 +45,7 @@ def _import_binding(module_name: str) -> ModuleType:
 
 
 async def bind_to_tool(
-    tool: config.Tool,
-    platform_client: client.PlatformClient
+    tool: config.Tool, platform_client: client.PlatformClient
 ) -> Tuple[Callable, Mapping[str, Any]]:
     """Bind a configuration tool to a callable function with metadata.
 

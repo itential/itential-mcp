@@ -14,12 +14,8 @@ __tags__ = ("configuration_manager",)
 
 
 async def describe_compliance_report(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    report_id: Annotated[str, Field(
-        description="The ID of the report to describe"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    report_id: Annotated[str, Field(description="The ID of the report to describe")],
 ) -> models.DescribeComplianceReportResponse:
     """
     Retrieve detailed compliance report results from Itential Platform.

@@ -14,9 +14,7 @@ __tags__ = ("configuration_manager",)
 
 
 async def get_device_groups(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
 ) -> models.GetDeviceGroupsResponse:
     """
     Get all device groups from Itential Platform.
@@ -50,20 +48,16 @@ async def get_device_groups(
 
 
 async def create_device_group(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the device group to create"
-    )],
-    description: Annotated[str | None, Field(
-        description="Short description of the device group",
-        default=None
-    )],
-    devices: Annotated[list | None, Field(
-        description="List of devices to add to the group",
-        default=None
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="The name of the device group to create")],
+    description: Annotated[
+        str | None,
+        Field(description="Short description of the device group", default=None),
+    ],
+    devices: Annotated[
+        list | None,
+        Field(description="List of devices to add to the group", default=None),
+    ],
 ) -> models.CreateDeviceGroupResponse:
     """
     Create a new device group on Itential Platform.
@@ -99,15 +93,16 @@ async def create_device_group(
 
 
 async def add_devices_to_group(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the device group to add devices to"
-    )],
-    devices: Annotated[list | None, Field(
-        description="List of devices to add to the group",
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[
+        str, Field(description="The name of the device group to add devices to")
+    ],
+    devices: Annotated[
+        list | None,
+        Field(
+            description="List of devices to add to the group",
+        ),
+    ],
 ) -> models.AddDevicesToGroupResponse:
     """
     Add one or more devices to a device group
@@ -146,21 +141,18 @@ async def add_devices_to_group(
     data = await client.configuration_manager.add_devices_to_group(name, devices)
 
     return models.AddDevicesToGroupResponse(
-        status=data["status"],
-        message=data.get("message", "Devices added successfully")
+        status=data["status"], message=data.get("message", "Devices added successfully")
     )
 
 
 async def remove_devices_from_group(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the device group to remove devices from"
-    )],
-    devices: Annotated[list[str] | None, Field(
-        description="List of devices to remove from the group"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[
+        str, Field(description="The name of the device group to remove devices from")
+    ],
+    devices: Annotated[
+        list[str] | None, Field(description="List of devices to remove from the group")
+    ],
 ) -> models.RemoveDevicesFromGroupResponse:
     """
     Remove one or more devices from a device group

@@ -8,7 +8,7 @@ from pydantic import Field
 from fastmcp import Context
 
 from itential_mcp.utilities import json as jsonutils
-from itential_mcp import exceptions
+from itential_mcp.core import exceptions
 
 from itential_mcp.models import gateway_manager as models
 
@@ -17,9 +17,7 @@ __tags__ = ("gateway_manager",)
 
 
 async def get_services(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
 ) -> models.GetServicesResponse:
     """
     Get the list of all know services from Itential Platform Gateway Manager
@@ -47,21 +45,21 @@ async def get_services(
     results = []
 
     for ele in data["result"]:
-        results.append(models.ServiceElement(
-            name=ele["service_metadata"]["name"],
-            cluster=ele["service_metadata"]["location"],
-            type=ele["service_metadata"]["type"],
-            description=ele["service_metadata"]["description"],
-            decorator=ele["service_metadata"]["decorator"],
-        ))
+        results.append(
+            models.ServiceElement(
+                name=ele["service_metadata"]["name"],
+                cluster=ele["service_metadata"]["location"],
+                type=ele["service_metadata"]["type"],
+                description=ele["service_metadata"]["description"],
+                decorator=ele["service_metadata"]["decorator"],
+            )
+        )
 
     return models.GetServicesResponse(results)
 
 
 async def get_gateways(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
 ) -> models.GetGatewaysResponse:
     """
     Get the list of all know services from Itential Platform Gateway Manager
@@ -89,31 +87,31 @@ async def get_gateways(
     results = []
 
     for ele in data["results"]:
-        results.append(models.GatewayElement(
-            name=ele["gateway_name"],
-            cluster=ele["cluster_id"],
-            description=ele["description"],
-            status=ele["connection_status"],
-            enabled=ele["enabled"],
-        ))
+        results.append(
+            models.GatewayElement(
+                name=ele["gateway_name"],
+                cluster=ele["cluster_id"],
+                description=ele["description"],
+                status=ele["connection_status"],
+                enabled=ele["enabled"],
+            )
+        )
 
     return models.GetGatewaysResponse(results)
 
 
 async def run_service(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the service to run"
-    )],
-    cluster: Annotated[str, Field(
-        description="The name of the cluster where the service lives"
-    )],
-    input_params: Annotated[dict | str | None, Field(
-        description="Optional input parameters to pass to the service",
-        default=None
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="The name of the service to run")],
+    cluster: Annotated[
+        str, Field(description="The name of the cluster where the service lives")
+    ],
+    input_params: Annotated[
+        dict | str | None,
+        Field(
+            description="Optional input parameters to pass to the service", default=None
+        ),
+    ],
 ) -> models.RunServiceResponse:
     """
     Run an existing service using the optional input parameters

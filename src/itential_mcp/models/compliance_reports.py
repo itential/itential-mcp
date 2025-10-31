@@ -20,7 +20,7 @@ class DescribeComplianceReportResponse(BaseModel):
     result: Annotated[
         Dict[str, Any],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Compliance report details containing validation results,
                 device compliance status, rule violations, and configuration
