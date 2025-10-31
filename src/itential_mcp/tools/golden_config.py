@@ -9,7 +9,7 @@ from fastmcp import Context
 
 from itential_mcp import exceptions
 from itential_mcp import errors
-from itential_mcp import jsonutils
+from itential_mcp.utilities import json as jsonutils
 
 from itential_mcp.models import configuration_manager as models
 

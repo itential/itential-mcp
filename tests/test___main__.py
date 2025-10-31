@@ -78,7 +78,7 @@ class TestCLICommands:
 
     @patch('sys.argv', ['itential-mcp', 'tags'])
     @patch('asyncio.run')
-    @patch('itential_mcp.toolutils.display_tags')
+    @patch('itential_mcp.utilities.tool.display_tags')
     def test_itential_mcp_tags(self, mock_display_tags, mock_asyncio_run):
         """Test itential-mcp tags command"""
         mock_display_tags.return_value = None
@@ -91,7 +91,7 @@ class TestCLICommands:
 
     @patch('sys.argv', ['itential-mcp', 'tools'])
     @patch('asyncio.run')
-    @patch('itential_mcp.toolutils.display_tools')
+    @patch('itential_mcp.utilities.tool.display_tools')
     def test_itential_mcp_tools(self, mock_display_tools, mock_asyncio_run):
         """Test itential-mcp tools command"""
         mock_display_tools.return_value = None
@@ -261,7 +261,7 @@ class TestCLIIntegration:
         mock_asyncio_run.assert_called_once()
 
     @patch('sys.argv', ['itential-mcp', 'tools'])
-    @patch('itential_mcp.toolutils.display_tools')
+    @patch('itential_mcp.utilities.tool.display_tools')
     @patch('asyncio.run')
     def test_tools_command_integration(self, mock_asyncio_run, mock_display_tools):
         """Test full integration of tools command"""
@@ -275,7 +275,7 @@ class TestCLIIntegration:
         mock_asyncio_run.assert_called_once()
 
     @patch('sys.argv', ['itential-mcp', 'tags'])
-    @patch('itential_mcp.toolutils.display_tags')
+    @patch('itential_mcp.utilities.tool.display_tags')
     @patch('asyncio.run')
     def test_tags_command_integration(self, mock_asyncio_run, mock_display_tags):
         """Test full integration of tags command"""
