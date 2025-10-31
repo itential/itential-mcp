@@ -23,7 +23,7 @@ class ServiceStatus(BaseModel):
                 The name of the service (e.g., 'redis', 'mongo')
                 """
             )
-        )
+        ),
     ]
 
     status: Annotated[
@@ -34,7 +34,7 @@ class ServiceStatus(BaseModel):
                 The current status of the service (e.g., 'running', 'stopped')
                 """
             )
-        )
+        ),
     ]
 
 
@@ -54,7 +54,7 @@ class PlatformStatus(BaseModel):
                 The hostname of the platform instance
                 """
             )
-        )
+        ),
     ]
 
     server_id: Annotated[
@@ -65,8 +65,8 @@ class PlatformStatus(BaseModel):
                 """
                 Unique server identifier for the platform instance
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     server_name: Annotated[
@@ -78,8 +78,8 @@ class PlatformStatus(BaseModel):
                 Optional server name for the platform instance
                 """
             ),
-            default=None
-        )
+            default=None,
+        ),
     ]
 
     services: Annotated[
@@ -90,8 +90,8 @@ class PlatformStatus(BaseModel):
                 List of core platform services and their current status
                 """
             ),
-            default_factory=list
-        )
+            default_factory=list,
+        ),
     ]
 
     timestamp: Annotated[
@@ -102,7 +102,7 @@ class PlatformStatus(BaseModel):
                 Unix timestamp when the status was collected
                 """
             )
-        )
+        ),
     ]
 
     apps: Annotated[
@@ -113,7 +113,7 @@ class PlatformStatus(BaseModel):
                 Overall status of applications (e.g., 'running', 'degraded')
                 """
             )
-        )
+        ),
     ]
 
     adapters: Annotated[
@@ -124,7 +124,7 @@ class PlatformStatus(BaseModel):
                 Overall status of adapters (e.g., 'running', 'degraded')
                 """
             )
-        )
+        ),
     ]
 
 
@@ -144,7 +144,7 @@ class CpuTimes(BaseModel):
                 CPU time spent in user mode (microseconds)
                 """
             )
-        )
+        ),
     ]
 
     nice: Annotated[
@@ -155,7 +155,7 @@ class CpuTimes(BaseModel):
                 CPU time spent on low priority processes (microseconds)
                 """
             )
-        )
+        ),
     ]
 
     sys: Annotated[
@@ -166,7 +166,7 @@ class CpuTimes(BaseModel):
                 CPU time spent in system mode (microseconds)
                 """
             )
-        )
+        ),
     ]
 
     idle: Annotated[
@@ -177,7 +177,7 @@ class CpuTimes(BaseModel):
                 CPU time spent idle (microseconds)
                 """
             )
-        )
+        ),
     ]
 
     irq: Annotated[
@@ -188,7 +188,7 @@ class CpuTimes(BaseModel):
                 CPU time spent servicing interrupts (microseconds)
                 """
             )
-        )
+        ),
     ]
 
 
@@ -208,7 +208,7 @@ class CpuInfo(BaseModel):
                 CPU model name and specifications
                 """
             )
-        )
+        ),
     ]
 
     speed: Annotated[
@@ -219,7 +219,7 @@ class CpuInfo(BaseModel):
                 Current CPU speed in MHz
                 """
             )
-        )
+        ),
     ]
 
     times: Annotated[
@@ -230,7 +230,7 @@ class CpuInfo(BaseModel):
                 CPU time statistics for this core
                 """
             )
-        )
+        ),
     ]
 
 
@@ -250,7 +250,7 @@ class SystemInfo(BaseModel):
                 System architecture (e.g., 'x64', 'arm64')
                 """
             )
-        )
+        ),
     ]
 
     release: Annotated[
@@ -261,7 +261,7 @@ class SystemInfo(BaseModel):
                 Operating system release version
                 """
             )
-        )
+        ),
     ]
 
     uptime: Annotated[
@@ -272,7 +272,7 @@ class SystemInfo(BaseModel):
                 System uptime in seconds
                 """
             )
-        )
+        ),
     ]
 
     free_mem: Annotated[
@@ -283,8 +283,8 @@ class SystemInfo(BaseModel):
                 """
                 Free system memory in bytes
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     total_mem: Annotated[
@@ -295,8 +295,8 @@ class SystemInfo(BaseModel):
                 """
                 Total system memory in bytes
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     load_avg: Annotated[
@@ -307,8 +307,8 @@ class SystemInfo(BaseModel):
                 """
                 System load averages for 1, 5, and 15 minutes
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     cpus: Annotated[
@@ -319,8 +319,8 @@ class SystemInfo(BaseModel):
                 Information about each CPU core
                 """
             ),
-            default_factory=list
-        )
+            default_factory=list,
+        ),
     ]
 
 
@@ -340,7 +340,7 @@ class MemoryUsage(BaseModel):
                 Resident Set Size - physical memory currently used by the process in bytes
                 """
             )
-        )
+        ),
     ]
 
     heap_total: Annotated[
@@ -351,8 +351,8 @@ class MemoryUsage(BaseModel):
                 """
                 Total heap memory allocated in bytes
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     heap_used: Annotated[
@@ -363,8 +363,8 @@ class MemoryUsage(BaseModel):
                 """
                 Heap memory currently used in bytes
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     external: Annotated[
@@ -375,7 +375,7 @@ class MemoryUsage(BaseModel):
                 External memory used by C++ objects bound to JavaScript objects in bytes
                 """
             )
-        )
+        ),
     ]
 
     array_buffers: Annotated[
@@ -386,8 +386,8 @@ class MemoryUsage(BaseModel):
                 """
                 Memory allocated for ArrayBuffers and SharedArrayBuffers in bytes
                 """
-            )
-        )
+            ),
+        ),
     ]
 
 
@@ -407,7 +407,7 @@ class CpuUsage(BaseModel):
                 CPU time spent in user mode by the process in microseconds
                 """
             )
-        )
+        ),
     ]
 
     system: Annotated[
@@ -418,7 +418,7 @@ class CpuUsage(BaseModel):
                 CPU time spent in system mode by the process in microseconds
                 """
             )
-        )
+        ),
     ]
 
 
@@ -434,17 +434,27 @@ class ServerVersions(BaseModel):
     acorn: Annotated[str, Field(description="Acorn JavaScript parser version")]
     ada: Annotated[str, Field(description="Ada URL parser version")]
     ares: Annotated[str, Field(description="c-ares DNS resolver version")]
-    base64: Annotated[Optional[str], Field(description="Base64 encoding library version", default=None)]
+    base64: Annotated[
+        Optional[str],
+        Field(description="Base64 encoding library version", default=None),
+    ]
     brotli: Annotated[str, Field(description="Brotli compression library version")]
-    cjs_module_lexer: Annotated[str, Field(alias="cjs_module_lexer", description="CommonJS module lexer version")]
+    cjs_module_lexer: Annotated[
+        str,
+        Field(alias="cjs_module_lexer", description="CommonJS module lexer version"),
+    ]
     cldr: Annotated[str, Field(description="Unicode CLDR data version")]
     icu: Annotated[str, Field(description="ICU internationalization library version")]
     llhttp: Annotated[str, Field(description="HTTP parser library version")]
     modules: Annotated[str, Field(description="Node.js ABI version")]
     napi: Annotated[str, Field(description="Node-API version")]
     nghttp2: Annotated[str, Field(description="HTTP/2 library version")]
-    nghttp3: Annotated[Optional[str], Field(description="HTTP/3 library version", default=None)]
-    ngtcp2: Annotated[Optional[str], Field(description="QUIC library version", default=None)]
+    nghttp3: Annotated[
+        Optional[str], Field(description="HTTP/3 library version", default=None)
+    ]
+    ngtcp2: Annotated[
+        Optional[str], Field(description="QUIC library version", default=None)
+    ]
     openssl: Annotated[str, Field(description="OpenSSL cryptographic library version")]
     simdutf: Annotated[str, Field(description="SIMD UTF validation library version")]
     tz: Annotated[str, Field(description="Timezone data version")]
@@ -472,7 +482,7 @@ class ServerInfo(BaseModel):
                 Itential Platform version
                 """
             )
-        )
+        ),
     ]
 
     release: Annotated[
@@ -483,7 +493,7 @@ class ServerInfo(BaseModel):
                 Itential Platform release version
                 """
             )
-        )
+        ),
     ]
 
     arch: Annotated[
@@ -494,7 +504,7 @@ class ServerInfo(BaseModel):
                 Server architecture (e.g., 'x64')
                 """
             )
-        )
+        ),
     ]
 
     platform: Annotated[
@@ -505,7 +515,7 @@ class ServerInfo(BaseModel):
                 Operating system platform (e.g., 'linux', 'win32')
                 """
             )
-        )
+        ),
     ]
 
     versions: Annotated[
@@ -516,7 +526,7 @@ class ServerInfo(BaseModel):
                 Version information for Node.js and its dependencies
                 """
             )
-        )
+        ),
     ]
 
     memory_usage: Annotated[
@@ -527,8 +537,8 @@ class ServerInfo(BaseModel):
                 """
                 Memory usage statistics for the main server process
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     cpu_usage: Annotated[
@@ -539,8 +549,8 @@ class ServerInfo(BaseModel):
                 """
                 CPU usage statistics for the main server process
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     uptime: Annotated[
@@ -551,7 +561,7 @@ class ServerInfo(BaseModel):
                 Server process uptime in seconds
                 """
             )
-        )
+        ),
     ]
 
     pid: Annotated[
@@ -562,7 +572,7 @@ class ServerInfo(BaseModel):
                 Process ID of the main server process
                 """
             )
-        )
+        ),
     ]
 
     dependencies: Annotated[
@@ -573,8 +583,8 @@ class ServerInfo(BaseModel):
                 Dictionary of key Itential service dependencies and their versions
                 """
             ),
-            default_factory=dict
-        )
+            default_factory=dict,
+        ),
     ]
 
 
@@ -594,7 +604,7 @@ class ConnectionInfo(BaseModel):
                 Connection state (e.g., 'ONLINE', 'OFFLINE')
                 """
             )
-        )
+        ),
     ]
 
 
@@ -614,7 +624,7 @@ class LoggerConfig(BaseModel):
                 Console logging level (e.g., 'info', 'debug', 'warning')
                 """
             )
-        )
+        ),
     ]
 
     file: Annotated[
@@ -625,7 +635,7 @@ class LoggerConfig(BaseModel):
                 File logging level (e.g., 'info', 'debug', 'warning')
                 """
             )
-        )
+        ),
     ]
 
     syslog: Annotated[
@@ -636,10 +646,10 @@ class LoggerConfig(BaseModel):
                 Syslog logging level (e.g., 'info', 'debug', 'warning')
                 """
             )
-        )
+        ),
     ]
 
-    @field_validator('syslog', mode='before')
+    @field_validator("syslog", mode="before")
     @classmethod
     def convert_empty_dict_to_string(cls, value):
         """Convert empty dict to empty string for syslog field."""
@@ -664,7 +674,7 @@ class ApplicationInfo(BaseModel):
                 Unique application identifier
                 """
             )
-        )
+        ),
     ]
 
     package_id: Annotated[
@@ -675,8 +685,8 @@ class ApplicationInfo(BaseModel):
                 """
                 NPM package identifier for the application
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     version: Annotated[
@@ -687,7 +697,7 @@ class ApplicationInfo(BaseModel):
                 Application version string
                 """
             )
-        )
+        ),
     ]
 
     type: Annotated[
@@ -698,7 +708,7 @@ class ApplicationInfo(BaseModel):
                 Type identifier for applications
                 """
             )
-        )
+        ),
     ]
 
     description: Annotated[
@@ -709,7 +719,7 @@ class ApplicationInfo(BaseModel):
                 Human-readable description of the application
                 """
             )
-        )
+        ),
     ]
 
     route_prefix: Annotated[
@@ -720,8 +730,8 @@ class ApplicationInfo(BaseModel):
                 """
                 HTTP route prefix for the application API endpoints
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     state: Annotated[
@@ -732,7 +742,7 @@ class ApplicationInfo(BaseModel):
                 Current operational state of the application
                 """
             )
-        )
+        ),
     ]
 
     connection: Annotated[
@@ -743,8 +753,8 @@ class ApplicationInfo(BaseModel):
                 Connection information (null for running applications)
                 """
             ),
-            default=None
-        )
+            default=None,
+        ),
     ]
 
     uptime: Annotated[
@@ -755,7 +765,7 @@ class ApplicationInfo(BaseModel):
                 Application uptime in seconds
                 """
             )
-        )
+        ),
     ]
 
     memory_usage: Annotated[
@@ -766,8 +776,8 @@ class ApplicationInfo(BaseModel):
                 """
                 Current memory usage statistics for the application
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     cpu_usage: Annotated[
@@ -778,8 +788,8 @@ class ApplicationInfo(BaseModel):
                 """
                 CPU usage statistics for the application
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     pid: Annotated[
@@ -790,7 +800,7 @@ class ApplicationInfo(BaseModel):
                 Process ID of the application
                 """
             )
-        )
+        ),
     ]
 
     logger: Annotated[
@@ -801,7 +811,7 @@ class ApplicationInfo(BaseModel):
                 Current logging configuration for the application
                 """
             )
-        )
+        ),
     ]
 
     timestamp: Annotated[
@@ -812,7 +822,7 @@ class ApplicationInfo(BaseModel):
                 Unix timestamp of the last status update
                 """
             )
-        )
+        ),
     ]
 
     prev_uptime: Annotated[
@@ -823,8 +833,8 @@ class ApplicationInfo(BaseModel):
                 """
                 Previous uptime measurement in seconds
                 """
-            )
-        )
+            ),
+        ),
     ]
 
 
@@ -844,7 +854,7 @@ class AdapterInfo(BaseModel):
                 Unique adapter identifier
                 """
             )
-        )
+        ),
     ]
 
     package_id: Annotated[
@@ -855,8 +865,8 @@ class AdapterInfo(BaseModel):
                 """
                 NPM package identifier for the adapter
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     version: Annotated[
@@ -867,7 +877,7 @@ class AdapterInfo(BaseModel):
                 Adapter version string
                 """
             )
-        )
+        ),
     ]
 
     type: Annotated[
@@ -878,7 +888,7 @@ class AdapterInfo(BaseModel):
                 Type identifier for adapters
                 """
             )
-        )
+        ),
     ]
 
     description: Annotated[
@@ -889,7 +899,7 @@ class AdapterInfo(BaseModel):
                 Human-readable description of the adapter
                 """
             )
-        )
+        ),
     ]
 
     route_prefix: Annotated[
@@ -900,8 +910,8 @@ class AdapterInfo(BaseModel):
                 """
                 HTTP route prefix for the adapter API endpoints
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     state: Annotated[
@@ -912,7 +922,7 @@ class AdapterInfo(BaseModel):
                 Current operational state of the adapter
                 """
             )
-        )
+        ),
     ]
 
     connection: Annotated[
@@ -923,7 +933,7 @@ class AdapterInfo(BaseModel):
                 Connection status information for the adapter
                 """
             )
-        )
+        ),
     ]
 
     uptime: Annotated[
@@ -934,7 +944,7 @@ class AdapterInfo(BaseModel):
                 Adapter uptime in seconds
                 """
             )
-        )
+        ),
     ]
 
     memory_usage: Annotated[
@@ -945,8 +955,8 @@ class AdapterInfo(BaseModel):
                 """
                 Current memory usage statistics for the adapter
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     cpu_usage: Annotated[
@@ -957,8 +967,8 @@ class AdapterInfo(BaseModel):
                 """
                 CPU usage statistics for the adapter
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     pid: Annotated[
@@ -969,7 +979,7 @@ class AdapterInfo(BaseModel):
                 Process ID of the adapter
                 """
             )
-        )
+        ),
     ]
 
     logger: Annotated[
@@ -980,7 +990,7 @@ class AdapterInfo(BaseModel):
                 Current logging configuration for the adapter
                 """
             )
-        )
+        ),
     ]
 
     timestamp: Annotated[
@@ -991,7 +1001,7 @@ class AdapterInfo(BaseModel):
                 Unix timestamp of the last status update
                 """
             )
-        )
+        ),
     ]
 
     prev_uptime: Annotated[
@@ -1002,8 +1012,8 @@ class AdapterInfo(BaseModel):
                 """
                 Previous uptime measurement in seconds
                 """
-            )
-        )
+            ),
+        ),
     ]
 
 
@@ -1025,7 +1035,7 @@ class HealthResponse(BaseModel):
                 Overall platform status including service states and health indicators
                 """
             )
-        )
+        ),
     ]
 
     system: Annotated[
@@ -1036,7 +1046,7 @@ class HealthResponse(BaseModel):
                 System-level hardware and operating system information
                 """
             )
-        )
+        ),
     ]
 
     server: Annotated[
@@ -1047,7 +1057,7 @@ class HealthResponse(BaseModel):
                 Node.js server runtime information and performance metrics
                 """
             )
-        )
+        ),
     ]
 
     applications: Annotated[
@@ -1058,8 +1068,8 @@ class HealthResponse(BaseModel):
                 Complete list of applications with their current status and resource usage
                 """
             ),
-            default_factory=list
-        )
+            default_factory=list,
+        ),
     ]
 
     adapters: Annotated[
@@ -1070,6 +1080,6 @@ class HealthResponse(BaseModel):
                 Complete list of adapters with their current status and connectivity information
                 """
             ),
-            default_factory=list
-        )
+            default_factory=list,
+        ),
     ]

@@ -7,7 +7,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from pydantic import BaseModel
 
 from itential_mcp.bindings.endpoint import _get_trigger, start_workflow, new
-from itential_mcp import client, exceptions
+from itential_mcp import client
+from itential_mcp.core import exceptions
 from fastmcp import Context
 
 
@@ -159,7 +160,7 @@ class TestGetTrigger:
             ],
         }
         triggers_response = {"data": []}
-        
+
         # Mock responses in order: automation lookup succeeds, trigger lookup returns empty
         mock_platform_client.client.get.side_effect = [
             MagicMock(json=lambda: automation_response),

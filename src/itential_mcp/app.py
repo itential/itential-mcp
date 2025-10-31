@@ -11,16 +11,18 @@ from collections.abc import Sequence
 
 from . import commands
 from . import cli
-from . import env
-from . import logging
+from .core import env
+from .core import logging
 
 
-LEGACY_ENV_VARS = frozenset((
-    ("ITENTIAL_MCP_TRANSPORT", "ITENTIAL_MCP_SERVER_TRANSPORT"),
-    ("ITENTIAL_MCP_HOST", "ITENTIAL_MCP_SERVER_HOST"),
-    ("ITENTIAL_MCP_PORT", "ITENTIAL_MCP_SERVER_PORT"),
-    ("ITENTIAL_MCP_LOG_LEVEL", "ITENTIAL_MCP_SERVER_LOG_LEVEL"),
-))
+LEGACY_ENV_VARS = frozenset(
+    (
+        ("ITENTIAL_MCP_TRANSPORT", "ITENTIAL_MCP_SERVER_TRANSPORT"),
+        ("ITENTIAL_MCP_HOST", "ITENTIAL_MCP_SERVER_HOST"),
+        ("ITENTIAL_MCP_PORT", "ITENTIAL_MCP_SERVER_PORT"),
+        ("ITENTIAL_MCP_LOG_LEVEL", "ITENTIAL_MCP_SERVER_LOG_LEVEL"),
+    )
+)
 
 
 def parse_args(args: Sequence) -> None:
@@ -43,67 +45,41 @@ def parse_args(args: Sequence) -> None:
     parser = cli.Parser(
         prog="itential-mcp",
         add_help=False,
-        description="Itential MCP\n\n  Find more information at: https://github.com/itential/itential-mcp"
+        description="Itential MCP\n\n  Find more information at: https://github.com/itential/itential-mcp",
     )
 
-    parser.add_argument(
-        "--config",
-        help="The Itential MCP configuration file"
-    )
+    parser.add_argument("--config", help="The Itential MCP configuration file")
 
     parser.add_argument(
-        '-h', '--help',
-        action='store_true',
-        help="Prints this help message and exits"
+        "-h", "--help", action="store_true", help="Prints this help message and exits"
     )
 
     subparsers = parser.add_subparsers(dest="command")
 
-    run_cmd = subparsers.add_parser(
-        "run",
-        description="Run the MCP server"
-    )
+    run_cmd = subparsers.add_parser("run", description="Run the MCP server")
 
     cli.add_server_group(run_cmd)
     cli.add_platform_group(run_cmd)
 
     call_cmd = subparsers.add_parser(
-        "call",
-        description="Call a tool and return the results"
+        "call", description="Call a tool and return the results"
     )
 
-    call_cmd.add_argument(
-        "tool",
-        help="Name of the tool call"
-    )
+    call_cmd.add_argument("tool", help="Name of the tool call")
 
     call_cmd.add_argument(
-        "--params",
-        metavar="<object>",
-        help="Parameters to pass to the tool"
+        "--params", metavar="<object>", help="Parameters to pass to the tool"
     )
 
     cli.add_platform_group(call_cmd)
 
-    subparsers.add_parser(
-        "tools",
-        description="Get list of available tools"
-    )
+    subparsers.add_parser("tools", description="Get list of available tools")
 
-    subparsers.add_parser(
-        "tags",
-        description="Get list of available tags"
-    )
+    subparsers.add_parser("tags", description="Get list of available tags")
 
-    subparsers.add_parser(
-        "version",
-        description="Print the version information"
-    )
+    subparsers.add_parser("version", description="Print the version information")
 
-    run_cmd.add_argument(
-        "--config",
-        help="The Itential MCP configuration file"
-    )
+    run_cmd.add_argument("--config", help="The Itential MCP configuration file")
 
     args = parser.parse_args(args=args)
 

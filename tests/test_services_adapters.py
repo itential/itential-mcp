@@ -5,7 +5,7 @@ import pytest
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from itential_mcp import exceptions
+from itential_mcp.core import exceptions
 from itential_mcp.services.adapters import Service
 
 
@@ -36,13 +36,7 @@ class TestAdaptersService:
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "total": 1,
-            "results": [
-                {
-                    "id": "test-adapter",
-                    "state": "RUNNING",
-                    "version": "1.0.0"
-                }
-            ]
+            "results": [{"id": "test-adapter", "state": "RUNNING", "version": "1.0.0"}],
         }
         mock_client.get.return_value = mock_response
 
@@ -50,11 +44,7 @@ class TestAdaptersService:
 
         # Verify client was called with correct parameters
         mock_client.get.assert_called_once_with(
-            "/health/adapters",
-            params={
-                "equals": "test-adapter",
-                "equalsField": "id"
-            }
+            "/health/adapters", params={"equals": "test-adapter", "equalsField": "id"}
         )
 
         # Verify result
@@ -84,8 +74,8 @@ class TestAdaptersService:
             "total": 2,
             "results": [
                 {"id": "adapter1", "state": "RUNNING"},
-                {"id": "adapter2", "state": "STOPPED"}
-            ]
+                {"id": "adapter2", "state": "STOPPED"},
+            ],
         }
         mock_client.get.return_value = mock_response
 
@@ -111,7 +101,7 @@ class TestStartAdapter:
     @pytest.mark.asyncio
     async def test_start_adapter_already_running(self, service):
         """Test starting an adapter that's already running"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
+        with patch.object(service, "_get_adapter_health") as mock_health:
             mock_health.return_value = {
                 "results": [{"id": "test-adapter", "state": "RUNNING"}]
             }
@@ -127,14 +117,14 @@ class TestStartAdapter:
     @pytest.mark.asyncio
     async def test_start_adapter_from_stopped_success(self, service):
         """Test successfully starting a stopped adapter"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
+        with patch.object(service, "_get_adapter_health") as mock_health:
             # First call returns STOPPED, second returns RUNNING
             mock_health.side_effect = [
                 {"results": [{"id": "test-adapter", "state": "STOPPED"}]},
-                {"results": [{"id": "test-adapter", "state": "RUNNING"}]}
+                {"results": [{"id": "test-adapter", "state": "RUNNING"}]},
             ]
 
-            with patch('asyncio.sleep', new_callable=AsyncMock):
+            with patch("asyncio.sleep", new_callable=AsyncMock):
                 result = await service.start_adapter("test-adapter", 10)
 
             # Should call PUT to start adapter
@@ -150,7 +140,7 @@ class TestStartAdapter:
     @pytest.mark.asyncio
     async def test_start_adapter_timeout(self, service):
         """Test adapter start timeout scenario"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
+        with patch.object(service, "_get_adapter_health") as mock_health:
             # Always return STOPPED (never transitions to RUNNING)
             mock_health.side_effect = [
                 {"results": [{"state": "STOPPED"}]},  # Initial state
@@ -158,7 +148,7 @@ class TestStartAdapter:
                 {"results": [{"state": "STOPPED"}]},  # Still stopped...
             ]
 
-            with patch('asyncio.sleep', new_callable=AsyncMock) as mock_sleep:
+            with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
                 with pytest.raises(exceptions.TimeoutExceededError):
                     await service.start_adapter("test-adapter", 2)
 
@@ -168,10 +158,8 @@ class TestStartAdapter:
     @pytest.mark.asyncio
     async def test_start_adapter_dead_state(self, service):
         """Test starting an adapter in DEAD state"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
-            mock_health.return_value = {
-                "results": [{"state": "DEAD"}]
-            }
+        with patch.object(service, "_get_adapter_health") as mock_health:
+            mock_health.return_value = {"results": [{"state": "DEAD"}]}
 
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.start_adapter("test-adapter", 10)
@@ -182,10 +170,8 @@ class TestStartAdapter:
     @pytest.mark.asyncio
     async def test_start_adapter_deleted_state(self, service):
         """Test starting an adapter in DELETED state"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
-            mock_health.return_value = {
-                "results": [{"state": "DELETED"}]
-            }
+        with patch.object(service, "_get_adapter_health") as mock_health:
+            mock_health.return_value = {"results": [{"state": "DELETED"}]}
 
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.start_adapter("test-adapter", 10)
@@ -195,15 +181,19 @@ class TestStartAdapter:
     @pytest.mark.asyncio
     async def test_start_adapter_state_transition_during_wait(self, service):
         """Test adapter transitioning to RUNNING during wait period"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
+        with patch.object(service, "_get_adapter_health") as mock_health:
             # Simulate state transition: STOPPED -> STOPPED -> RUNNING
             mock_health.side_effect = [
                 {"results": [{"id": "test-adapter", "state": "STOPPED"}]},  # Initial
-                {"results": [{"id": "test-adapter", "state": "STOPPED"}]},  # First check
-                {"results": [{"id": "test-adapter", "state": "RUNNING"}]}   # Second check - success!
+                {
+                    "results": [{"id": "test-adapter", "state": "STOPPED"}]
+                },  # First check
+                {
+                    "results": [{"id": "test-adapter", "state": "RUNNING"}]
+                },  # Second check - success!
             ]
 
-            with patch('asyncio.sleep', new_callable=AsyncMock) as mock_sleep:
+            with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
                 result = await service.start_adapter("test-adapter", 10)
 
             # Should have slept once before successful state check
@@ -229,7 +219,7 @@ class TestStopAdapter:
     @pytest.mark.asyncio
     async def test_stop_adapter_already_stopped(self, service):
         """Test stopping an adapter that's already stopped"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
+        with patch.object(service, "_get_adapter_health") as mock_health:
             mock_health.return_value = {
                 "results": [{"id": "test-adapter", "state": "STOPPED"}]
             }
@@ -245,14 +235,14 @@ class TestStopAdapter:
     @pytest.mark.asyncio
     async def test_stop_adapter_from_running_success(self, service):
         """Test successfully stopping a running adapter"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
+        with patch.object(service, "_get_adapter_health") as mock_health:
             # First call returns RUNNING, second returns STOPPED
             mock_health.side_effect = [
                 {"results": [{"id": "test-adapter", "state": "RUNNING"}]},
-                {"results": [{"id": "test-adapter", "state": "STOPPED"}]}
+                {"results": [{"id": "test-adapter", "state": "STOPPED"}]},
             ]
 
-            with patch('asyncio.sleep', new_callable=AsyncMock):
+            with patch("asyncio.sleep", new_callable=AsyncMock):
                 result = await service.stop_adapter("test-adapter", 10)
 
             # Should call PUT to stop adapter
@@ -265,7 +255,7 @@ class TestStopAdapter:
     @pytest.mark.asyncio
     async def test_stop_adapter_timeout(self, service):
         """Test adapter stop timeout scenario"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
+        with patch.object(service, "_get_adapter_health") as mock_health:
             # Always return RUNNING (never transitions to STOPPED)
             mock_health.side_effect = [
                 {"results": [{"state": "RUNNING"}]},  # Initial state
@@ -273,7 +263,7 @@ class TestStopAdapter:
                 {"results": [{"state": "RUNNING"}]},  # Still running...
             ]
 
-            with patch('asyncio.sleep', new_callable=AsyncMock) as mock_sleep:
+            with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
                 with pytest.raises(exceptions.TimeoutExceededError):
                     await service.stop_adapter("test-adapter", 2)
 
@@ -282,10 +272,8 @@ class TestStopAdapter:
     @pytest.mark.asyncio
     async def test_stop_adapter_dead_state(self, service):
         """Test stopping an adapter in DEAD state"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
-            mock_health.return_value = {
-                "results": [{"state": "DEAD"}]
-            }
+        with patch.object(service, "_get_adapter_health") as mock_health:
+            mock_health.return_value = {"results": [{"state": "DEAD"}]}
 
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.stop_adapter("test-adapter", 10)
@@ -296,10 +284,8 @@ class TestStopAdapter:
     @pytest.mark.asyncio
     async def test_stop_adapter_deleted_state(self, service):
         """Test stopping an adapter in DELETED state"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
-            mock_health.return_value = {
-                "results": [{"state": "DELETED"}]
-            }
+        with patch.object(service, "_get_adapter_health") as mock_health:
+            mock_health.return_value = {"results": [{"state": "DELETED"}]}
 
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.stop_adapter("test-adapter", 10)
@@ -325,14 +311,14 @@ class TestRestartAdapter:
     @pytest.mark.asyncio
     async def test_restart_adapter_from_running_success(self, service):
         """Test successfully restarting a running adapter"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
+        with patch.object(service, "_get_adapter_health") as mock_health:
             # First call returns RUNNING, second returns RUNNING after restart
             mock_health.side_effect = [
                 {"results": [{"id": "test-adapter", "state": "RUNNING"}]},
-                {"results": [{"id": "test-adapter", "state": "RUNNING"}]}
+                {"results": [{"id": "test-adapter", "state": "RUNNING"}]},
             ]
 
-            with patch('asyncio.sleep', new_callable=AsyncMock):
+            with patch("asyncio.sleep", new_callable=AsyncMock):
                 result = await service.restart_adapter("test-adapter", 10)
 
             # Should call PUT to restart adapter
@@ -345,15 +331,15 @@ class TestRestartAdapter:
     @pytest.mark.asyncio
     async def test_restart_adapter_timeout(self, service):
         """Test adapter restart timeout scenario"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
+        with patch.object(service, "_get_adapter_health") as mock_health:
             # First call RUNNING, then adapter gets stuck in some other state
             mock_health.side_effect = [
-                {"results": [{"state": "RUNNING"}]},   # Initial state
-                {"results": [{"state": "STOPPED"}]},   # After restart - stuck
-                {"results": [{"state": "STOPPED"}]},   # Still stopped...
+                {"results": [{"state": "RUNNING"}]},  # Initial state
+                {"results": [{"state": "STOPPED"}]},  # After restart - stuck
+                {"results": [{"state": "STOPPED"}]},  # Still stopped...
             ]
 
-            with patch('asyncio.sleep', new_callable=AsyncMock) as mock_sleep:
+            with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
                 with pytest.raises(exceptions.TimeoutExceededError):
                     await service.restart_adapter("test-adapter", 2)
 
@@ -362,10 +348,8 @@ class TestRestartAdapter:
     @pytest.mark.asyncio
     async def test_restart_adapter_dead_state(self, service):
         """Test restarting an adapter in DEAD state"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
-            mock_health.return_value = {
-                "results": [{"state": "DEAD"}]
-            }
+        with patch.object(service, "_get_adapter_health") as mock_health:
+            mock_health.return_value = {"results": [{"state": "DEAD"}]}
 
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.restart_adapter("test-adapter", 10)
@@ -376,10 +360,8 @@ class TestRestartAdapter:
     @pytest.mark.asyncio
     async def test_restart_adapter_deleted_state(self, service):
         """Test restarting an adapter in DELETED state"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
-            mock_health.return_value = {
-                "results": [{"state": "DELETED"}]
-            }
+        with patch.object(service, "_get_adapter_health") as mock_health:
+            mock_health.return_value = {"results": [{"state": "DELETED"}]}
 
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.restart_adapter("test-adapter", 10)
@@ -389,10 +371,8 @@ class TestRestartAdapter:
     @pytest.mark.asyncio
     async def test_restart_adapter_stopped_state(self, service):
         """Test restarting an adapter in STOPPED state"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
-            mock_health.return_value = {
-                "results": [{"state": "STOPPED"}]
-            }
+        with patch.object(service, "_get_adapter_health") as mock_health:
+            mock_health.return_value = {"results": [{"state": "STOPPED"}]}
 
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.restart_adapter("test-adapter", 10)
@@ -403,15 +383,19 @@ class TestRestartAdapter:
     @pytest.mark.asyncio
     async def test_restart_adapter_state_transition_during_wait(self, service):
         """Test adapter transitioning back to RUNNING during restart wait"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
+        with patch.object(service, "_get_adapter_health") as mock_health:
             # Simulate restart process: RUNNING -> STOPPED -> RUNNING
             mock_health.side_effect = [
                 {"results": [{"id": "test-adapter", "state": "RUNNING"}]},  # Initial
-                {"results": [{"id": "test-adapter", "state": "STOPPED"}]},  # During restart
-                {"results": [{"id": "test-adapter", "state": "RUNNING"}]}   # Back to running
+                {
+                    "results": [{"id": "test-adapter", "state": "STOPPED"}]
+                },  # During restart
+                {
+                    "results": [{"id": "test-adapter", "state": "RUNNING"}]
+                },  # Back to running
             ]
 
-            with patch('asyncio.sleep', new_callable=AsyncMock) as mock_sleep:
+            with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
                 result = await service.restart_adapter("test-adapter", 10)
 
             # Should have slept once during the restart process
@@ -438,6 +422,7 @@ class TestServiceIntegration:
     async def test_service_inherits_from_servicebase(self, service):
         """Test that Service properly inherits from ServiceBase"""
         from itential_mcp.services import ServiceBase
+
         assert isinstance(service, ServiceBase)
 
     @pytest.mark.asyncio
@@ -447,18 +432,18 @@ class TestServiceIntegration:
 
         # Check start_adapter signature
         start_sig = inspect.signature(service.start_adapter)
-        assert 'name' in start_sig.parameters
-        assert 'timeout' in start_sig.parameters
+        assert "name" in start_sig.parameters
+        assert "timeout" in start_sig.parameters
 
         # Check stop_adapter signature
         stop_sig = inspect.signature(service.stop_adapter)
-        assert 'name' in stop_sig.parameters
-        assert 'timeout' in stop_sig.parameters
+        assert "name" in stop_sig.parameters
+        assert "timeout" in stop_sig.parameters
 
         # Check restart_adapter signature
         restart_sig = inspect.signature(service.restart_adapter)
-        assert 'name' in restart_sig.parameters
-        assert 'timeout' in restart_sig.parameters
+        assert "name" in restart_sig.parameters
+        assert "timeout" in restart_sig.parameters
 
     @pytest.mark.asyncio
     async def test_all_methods_are_async(self, service):
@@ -467,11 +452,12 @@ class TestServiceIntegration:
 
         # Get all public methods (not starting with _)
         public_methods = [
-            method for method in dir(service)
-            if not method.startswith('_') and callable(getattr(service, method))
+            method
+            for method in dir(service)
+            if not method.startswith("_") and callable(getattr(service, method))
         ]
 
-        for method_name in ['start_adapter', 'stop_adapter', 'restart_adapter']:
+        for method_name in ["start_adapter", "stop_adapter", "restart_adapter"]:
             if method_name in public_methods:
                 method = getattr(service, method_name)
                 assert inspect.iscoroutinefunction(method)
@@ -479,7 +465,7 @@ class TestServiceIntegration:
     @pytest.mark.asyncio
     async def test_adapter_not_found_propagation(self, service):
         """Test that NotFoundError from _get_adapter_health propagates correctly"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
+        with patch.object(service, "_get_adapter_health") as mock_health:
             mock_health.side_effect = exceptions.NotFoundError("Adapter not found")
 
             with pytest.raises(exceptions.NotFoundError):
@@ -552,7 +538,7 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_zero_timeout_handling(self, service):
         """Test handling of zero timeout values"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
+        with patch.object(service, "_get_adapter_health") as mock_health:
             mock_health.return_value = {"results": [{"state": "STOPPED"}]}
 
             # Zero timeout should immediately raise TimeoutExceededError
@@ -578,8 +564,10 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_large_timeout_values(self, service):
         """Test handling of very large timeout values"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
-            mock_health.return_value = {"results": [{"id": "test-adapter", "state": "RUNNING"}]}
+        with patch.object(service, "_get_adapter_health") as mock_health:
+            mock_health.return_value = {
+                "results": [{"id": "test-adapter", "state": "RUNNING"}]
+            }
 
             # Should handle large timeout without issues
             result = await service.start_adapter("test-adapter", 999999)
@@ -593,7 +581,7 @@ class TestEdgeCases:
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "total": 1,
-            "results": [{"state": "RUNNING"}]
+            "results": [{"state": "RUNNING"}],
         }
         mock_client.get.return_value = mock_response
 
@@ -601,17 +589,13 @@ class TestEdgeCases:
 
         # Verify the special name was used correctly in the API call
         mock_client.get.assert_called_with(
-            "/health/adapters",
-            params={
-                "equals": special_name,
-                "equalsField": "id"
-            }
+            "/health/adapters", params={"equals": special_name, "equalsField": "id"}
         )
 
     @pytest.mark.asyncio
     async def test_empty_adapter_name(self, service):
         """Test handling of empty adapter name"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
+        with patch.object(service, "_get_adapter_health") as mock_health:
             mock_health.return_value = {"results": [{"id": "", "state": "RUNNING"}]}
 
             # Should handle empty name (though it may not be realistic)
@@ -626,7 +610,7 @@ class TestEdgeCases:
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "total": 1,
-            "results": [{"state": "RUNNING"}]
+            "results": [{"state": "RUNNING"}],
         }
         mock_client.get.return_value = mock_response
 
@@ -634,35 +618,39 @@ class TestEdgeCases:
 
         # Verify Unicode name was handled correctly
         mock_client.get.assert_called_with(
-            "/health/adapters",
-            params={
-                "equals": unicode_name,
-                "equalsField": "id"
-            }
+            "/health/adapters", params={"equals": unicode_name, "equalsField": "id"}
         )
 
     @pytest.mark.asyncio
     async def test_concurrent_operations(self, service):
         """Test concurrent adapter operations"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
+        with patch.object(service, "_get_adapter_health") as mock_health:
             # Create a side_effect function that returns different states based on adapter name
             def mock_health_response(adapter_name):
                 if adapter_name == "adapter1":
-                    return {"results": [{"id": "adapter1", "state": "RUNNING"}]}  # start_adapter - already running
+                    return {
+                        "results": [{"id": "adapter1", "state": "RUNNING"}]
+                    }  # start_adapter - already running
                 elif adapter_name == "adapter2":
-                    return {"results": [{"id": "adapter2", "state": "STOPPED"}]}  # stop_adapter - already stopped
+                    return {
+                        "results": [{"id": "adapter2", "state": "STOPPED"}]
+                    }  # stop_adapter - already stopped
                 elif adapter_name == "adapter3":
-                    return {"results": [{"id": "adapter3", "state": "RUNNING"}]}  # restart_adapter - running
+                    return {
+                        "results": [{"id": "adapter3", "state": "RUNNING"}]
+                    }  # restart_adapter - running
                 else:
-                    return {"results": [{"id": adapter_name, "state": "RUNNING"}]}  # default
-            
+                    return {
+                        "results": [{"id": adapter_name, "state": "RUNNING"}]
+                    }  # default
+
             mock_health.side_effect = mock_health_response
 
             # Run multiple operations concurrently
             tasks = [
                 service.start_adapter("adapter1", 10),
                 service.stop_adapter("adapter2", 10),
-                service.restart_adapter("adapter3", 10)
+                service.restart_adapter("adapter3", 10),
             ]
 
             results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -672,15 +660,17 @@ class TestEdgeCases:
             for result in results:
                 assert not isinstance(result, Exception)
                 assert isinstance(result, dict)
-                assert 'id' in result
-                assert 'state' in result
+                assert "id" in result
+                assert "state" in result
 
     @pytest.mark.asyncio
     async def test_state_case_sensitivity(self, service):
         """Test that adapter states are case sensitive"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
+        with patch.object(service, "_get_adapter_health") as mock_health:
             # Use lowercase state (should not be recognized as valid by the service logic)
-            mock_health.return_value = {"results": [{"id": "test-adapter", "state": "running"}]}
+            mock_health.return_value = {
+                "results": [{"id": "test-adapter", "state": "running"}]
+            }
 
             # The service should still return the result as-is since it just returns raw dict
             result = await service.start_adapter("test-adapter", 10)
@@ -705,61 +695,73 @@ class TestModelResponses:
     @pytest.mark.asyncio
     async def test_start_adapter_returns_correct_model(self, service):
         """Test that start_adapter returns dict with expected fields"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
-            mock_health.return_value = {"results": [{"id": "test-adapter", "state": "RUNNING"}]}
+        with patch.object(service, "_get_adapter_health") as mock_health:
+            mock_health.return_value = {
+                "results": [{"id": "test-adapter", "state": "RUNNING"}]
+            }
 
             result = await service.start_adapter("test-adapter", 10)
 
             assert isinstance(result, dict)
-            assert 'id' in result
-            assert 'state' in result
+            assert "id" in result
+            assert "state" in result
 
     @pytest.mark.asyncio
     async def test_stop_adapter_returns_correct_model(self, service):
         """Test that stop_adapter returns dict with expected fields"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
-            mock_health.return_value = {"results": [{"id": "test-adapter", "state": "STOPPED"}]}
+        with patch.object(service, "_get_adapter_health") as mock_health:
+            mock_health.return_value = {
+                "results": [{"id": "test-adapter", "state": "STOPPED"}]
+            }
 
             result = await service.stop_adapter("test-adapter", 10)
 
             assert isinstance(result, dict)
-            assert 'id' in result
-            assert 'state' in result
+            assert "id" in result
+            assert "state" in result
 
     @pytest.mark.asyncio
     async def test_restart_adapter_returns_correct_model(self, service):
         """Test that restart_adapter returns dict with expected fields"""
-        with patch.object(service, '_get_adapter_health') as mock_health:
-            mock_health.return_value = {"results": [{"id": "test-adapter", "state": "RUNNING"}]}
+        with patch.object(service, "_get_adapter_health") as mock_health:
+            mock_health.return_value = {
+                "results": [{"id": "test-adapter", "state": "RUNNING"}]
+            }
 
             result = await service.restart_adapter("test-adapter", 10)
 
             assert isinstance(result, dict)
-            assert 'id' in result
-            assert 'state' in result
+            assert "id" in result
+            assert "state" in result
 
     @pytest.mark.asyncio
     async def test_model_response_data_integrity(self, service):
         """Test that dict responses contain correct data"""
         adapter_name = "integration-test-adapter"
 
-        with patch.object(service, '_get_adapter_health') as mock_health:
+        with patch.object(service, "_get_adapter_health") as mock_health:
             # Mock different scenarios for each method call
-            
+
             # Test start_adapter - adapter already running
-            mock_health.return_value = {"results": [{"id": adapter_name, "state": "RUNNING"}]}
+            mock_health.return_value = {
+                "results": [{"id": adapter_name, "state": "RUNNING"}]
+            }
             start_result = await service.start_adapter(adapter_name, 10)
             assert start_result["id"] == adapter_name
             assert start_result["state"] == "RUNNING"
-            
+
             # Test stop_adapter - adapter already stopped
-            mock_health.return_value = {"results": [{"id": adapter_name, "state": "STOPPED"}]}
+            mock_health.return_value = {
+                "results": [{"id": adapter_name, "state": "STOPPED"}]
+            }
             stop_result = await service.stop_adapter(adapter_name, 10)
             assert stop_result["id"] == adapter_name
             assert stop_result["state"] == "STOPPED"
-            
+
             # Test restart_adapter - adapter running
-            mock_health.return_value = {"results": [{"id": adapter_name, "state": "RUNNING"}]}
+            mock_health.return_value = {
+                "results": [{"id": adapter_name, "state": "RUNNING"}]
+            }
             restart_result = await service.restart_adapter(adapter_name, 10)
             assert restart_result["id"] == adapter_name
             assert restart_result["state"] == "RUNNING"

@@ -11,7 +11,7 @@ from fastmcp import Context
 
 from itential_mcp import config
 from itential_mcp import client
-from itential_mcp import exceptions
+from itential_mcp.core import exceptions
 from itential_mcp.utilities import json as jsonutils
 
 from itential_mcp.tools import gateway_manager
@@ -45,7 +45,7 @@ async def _get_service(platform_client: client.PlatformClient, t: config.Endpoin
 async def run_service(
     ctx: Context,
     _tool_config: config.Tool | None = None,
-    input_params: dict | str | None = None
+    input_params: dict | str | None = None,
 ) -> BaseModel:
     """Execute a service on the Itential Platform using the configured tool settings.
 
@@ -79,8 +79,7 @@ async def run_service(
 
 
 async def new(
-    t: config.ServiceTool,
-    platform_client: client.PlatformClient
+    t: config.ServiceTool, platform_client: client.PlatformClient
 ) -> Tuple[Callable, str]:
     """Create a new service binding with callable function and documentation.
 

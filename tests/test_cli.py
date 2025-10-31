@@ -27,20 +27,15 @@ class TestParser:
 
         # Initialization with parameters
         parser = Parser(
-            prog="test-prog",
-            description="Test description",
-            add_help=False
+            prog="test-prog", description="Test description", add_help=False
         )
         assert parser.prog == "test-prog"
         assert parser.description == "Test description"
 
-    @patch('sys.stdout', new_callable=StringIO)
+    @patch("sys.stdout", new_callable=StringIO)
     def test_print_app_help_basic(self, mock_stdout):
         """Test basic print_app_help functionality"""
-        parser = Parser(
-            prog="test-prog",
-            description="Test CLI application"
-        )
+        parser = Parser(prog="test-prog", description="Test CLI application")
 
         # Add a basic argument
         parser.add_argument("--config", help="Configuration file")
@@ -62,7 +57,7 @@ class TestParser:
         assert "--config" in output
         assert "Configuration file" in output
 
-    @patch('sys.stdout', new_callable=StringIO)
+    @patch("sys.stdout", new_callable=StringIO)
     def test_print_app_help_multiple_commands(self, mock_stdout):
         """Test print_app_help with multiple commands"""
         parser = Parser(prog="test-app", description="Multi-command app")
@@ -79,13 +74,15 @@ class TestParser:
         assert "stop" in output and "Stop the service" in output
         assert "status" in output and "Check service status" in output
 
-    @patch('sys.stdout', new_callable=StringIO)
+    @patch("sys.stdout", new_callable=StringIO)
     def test_print_app_help_with_options(self, mock_stdout):
         """Test print_app_help with various option types"""
         parser = Parser(prog="test-app", description="Test app")
 
         # Add different types of options
-        parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
+        parser.add_argument(
+            "--verbose", "-v", action="store_true", help="Verbose output"
+        )
         parser.add_argument("--config", help="Configuration file path")
         parser.add_argument("--port", type=int, help="Port number")
         parser.add_argument("--no-help-option", help=None)  # Test no help case
@@ -102,7 +99,7 @@ class TestParser:
         assert "--port" in output
         assert "NO HELP AVAILABLE!!" in output  # For option without help
 
-    @patch('sys.stdout', new_callable=StringIO)
+    @patch("sys.stdout", new_callable=StringIO)
     def test_print_help_basic(self, mock_stdout):
         """Test basic print_help functionality"""
         parser = Parser(prog="test-prog", description="Test application")
@@ -128,7 +125,7 @@ class TestParser:
         assert "Options" in output
         assert "--config" in output
 
-    @patch('sys.stdout', new_callable=StringIO)
+    @patch("sys.stdout", new_callable=StringIO)
     def test_print_help_with_positional_args(self, mock_stdout):
         """Test print_help with positional arguments"""
         parser = Parser(prog="test-prog", description="Test app")
@@ -146,8 +143,8 @@ class TestParser:
         assert "<command> <target>" in output
         assert "test-prog <command> <target> [OPTIONS]" in output
 
-    @patch('itential_mcp.terminal.getcols')
-    @patch('sys.stdout', new_callable=StringIO)
+    @patch("itential_mcp.terminal.getcols")
+    @patch("sys.stdout", new_callable=StringIO)
     def test_print_help_long_options(self, mock_stdout, mock_getcols):
         """Test print_help with long option names that require wrapping"""
         mock_getcols.return_value = 40  # Short line width to force wrapping
@@ -156,8 +153,11 @@ class TestParser:
 
         # Add argument group with long option names
         group = parser.add_argument_group("Long Options")
-        group.add_argument("--very-long-option-name", metavar="VALUE",
-                          help="This is a very long help string that should be wrapped")
+        group.add_argument(
+            "--very-long-option-name",
+            metavar="VALUE",
+            help="This is a very long help string that should be wrapped",
+        )
 
         parser.add_argument("--config", help="Short help")
 
@@ -167,7 +167,7 @@ class TestParser:
         assert "very-long-option-name" in output
         assert "This is a very long help string" in output
 
-    @patch('sys.stdout', new_callable=StringIO)
+    @patch("sys.stdout", new_callable=StringIO)
     def test_print_help_with_metavar(self, mock_stdout):
         """Test print_help with metavar options"""
         parser = Parser(prog="test-prog", description="Test app")
@@ -185,7 +185,7 @@ class TestParser:
         assert "--count N" in output
         assert "--output FILE" in output
 
-    @patch('sys.stdout', new_callable=StringIO)
+    @patch("sys.stdout", new_callable=StringIO)
     def test_print_help_multiple_option_strings_bug(self, mock_stdout):
         """Test print_help with options that have multiple strings - demonstrates a bug with None metavar"""
         parser = Parser(prog="test-prog", description="Test app")
@@ -194,15 +194,19 @@ class TestParser:
         parser.add_argument("--config", help="Config file")
 
         group = parser.add_argument_group("Multi Options")
-        group.add_argument("--verbose", "-v", action="store_true", help="Verbose mode")  # metavar is None
+        group.add_argument(
+            "--verbose", "-v", action="store_true", help="Verbose mode"
+        )  # metavar is None
         group.add_argument("--output", "-o", metavar="FILE", help="Output file")
 
         # This test demonstrates that the CLI code has a bug on line 94
         # It tries to call .upper() on None when metavar is None for multiple option strings
-        with pytest.raises(AttributeError, match="'NoneType' object has no attribute 'upper'"):
+        with pytest.raises(
+            AttributeError, match="'NoneType' object has no attribute 'upper'"
+        ):
             parser.print_help()
 
-    @patch('sys.stdout', new_callable=StringIO)
+    @patch("sys.stdout", new_callable=StringIO)
     def test_print_help_multiple_option_strings_with_metavar(self, mock_stdout):
         """Test print_help with options that have multiple strings and metavar works correctly"""
         parser = Parser(prog="test-prog", description="Test app")
@@ -220,7 +224,7 @@ class TestParser:
         assert "--output, -o FILE" in output or "-o, --output FILE" in output
         assert "Output file" in output
 
-    @patch('sys.stdout', new_callable=StringIO)
+    @patch("sys.stdout", new_callable=StringIO)
     def test_print_help_no_options_group_error(self, mock_stdout):
         """Test that print_help handles missing 'options' group gracefully"""
         parser = Parser(prog="test-prog", description="Test app", add_help=False)
@@ -238,7 +242,7 @@ class TestParser:
 class TestGetArgumentsFromConfig:
     """Test cases for _get_arguments_from_config function"""
 
-    @patch('itential_mcp.cli.fields')
+    @patch("itential_mcp.cli.fields")
     def test_get_arguments_from_config_basic(self, mock_fields):
         """Test basic functionality of _get_arguments_from_config"""
         # Mock a config field
@@ -248,7 +252,7 @@ class TestGetArgumentsFromConfig:
         mock_field.default.json_schema_extra = {
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ["--host"],
-            "x-itential-mcp-options": {"type": str}
+            "x-itential-mcp-options": {"type": str},
         }
         mock_field.default.description = "Server host address"
         mock_field.default.default = "localhost"
@@ -267,15 +271,13 @@ class TestGetArgumentsFromConfig:
         assert result[0][2]["help"] == "Server host address (default=127.0.0.1)"
         assert result[0][2]["type"] is str
 
-    @patch('itential_mcp.cli.fields')
+    @patch("itential_mcp.cli.fields")
     def test_get_arguments_from_config_no_cli_enabled(self, mock_fields):
         """Test _get_arguments_from_config with CLI disabled fields"""
         mock_field = Mock()
         mock_field.name = "internal_field"
         mock_field.default = Mock()
-        mock_field.default.json_schema_extra = {
-            "x-itential-mcp-cli-enabled": False
-        }
+        mock_field.default.json_schema_extra = {"x-itential-mcp-cli-enabled": False}
 
         mock_fields.return_value = [mock_field]
         cli._get_arguments_from_config.cache_clear()
@@ -284,7 +286,7 @@ class TestGetArgumentsFromConfig:
 
         assert len(result) == 0
 
-    @patch('itential_mcp.cli.fields')
+    @patch("itential_mcp.cli.fields")
     def test_get_arguments_from_config_no_schema_extra(self, mock_fields):
         """Test _get_arguments_from_config with fields having no json_schema_extra"""
         mock_field = Mock()
@@ -299,7 +301,7 @@ class TestGetArgumentsFromConfig:
 
         assert len(result) == 0
 
-    @patch('itential_mcp.cli.fields')
+    @patch("itential_mcp.cli.fields")
     def test_get_arguments_from_config_no_description(self, mock_fields):
         """Test _get_arguments_from_config with fields having no description"""
         mock_field = Mock()
@@ -307,7 +309,7 @@ class TestGetArgumentsFromConfig:
         mock_field.default = Mock()
         mock_field.default.json_schema_extra = {
             "x-itential-mcp-cli-enabled": True,
-            "x-itential-mcp-arguments": ["--no-desc"]
+            "x-itential-mcp-arguments": ["--no-desc"],
         }
         mock_field.default.description = None
         mock_field.default.default = "default_value"
@@ -320,7 +322,7 @@ class TestGetArgumentsFromConfig:
         assert len(result) == 1
         assert result[0][2]["help"] == "NO HELP AVAILABLE!!"
 
-    @patch('itential_mcp.cli.fields')
+    @patch("itential_mcp.cli.fields")
     def test_get_arguments_from_config_multiple_fields(self, mock_fields):
         """Test _get_arguments_from_config with multiple valid fields"""
         # Create multiple mock fields
@@ -330,7 +332,7 @@ class TestGetArgumentsFromConfig:
         field1.default.json_schema_extra = {
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ["--port", "-p"],
-            "x-itential-mcp-options": {"type": int}
+            "x-itential-mcp-options": {"type": int},
         }
         field1.default.description = "Server port"
         field1.default.default = 8080
@@ -341,7 +343,7 @@ class TestGetArgumentsFromConfig:
         field2.default.json_schema_extra = {
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ["--username"],
-            "x-itential-mcp-options": {"type": str, "required": True}
+            "x-itential-mcp-options": {"type": str, "required": True},
         }
         field2.default.description = "Platform username"
         field2.default.default = None
@@ -349,9 +351,7 @@ class TestGetArgumentsFromConfig:
         field3 = Mock()
         field3.name = "disabled_field"
         field3.default = Mock()
-        field3.default.json_schema_extra = {
-            "x-itential-mcp-cli-enabled": False
-        }
+        field3.default.json_schema_extra = {"x-itential-mcp-cli-enabled": False}
 
         mock_fields.return_value = [field1, field2, field3]
         cli._get_arguments_from_config.cache_clear()
@@ -370,7 +370,7 @@ class TestGetArgumentsFromConfig:
         assert result[1][1] == ["--username"]
         assert result[1][2]["required"] is True
 
-    @patch('itential_mcp.cli.fields')
+    @patch("itential_mcp.cli.fields")
     def test_get_arguments_from_config_caching(self, mock_fields):
         """Test that _get_arguments_from_config uses LRU caching"""
         mock_field = Mock()
@@ -378,7 +378,7 @@ class TestGetArgumentsFromConfig:
         mock_field.default = Mock()
         mock_field.default.json_schema_extra = {
             "x-itential-mcp-cli-enabled": True,
-            "x-itential-mcp-arguments": ["--test"]
+            "x-itential-mcp-arguments": ["--test"],
         }
         mock_field.default.description = "Test field"
         mock_field.default.default = "test"
@@ -394,7 +394,7 @@ class TestGetArgumentsFromConfig:
         assert mock_fields.call_count == 1
         assert result1 == result2
 
-    @patch('itential_mcp.cli.fields')
+    @patch("itential_mcp.cli.fields")
     def test_get_arguments_from_config_no_options(self, mock_fields):
         """Test _get_arguments_from_config when x-itential-mcp-options is None"""
         mock_field = Mock()
@@ -403,7 +403,7 @@ class TestGetArgumentsFromConfig:
         mock_field.default.json_schema_extra = {
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ["--simple"],
-            "x-itential-mcp-options": None
+            "x-itential-mcp-options": None,
         }
         mock_field.default.description = "Simple field"
         mock_field.default.default = "simple"
@@ -422,14 +422,26 @@ class TestGetArgumentsFromConfig:
 class TestAddPlatformArguments:
     """Test cases for add_platform_group function"""
 
-    @patch('itential_mcp.cli._get_arguments_from_config')
+    @patch("itential_mcp.cli._get_arguments_from_config")
     def test_add_platform_group_basic(self, mock_get_args):
         """Test basic functionality of add_platform_group"""
         # Mock config arguments
         mock_get_args.return_value = [
-            ("platform_host", ["--platform-host"], {"dest": "platform_host", "help": "Platform host"}),
-            ("platform_port", ["--platform-port"], {"dest": "platform_port", "help": "Platform port"}),
-            ("server_host", ["--server-host"], {"dest": "server_host", "help": "Server host"}),
+            (
+                "platform_host",
+                ["--platform-host"],
+                {"dest": "platform_host", "help": "Platform host"},
+            ),
+            (
+                "platform_port",
+                ["--platform-port"],
+                {"dest": "platform_port", "help": "Platform port"},
+            ),
+            (
+                "server_host",
+                ["--server-host"],
+                {"dest": "server_host", "help": "Server host"},
+            ),
         ]
 
         # Create mock command parser
@@ -442,7 +454,7 @@ class TestAddPlatformArguments:
         # Verify argument group was created
         mock_cmd.add_argument_group.assert_called_once_with(
             "Itential Platform Options",
-            "Configuration options for connecting to Itential Platform API"
+            "Configuration options for connecting to Itential Platform API",
         )
 
         # Verify only platform arguments were added (2 calls for 2 platform args)
@@ -455,13 +467,21 @@ class TestAddPlatformArguments:
         assert calls[1][0] == ("--platform-port",)
         assert calls[1][1] == {"dest": "platform_port", "help": "Platform port"}
 
-    @patch('itential_mcp.cli._get_arguments_from_config')
+    @patch("itential_mcp.cli._get_arguments_from_config")
     def test_add_platform_group_no_platform_args(self, mock_get_args):
         """Test add_platform_group when no platform arguments are available"""
         # Mock config with no platform arguments
         mock_get_args.return_value = [
-            ("server_host", ["--server-host"], {"dest": "server_host", "help": "Server host"}),
-            ("other_option", ["--other"], {"dest": "other_option", "help": "Other option"}),
+            (
+                "server_host",
+                ["--server-host"],
+                {"dest": "server_host", "help": "Server host"},
+            ),
+            (
+                "other_option",
+                ["--other"],
+                {"dest": "other_option", "help": "Other option"},
+            ),
         ]
 
         mock_cmd = Mock()
@@ -476,15 +496,35 @@ class TestAddPlatformArguments:
         # But no arguments should be added
         mock_group.add_argument.assert_not_called()
 
-    @patch('itential_mcp.cli._get_arguments_from_config')
+    @patch("itential_mcp.cli._get_arguments_from_config")
     def test_add_platform_group_multiple_platform_args(self, mock_get_args):
         """Test add_platform_group with multiple platform arguments"""
         mock_get_args.return_value = [
-            ("platform_host", ["--platform-host"], {"dest": "platform_host", "help": "Host"}),
-            ("platform_port", ["--platform-port"], {"dest": "platform_port", "help": "Port"}),
-            ("platform_username", ["--platform-user"], {"dest": "platform_username", "help": "Username"}),
-            ("platform_password", ["--platform-pass"], {"dest": "platform_password", "help": "Password"}),
-            ("server_host", ["--server-host"], {"dest": "server_host", "help": "Server host"}),
+            (
+                "platform_host",
+                ["--platform-host"],
+                {"dest": "platform_host", "help": "Host"},
+            ),
+            (
+                "platform_port",
+                ["--platform-port"],
+                {"dest": "platform_port", "help": "Port"},
+            ),
+            (
+                "platform_username",
+                ["--platform-user"],
+                {"dest": "platform_username", "help": "Username"},
+            ),
+            (
+                "platform_password",
+                ["--platform-pass"],
+                {"dest": "platform_password", "help": "Password"},
+            ),
+            (
+                "server_host",
+                ["--server-host"],
+                {"dest": "server_host", "help": "Server host"},
+            ),
         ]
 
         mock_cmd = Mock()
@@ -500,13 +540,25 @@ class TestAddPlatformArguments:
 class TestAddServerArguments:
     """Test cases for add_server_group function"""
 
-    @patch('itential_mcp.cli._get_arguments_from_config')
+    @patch("itential_mcp.cli._get_arguments_from_config")
     def test_add_server_group_basic(self, mock_get_args):
         """Test basic functionality of add_server_group"""
         mock_get_args.return_value = [
-            ("server_host", ["--server-host"], {"dest": "server_host", "help": "Server host"}),
-            ("server_port", ["--server-port"], {"dest": "server_port", "help": "Server port"}),
-            ("platform_host", ["--platform-host"], {"dest": "platform_host", "help": "Platform host"}),
+            (
+                "server_host",
+                ["--server-host"],
+                {"dest": "server_host", "help": "Server host"},
+            ),
+            (
+                "server_port",
+                ["--server-port"],
+                {"dest": "server_port", "help": "Server port"},
+            ),
+            (
+                "platform_host",
+                ["--platform-host"],
+                {"dest": "platform_host", "help": "Platform host"},
+            ),
         ]
 
         mock_cmd = Mock()
@@ -517,19 +569,26 @@ class TestAddServerArguments:
 
         # Verify argument group was created
         mock_cmd.add_argument_group.assert_called_once_with(
-            "MCP Server Options",
-            "Configuration options for the MCP Server instance"
+            "MCP Server Options", "Configuration options for the MCP Server instance"
         )
 
         # Verify only server arguments were added
         assert mock_group.add_argument.call_count == 2
 
-    @patch('itential_mcp.cli._get_arguments_from_config')
+    @patch("itential_mcp.cli._get_arguments_from_config")
     def test_add_server_group_no_server_args(self, mock_get_args):
         """Test add_server_group when no server arguments are available"""
         mock_get_args.return_value = [
-            ("platform_host", ["--platform-host"], {"dest": "platform_host", "help": "Platform host"}),
-            ("other_option", ["--other"], {"dest": "other_option", "help": "Other option"}),
+            (
+                "platform_host",
+                ["--platform-host"],
+                {"dest": "platform_host", "help": "Platform host"},
+            ),
+            (
+                "other_option",
+                ["--other"],
+                {"dest": "other_option", "help": "Other option"},
+            ),
         ]
 
         mock_cmd = Mock()
@@ -541,15 +600,27 @@ class TestAddServerArguments:
         mock_cmd.add_argument_group.assert_called_once()
         mock_group.add_argument.assert_not_called()
 
-    @patch('itential_mcp.cli._get_arguments_from_config')
+    @patch("itential_mcp.cli._get_arguments_from_config")
     def test_add_server_group_multiple_server_args(self, mock_get_args):
         """Test add_server_group with multiple server arguments"""
         mock_get_args.return_value = [
             ("server_host", ["--host"], {"dest": "server_host", "help": "Host"}),
             ("server_port", ["--port"], {"dest": "server_port", "help": "Port"}),
-            ("server_transport", ["--transport"], {"dest": "server_transport", "help": "Transport"}),
-            ("server_log_level", ["--log-level"], {"dest": "server_log_level", "help": "Log level"}),
-            ("platform_username", ["--username"], {"dest": "platform_username", "help": "Username"}),
+            (
+                "server_transport",
+                ["--transport"],
+                {"dest": "server_transport", "help": "Transport"},
+            ),
+            (
+                "server_log_level",
+                ["--log-level"],
+                {"dest": "server_log_level", "help": "Log level"},
+            ),
+            (
+                "platform_username",
+                ["--username"],
+                {"dest": "platform_username", "help": "Username"},
+            ),
         ]
 
         mock_cmd = Mock()
@@ -567,16 +638,16 @@ class TestModuleStructure:
 
     def test_module_imports(self):
         """Test that all required modules are imported"""
-        assert hasattr(cli, 'argparse')
-        assert hasattr(cli, 'terminal')
-        assert hasattr(cli, 'config')
+        assert hasattr(cli, "argparse")
+        assert hasattr(cli, "terminal")
+        assert hasattr(cli, "config")
 
     def test_module_functions_exist(self):
         """Test that all expected functions exist"""
         expected_functions = [
-            '_get_arguments_from_config',
-            'add_platform_group',
-            'add_server_group'
+            "_get_arguments_from_config",
+            "add_platform_group",
+            "add_server_group",
         ]
 
         for func_name in expected_functions:
@@ -585,22 +656,22 @@ class TestModuleStructure:
 
     def test_parser_class_exists(self):
         """Test that Parser class exists and is properly defined"""
-        assert hasattr(cli, 'Parser')
+        assert hasattr(cli, "Parser")
         assert issubclass(cli.Parser, argparse.ArgumentParser)
 
     def test_typing_imports(self):
         """Test that typing imports are available"""
-        assert hasattr(cli, 'Sequence')
-        assert hasattr(cli, 'Tuple')
-        assert hasattr(cli, 'Mapping')
+        assert hasattr(cli, "Sequence")
+        assert hasattr(cli, "Tuple")
+        assert hasattr(cli, "Mapping")
 
     def test_lru_cache_import(self):
         """Test that lru_cache is imported"""
-        assert hasattr(cli, 'lru_cache')
+        assert hasattr(cli, "lru_cache")
 
     def test_fields_import(self):
         """Test that dataclasses.fields is imported"""
-        assert hasattr(cli, 'fields')
+        assert hasattr(cli, "fields")
 
 
 class TestParserIntegration:
@@ -608,14 +679,13 @@ class TestParserIntegration:
 
     def test_parser_with_real_arguments(self):
         """Test Parser with realistic argument setup"""
-        parser = Parser(
-            prog="itential-mcp",
-            description="Itential MCP Server CLI"
-        )
+        parser = Parser(prog="itential-mcp", description="Itential MCP Server CLI")
 
         # Add global arguments
         parser.add_argument("--config", help="Configuration file")
-        parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
+        parser.add_argument(
+            "--verbose", "-v", action="store_true", help="Verbose output"
+        )
 
         # Add subcommands
         subparsers = parser.add_subparsers(dest="command")
@@ -632,20 +702,16 @@ class TestParserIntegration:
         assert args.host == "example.com"
         assert args.port == 9000
 
-    @patch('sys.stdout', new_callable=StringIO)
+    @patch("sys.stdout", new_callable=StringIO)
     def test_parser_help_integration(self, mock_stdout):
         """Test Parser help output integration"""
-        parser = Parser(
-            prog="itential-mcp",
-            description="Itential MCP Server"
-        )
+        parser = Parser(prog="itential-mcp", description="Itential MCP Server")
 
         parser.add_argument("--config", help="Config file")
 
         # Add server arguments group
         server_group = parser.add_argument_group(
-            "Server Options",
-            "Options for server configuration"
+            "Server Options", "Options for server configuration"
         )
         server_group.add_argument("--host", help="Server host")
         server_group.add_argument("--port", type=int, help="Server port")
@@ -675,14 +741,30 @@ class TestParserIntegration:
         assert "--host" in help_output
         assert "--port" in help_output
 
-    @patch('itential_mcp.cli._get_arguments_from_config')
+    @patch("itential_mcp.cli._get_arguments_from_config")
     def test_argument_functions_integration(self, mock_get_args):
         """Test integration of add_platform_group and add_server_group"""
         mock_get_args.return_value = [
-            ("platform_host", ["--platform-host"], {"dest": "platform_host", "help": "Platform host"}),
-            ("platform_port", ["--platform-port"], {"dest": "platform_port", "type": int, "help": "Platform port"}),
-            ("server_host", ["--server-host"], {"dest": "server_host", "help": "Server host"}),
-            ("server_transport", ["--transport"], {"dest": "server_transport", "help": "Transport protocol"}),
+            (
+                "platform_host",
+                ["--platform-host"],
+                {"dest": "platform_host", "help": "Platform host"},
+            ),
+            (
+                "platform_port",
+                ["--platform-port"],
+                {"dest": "platform_port", "type": int, "help": "Platform port"},
+            ),
+            (
+                "server_host",
+                ["--server-host"],
+                {"dest": "server_host", "help": "Server host"},
+            ),
+            (
+                "server_transport",
+                ["--transport"],
+                {"dest": "server_transport", "help": "Transport protocol"},
+            ),
         ]
 
         parser = Parser(prog="test-app")
@@ -694,12 +776,18 @@ class TestParserIntegration:
         cli.add_server_group(parser)
 
         # Test parsing
-        args = parser.parse_args([
-            "--platform-host", "platform.example.com",
-            "--platform-port", "443",
-            "--server-host", "0.0.0.0",
-            "--transport", "http"
-        ])
+        args = parser.parse_args(
+            [
+                "--platform-host",
+                "platform.example.com",
+                "--platform-port",
+                "443",
+                "--server-host",
+                "0.0.0.0",
+                "--transport",
+                "http",
+            ]
+        )
 
         assert args.platform_host == "platform.example.com"
         assert args.platform_port == 443
@@ -710,7 +798,7 @@ class TestParserIntegration:
 class TestErrorHandling:
     """Test error handling and edge cases"""
 
-    @patch('sys.stdout', new_callable=StringIO)
+    @patch("sys.stdout", new_callable=StringIO)
     def test_print_app_help_no_subparsers(self, mock_stdout):
         """Test print_app_help behavior when no subparsers are defined"""
         parser = Parser(prog="test-app", description="Test app")
@@ -720,7 +808,7 @@ class TestErrorHandling:
         with pytest.raises(AttributeError):
             parser.print_app_help()
 
-    @patch('sys.stdout', new_callable=StringIO)
+    @patch("sys.stdout", new_callable=StringIO)
     def test_print_help_empty_parser(self, mock_stdout):
         """Test print_help with minimal parser setup"""
         parser = Parser(prog="minimal", description="Minimal parser", add_help=False)
@@ -730,7 +818,7 @@ class TestErrorHandling:
         with pytest.raises(KeyError):
             parser.print_help()
 
-    @patch('itential_mcp.cli.fields')
+    @patch("itential_mcp.cli.fields")
     def test_get_arguments_from_config_exception_handling(self, mock_fields):
         """Test _get_arguments_from_config handles malformed field data"""
         # Mock a field with missing attributes
@@ -759,6 +847,7 @@ class TestErrorHandling:
 
         # Methods should accept file parameter without error
         import io
+
         test_file = io.StringIO()
 
         # These should not raise errors

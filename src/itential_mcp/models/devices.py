@@ -53,7 +53,7 @@ class Device(BaseModel):
                 """
                 The type of device (e.g., 'cisco_ios', 'juniper')
                 """
-            )
+            ),
         ),
     ]
 
@@ -65,7 +65,7 @@ class Device(BaseModel):
                 """
                 Current operational status of the device
                 """
-            )
+            ),
         ),
     ]
 

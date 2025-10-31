@@ -23,23 +23,27 @@ class TestWorkflowElement:
         element = WorkflowElement(
             name="test-workflow",
             description="A test workflow",
-            input_schema={"type": "object", "properties": {"input": {"type": "string"}}},
+            input_schema={
+                "type": "object",
+                "properties": {"input": {"type": "string"}},
+            },
             route_name="test-route",
-            last_executed="2025-01-01T00:00:00Z"
+            last_executed="2025-01-01T00:00:00Z",
         )
-        
+
         assert element.name == "test-workflow"
         assert element.description == "A test workflow"
-        assert element.input_schema == {"type": "object", "properties": {"input": {"type": "string"}}}
+        assert element.input_schema == {
+            "type": "object",
+            "properties": {"input": {"type": "string"}},
+        }
         assert element.route_name == "test-route"
         assert element.last_executed == "2025-01-01T00:00:00Z"
 
     def test_workflow_element_required_only(self):
         """Test WorkflowElement with required fields only"""
-        element = WorkflowElement(
-            name="test-workflow"
-        )
-        
+        element = WorkflowElement(name="test-workflow")
+
         assert element.name == "test-workflow"
         assert element.description is None
         assert element.input_schema is None
@@ -53,9 +57,9 @@ class TestWorkflowElement:
             description=None,
             input_schema=None,
             route_name=None,
-            last_executed=None
+            last_executed=None,
         )
-        
+
         assert element.name == "test-workflow"
         assert element.description is None
         assert element.input_schema is None
@@ -66,22 +70,18 @@ class TestWorkflowElement:
         """Test WorkflowElement validation fails with missing name"""
         with pytest.raises(ValidationError) as exc_info:
             WorkflowElement()
-        
+
         errors = exc_info.value.errors()
         assert len(errors) == 1
         assert errors[0]["type"] == "missing"
         assert errors[0]["loc"] == ("name",)
 
-
     def test_workflow_element_empty_string_values(self):
         """Test WorkflowElement with empty string values"""
         element = WorkflowElement(
-            name="",
-            description="",
-            route_name="",
-            last_executed=""
+            name="", description="", route_name="", last_executed=""
         )
-        
+
         assert element.name == ""
         assert element.description == ""
         assert element.route_name == ""
@@ -94,21 +94,17 @@ class TestGetWorkflowsResponse:
     def test_get_workflows_response_empty(self):
         """Test empty GetWorkflowsResponse"""
         response = GetWorkflowsResponse(root=[])
-        
+
         assert response.root == []
         assert len(response.root) == 0
 
     def test_get_workflows_response_with_elements(self):
         """Test GetWorkflowsResponse with workflow elements"""
-        element1 = WorkflowElement(
-            name="workflow-one"
-        )
-        element2 = WorkflowElement(
-            name="workflow-two", description="Second workflow"
-        )
-        
+        element1 = WorkflowElement(name="workflow-one")
+        element2 = WorkflowElement(name="workflow-two", description="Second workflow")
+
         response = GetWorkflowsResponse(root=[element1, element2])
-        
+
         assert len(response.root) == 2
         assert response.root[0].name == "workflow-one"
         assert response.root[1].name == "workflow-two"
@@ -117,7 +113,7 @@ class TestGetWorkflowsResponse:
     def test_get_workflows_response_default_factory(self):
         """Test GetWorkflowsResponse default factory creates empty list"""
         response = GetWorkflowsResponse()
-        
+
         assert response.root == []
         assert len(response.root) == 0
 
@@ -125,9 +121,9 @@ class TestGetWorkflowsResponse:
         """Test GetWorkflowsResponse can be iterated"""
         element1 = WorkflowElement(_id="workflow-1", name="workflow-one")
         element2 = WorkflowElement(_id="workflow-2", name="workflow-two")
-        
+
         response = GetWorkflowsResponse(root=[element1, element2])
-        
+
         workflows = list(response.root)
         assert len(workflows) == 2
         assert workflows[0].name == "workflow-one"
@@ -142,9 +138,9 @@ class TestJobMetrics:
         metrics = JobMetrics(
             start_time="2025-01-01T10:00:00Z",
             end_time="2025-01-01T10:05:00Z",
-            user="test-user"
+            user="test-user",
         )
-        
+
         assert metrics.start_time == "2025-01-01T10:00:00Z"
         assert metrics.end_time == "2025-01-01T10:05:00Z"
         assert metrics.user == "test-user"
@@ -152,30 +148,23 @@ class TestJobMetrics:
     def test_job_metrics_empty(self):
         """Test JobMetrics with no fields"""
         metrics = JobMetrics()
-        
+
         assert metrics.start_time is None
         assert metrics.end_time is None
         assert metrics.user is None
 
     def test_job_metrics_partial(self):
         """Test JobMetrics with some fields"""
-        metrics = JobMetrics(
-            start_time="2025-01-01T10:00:00Z",
-            user="test-user"
-        )
-        
+        metrics = JobMetrics(start_time="2025-01-01T10:00:00Z", user="test-user")
+
         assert metrics.start_time == "2025-01-01T10:00:00Z"
         assert metrics.end_time is None
         assert metrics.user == "test-user"
 
     def test_job_metrics_explicit_none(self):
         """Test JobMetrics with explicit None values"""
-        metrics = JobMetrics(
-            start_time=None,
-            end_time=None,
-            user=None
-        )
-        
+        metrics = JobMetrics(start_time=None, end_time=None, user=None)
+
         assert metrics.start_time is None
         assert metrics.end_time is None
         assert metrics.user is None
@@ -186,20 +175,17 @@ class TestStartWorkflowResponse:
 
     def test_start_workflow_response_basic(self):
         """Test basic StartWorkflowResponse creation"""
-        metrics = JobMetrics(
-            start_time="2025-01-01T10:00:00Z",
-            user="test-user"
-        )
-        
+        metrics = JobMetrics(start_time="2025-01-01T10:00:00Z", user="test-user")
+
         response = StartWorkflowResponse(
             object_id="job-123",
             name="test-workflow",
             description="A test workflow",
             tasks={"task1": {"type": "action"}},
             status="running",
-            metrics=metrics
+            metrics=metrics,
         )
-        
+
         assert response.object_id == "job-123"
         assert response.name == "test-workflow"
         assert response.description == "A test workflow"
@@ -211,15 +197,15 @@ class TestStartWorkflowResponse:
     def test_start_workflow_response_required_only(self):
         """Test StartWorkflowResponse with required fields only"""
         metrics = JobMetrics()
-        
+
         response = StartWorkflowResponse(
             object_id="job-123",
             name="test-workflow",
             tasks={},
             status="complete",
-            metrics=metrics
+            metrics=metrics,
         )
-        
+
         assert response.object_id == "job-123"
         assert response.name == "test-workflow"
         assert response.description is None
@@ -230,31 +216,38 @@ class TestStartWorkflowResponse:
     def test_start_workflow_response_all_statuses(self):
         """Test StartWorkflowResponse with all valid status values"""
         metrics = JobMetrics()
-        valid_statuses = ["error", "complete", "running", "canceled", "incomplete", "paused"]
-        
+        valid_statuses = [
+            "error",
+            "complete",
+            "running",
+            "canceled",
+            "incomplete",
+            "paused",
+        ]
+
         for status in valid_statuses:
             response = StartWorkflowResponse(
                 object_id="job-123",
                 name="test-workflow",
                 tasks={},
                 status=status,
-                metrics=metrics
+                metrics=metrics,
             )
             assert response.status == status
 
     def test_start_workflow_response_invalid_status(self):
         """Test StartWorkflowResponse validation fails with invalid status"""
         metrics = JobMetrics()
-        
+
         with pytest.raises(ValidationError) as exc_info:
             StartWorkflowResponse(
                 object_id="job-123",
                 name="test-workflow",
                 tasks={},
                 status="invalid-status",
-                metrics=metrics
+                metrics=metrics,
             )
-        
+
         errors = exc_info.value.errors()
         assert len(errors) == 1
         assert errors[0]["type"] == "literal_error"
@@ -264,7 +257,7 @@ class TestStartWorkflowResponse:
         """Test StartWorkflowResponse validation fails with missing required fields"""
         with pytest.raises(ValidationError) as exc_info:
             StartWorkflowResponse()
-        
+
         errors = exc_info.value.errors()
         required_fields = {"object_id", "name", "tasks", "status", "metrics"}
         error_fields = {error["loc"][0] for error in errors}
@@ -277,22 +270,19 @@ class TestStartWorkflowResponse:
             "task1": {
                 "type": "automation",
                 "app": "operations-manager",
-                "data": {"key": "value"}
+                "data": {"key": "value"},
             },
-            "task2": {
-                "type": "manual",
-                "description": "Manual approval step"
-            }
+            "task2": {"type": "manual", "description": "Manual approval step"},
         }
-        
+
         response = StartWorkflowResponse(
             object_id="job-123",
             name="test-workflow",
             tasks=complex_tasks,
             status="running",
-            metrics=metrics
+            metrics=metrics,
         )
-        
+
         assert response.tasks == complex_tasks
         assert "task1" in response.tasks
         assert "task2" in response.tasks
@@ -306,12 +296,9 @@ class TestJobElement:
     def test_job_element_basic(self):
         """Test basic JobElement creation"""
         job = JobElement(
-            _id="job-123",
-            name="Test Job",
-            description="A test job",
-            status="running"
+            _id="job-123", name="Test Job", description="A test job", status="running"
         )
-        
+
         assert job.object_id == "job-123"
         assert job.name == "Test Job"
         assert job.description == "A test job"
@@ -319,12 +306,8 @@ class TestJobElement:
 
     def test_job_element_required_only(self):
         """Test JobElement with required fields only"""
-        job = JobElement(
-            _id="job-123",
-            name="Test Job",
-            status="complete"
-        )
-        
+        job = JobElement(_id="job-123", name="Test Job", status="complete")
+
         assert job.object_id == "job-123"
         assert job.name == "Test Job"
         assert job.description is None
@@ -337,7 +320,7 @@ class TestGetJobsResponse:
     def test_get_jobs_response_empty(self):
         """Test GetJobsResponse with no jobs"""
         response = GetJobsResponse(root=[])
-        
+
         assert len(response.root) == 0
         assert list(response.root) == []
 
@@ -345,9 +328,9 @@ class TestGetJobsResponse:
         """Test GetJobsResponse with job elements"""
         job1 = JobElement(_id="job-1", name="Job One", status="complete")
         job2 = JobElement(_id="job-2", name="Job Two", status="running")
-        
+
         response = GetJobsResponse(root=[job1, job2])
-        
+
         assert len(response.root) == 2
         assert response.root[0].object_id == "job-1"
         assert response.root[1].object_id == "job-2"
@@ -366,9 +349,9 @@ class TestDescribeJobResponse:
             tasks={"task1": {"type": "action"}},
             status="complete",
             metrics={"start_time": 1640995200000},
-            updated="2025-01-01T12:00:00Z"
+            updated="2025-01-01T12:00:00Z",
         )
-        
+
         assert job_detail.object_id == "job-123"
         assert job_detail.name == "Test Job"
         assert job_detail.description == "A detailed test job"

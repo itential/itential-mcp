@@ -25,8 +25,8 @@ class DeviceGroupElement(BaseModel):
                 """
                 Unique identifier for the device group
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     name: Annotated[
@@ -37,7 +37,7 @@ class DeviceGroupElement(BaseModel):
                 Device group name
                 """
             )
-        )
+        ),
     ]
 
     devices: Annotated[
@@ -48,8 +48,8 @@ class DeviceGroupElement(BaseModel):
                 List of device names in this group
                 """
             ),
-            default_factory=list
-        )
+            default_factory=list,
+        ),
     ]
 
     description: Annotated[
@@ -60,7 +60,7 @@ class DeviceGroupElement(BaseModel):
                 Device group description
                 """
             )
-        )
+        ),
     ]
 
 
@@ -81,8 +81,8 @@ class GetDeviceGroupsResponse(RootModel):
                 List of device group objects with id, name, devices, and description
                 """
             ),
-            default_factory=list
-        )
+            default_factory=list,
+        ),
     ]
 
 
@@ -103,8 +103,8 @@ class CreateDeviceGroupResponse(BaseModel):
                 """
                 Unique identifier for the created device group
                 """
-            )
-        )
+            ),
+        ),
     ]
 
     name: Annotated[
@@ -115,7 +115,7 @@ class CreateDeviceGroupResponse(BaseModel):
                 Name of the device group
                 """
             )
-        )
+        ),
     ]
 
     message: Annotated[
@@ -126,7 +126,7 @@ class CreateDeviceGroupResponse(BaseModel):
                 Status message describing the create operation
                 """
             )
-        )
+        ),
     ]
 
     status: Annotated[
@@ -137,7 +137,7 @@ class CreateDeviceGroupResponse(BaseModel):
                 Current status of the device group
                 """
             )
-        )
+        ),
     ]
 
 
@@ -157,7 +157,7 @@ class AddDevicesToGroupResponse(BaseModel):
                 Message that provides the status of the operation
                 """
             )
-        )
+        ),
     ]
 
     message: Annotated[
@@ -168,7 +168,7 @@ class AddDevicesToGroupResponse(BaseModel):
                 Short description of the status of the operation
                 """
             )
-        )
+        ),
     ]
 
 
@@ -188,7 +188,7 @@ class RemoveDevicesFromGroupResponse(BaseModel):
                 Message that provides the status of the operation
                 """
             )
-        )
+        ),
     ]
 
     message: Annotated[
@@ -199,7 +199,5 @@ class RemoveDevicesFromGroupResponse(BaseModel):
                 Short description of the status of the operation
                 """
             )
-        )
+        ),
     ]
-
-

@@ -16,7 +16,7 @@ from itential_mcp.models.health import (
     LoggerConfig,
     ApplicationInfo,
     AdapterInfo,
-    HealthResponse
+    HealthResponse,
 )
 
 
@@ -25,21 +25,15 @@ class TestServiceStatus:
 
     def test_service_status_creation(self):
         """Test creating a ServiceStatus with valid data."""
-        service_status = ServiceStatus(
-            service="redis",
-            status="running"
-        )
-        
+        service_status = ServiceStatus(service="redis", status="running")
+
         assert service_status.service == "redis"
         assert service_status.status == "running"
 
     def test_service_status_serialization(self):
         """Test ServiceStatus model serialization."""
-        service_status = ServiceStatus(
-            service="mongo",
-            status="stopped"
-        )
-        
+        service_status = ServiceStatus(service="mongo", status="stopped")
+
         data = service_status.model_dump()
         expected = {"service": "mongo", "status": "stopped"}
         assert data == expected
@@ -48,7 +42,7 @@ class TestServiceStatus:
         """Test creating ServiceStatus from dictionary."""
         data = {"service": "redis", "status": "running"}
         service_status = ServiceStatus(**data)
-        
+
         assert service_status.service == "redis"
         assert service_status.status == "running"
 
@@ -65,9 +59,9 @@ class TestPlatformStatus:
             services=[service_status],
             timestamp=1757004595716,
             apps="running",
-            adapters="running"
+            adapters="running",
         )
-        
+
         assert platform_status.host == "test.host"
         assert platform_status.server_id == "test-server-123"
         assert platform_status.server_name is None
@@ -85,9 +79,9 @@ class TestPlatformStatus:
             "services": [{"service": "redis", "status": "running"}],
             "timestamp": 1757004595716,
             "apps": "running",
-            "adapters": "running"
+            "adapters": "running",
         }
-        
+
         platform_status = PlatformStatus(**data)
         assert platform_status.server_id == "test-server-123"
         assert platform_status.server_name == "Test Server"
@@ -102,9 +96,9 @@ class TestPlatformStatus:
             services=[service_status],
             timestamp=1757004595716,
             apps="running",
-            adapters="running"
+            adapters="running",
         )
-        
+
         data = platform_status.model_dump(by_alias=True)
         assert "serverId" in data
         assert "serverName" in data
@@ -118,9 +112,9 @@ class TestPlatformStatus:
             serverId="test-server-123",
             timestamp=1757004595716,
             apps="running",
-            adapters="running"
+            adapters="running",
         )
-        
+
         assert platform_status.services == []
 
     def test_platform_status_optional_server_name(self):
@@ -130,9 +124,9 @@ class TestPlatformStatus:
             serverId="test-server-123",
             timestamp=1757004595716,
             apps="running",
-            adapters="running"
+            adapters="running",
         )
-        
+
         assert platform_status.server_name is None
 
 
@@ -142,13 +136,9 @@ class TestCpuTimes:
     def test_cpu_times_creation(self):
         """Test creating CpuTimes with valid data."""
         cpu_times = CpuTimes(
-            user=52081020,
-            nice=26850,
-            sys=18688410,
-            idle=4564187990,
-            irq=7986130
+            user=52081020, nice=26850, sys=18688410, idle=4564187990, irq=7986130
         )
-        
+
         assert cpu_times.user == 52081020
         assert cpu_times.nice == 26850
         assert cpu_times.sys == 18688410
@@ -157,22 +147,10 @@ class TestCpuTimes:
 
     def test_cpu_times_serialization(self):
         """Test CpuTimes model serialization."""
-        cpu_times = CpuTimes(
-            user=100,
-            nice=50,
-            sys=75,
-            idle=1000,
-            irq=25
-        )
-        
+        cpu_times = CpuTimes(user=100, nice=50, sys=75, idle=1000, irq=25)
+
         data = cpu_times.model_dump()
-        expected = {
-            "user": 100,
-            "nice": 50,
-            "sys": 75,
-            "idle": 1000,
-            "irq": 25
-        }
+        expected = {"user": 100, "nice": 50, "sys": 75, "idle": 1000, "irq": 25}
         assert data == expected
 
 
@@ -182,39 +160,25 @@ class TestCpuInfo:
     def test_cpu_info_creation(self):
         """Test creating CpuInfo with valid data."""
         cpu_times = CpuTimes(
-            user=52081020,
-            nice=26850,
-            sys=18688410,
-            idle=4564187990,
-            irq=7986130
+            user=52081020, nice=26850, sys=18688410, idle=4564187990, irq=7986130
         )
-        
+
         cpu_info = CpuInfo(
             model="Intel(R) Core(TM) i7-12700H CPU @ 2.30GHz",
             speed=4015,
-            times=cpu_times
+            times=cpu_times,
         )
-        
+
         assert cpu_info.model == "Intel(R) Core(TM) i7-12700H CPU @ 2.30GHz"
         assert cpu_info.speed == 4015
         assert cpu_info.times.user == 52081020
 
     def test_cpu_info_nested_serialization(self):
         """Test CpuInfo serialization with nested CpuTimes."""
-        cpu_times = CpuTimes(
-            user=100,
-            nice=50,
-            sys=75,
-            idle=1000,
-            irq=25
-        )
-        
-        cpu_info = CpuInfo(
-            model="Test CPU",
-            speed=3000,
-            times=cpu_times
-        )
-        
+        cpu_times = CpuTimes(user=100, nice=50, sys=75, idle=1000, irq=25)
+
+        cpu_info = CpuInfo(model="Test CPU", speed=3000, times=cpu_times)
+
         data = cpu_info.model_dump()
         assert data["model"] == "Test CPU"
         assert data["speed"] == 3000
@@ -229,7 +193,7 @@ class TestSystemInfo:
         """Test creating SystemInfo with valid data."""
         cpu_times = CpuTimes(user=100, nice=50, sys=75, idle=1000, irq=25)
         cpu_info = CpuInfo(model="Test CPU", speed=3000, times=cpu_times)
-        
+
         system_info = SystemInfo(
             arch="x64",
             release="6.13.12-100.fc40.x86_64",
@@ -237,9 +201,9 @@ class TestSystemInfo:
             freemem=53953363968,
             totalmem=67111694336,
             loadavg=[0.15, 0.22, 0.25],
-            cpus=[cpu_info]
+            cpus=[cpu_info],
         )
-        
+
         assert system_info.arch == "x64"
         assert system_info.release == "6.13.12-100.fc40.x86_64"
         assert system_info.uptime == 4668812.41
@@ -257,13 +221,21 @@ class TestSystemInfo:
             "freemem": 53953363968,
             "totalmem": 67111694336,
             "loadavg": [0.15, 0.22, 0.25],
-            "cpus": [{
-                "model": "Test CPU",
-                "speed": 3000,
-                "times": {"user": 100, "nice": 50, "sys": 75, "idle": 1000, "irq": 25}
-            }]
+            "cpus": [
+                {
+                    "model": "Test CPU",
+                    "speed": 3000,
+                    "times": {
+                        "user": 100,
+                        "nice": 50,
+                        "sys": 75,
+                        "idle": 1000,
+                        "irq": 25,
+                    },
+                }
+            ],
         }
-        
+
         system_info = SystemInfo(**data)
         assert system_info.free_mem == 53953363968
         assert system_info.total_mem == 67111694336
@@ -273,7 +245,7 @@ class TestSystemInfo:
         """Test SystemInfo serialization with aliases (camelCase)."""
         cpu_times = CpuTimes(user=100, nice=50, sys=75, idle=1000, irq=25)
         cpu_info = CpuInfo(model="Test CPU", speed=3000, times=cpu_times)
-        
+
         system_info = SystemInfo(
             arch="x64",
             release="6.13.12-100.fc40.x86_64",
@@ -281,9 +253,9 @@ class TestSystemInfo:
             freemem=53953363968,
             totalmem=67111694336,
             loadavg=[0.15, 0.22, 0.25],
-            cpus=[cpu_info]
+            cpus=[cpu_info],
         )
-        
+
         data = system_info.model_dump(by_alias=True)
         assert "freemem" in data
         assert "totalmem" in data
@@ -298,9 +270,9 @@ class TestSystemInfo:
             uptime=4668812.41,
             freemem=53953363968,
             totalmem=67111694336,
-            loadavg=[0.15, 0.22, 0.25]
+            loadavg=[0.15, 0.22, 0.25],
         )
-        
+
         assert system_info.cpus == []
 
 
@@ -314,9 +286,9 @@ class TestMemoryUsage:
             heapTotal=158703616,
             heapUsed=147501584,
             external=50291978,
-            arrayBuffers=46521129
+            arrayBuffers=46521129,
         )
-        
+
         assert memory_usage.rss == 469671936
         assert memory_usage.heap_total == 158703616
         assert memory_usage.heap_used == 147501584
@@ -330,9 +302,9 @@ class TestMemoryUsage:
             "heapTotal": 158703616,
             "heapUsed": 147501584,
             "external": 50291978,
-            "arrayBuffers": 46521129
+            "arrayBuffers": 46521129,
         }
-        
+
         memory_usage = MemoryUsage(**data)
         assert memory_usage.heap_total == 158703616
         assert memory_usage.heap_used == 147501584
@@ -345,9 +317,9 @@ class TestMemoryUsage:
             heapTotal=158703616,
             heapUsed=147501584,
             external=50291978,
-            arrayBuffers=46521129
+            arrayBuffers=46521129,
         )
-        
+
         data = memory_usage.model_dump(by_alias=True)
         assert "heapTotal" in data
         assert "heapUsed" in data
@@ -360,21 +332,15 @@ class TestCpuUsage:
 
     def test_cpu_usage_creation(self):
         """Test creating CpuUsage with valid data."""
-        cpu_usage = CpuUsage(
-            user=3815108692,
-            system=621631048
-        )
-        
+        cpu_usage = CpuUsage(user=3815108692, system=621631048)
+
         assert cpu_usage.user == 3815108692
         assert cpu_usage.system == 621631048
 
     def test_cpu_usage_serialization(self):
         """Test CpuUsage model serialization."""
-        cpu_usage = CpuUsage(
-            user=1000000,
-            system=500000
-        )
-        
+        cpu_usage = CpuUsage(user=1000000, system=500000)
+
         data = cpu_usage.model_dump()
         expected = {"user": 1000000, "system": 500000}
         assert data == expected
@@ -409,9 +375,9 @@ class TestServerVersions:
             uv="1.45.0",
             uvwasi="0.0.18",
             v8="11.3.244.8-node.9",
-            zlib="1.2.13.1-motley"
+            zlib="1.2.13.1-motley",
         )
-        
+
         assert versions.node == "20.3.0"
         assert versions.acorn == "8.8.2"
         assert versions.openssl == "3.0.8+quic"
@@ -443,9 +409,9 @@ class TestServerVersions:
             uv="1.44.0",
             uvwasi="0.0.18",
             v8="10.2.154",
-            zlib="1.2.13"
+            zlib="1.2.13",
         )
-        
+
         data = versions.model_dump()
         assert data["node"] == "18.0.0"
         assert data["openssl"] == "3.0.0"
@@ -462,14 +428,11 @@ class TestServerInfo:
             heapTotal=158703616,
             heapUsed=147501584,
             external=50291978,
-            arrayBuffers=46521129
+            arrayBuffers=46521129,
         )
-        
-        cpu_usage = CpuUsage(
-            user=3815108692,
-            system=621631048
-        )
-        
+
+        cpu_usage = CpuUsage(user=3815108692, system=621631048)
+
         versions = ServerVersions(
             node="20.3.0",
             acorn="8.8.2",
@@ -494,9 +457,9 @@ class TestServerInfo:
             uv="1.45.0",
             uvwasi="0.0.18",
             v8="11.3.244.8-node.9",
-            zlib="1.2.13.1-motley"
+            zlib="1.2.13.1-motley",
         )
-        
+
         server_info = ServerInfo(
             version="15.8.10-2023.2.44",
             release="2023.2.9",
@@ -507,9 +470,9 @@ class TestServerInfo:
             cpuUsage=cpu_usage,
             uptime=2083622.963931177,
             pid=1,
-            dependencies={"@itential/service": "3.1.12"}
+            dependencies={"@itential/service": "3.1.12"},
         )
-        
+
         assert server_info.version == "15.8.10-2023.2.44"
         assert server_info.release == "2023.2.9"
         assert server_info.arch == "x64"
@@ -549,24 +512,21 @@ class TestServerInfo:
                 "uv": "1.45.0",
                 "uvwasi": "0.0.18",
                 "v8": "11.3.244.8-node.9",
-                "zlib": "1.2.13.1-motley"
+                "zlib": "1.2.13.1-motley",
             },
             "memoryUsage": {
                 "rss": 469671936,
                 "heapTotal": 158703616,
                 "heapUsed": 147501584,
                 "external": 50291978,
-                "arrayBuffers": 46521129
+                "arrayBuffers": 46521129,
             },
-            "cpuUsage": {
-                "user": 3815108692,
-                "system": 621631048
-            },
+            "cpuUsage": {"user": 3815108692, "system": 621631048},
             "uptime": 2083622.963931177,
             "pid": 1,
-            "dependencies": {"@itential/service": "3.1.12"}
+            "dependencies": {"@itential/service": "3.1.12"},
         }
-        
+
         server_info = ServerInfo(**data)
         assert server_info.memory_usage.heap_total == 158703616
         assert server_info.cpu_usage.user == 3815108692
@@ -578,11 +538,11 @@ class TestServerInfo:
             heapTotal=158703616,
             heapUsed=147501584,
             external=50291978,
-            arrayBuffers=46521129
+            arrayBuffers=46521129,
         )
-        
+
         cpu_usage = CpuUsage(user=3815108692, system=621631048)
-        
+
         versions = ServerVersions(
             node="20.3.0",
             acorn="8.8.2",
@@ -607,9 +567,9 @@ class TestServerInfo:
             uv="1.45.0",
             uvwasi="0.0.18",
             v8="11.3.244.8-node.9",
-            zlib="1.2.13.1-motley"
+            zlib="1.2.13.1-motley",
         )
-        
+
         server_info = ServerInfo(
             version="15.8.10-2023.2.44",
             release="2023.2.9",
@@ -619,9 +579,9 @@ class TestServerInfo:
             memoryUsage=memory_usage,
             cpuUsage=cpu_usage,
             uptime=2083622.963931177,
-            pid=1
+            pid=1,
         )
-        
+
         assert server_info.dependencies == {}
 
 
@@ -650,30 +610,18 @@ class TestLoggerConfig:
 
     def test_logger_config_creation(self):
         """Test creating LoggerConfig with valid data."""
-        logger_config = LoggerConfig(
-            console="info",
-            file="debug",
-            syslog="warning"
-        )
-        
+        logger_config = LoggerConfig(console="info", file="debug", syslog="warning")
+
         assert logger_config.console == "info"
         assert logger_config.file == "debug"
         assert logger_config.syslog == "warning"
 
     def test_logger_config_serialization(self):
         """Test LoggerConfig model serialization."""
-        logger_config = LoggerConfig(
-            console="info",
-            file="info",
-            syslog="warning"
-        )
-        
+        logger_config = LoggerConfig(console="info", file="info", syslog="warning")
+
         data = logger_config.model_dump()
-        expected = {
-            "console": "info",
-            "file": "info",
-            "syslog": "warning"
-        }
+        expected = {"console": "info", "file": "info", "syslog": "warning"}
         assert data == expected
 
 
@@ -687,17 +635,13 @@ class TestApplicationInfo:
             heapTotal=50000000,
             heapUsed=40000000,
             external=5000000,
-            arrayBuffers=4000000
+            arrayBuffers=4000000,
         )
-        
+
         cpu_usage = CpuUsage(user=1000000, system=500000)
-        
-        logger_config = LoggerConfig(
-            console="info",
-            file="info",
-            syslog="warning"
-        )
-        
+
+        logger_config = LoggerConfig(console="info", file="info", syslog="warning")
+
         app_info = ApplicationInfo(
             id="TestApp",
             package_id="@itential/test-app",
@@ -712,9 +656,9 @@ class TestApplicationInfo:
             pid=123,
             logger=logger_config,
             timestamp=1757004595716,
-            prevUptime=999.0
+            prevUptime=999.0,
         )
-        
+
         assert app_info.id == "TestApp"
         assert app_info.package_id == "@itential/test-app"
         assert app_info.version == "1.0.0"
@@ -740,19 +684,15 @@ class TestApplicationInfo:
                 "heapTotal": 50000000,
                 "heapUsed": 40000000,
                 "external": 5000000,
-                "arrayBuffers": 4000000
+                "arrayBuffers": 4000000,
             },
             "cpuUsage": {"user": 1000000, "system": 500000},
             "pid": 123,
-            "logger": {
-                "console": "info",
-                "file": "info",
-                "syslog": "warning"
-            },
+            "logger": {"console": "info", "file": "info", "syslog": "warning"},
             "timestamp": 1757004595716,
-            "prevUptime": 999.0
+            "prevUptime": 999.0,
         }
-        
+
         app_info = ApplicationInfo(**data)
         assert app_info.route_prefix == "test-app"
         assert app_info.memory_usage.heap_total == 50000000
@@ -765,17 +705,13 @@ class TestApplicationInfo:
             heapTotal=50000000,
             heapUsed=40000000,
             external=5000000,
-            arrayBuffers=4000000
+            arrayBuffers=4000000,
         )
-        
+
         cpu_usage = CpuUsage(user=1000000, system=500000)
-        
-        logger_config = LoggerConfig(
-            console="info",
-            file="info",
-            syslog="warning"
-        )
-        
+
+        logger_config = LoggerConfig(console="info", file="info", syslog="warning")
+
         app_info = ApplicationInfo(
             id="TestApp",
             package_id="@itential/test-app",
@@ -790,9 +726,9 @@ class TestApplicationInfo:
             pid=123,
             logger=logger_config,
             timestamp=1757004595716,
-            prevUptime=999.0
+            prevUptime=999.0,
         )
-        
+
         assert app_info.state == "STOPPED"
 
 
@@ -806,19 +742,15 @@ class TestAdapterInfo:
             heapTotal=70000000,
             heapUsed=60000000,
             external=8000000,
-            arrayBuffers=7000000
+            arrayBuffers=7000000,
         )
-        
+
         cpu_usage = CpuUsage(user=2000000, system=1000000)
-        
+
         connection_info = ConnectionInfo(state="ONLINE")
-        
-        logger_config = LoggerConfig(
-            console="info",
-            file="info",
-            syslog="warning"
-        )
-        
+
+        logger_config = LoggerConfig(console="info", file="info", syslog="warning")
+
         adapter_info = AdapterInfo(
             id="TestAdapter",
             package_id="@itential/test-adapter",
@@ -834,9 +766,9 @@ class TestAdapterInfo:
             pid=456,
             logger=logger_config,
             timestamp=1757004595716,
-            prevUptime=1999.0
+            prevUptime=1999.0,
         )
-        
+
         assert adapter_info.id == "TestAdapter"
         assert adapter_info.package_id == "@itential/test-adapter"
         assert adapter_info.version == "1.0.0"
@@ -862,19 +794,15 @@ class TestAdapterInfo:
                 "heapTotal": 70000000,
                 "heapUsed": 60000000,
                 "external": 8000000,
-                "arrayBuffers": 7000000
+                "arrayBuffers": 7000000,
             },
             "cpuUsage": {"user": 2000000, "system": 1000000},
             "pid": 456,
-            "logger": {
-                "console": "info",
-                "file": "info",
-                "syslog": "warning"
-            },
+            "logger": {"console": "info", "file": "info", "syslog": "warning"},
             "timestamp": 1757004595716,
-            "prevUptime": 1999.0
+            "prevUptime": 1999.0,
         }
-        
+
         adapter_info = AdapterInfo(**data)
         assert adapter_info.route_prefix == "test-adapter"
         assert adapter_info.memory_usage.heap_total == 70000000
@@ -887,19 +815,15 @@ class TestAdapterInfo:
             heapTotal=70000000,
             heapUsed=60000000,
             external=8000000,
-            arrayBuffers=7000000
+            arrayBuffers=7000000,
         )
-        
+
         cpu_usage = CpuUsage(user=2000000, system=1000000)
-        
+
         connection_info = ConnectionInfo(state="OFFLINE")
-        
-        logger_config = LoggerConfig(
-            console="info",
-            file="info",
-            syslog="warning"
-        )
-        
+
+        logger_config = LoggerConfig(console="info", file="info", syslog="warning")
+
         adapter_info = AdapterInfo(
             id="TestAdapter",
             package_id="@itential/test-adapter",
@@ -915,9 +839,9 @@ class TestAdapterInfo:
             pid=456,
             logger=logger_config,
             timestamp=1757004595716,
-            prevUptime=1999.0
+            prevUptime=1999.0,
         )
-        
+
         assert adapter_info.connection.state == "OFFLINE"
 
     def test_adapter_info_serialization_with_aliases(self):
@@ -927,19 +851,15 @@ class TestAdapterInfo:
             heapTotal=70000000,
             heapUsed=60000000,
             external=8000000,
-            arrayBuffers=7000000
+            arrayBuffers=7000000,
         )
-        
+
         cpu_usage = CpuUsage(user=2000000, system=1000000)
-        
+
         connection_info = ConnectionInfo(state="ONLINE")
-        
-        logger_config = LoggerConfig(
-            console="info",
-            file="info",
-            syslog="warning"
-        )
-        
+
+        logger_config = LoggerConfig(console="info", file="info", syslog="warning")
+
         adapter_info = AdapterInfo(
             id="TestAdapter",
             package_id="@itential/test-adapter",
@@ -955,9 +875,9 @@ class TestAdapterInfo:
             pid=456,
             logger=logger_config,
             timestamp=1757004595716,
-            prevUptime=1999.0
+            prevUptime=1999.0,
         )
-        
+
         # Test serialization with aliases (should match API format)
         data = adapter_info.model_dump(by_alias=True)
         assert "package_id" in data  # API uses package_id, not packageId
@@ -976,17 +896,13 @@ class TestAdapterInfo:
             heapTotal=50000000,
             heapUsed=40000000,
             external=5000000,
-            arrayBuffers=4000000
+            arrayBuffers=4000000,
         )
-        
+
         cpu_usage = CpuUsage(user=1000000, system=500000)
-        
-        logger_config = LoggerConfig(
-            console="info",
-            file="info",
-            syslog="warning"
-        )
-        
+
+        logger_config = LoggerConfig(console="info", file="info", syslog="warning")
+
         app_info = ApplicationInfo(
             id="TestApp",
             package_id="@itential/test-app",
@@ -1001,9 +917,9 @@ class TestAdapterInfo:
             pid=123,
             logger=logger_config,
             timestamp=1757004595716,
-            prevUptime=999.0
+            prevUptime=999.0,
         )
-        
+
         # Test serialization with aliases (should match API format)
         data = app_info.model_dump(by_alias=True)
         assert "package_id" in data  # API uses package_id, not packageId
@@ -1022,19 +938,19 @@ class TestHealthResponse:
     def test_health_response_creation(self):
         """Test creating HealthResponse with valid data."""
         service_status = ServiceStatus(service="redis", status="running")
-        
+
         platform_status = PlatformStatus(
             host="test.platform",
             serverId="test-server-123",
             services=[service_status],
             timestamp=1757004595716,
             apps="running",
-            adapters="running"
+            adapters="running",
         )
-        
+
         cpu_times = CpuTimes(user=100, nice=50, sys=75, idle=1000, irq=25)
         cpu_info = CpuInfo(model="Test CPU", speed=3000, times=cpu_times)
-        
+
         system_info = SystemInfo(
             arch="x64",
             release="6.13.12-100.fc40.x86_64",
@@ -1042,19 +958,19 @@ class TestHealthResponse:
             freemem=53953363968,
             totalmem=67111694336,
             loadavg=[0.15, 0.22, 0.25],
-            cpus=[cpu_info]
+            cpus=[cpu_info],
         )
-        
+
         memory_usage = MemoryUsage(
             rss=469671936,
             heapTotal=158703616,
             heapUsed=147501584,
             external=50291978,
-            arrayBuffers=46521129
+            arrayBuffers=46521129,
         )
-        
+
         cpu_usage = CpuUsage(user=3815108692, system=621631048)
-        
+
         versions = ServerVersions(
             node="20.3.0",
             acorn="8.8.2",
@@ -1079,9 +995,9 @@ class TestHealthResponse:
             uv="1.45.0",
             uvwasi="0.0.18",
             v8="11.3.244.8-node.9",
-            zlib="1.2.13.1-motley"
+            zlib="1.2.13.1-motley",
         )
-        
+
         server_info = ServerInfo(
             version="15.8.10-2023.2.44",
             release="2023.2.9",
@@ -1092,17 +1008,17 @@ class TestHealthResponse:
             cpuUsage=cpu_usage,
             uptime=2083622.963931177,
             pid=1,
-            dependencies={"@itential/service": "3.1.12"}
+            dependencies={"@itential/service": "3.1.12"},
         )
-        
+
         health_response = HealthResponse(
             status=platform_status,
             system=system_info,
             server=server_info,
             applications=[],
-            adapters=[]
+            adapters=[],
         )
-        
+
         assert health_response.status.host == "test.platform"
         assert health_response.system.arch == "x64"
         assert health_response.server.version == "15.8.10-2023.2.44"
@@ -1112,19 +1028,19 @@ class TestHealthResponse:
     def test_health_response_with_applications_and_adapters(self):
         """Test HealthResponse with applications and adapters."""
         service_status = ServiceStatus(service="redis", status="running")
-        
+
         platform_status = PlatformStatus(
             host="test.platform",
             serverId="test-server-123",
             services=[service_status],
             timestamp=1757004595716,
             apps="running",
-            adapters="running"
+            adapters="running",
         )
-        
+
         cpu_times = CpuTimes(user=100, nice=50, sys=75, idle=1000, irq=25)
         cpu_info = CpuInfo(model="Test CPU", speed=3000, times=cpu_times)
-        
+
         system_info = SystemInfo(
             arch="x64",
             release="6.13.12-100.fc40.x86_64",
@@ -1132,19 +1048,19 @@ class TestHealthResponse:
             freemem=53953363968,
             totalmem=67111694336,
             loadavg=[0.15, 0.22, 0.25],
-            cpus=[cpu_info]
+            cpus=[cpu_info],
         )
-        
+
         memory_usage = MemoryUsage(
             rss=469671936,
             heapTotal=158703616,
             heapUsed=147501584,
             external=50291978,
-            arrayBuffers=46521129
+            arrayBuffers=46521129,
         )
-        
+
         cpu_usage = CpuUsage(user=3815108692, system=621631048)
-        
+
         versions = ServerVersions(
             node="20.3.0",
             acorn="8.8.2",
@@ -1169,9 +1085,9 @@ class TestHealthResponse:
             uv="1.45.0",
             uvwasi="0.0.18",
             v8="11.3.244.8-node.9",
-            zlib="1.2.13.1-motley"
+            zlib="1.2.13.1-motley",
         )
-        
+
         server_info = ServerInfo(
             version="15.8.10-2023.2.44",
             release="2023.2.9",
@@ -1182,22 +1098,22 @@ class TestHealthResponse:
             cpuUsage=cpu_usage,
             uptime=2083622.963931177,
             pid=1,
-            dependencies={"@itential/service": "3.1.12"}
+            dependencies={"@itential/service": "3.1.12"},
         )
-        
+
         # Create test application
         app_memory = MemoryUsage(
             rss=100000000,
             heapTotal=50000000,
             heapUsed=40000000,
             external=5000000,
-            arrayBuffers=4000000
+            arrayBuffers=4000000,
         )
-        
+
         app_cpu = CpuUsage(user=1000000, system=500000)
-        
+
         app_logger = LoggerConfig(console="info", file="info", syslog="warning")
-        
+
         application = ApplicationInfo(
             id="TestApp",
             package_id="@itential/test-app",
@@ -1212,24 +1128,24 @@ class TestHealthResponse:
             pid=123,
             logger=app_logger,
             timestamp=1757004595716,
-            prevUptime=999.0
+            prevUptime=999.0,
         )
-        
+
         # Create test adapter
         adapter_memory = MemoryUsage(
             rss=150000000,
             heapTotal=70000000,
             heapUsed=60000000,
             external=8000000,
-            arrayBuffers=7000000
+            arrayBuffers=7000000,
         )
-        
+
         adapter_cpu = CpuUsage(user=2000000, system=1000000)
-        
+
         adapter_connection = ConnectionInfo(state="ONLINE")
-        
+
         adapter_logger = LoggerConfig(console="info", file="info", syslog="warning")
-        
+
         adapter = AdapterInfo(
             id="TestAdapter",
             package_id="@itential/test-adapter",
@@ -1245,17 +1161,17 @@ class TestHealthResponse:
             pid=456,
             logger=adapter_logger,
             timestamp=1757004595716,
-            prevUptime=1999.0
+            prevUptime=1999.0,
         )
-        
+
         health_response = HealthResponse(
             status=platform_status,
             system=system_info,
             server=server_info,
             applications=[application],
-            adapters=[adapter]
+            adapters=[adapter],
         )
-        
+
         assert len(health_response.applications) == 1
         assert len(health_response.adapters) == 1
         assert health_response.applications[0].id == "TestApp"
@@ -1264,19 +1180,19 @@ class TestHealthResponse:
     def test_health_response_empty_lists(self):
         """Test HealthResponse with empty applications and adapters lists."""
         service_status = ServiceStatus(service="redis", status="running")
-        
+
         platform_status = PlatformStatus(
             host="test.platform",
             serverId="test-server-123",
             services=[service_status],
             timestamp=1757004595716,
             apps="running",
-            adapters="running"
+            adapters="running",
         )
-        
+
         cpu_times = CpuTimes(user=100, nice=50, sys=75, idle=1000, irq=25)
         cpu_info = CpuInfo(model="Test CPU", speed=3000, times=cpu_times)
-        
+
         system_info = SystemInfo(
             arch="x64",
             release="6.13.12-100.fc40.x86_64",
@@ -1284,19 +1200,19 @@ class TestHealthResponse:
             freemem=53953363968,
             totalmem=67111694336,
             loadavg=[0.15, 0.22, 0.25],
-            cpus=[cpu_info]
+            cpus=[cpu_info],
         )
-        
+
         memory_usage = MemoryUsage(
             rss=469671936,
             heapTotal=158703616,
             heapUsed=147501584,
             external=50291978,
-            arrayBuffers=46521129
+            arrayBuffers=46521129,
         )
-        
+
         cpu_usage = CpuUsage(user=3815108692, system=621631048)
-        
+
         versions = ServerVersions(
             node="20.3.0",
             acorn="8.8.2",
@@ -1321,9 +1237,9 @@ class TestHealthResponse:
             uv="1.45.0",
             uvwasi="0.0.18",
             v8="11.3.244.8-node.9",
-            zlib="1.2.13.1-motley"
+            zlib="1.2.13.1-motley",
         )
-        
+
         server_info = ServerInfo(
             version="15.8.10-2023.2.44",
             release="2023.2.9",
@@ -1334,34 +1250,32 @@ class TestHealthResponse:
             cpuUsage=cpu_usage,
             uptime=2083622.963931177,
             pid=1,
-            dependencies={"@itential/service": "3.1.12"}
+            dependencies={"@itential/service": "3.1.12"},
         )
-        
+
         health_response = HealthResponse(
-            status=platform_status,
-            system=system_info,
-            server=server_info
+            status=platform_status, system=system_info, server=server_info
         )
-        
+
         assert health_response.applications == []
         assert health_response.adapters == []
 
     def test_health_response_comprehensive_serialization(self):
         """Test complete HealthResponse serialization with all components."""
         service_status = ServiceStatus(service="redis", status="running")
-        
+
         platform_status = PlatformStatus(
             host="test.platform",
             serverId="test-server-123",
             services=[service_status],
             timestamp=1757004595716,
             apps="running",
-            adapters="running"
+            adapters="running",
         )
-        
+
         cpu_times = CpuTimes(user=100, nice=50, sys=75, idle=1000, irq=25)
         cpu_info = CpuInfo(model="Test CPU", speed=3000, times=cpu_times)
-        
+
         system_info = SystemInfo(
             arch="x64",
             release="6.13.12-100.fc40.x86_64",
@@ -1369,19 +1283,19 @@ class TestHealthResponse:
             freemem=53953363968,
             totalmem=67111694336,
             loadavg=[0.15, 0.22, 0.25],
-            cpus=[cpu_info]
+            cpus=[cpu_info],
         )
-        
+
         memory_usage = MemoryUsage(
             rss=469671936,
             heapTotal=158703616,
             heapUsed=147501584,
             external=50291978,
-            arrayBuffers=46521129
+            arrayBuffers=46521129,
         )
-        
+
         cpu_usage = CpuUsage(user=3815108692, system=621631048)
-        
+
         versions = ServerVersions(
             node="20.3.0",
             acorn="8.8.2",
@@ -1406,9 +1320,9 @@ class TestHealthResponse:
             uv="1.45.0",
             uvwasi="0.0.18",
             v8="11.3.244.8-node.9",
-            zlib="1.2.13.1-motley"
+            zlib="1.2.13.1-motley",
         )
-        
+
         server_info = ServerInfo(
             version="15.8.10-2023.2.44",
             release="2023.2.9",
@@ -1419,24 +1333,24 @@ class TestHealthResponse:
             cpuUsage=cpu_usage,
             uptime=2083622.963931177,
             pid=1,
-            dependencies={"@itential/service": "3.1.12"}
+            dependencies={"@itential/service": "3.1.12"},
         )
-        
+
         health_response = HealthResponse(
             status=platform_status,
             system=system_info,
             server=server_info,
             applications=[],
-            adapters=[]
+            adapters=[],
         )
-        
+
         data = health_response.model_dump()
         assert "status" in data
         assert "system" in data
         assert "server" in data
         assert "applications" in data
         assert "adapters" in data
-        
+
         # Test alias serialization
         alias_data = health_response.model_dump(by_alias=True)
         assert "serverId" in alias_data["status"]
@@ -1453,11 +1367,11 @@ class TestHealthResponse:
                 "serverName": None,
                 "services": [
                     {"service": "redis", "status": "running"},
-                    {"service": "mongo", "status": "running"}
+                    {"service": "mongo", "status": "running"},
                 ],
                 "timestamp": 1757090849045,
                 "apps": "degraded",
-                "adapters": "running"
+                "adapters": "running",
             },
             "system": {
                 "arch": "x64",
@@ -1466,17 +1380,19 @@ class TestHealthResponse:
                 "freemem": 53909569536,
                 "totalmem": 67111694336,
                 "loadavg": [0.0, 0.05, 0.15],
-                "cpus": [{
-                    "model": "Intel(R) Core(TM) i7-10710U CPU @ 1.10GHz",
-                    "speed": 3980,
-                    "times": {
-                        "user": 53001480,
-                        "nice": 27070,
-                        "sys": 19005460,
-                        "idle": 4648595970,
-                        "irq": 8128900
+                "cpus": [
+                    {
+                        "model": "Intel(R) Core(TM) i7-10710U CPU @ 1.10GHz",
+                        "speed": 3980,
+                        "times": {
+                            "user": 53001480,
+                            "nice": 27070,
+                            "sys": 19005460,
+                            "idle": 4648595970,
+                            "irq": 8128900,
+                        },
                     }
-                }]
+                ],
             },
             "server": {
                 "version": "15.8.10-2023.2.44",
@@ -1507,94 +1423,84 @@ class TestHealthResponse:
                     "uv": "1.45.0",
                     "uvwasi": "0.0.18",
                     "v8": "11.3.244.8-node.9",
-                    "zlib": "1.2.13.1-motley"
+                    "zlib": "1.2.13.1-motley",
                 },
                 "memoryUsage": {
                     "rss": 490758144,
                     "heapTotal": 191733760,
                     "heapUsed": 155665376,
                     "external": 53745949,
-                    "arrayBuffers": 49975100
+                    "arrayBuffers": 49975100,
                 },
-                "cpuUsage": {
-                    "user": 3899743493,
-                    "system": 641198313
-                },
+                "cpuUsage": {"user": 3899743493, "system": 641198313},
                 "uptime": 2169876.158544452,
                 "pid": 1,
                 "dependencies": {
                     "@itential/service": "3.1.12",
-                    "@itential/network": "4.1.5"
-                }
+                    "@itential/network": "4.1.5",
+                },
             },
-            "applications": [{
-                "id": "AGManager",
-                "package_id": "@itential/app-ag_manager",
-                "version": "1.20.3-2023.2.1",
-                "type": "Application",
-                "description": "stand alone discovery",
-                "routePrefix": "ag-manager",
-                "state": "RUNNING",
-                "connection": None,
-                "uptime": 846338.466451258,
-                "memoryUsage": {
-                    "rss": 181534720,
-                    "heapTotal": 111050752,
-                    "heapUsed": 107171864,
-                    "external": 80144072,
-                    "arrayBuffers": 77843804
-                },
-                "cpuUsage": {
-                    "user": 289119808,
-                    "system": 125456921
-                },
-                "pid": 715,
-                "logger": {
-                    "console": "info",
-                    "file": "info",
-                    "syslog": "warning"
-                },
-                "timestamp": 1757090846633,
-                "prevUptime": 846333.466399005
-            }],
-            "adapters": [{
-                "id": "Gateway",
-                "package_id": "@itential/adapter-automation_gateway",
-                "version": "4.31.4-2023.2.1",
-                "type": "Adapter",
-                "description": "Itential Ansible Manager Adapter",
-                "routePrefix": "automationgateway",
-                "state": "RUNNING",
-                "connection": {"state": "ONLINE"},
-                "uptime": 846361.043660279,
-                "memoryUsage": {
-                    "rss": 157736960,
-                    "heapTotal": 83701760,
-                    "heapUsed": 72719480,
-                    "external": 95906058,
-                    "arrayBuffers": 93589021
-                },
-                "cpuUsage": {
-                    "user": 468600392,
-                    "system": 137284189
-                },
-                "pid": 701,
-                "logger": {
-                    "console": "info",
-                    "file": "info",
-                    "syslog": "warning"
-                },
-                "timestamp": 1757090848784,
-                "prevUptime": 846356.042837805
-            }]
+            "applications": [
+                {
+                    "id": "AGManager",
+                    "package_id": "@itential/app-ag_manager",
+                    "version": "1.20.3-2023.2.1",
+                    "type": "Application",
+                    "description": "stand alone discovery",
+                    "routePrefix": "ag-manager",
+                    "state": "RUNNING",
+                    "connection": None,
+                    "uptime": 846338.466451258,
+                    "memoryUsage": {
+                        "rss": 181534720,
+                        "heapTotal": 111050752,
+                        "heapUsed": 107171864,
+                        "external": 80144072,
+                        "arrayBuffers": 77843804,
+                    },
+                    "cpuUsage": {"user": 289119808, "system": 125456921},
+                    "pid": 715,
+                    "logger": {"console": "info", "file": "info", "syslog": "warning"},
+                    "timestamp": 1757090846633,
+                    "prevUptime": 846333.466399005,
+                }
+            ],
+            "adapters": [
+                {
+                    "id": "Gateway",
+                    "package_id": "@itential/adapter-automation_gateway",
+                    "version": "4.31.4-2023.2.1",
+                    "type": "Adapter",
+                    "description": "Itential Ansible Manager Adapter",
+                    "routePrefix": "automationgateway",
+                    "state": "RUNNING",
+                    "connection": {"state": "ONLINE"},
+                    "uptime": 846361.043660279,
+                    "memoryUsage": {
+                        "rss": 157736960,
+                        "heapTotal": 83701760,
+                        "heapUsed": 72719480,
+                        "external": 95906058,
+                        "arrayBuffers": 93589021,
+                    },
+                    "cpuUsage": {"user": 468600392, "system": 137284189},
+                    "pid": 701,
+                    "logger": {"console": "info", "file": "info", "syslog": "warning"},
+                    "timestamp": 1757090848784,
+                    "prevUptime": 846356.042837805,
+                }
+            ],
         }
 
         # Test that our models can parse actual API data
         health_response = HealthResponse(**api_data)
-        
+
         # Verify parsing worked correctly with snake_case field access
         assert health_response.status.host == "platform.devel"
-        assert health_response.status.server_id == "c0ecb6ba62d43b067c09a1c33488a7d41df592f6"
+        assert (
+            health_response.status.server_id
+            == "c0ecb6ba62d43b067c09a1c33488a7d41df592f6"
+        )
         assert health_response.system.arch == "x64"
         assert health_response.system.free_mem == 53909569536
         assert health_response.system.total_mem == 67111694336
@@ -1603,19 +1509,19 @@ class TestHealthResponse:
         assert health_response.server.cpu_usage.user == 3899743493
         assert len(health_response.applications) == 1
         assert len(health_response.adapters) == 1
-        
+
         app = health_response.applications[0]
         assert app.package_id == "@itential/app-ag_manager"
         assert app.route_prefix == "ag-manager"
         assert app.memory_usage.heap_total == 111050752
         assert app.prev_uptime == 846333.466399005
-        
+
         adapter = health_response.adapters[0]
         assert adapter.package_id == "@itential/adapter-automation_gateway"
         assert adapter.route_prefix == "automationgateway"
         assert adapter.memory_usage.heap_total == 83701760
         assert adapter.prev_uptime == 846356.042837805
-        
+
         # Test that serialization with aliases produces API-compatible output
         serialized = health_response.model_dump(by_alias=True)
         assert "serverId" in serialized["status"]

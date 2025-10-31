@@ -117,19 +117,21 @@ class TestJobMetricElement:
 
     def test_job_metric_element_complex_metrics(self):
         """Test JobMetricElement with complex metrics object"""
-        complex_metrics = [{
-            "execution_stats": {
-                "total_runs": 150,
-                "successful_runs": 145,
-                "failed_runs": 5,
-            },
-            "performance": {
-                "avg_duration_ms": 2500.5,
-                "min_duration_ms": 1200.0,
-                "max_duration_ms": 4800.3,
-            },
-            "resource_usage": {"cpu_avg": 0.65, "memory_peak_mb": 512},
-        }]
+        complex_metrics = [
+            {
+                "execution_stats": {
+                    "total_runs": 150,
+                    "successful_runs": 145,
+                    "failed_runs": 5,
+                },
+                "performance": {
+                    "avg_duration_ms": 2500.5,
+                    "min_duration_ms": 1200.0,
+                    "max_duration_ms": 4800.3,
+                },
+                "resource_usage": {"cpu_avg": 0.65, "memory_peak_mb": 512},
+            }
+        ]
 
         element = JobMetricElement(
             _id="complex-job-123",
@@ -396,15 +398,17 @@ class TestTaskMetricElement:
 
     def test_task_metric_element_complex_metrics(self):
         """Test TaskMetricElement with complex metrics object"""
-        complex_metrics = [{
-            "timing": {
-                "total_executions": 100,
-                "avg_duration_ms": 1500.5,
-                "percentiles": {"p50": 1200.0, "p95": 2800.0, "p99": 4500.0},
-            },
-            "success_rate": 0.98,
-            "error_categories": {"timeout": 1, "connection_error": 1},
-        }]
+        complex_metrics = [
+            {
+                "timing": {
+                    "total_executions": 100,
+                    "avg_duration_ms": 1500.5,
+                    "percentiles": {"p50": 1200.0, "p95": 2800.0, "p99": 4500.0},
+                },
+                "success_rate": 0.98,
+                "error_categories": {"timeout": 1, "connection_error": 1},
+            }
+        ]
 
         element = TaskMetricElement(
             taskId="complex-task-123",

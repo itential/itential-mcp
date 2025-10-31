@@ -18,11 +18,7 @@ class Service(ServiceBase):
 
     name: str = "workflow_engine"
 
-    async def _get_route(
-        self,
-        path: str,
-        params: dict | None = None
-    ) -> list[dict]:
+    async def _get_route(self, path: str, params: dict | None = None) -> list[dict]:
         """
         Generic method to retrieve paginated data from workflow engine API endpoints.
 
@@ -71,10 +67,7 @@ class Service(ServiceBase):
 
         return results
 
-    async def get_job_metrics(
-        self,
-        params: dict | None = None
-    ) -> list[dict]:
+    async def get_job_metrics(self, params: dict | None = None) -> list[dict]:
         """
         Retrieve job metrics from the Workflow Engine.
 
@@ -100,10 +93,7 @@ class Service(ServiceBase):
         """
         return await self._get_route("/workflow_engine/jobs/metrics", params=params)
 
-    async def get_task_metrics(
-        self,
-        params: dict | None = None
-    ) -> list[dict]:
+    async def get_task_metrics(self, params: dict | None = None) -> list[dict]:
         """
         Retrieve task metrics from the Workflow Engine.
 

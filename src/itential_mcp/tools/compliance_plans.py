@@ -14,9 +14,7 @@ __tags__ = ("configuration_manager",)
 
 
 async def get_compliance_plans(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
 ) -> models.GetCompliancePlansResponse:
     """
     Get all compliance plans from Itential Platform.
@@ -40,12 +38,8 @@ async def get_compliance_plans(
 
 
 async def run_compliance_plan(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    name: Annotated[str, Field(
-        description="The name of the compliance plan to run"
-    )],
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    name: Annotated[str, Field(description="The name of the compliance plan to run")],
 ) -> models.RunCompliancePlanResponse:
     """
     Execute a compliance plan against network devices.

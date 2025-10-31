@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, Mock
 
 import ipsdk
 
-from itential_mcp import exceptions
+from itential_mcp.core import exceptions
 from itential_mcp.services.configuration_manager import Service
 from itential_mcp.services import ServiceBase
 

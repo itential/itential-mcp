@@ -5,7 +5,7 @@ import json
 
 import ipsdk
 
-from itential_mcp import exceptions
+from itential_mcp.core import exceptions
 
 from itential_mcp.services import ServiceBase
 
@@ -351,9 +351,7 @@ class Service(ServiceBase):
         return res.json()
 
     async def create_device_group(
-        self, name: str,
-        devices: list,
-        description: str | None = None
+        self, name: str, devices: list, description: str | None = None
     ) -> dict:
         """
         Create a new device group in the Configuration Manager.
@@ -385,14 +383,10 @@ class Service(ServiceBase):
         body = {
             "groupName": name,
             "groupDescription": description,
-            "deviceNames": ",".join(devices)
-
+            "deviceNames": ",".join(devices),
         }
 
-        res = await self.client.post(
-            "/configuration_manager/devicegroup",
-            json=body
-        )
+        res = await self.client.post("/configuration_manager/devicegroup", json=body)
 
         return res.json()
 

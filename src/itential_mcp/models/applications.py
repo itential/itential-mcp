@@ -19,57 +19,56 @@ class GetApplicationsElement(BaseModel):
     name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The name of the application
                 """
             )
-        )
+        ),
     ]
 
     package: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The NodeJS package name for the application
                 """
             )
-        )
+        ),
     ]
 
     version: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The application version
                 """
             )
-        )
+        ),
     ]
 
     description: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Short description of the application
                 """
             )
-        )
+        ),
     ]
-
 
     state: Annotated[
         Literal["DEAD", "STOPPED", "RUNNING", "DELETED"],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Operational state (DEAD, STOPPED, RUNNING, DELETED)
                 """
             )
-        )
+        ),
     ]
 
 
@@ -85,15 +84,14 @@ class GetApplicationsResponse(RootModel):
     root: Annotated[
         List[GetApplicationsElement],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 List of application objects with name, package, version, description, and state
                 """
             ),
-            default_factory = list
-        )
+            default_factory=list,
+        ),
     ]
-
 
 
 class StartApplicationResponse(BaseModel):
@@ -108,23 +106,23 @@ class StartApplicationResponse(BaseModel):
     name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The name of the application
                 """
             )
-        )
+        ),
     ]
 
     state: Annotated[
         Literal["DEAD", "STOPPED", "RUNNING", "DELETED"],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Operational state (DEAD, STOPPED, RUNNING, DELETED)
                 """
             )
-        )
+        ),
     ]
 
 
@@ -140,23 +138,23 @@ class StopApplicationResponse(BaseModel):
     name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The name of the application
                 """
             )
-        )
+        ),
     ]
 
     state: Annotated[
         Literal["DEAD", "STOPPED", "RUNNING", "DELETED"],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Operational state (DEAD, STOPPED, RUNNING, DELETED)
                 """
             )
-        )
+        ),
     ]
 
 
@@ -172,21 +170,21 @@ class RestartApplicationResponse(BaseModel):
     name: Annotated[
         str,
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 The name of the application
                 """
             )
-        )
+        ),
     ]
 
     state: Annotated[
         Literal["DEAD", "STOPPED", "RUNNING", "DELETED"],
         Field(
-            description = inspect.cleandoc(
+            description=inspect.cleandoc(
                 """
                 Operational state (DEAD, STOPPED, RUNNING, DELETED)
                 """
             )
-        )
+        ),
     ]

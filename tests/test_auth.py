@@ -7,7 +7,7 @@ import pytest
 
 from itential_mcp import auth
 from itential_mcp.config import Config
-from itential_mcp.exceptions import ConfigurationException
+from itential_mcp.core.exceptions import ConfigurationException
 
 
 class TestBuildAuthProvider:

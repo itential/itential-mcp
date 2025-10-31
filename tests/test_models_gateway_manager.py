@@ -9,7 +9,7 @@ from itential_mcp.models.gateway_manager import (
     GetServicesResponse,
     GatewayElement,
     GetGatewaysResponse,
-    RunServiceResponse
+    RunServiceResponse,
 )
 
 
@@ -23,21 +23,22 @@ class TestServiceElement:
             cluster="test-cluster",
             type="python-script",
             description="Test service for unit testing",
-            decorator={"type": "object", "properties": {"param1": {"type": "string"}}}
+            decorator={"type": "object", "properties": {"param1": {"type": "string"}}},
         )
-        
+
         assert element.name == "test-service"
         assert element.cluster == "test-cluster"
         assert element.type == "python-script"
         assert element.description == "Test service for unit testing"
-        assert element.decorator == {"type": "object", "properties": {"param1": {"type": "string"}}}
+        assert element.decorator == {
+            "type": "object",
+            "properties": {"param1": {"type": "string"}},
+        }
 
-    @pytest.mark.parametrize("service_type", [
-        "ansible-playbook", 
-        "python-script", 
-        "opentofu-plan",
-        "custom-script"
-    ])
+    @pytest.mark.parametrize(
+        "service_type",
+        ["ansible-playbook", "python-script", "opentofu-plan", "custom-script"],
+    )
     def test_service_element_valid_types(self, service_type):
         """Test ServiceElement with various service types"""
         element = ServiceElement(
@@ -45,7 +46,7 @@ class TestServiceElement:
             cluster="cluster",
             type=service_type,
             description="description",
-            decorator={}
+            decorator={},
         )
         assert element.type == service_type
 
@@ -53,11 +54,13 @@ class TestServiceElement:
         """Test ServiceElement with missing required fields"""
         with pytest.raises(ValidationError) as exc_info:
             ServiceElement()
-        
+
         errors = exc_info.value.errors()
         required_fields = {"name", "cluster", "type", "description", "decorator"}
-        missing_fields = {error["loc"][0] for error in errors if error["type"] == "missing"}
-        
+        missing_fields = {
+            error["loc"][0] for error in errors if error["type"] == "missing"
+        }
+
         assert required_fields == missing_fields
 
     def test_service_element_serialization(self):
@@ -68,17 +71,17 @@ class TestServiceElement:
             cluster="test-cluster",
             type="ansible-playbook",
             description="Serialization test",
-            decorator=decorator
+            decorator=decorator,
         )
-        
+
         expected_dict = {
             "name": "serialize-service",
             "cluster": "test-cluster",
             "type": "ansible-playbook",
             "description": "Serialization test",
-            "decorator": decorator
+            "decorator": decorator,
         }
-        
+
         assert element.model_dump() == expected_dict
 
     def test_service_element_json_serialization(self):
@@ -88,9 +91,9 @@ class TestServiceElement:
             cluster="json-cluster",
             type="python-script",
             description="JSON test service",
-            decorator={"schema": "test"}
+            decorator={"schema": "test"},
         )
-        
+
         json_str = element.model_dump_json()
         assert '"name":"json-service"' in json_str
         assert '"type":"python-script"' in json_str
@@ -104,19 +107,15 @@ class TestServiceElement:
                 cluster="cluster",
                 type="python-script",
                 description="description",
-                decorator={}
+                decorator={},
             )
 
     def test_service_element_empty_strings(self):
         """Test ServiceElement with empty string values"""
         element = ServiceElement(
-            name="",
-            cluster="",
-            type="",
-            description="",
-            decorator={}
+            name="", cluster="", type="", description="", decorator={}
         )
-        
+
         assert element.name == ""
         assert element.cluster == ""
         assert element.type == ""
@@ -129,9 +128,9 @@ class TestServiceElement:
             cluster="тест-кластер",
             type="скрипт-питон",
             description="Service de test avec émojis 🚀",
-            decorator={"unicode": "支持"}
+            decorator={"unicode": "支持"},
         )
-        
+
         assert element.name == "测试服务"
         assert element.cluster == "тест-кластер"
         assert element.type == "скрипт-питон"
@@ -147,26 +146,24 @@ class TestServiceElement:
                 "options": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "default": []
+                    "default": [],
                 },
                 "config": {
                     "type": "object",
-                    "properties": {
-                        "timeout": {"type": "integer", "minimum": 1}
-                    }
-                }
+                    "properties": {"timeout": {"type": "integer", "minimum": 1}},
+                },
             },
-            "required": ["username", "password"]
+            "required": ["username", "password"],
         }
-        
+
         element = ServiceElement(
             name="complex-service",
             cluster="complex-cluster",
             type="ansible-playbook",
             description="Service with complex decorator",
-            decorator=complex_decorator
+            decorator=complex_decorator,
         )
-        
+
         assert element.decorator == complex_decorator
 
 
@@ -185,9 +182,9 @@ class TestGetServicesResponse:
             cluster="single-cluster",
             type="python-script",
             description="Single service",
-            decorator={"type": "object"}
+            decorator={"type": "object"},
         )
-        
+
         response = GetServicesResponse(root=[service])
         assert len(response.root) == 1
         assert response.root[0].name == "single-service"
@@ -200,14 +197,14 @@ class TestGetServicesResponse:
                 cluster=f"cluster-{i}",
                 type="python-script",
                 description=f"Test service {i}",
-                decorator={"id": i}
+                decorator={"id": i},
             )
             for i in range(5)
         ]
-        
+
         response = GetServicesResponse(root=services)
         assert len(response.root) == 5
-        
+
         for i, service in enumerate(response.root):
             assert service.name == f"service-{i}"
 
@@ -219,24 +216,24 @@ class TestGetServicesResponse:
                 cluster="cluster-1",
                 type="ansible-playbook",
                 description="Ansible service",
-                decorator={"playbook": "test.yml"}
+                decorator={"playbook": "test.yml"},
             ),
             ServiceElement(
                 name="python-service",
                 cluster="cluster-2",
                 type="python-script",
                 description="Python service",
-                decorator={"script": "test.py"}
+                decorator={"script": "test.py"},
             ),
             ServiceElement(
                 name="terraform-service",
                 cluster="cluster-3",
                 type="opentofu-plan",
                 description="Terraform service",
-                decorator={"plan": "main.tf"}
-            )
+                decorator={"plan": "main.tf"},
+            ),
         ]
-        
+
         response = GetServicesResponse(root=services)
         types = [service.type for service in response.root]
         assert "ansible-playbook" in types
@@ -250,12 +247,12 @@ class TestGetServicesResponse:
             cluster="serialize-cluster",
             type="python-script",
             description="Serialization test",
-            decorator={"version": "1.0"}
+            decorator={"version": "1.0"},
         )
-        
+
         response = GetServicesResponse(root=[service])
         serialized = response.model_dump()
-        
+
         # GetServicesResponse is a RootModel, so it serializes directly as a list
         assert isinstance(serialized, list)
         assert len(serialized) == 1
@@ -264,13 +261,17 @@ class TestGetServicesResponse:
     def test_get_services_response_invalid_service_data(self):
         """Test GetServicesResponse with invalid service data"""
         with pytest.raises(ValidationError):
-            GetServicesResponse(root=[{
-                "name": "test",
-                "cluster": "test",
-                "type": "python-script",
-                "description": "test"
-                # Missing decorator field
-            }])
+            GetServicesResponse(
+                root=[
+                    {
+                        "name": "test",
+                        "cluster": "test",
+                        "type": "python-script",
+                        "description": "test",
+                        # Missing decorator field
+                    }
+                ]
+            )
 
     def test_get_services_response_iteration(self):
         """Test that GetServicesResponse can be iterated"""
@@ -280,16 +281,16 @@ class TestGetServicesResponse:
                 cluster=f"cluster-{i}",
                 type="python-script",
                 description=f"Iterator test {i}",
-                decorator={"index": i}
+                decorator={"index": i},
             )
             for i in range(3)
         ]
-        
+
         response = GetServicesResponse(root=services)
-        
+
         # Test direct access
         assert len(response.root) == 3
-        
+
         # Test iteration
         names = [service.name for service in response.root]
         assert names == ["iter-0", "iter-1", "iter-2"]
@@ -305,22 +306,18 @@ class TestGatewayElement:
             cluster="test-cluster",
             description="Test gateway for unit testing",
             status="connected",
-            enabled=True
+            enabled=True,
         )
-        
+
         assert element.name == "test-gateway"
         assert element.cluster == "test-cluster"
         assert element.description == "Test gateway for unit testing"
         assert element.status == "connected"
         assert element.enabled is True
 
-    @pytest.mark.parametrize("status", [
-        "connected", 
-        "disconnected", 
-        "connecting",
-        "error",
-        "unknown"
-    ])
+    @pytest.mark.parametrize(
+        "status", ["connected", "disconnected", "connecting", "error", "unknown"]
+    )
     def test_gateway_element_valid_statuses(self, status):
         """Test GatewayElement with various status values"""
         element = GatewayElement(
@@ -328,7 +325,7 @@ class TestGatewayElement:
             cluster="cluster",
             description="description",
             status=status,
-            enabled=True
+            enabled=True,
         )
         assert element.status == status
 
@@ -340,7 +337,7 @@ class TestGatewayElement:
             cluster="cluster",
             description="description",
             status="connected",
-            enabled=enabled
+            enabled=enabled,
         )
         assert element.enabled is enabled
 
@@ -348,11 +345,13 @@ class TestGatewayElement:
         """Test GatewayElement with missing required fields"""
         with pytest.raises(ValidationError) as exc_info:
             GatewayElement()
-        
+
         errors = exc_info.value.errors()
         required_fields = {"name", "cluster", "description", "status", "enabled"}
-        missing_fields = {error["loc"][0] for error in errors if error["type"] == "missing"}
-        
+        missing_fields = {
+            error["loc"][0] for error in errors if error["type"] == "missing"
+        }
+
         assert required_fields == missing_fields
 
     def test_gateway_element_serialization(self):
@@ -362,17 +361,17 @@ class TestGatewayElement:
             cluster="serialize-cluster",
             description="Serialization test",
             status="disconnected",
-            enabled=False
+            enabled=False,
         )
-        
+
         expected_dict = {
             "name": "serialize-gateway",
             "cluster": "serialize-cluster",
             "description": "Serialization test",
             "status": "disconnected",
-            "enabled": False
+            "enabled": False,
         }
-        
+
         assert element.model_dump() == expected_dict
 
     def test_gateway_element_field_validation(self):
@@ -384,7 +383,7 @@ class TestGatewayElement:
                 cluster="cluster",
                 description="description",
                 status="connected",
-                enabled="invalid_boolean"  # Should be boolean
+                enabled="invalid_boolean",  # Should be boolean
             )
 
     def test_gateway_element_unicode_support(self):
@@ -394,9 +393,9 @@ class TestGatewayElement:
             cluster="тест-кластер",
             description="Gateway de test avec émojis 🌐",
             status="подключено",
-            enabled=True
+            enabled=True,
         )
-        
+
         assert element.name == "测试网关"
         assert element.cluster == "тест-кластер"
         assert element.description == "Gateway de test avec émojis 🌐"
@@ -418,9 +417,9 @@ class TestGetGatewaysResponse:
             cluster="single-cluster",
             description="Single gateway",
             status="connected",
-            enabled=True
+            enabled=True,
         )
-        
+
         response = GetGatewaysResponse(root=[gateway])
         assert len(response.root) == 1
         assert response.root[0].name == "single-gateway"
@@ -433,14 +432,14 @@ class TestGetGatewaysResponse:
                 cluster=f"cluster-{i}",
                 description=f"Test gateway {i}",
                 status="connected",
-                enabled=i % 2 == 0  # Alternate enabled/disabled
+                enabled=i % 2 == 0,  # Alternate enabled/disabled
             )
             for i in range(5)
         ]
-        
+
         response = GetGatewaysResponse(root=gateways)
         assert len(response.root) == 5
-        
+
         for i, gateway in enumerate(response.root):
             assert gateway.name == f"gateway-{i}"
 
@@ -452,24 +451,24 @@ class TestGetGatewaysResponse:
                 cluster="cluster-1",
                 description="Connected gateway",
                 status="connected",
-                enabled=True
+                enabled=True,
             ),
             GatewayElement(
                 name="disconnected-gateway",
                 cluster="cluster-2",
                 description="Disconnected gateway",
                 status="disconnected",
-                enabled=False
+                enabled=False,
             ),
             GatewayElement(
                 name="error-gateway",
                 cluster="cluster-3",
                 description="Error gateway",
                 status="error",
-                enabled=True
-            )
+                enabled=True,
+            ),
         ]
-        
+
         response = GetGatewaysResponse(root=gateways)
         statuses = [gateway.status for gateway in response.root]
         assert "connected" in statuses
@@ -483,12 +482,12 @@ class TestGetGatewaysResponse:
             cluster="serialize-cluster",
             description="Serialization test",
             status="connected",
-            enabled=True
+            enabled=True,
         )
-        
+
         response = GetGatewaysResponse(root=[gateway])
         serialized = response.model_dump()
-        
+
         # GetGatewaysResponse is a RootModel, so it serializes directly as a list
         assert isinstance(serialized, list)
         assert len(serialized) == 1
@@ -506,9 +505,9 @@ class TestRunServiceResponse:
             return_code=0,
             start_time="2025-01-01T10:00:00Z",
             end_time="2025-01-01T10:00:05Z",
-            elapsed_time=5.0
+            elapsed_time=5.0,
         )
-        
+
         assert response.stdout == "Hello, World!"
         assert response.stderr == ""
         assert response.return_code == 0
@@ -525,7 +524,7 @@ class TestRunServiceResponse:
             return_code=return_code,
             start_time="2025-01-01T10:00:00Z",
             end_time="2025-01-01T10:00:01Z",
-            elapsed_time=1.0
+            elapsed_time=1.0,
         )
         assert response.return_code == return_code
 
@@ -537,9 +536,9 @@ class TestRunServiceResponse:
             return_code=0,
             start_time="2025-01-01T12:00:00Z",
             end_time="2025-01-01T12:00:10Z",
-            elapsed_time=10.5
+            elapsed_time=10.5,
         )
-        
+
         assert response.return_code == 0
         assert "successfully" in response.stdout
         assert response.stderr == ""
@@ -553,9 +552,9 @@ class TestRunServiceResponse:
             return_code=1,
             start_time="2025-01-01T12:00:00Z",
             end_time="2025-01-01T12:00:30Z",
-            elapsed_time=30.0
+            elapsed_time=30.0,
         )
-        
+
         assert response.return_code != 0
         assert "Error" in response.stderr
         assert response.elapsed_time == 30.0
@@ -564,11 +563,13 @@ class TestRunServiceResponse:
         """Test RunServiceResponse with missing required fields"""
         with pytest.raises(ValidationError) as exc_info:
             RunServiceResponse()
-        
+
         errors = exc_info.value.errors()
         required_fields = {"return_code", "start_time", "end_time", "elapsed_time"}
-        missing_fields = {error["loc"][0] for error in errors if error["type"] == "missing"}
-        
+        missing_fields = {
+            error["loc"][0] for error in errors if error["type"] == "missing"
+        }
+
         assert required_fields == missing_fields
 
     def test_run_service_response_field_validation(self):
@@ -581,9 +582,9 @@ class TestRunServiceResponse:
                 return_code=None,  # Should be int
                 start_time="2025-01-01T10:00:00Z",
                 end_time="2025-01-01T10:00:01Z",
-                elapsed_time=1.0
+                elapsed_time=1.0,
             )
-        
+
         # Test invalid elapsed_time type
         with pytest.raises(ValidationError):
             RunServiceResponse(
@@ -592,7 +593,7 @@ class TestRunServiceResponse:
                 return_code=0,
                 start_time="2025-01-01T10:00:00Z",
                 end_time="2025-01-01T10:00:01Z",
-                elapsed_time=None  # Should be float
+                elapsed_time=None,  # Should be float
             )
 
     def test_run_service_response_serialization(self):
@@ -603,9 +604,9 @@ class TestRunServiceResponse:
             return_code=0,
             start_time="2025-01-01T14:00:00.000Z",
             end_time="2025-01-01T14:00:02.500Z",
-            elapsed_time=2.5
+            elapsed_time=2.5,
         )
-        
+
         serialized = response.model_dump()
         expected = {
             "stdout": "Serialization test output",
@@ -613,9 +614,9 @@ class TestRunServiceResponse:
             "return_code": 0,
             "start_time": "2025-01-01T14:00:00.000Z",
             "end_time": "2025-01-01T14:00:02.500Z",
-            "elapsed_time": 2.5
+            "elapsed_time": 2.5,
         }
-        
+
         assert serialized == expected
 
     def test_run_service_response_unicode_output(self):
@@ -626,9 +627,9 @@ class TestRunServiceResponse:
             return_code=0,
             start_time="2025-01-01T10:00:00Z",
             end_time="2025-01-01T10:00:01Z",
-            elapsed_time=1.0
+            elapsed_time=1.0,
         )
-        
+
         assert "成功完成任务 ✅" in response.stdout
         assert "Avertissement: mode de test 🧪" in response.stderr
 
@@ -636,16 +637,16 @@ class TestRunServiceResponse:
         """Test RunServiceResponse with large output"""
         large_stdout = "Line {}\n" * 10000
         large_stderr = "Error {}\n" * 1000
-        
+
         response = RunServiceResponse(
             stdout=large_stdout.format(*range(10000)),
             stderr=large_stderr.format(*range(1000)),
             return_code=2,
             start_time="2025-01-01T10:00:00Z",
             end_time="2025-01-01T10:05:00Z",
-            elapsed_time=300.0
+            elapsed_time=300.0,
         )
-        
+
         assert len(response.stdout) > 50000
         assert len(response.stderr) > 5000
         assert response.elapsed_time == 300.0
@@ -658,9 +659,9 @@ class TestRunServiceResponse:
             return_code=0,
             start_time="2025-01-01T10:00:00Z",
             end_time="2025-01-01T10:00:00Z",
-            elapsed_time=0.0
+            elapsed_time=0.0,
         )
-        
+
         assert response.elapsed_time == 0.0
 
     def test_run_service_response_negative_elapsed_time(self):
@@ -672,9 +673,9 @@ class TestRunServiceResponse:
             return_code=0,
             start_time="2025-01-01T10:00:01Z",
             end_time="2025-01-01T10:00:00Z",
-            elapsed_time=-1.0
+            elapsed_time=-1.0,
         )
-        
+
         assert response.elapsed_time == -1.0
 
 
@@ -688,36 +689,32 @@ class TestModelInteroperability:
             cluster="test-cluster",
             type="python-script",
             description="Test service",
-            decorator={}
+            decorator={},
         )
-        
+
         gateway = GatewayElement(
             name="test-gateway",
             cluster="test-cluster",
             description="Test gateway",
             status="connected",
-            enabled=True
+            enabled=True,
         )
-        
+
         services_response = GetServicesResponse(root=[service])
         gateways_response = GetGatewaysResponse(root=[gateway])
-        
+
         # Both should serialize as lists
         assert isinstance(services_response.model_dump(), list)
         assert isinstance(gateways_response.model_dump(), list)
 
     def test_model_field_descriptions_exist(self):
         """Test that all models have proper field descriptions"""
-        models_to_test = [
-            ServiceElement,
-            GatewayElement,
-            RunServiceResponse
-        ]
-        
+        models_to_test = [ServiceElement, GatewayElement, RunServiceResponse]
+
         for model_class in models_to_test:
             schema = model_class.model_json_schema()
             properties = schema["properties"]
-            
+
             for field_name, field_info in properties.items():
                 assert "description" in field_info
                 assert len(field_info["description"]) > 0
@@ -729,13 +726,13 @@ class TestModelInteroperability:
             GetServicesResponse,
             GatewayElement,
             GetGatewaysResponse,
-            RunServiceResponse
+            RunServiceResponse,
         ]
-        
+
         for model_class in models:
             schema = model_class.model_json_schema()
             assert "type" in schema
-            
+
             # RootModels have different schema structure
             if model_class in [GetServicesResponse, GetGatewaysResponse]:
                 assert "items" in schema
@@ -745,18 +742,27 @@ class TestModelInteroperability:
     def test_model_equality(self):
         """Test model equality behavior"""
         service1 = ServiceElement(
-            name="test", cluster="test", type="python-script",
-            description="test", decorator={}
+            name="test",
+            cluster="test",
+            type="python-script",
+            description="test",
+            decorator={},
         )
         service2 = ServiceElement(
-            name="test", cluster="test", type="python-script",
-            description="test", decorator={}
+            name="test",
+            cluster="test",
+            type="python-script",
+            description="test",
+            decorator={},
         )
         service3 = ServiceElement(
-            name="different", cluster="test", type="python-script",
-            description="test", decorator={}
+            name="different",
+            cluster="test",
+            type="python-script",
+            description="test",
+            decorator={},
         )
-        
+
         assert service1 == service2
         assert service1 != service3
 
@@ -767,30 +773,30 @@ class TestModelValidationEdgeCases:
     def test_extremely_long_field_values(self):
         """Test models with extremely long field values"""
         long_string = "x" * 10000
-        
+
         service = ServiceElement(
             name=long_string,
             cluster=long_string,
             type=long_string,
             description=long_string,
-            decorator={"long_key": long_string}
+            decorator={"long_key": long_string},
         )
-        
+
         assert len(service.name) == 10000
         assert len(service.cluster) == 10000
 
     def test_special_characters_in_fields(self):
         """Test models with special characters in fields"""
         special_chars = "!@#$%^&*()[]{}|;':\",./<>?"
-        
+
         gateway = GatewayElement(
             name=special_chars,
             cluster=special_chars,
             description=special_chars,
             status=special_chars,
-            enabled=True
+            enabled=True,
         )
-        
+
         assert gateway.name == special_chars
 
     def test_empty_and_whitespace_strings(self):
@@ -801,9 +807,9 @@ class TestModelValidationEdgeCases:
             return_code=0,
             start_time="\t",
             end_time="\n",
-            elapsed_time=0.0
+            elapsed_time=0.0,
         )
-        
+
         assert run_response.stdout == ""
         assert run_response.stderr == "   "
         assert run_response.start_time == "\t"

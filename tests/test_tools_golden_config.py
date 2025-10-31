@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, Mock
 
 from fastmcp import Context
 
-from itential_mcp import exceptions
-from itential_mcp import errors
+from itential_mcp.core import exceptions
+from itential_mcp.core import errors
 from itential_mcp.tools.golden_config import (
     get_golden_config_trees,
     create_golden_config_tree,
