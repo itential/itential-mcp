@@ -1,10 +1,10 @@
 <div align="left">
 
-[![PyPI version](https://badge.fury.io/py/ipsdk.svg)](https://badge.fury.io/py/ipsdk)
+[![PyPI version](https://badge.fury.io/py/itential-mcp.svg)](https://badge.fury.io/py/itential-mcp)
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/itential/itential-mcp)
-[![Coverage](https://img.shields.io/badge/coverage-95%25-green)](https://github.com/itential/ipsdk)
+[![Coverage](https://img.shields.io/badge/coverage-95%25-green)](https://github.com/itential/itential-mcp)
 
 </div>
 
