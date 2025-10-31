@@ -3,7 +3,7 @@
 
 from datetime import datetime, timezone
 
-from itential_mcp.timeutils import epoch_to_timestamp
+from itential_mcp.utilities.time import epoch_to_timestamp
 
 
 def test_epoch_to_timestamp_basic():

@@ -11,7 +11,7 @@ from typing import get_type_hints
 
 from pydantic import BaseModel
 
-from . import terminal
+from .. import terminal
 
 
 def tags(*tag_list) -> Callable:

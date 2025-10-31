@@ -7,9 +7,9 @@ from pydantic import Field
 
 from fastmcp import Context
 
-from itential_mcp import timeutils
+from itential_mcp.utilities import time as timeutils
 from itential_mcp import exceptions
-from itential_mcp import jsonutils
+from itential_mcp.utilities import json as jsonutils
 
 from itential_mcp.models import operations_manager as models
 
