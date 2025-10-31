@@ -804,3 +804,325 @@ class TestServiceIntegration:
 
         with pytest.raises(Exception, match="Network error"):
             await service.describe_resource("test-resource")
+
+
+class TestGetActionExecutions:
+    """Test the get_action_executions method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock AsyncPlatform client"""
+        return AsyncMock(spec=AsyncPlatform)
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mock client"""
+        return Service(mock_client)
+
+    @pytest.mark.asyncio
+    async def test_get_action_executions_empty_result(self, service):
+        """Test get_action_executions with no action executions"""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"data": [], "metadata": {"total": 0}}
+        service.client.get.return_value = mock_response
+
+        result = await service.get_action_executions()
+
+        assert result == []
+        service.client.get.assert_called_once_with(
+            "/lifecycle-manager/action-executions", params={"limit": 100, "skip": 0}
+        )
+
+    @pytest.mark.asyncio
+    async def test_get_action_executions_single_page(self, service):
+        """Test get_action_executions with results fitting in single page"""
+        test_data = [
+            {
+                "_id": "1",
+                "modelName": "test-resource",
+                "instanceName": "test-instance",
+                "actionName": "create",
+                "status": "completed",
+            },
+            {
+                "_id": "2",
+                "modelName": "other-resource",
+                "instanceName": "other-instance", 
+                "actionName": "update",
+                "status": "running",
+            },
+        ]
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"data": test_data, "metadata": {"total": 2}}
+        service.client.get.return_value = mock_response
+
+        result = await service.get_action_executions()
+
+        assert result == test_data
+        assert len(result) == 2
+
+    @pytest.mark.asyncio
+    async def test_get_action_executions_with_resource_filter(self, service):
+        """Test get_action_executions with resource name filter"""
+        test_data = [
+            {
+                "_id": "1",
+                "modelName": "test-resource",
+                "instanceName": "test-instance",
+                "actionName": "create",
+            }
+        ]
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"data": test_data, "metadata": {"total": 1}}
+        service.client.get.return_value = mock_response
+
+        result = await service.get_action_executions(resource_name="test-resource")
+
+        assert result == test_data
+        service.client.get.assert_called_once_with(
+            "/lifecycle-manager/action-executions",
+            params={
+                "limit": 100,
+                "skip": 0,
+                "starts-with[modelName]": "test-resource",
+            },
+        )
+
+    @pytest.mark.asyncio
+    async def test_get_action_executions_with_instance_filter(self, service):
+        """Test get_action_executions with instance name filter"""
+        test_data = [
+            {
+                "_id": "1",
+                "modelName": "test-resource",
+                "instanceName": "test-instance",
+                "actionName": "create",
+            }
+        ]
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"data": test_data, "metadata": {"total": 1}}
+        service.client.get.return_value = mock_response
+
+        result = await service.get_action_executions(instance_name="test-instance")
+
+        assert result == test_data
+        service.client.get.assert_called_once_with(
+            "/lifecycle-manager/action-executions",
+            params={
+                "limit": 100,
+                "skip": 0,
+                "starts-with[instanceName]": "test-instance",
+            },
+        )
+
+    @pytest.mark.asyncio
+    async def test_get_action_executions_with_both_filters(self, service):
+        """Test get_action_executions with both resource and instance name filters"""
+        test_data = [
+            {
+                "_id": "1",
+                "modelName": "test-resource",
+                "instanceName": "test-instance",
+                "actionName": "create",
+            }
+        ]
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"data": test_data, "metadata": {"total": 1}}
+        service.client.get.return_value = mock_response
+
+        result = await service.get_action_executions(
+            resource_name="test-resource", instance_name="test-instance"
+        )
+
+        assert result == test_data
+        service.client.get.assert_called_once_with(
+            "/lifecycle-manager/action-executions",
+            params={
+                "limit": 100,
+                "skip": 0,
+                "starts-with[modelName]": "test-resource",
+                "starts-with[instanceName]": "test-instance",
+            },
+        )
+
+    @pytest.mark.asyncio
+    async def test_get_action_executions_with_empty_string_filters(self, service):
+        """Test get_action_executions with empty string filters (should be ignored)"""
+        test_data = [{"_id": "1", "modelName": "test-resource"}]
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"data": test_data, "metadata": {"total": 1}}
+        service.client.get.return_value = mock_response
+
+        result = await service.get_action_executions(
+            resource_name="", instance_name=""
+        )
+
+        assert result == test_data
+        # Should not include the starts-with filters for empty strings
+        service.client.get.assert_called_once_with(
+            "/lifecycle-manager/action-executions", params={"limit": 100, "skip": 0}
+        )
+
+    @pytest.mark.asyncio
+    async def test_get_action_executions_multiple_pages(self, service):
+        """Test get_action_executions with results requiring multiple pages"""
+        # First page data
+        first_page_data = [
+            {"_id": str(i), "modelName": f"resource{i}", "actionName": "create"}
+            for i in range(100)
+        ]
+        # Second page data
+        second_page_data = [
+            {"_id": str(i), "modelName": f"resource{i}", "actionName": "create"}
+            for i in range(100, 150)
+        ]
+
+        # Mock first call (returns total count)
+        first_response = MagicMock()
+        first_response.json.return_value = {
+            "data": first_page_data,
+            "metadata": {"total": 150},
+        }
+
+        # Mock second call (additional page)
+        second_response = MagicMock()
+        second_response.json.return_value = {
+            "data": second_page_data,
+            "metadata": {"total": 150},
+        }
+
+        service.client.get.side_effect = [first_response, second_response]
+
+        result = await service.get_action_executions()
+
+        assert len(result) == 150
+        # Verify we got data from both pages
+        first_page_ids = [x["_id"] for x in result if int(x["_id"]) < 100]
+        second_page_ids = [x["_id"] for x in result if int(x["_id"]) >= 100]
+        assert len(first_page_ids) == 100
+        assert len(second_page_ids) == 50
+
+    @pytest.mark.asyncio
+    async def test_get_action_executions_pagination_exception_handling(self, service):
+        """Test get_action_executions handles pagination exceptions"""
+        # First page succeeds
+        first_response = MagicMock()
+        first_response.json.return_value = {
+            "data": [{"_id": "1", "modelName": "resource1"}],
+            "metadata": {"total": 150},
+        }
+
+        # Second page fails
+        service.client.get.side_effect = [first_response, Exception("Network error")]
+
+        with pytest.raises(Exception, match="Network error"):
+            await service.get_action_executions()
+
+
+class TestFetchPageWithParams:
+    """Test the _fetch_page_with_params helper method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock AsyncPlatform client"""
+        return AsyncMock(spec=AsyncPlatform)
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mock client"""
+        return Service(mock_client)
+
+    @pytest.mark.asyncio
+    async def test_fetch_page_with_params_no_filters(self, service):
+        """Test _fetch_page_with_params without filters"""
+        test_data = [{"_id": "1", "modelName": "resource1"}]
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"data": test_data, "metadata": {"total": 1}}
+        service.client.get.return_value = mock_response
+
+        result = await service._fetch_page_with_params("/test-endpoint", 50, 25)
+
+        assert result == test_data
+        service.client.get.assert_called_once_with(
+            "/test-endpoint", params={"limit": 25, "skip": 50}
+        )
+
+    @pytest.mark.asyncio
+    async def test_fetch_page_with_params_with_resource_filter(self, service):
+        """Test _fetch_page_with_params with resource name filter"""
+        test_data = [{"_id": "1", "modelName": "test-resource"}]
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"data": test_data, "metadata": {"total": 1}}
+        service.client.get.return_value = mock_response
+
+        result = await service._fetch_page_with_params(
+            "/test-endpoint", 50, 25, resource_name="test-resource"
+        )
+
+        assert result == test_data
+        service.client.get.assert_called_once_with(
+            "/test-endpoint",
+            params={
+                "limit": 25,
+                "skip": 50,
+                "starts-with[modelName]": "test-resource",
+            },
+        )
+
+    @pytest.mark.asyncio
+    async def test_fetch_page_with_params_with_instance_filter(self, service):
+        """Test _fetch_page_with_params with instance name filter"""
+        test_data = [{"_id": "1", "instanceName": "test-instance"}]
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"data": test_data, "metadata": {"total": 1}}
+        service.client.get.return_value = mock_response
+
+        result = await service._fetch_page_with_params(
+            "/test-endpoint", 50, 25, instance_name="test-instance"
+        )
+
+        assert result == test_data
+        service.client.get.assert_called_once_with(
+            "/test-endpoint",
+            params={
+                "limit": 25,
+                "skip": 50,
+                "starts-with[instanceName]": "test-instance",
+            },
+        )
+
+    @pytest.mark.asyncio
+    async def test_fetch_page_with_params_with_both_filters(self, service):
+        """Test _fetch_page_with_params with both filters"""
+        test_data = [{"_id": "1", "modelName": "test-resource"}]
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"data": test_data, "metadata": {"total": 1}}
+        service.client.get.return_value = mock_response
+
+        result = await service._fetch_page_with_params(
+            "/test-endpoint",
+            50,
+            25,
+            resource_name="test-resource",
+            instance_name="test-instance",
+        )
+
+        assert result == test_data
+        service.client.get.assert_called_once_with(
+            "/test-endpoint",
+            params={
+                "limit": 25,
+                "skip": 50,
+                "starts-with[modelName]": "test-resource",
+                "starts-with[instanceName]": "test-instance",
+            },
+        )
