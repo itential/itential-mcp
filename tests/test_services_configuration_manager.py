@@ -127,6 +127,40 @@ class TestConfigurationManagerService:
         assert result == []
 
     @pytest.mark.asyncio
+    async def test_get_configuration_parser_names_success(self, service, mock_client):
+        """Test successful retrieval of configuration parser names."""
+        expected_parsers = [
+            {"name": "cisco_ios"},
+            {"name": "juniper"},
+            {"name": "arista_eos"},
+        ]
+
+        mock_response = Mock()
+        mock_response.json.return_value = {"list": expected_parsers}
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_configuration_parser_names()
+
+        mock_client.get.assert_called_once_with(
+            "/configuration_manager/configurations/parser"
+        )
+        assert result == ["cisco_ios", "juniper", "arista_eos"]
+
+    @pytest.mark.asyncio
+    async def test_get_configuration_parser_names_empty(self, service, mock_client):
+        """Test get_configuration_parser_names with empty list."""
+        mock_response = Mock()
+        mock_response.json.return_value = {"list": []}
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_configuration_parser_names()
+
+        mock_client.get.assert_called_once_with(
+            "/configuration_manager/configurations/parser"
+        )
+        assert result == []
+
+    @pytest.mark.asyncio
     async def test_create_golden_config_tree_minimal(self, service, mock_client):
         """Test creating a golden config tree with minimal parameters."""
         expected_response = {
@@ -134,6 +168,13 @@ class TestConfigurationManagerService:
             "name": "test-tree",
             "deviceType": "cisco_ios",
         }
+
+        # Mock the parser endpoint for device type validation
+        parser_mock_response = Mock()
+        parser_mock_response.json.return_value = {
+            "list": [{"name": "cisco_ios"}, {"name": "juniper"}]
+        }
+        mock_client.get.return_value = parser_mock_response
 
         mock_response = Mock()
         mock_response.json.return_value = expected_response
@@ -143,6 +184,9 @@ class TestConfigurationManagerService:
             name="test-tree", device_type="cisco_ios"
         )
 
+        mock_client.get.assert_called_once_with(
+            "/configuration_manager/configurations/parser"
+        )
         mock_client.post.assert_called_once_with(
             "/configuration_manager/configs",
             json={"name": "test-tree", "deviceType": "cisco_ios"},
@@ -159,6 +203,13 @@ class TestConfigurationManagerService:
         }
         variables = {"var1": "value1", "var2": "value2"}
 
+        # Mock the parser endpoint for device type validation
+        parser_mock_response = Mock()
+        parser_mock_response.json.return_value = {
+            "list": [{"name": "cisco_ios"}, {"name": "juniper"}]
+        }
+        mock_client.get.return_value = parser_mock_response
+
         mock_response = Mock()
         mock_response.json.return_value = expected_response
         mock_client.post.return_value = mock_response
@@ -167,6 +218,9 @@ class TestConfigurationManagerService:
             name="test-tree", device_type="cisco_ios", variables=variables
         )
 
+        mock_client.get.assert_called_once_with(
+            "/configuration_manager/configurations/parser"
+        )
         mock_client.post.assert_called_once_with(
             "/configuration_manager/configs",
             json={"name": "test-tree", "deviceType": "cisco_ios"},
@@ -189,6 +243,13 @@ class TestConfigurationManagerService:
         }
         template = "interface {{ interface_name }}\n description {{ description }}"
 
+        # Mock the parser endpoint for device type validation
+        parser_mock_response = Mock()
+        parser_mock_response.json.return_value = {
+            "list": [{"name": "cisco_ios"}, {"name": "juniper"}]
+        }
+        mock_client.get.return_value = parser_mock_response
+
         mock_response = Mock()
         mock_response.json.return_value = expected_response
         mock_client.post.return_value = mock_response
@@ -200,6 +261,9 @@ class TestConfigurationManagerService:
             name="test-tree", device_type="cisco_ios", template=template
         )
 
+        mock_client.get.assert_called_once_with(
+            "/configuration_manager/configurations/parser"
+        )
         mock_client.post.assert_called_once_with(
             "/configuration_manager/configs",
             json={"name": "test-tree", "deviceType": "cisco_ios"},
@@ -224,6 +288,13 @@ class TestConfigurationManagerService:
         template = "interface {{ interface_name }}"
         variables = {"interface_name": "GigabitEthernet0/1"}
 
+        # Mock the parser endpoint for device type validation
+        parser_mock_response = Mock()
+        parser_mock_response.json.return_value = {
+            "list": [{"name": "cisco_ios"}, {"name": "juniper"}]
+        }
+        mock_client.get.return_value = parser_mock_response
+
         mock_response = Mock()
         mock_response.json.return_value = expected_response
         mock_client.post.return_value = mock_response
@@ -237,6 +308,9 @@ class TestConfigurationManagerService:
             variables=variables,
         )
 
+        mock_client.get.assert_called_once_with(
+            "/configuration_manager/configurations/parser"
+        )
         mock_client.post.assert_called_once_with(
             "/configuration_manager/configs",
             json={"name": "test-tree", "deviceType": "cisco_ios"},
@@ -256,6 +330,13 @@ class TestConfigurationManagerService:
     @pytest.mark.asyncio
     async def test_create_golden_config_tree_server_error(self, service, mock_client):
         """Test create_golden_config_tree with server error."""
+        # Mock the parser endpoint for device type validation
+        parser_mock_response = Mock()
+        parser_mock_response.json.return_value = {
+            "list": [{"name": "cisco_ios"}, {"name": "juniper"}]
+        }
+        mock_client.get.return_value = parser_mock_response
+
         error_response = {"error": "Tree name already exists"}
         server_error = ipsdk.exceptions.ServerError(
             "Server Error", details={"response_body": json.dumps(error_response)}
@@ -269,6 +350,28 @@ class TestConfigurationManagerService:
 
         # Just verify that the ServerException was raised correctly
         assert isinstance(exc_info.value, exceptions.ServerException)
+
+    @pytest.mark.asyncio
+    async def test_create_golden_config_tree_invalid_device_type(
+        self, service, mock_client
+    ):
+        """Test create_golden_config_tree with invalid device type."""
+        # Mock the parser endpoint with valid device types
+        parser_mock_response = Mock()
+        parser_mock_response.json.return_value = {
+            "list": [{"name": "cisco_ios"}, {"name": "juniper"}]
+        }
+        mock_client.get.return_value = parser_mock_response
+
+        with pytest.raises(ValueError) as exc_info:
+            await service.create_golden_config_tree(
+                name="test-tree", device_type="invalid_device"
+            )
+
+        # Verify the error message contains the invalid type and valid types
+        assert "invalid_device" in str(exc_info.value)
+        assert "cisco_ios" in str(exc_info.value)
+        assert "juniper" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_describe_golden_config_tree_version(self, service, mock_client):
