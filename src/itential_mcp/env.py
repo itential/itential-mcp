@@ -7,7 +7,7 @@ from typing import Callable, Any
 
 from functools import partial
 
-from . import stringutils
+from .utilities import string as stringutils
 
 
 def get(f: Callable, key: str, default: Any | None=None) -> Any:

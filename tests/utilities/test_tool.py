@@ -6,7 +6,7 @@ import tempfile
 import pytest
 from unittest.mock import patch, MagicMock
 
-from itential_mcp.toolutils import tags, itertools, display_tools, display_tags
+from itential_mcp.utilities.tool import tags, itertools, display_tools, display_tags
 
 
 class TestTagsDecorator:
@@ -119,7 +119,7 @@ def tagged_function():
         """Test itertools with function-level tags decorator"""
         with tempfile.TemporaryDirectory() as temp_dir:
             test_module_content = '''
-from itential_mcp.toolutils import tags
+from itential_mcp.utilities.tool import tags
 
 @tags("decorated", "special")
 def decorated_function():
@@ -234,8 +234,8 @@ class TestDisplayFunctions:
     """Test the display functions"""
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.toolutils.terminal.getcols", return_value=80)
-    @patch("itential_mcp.toolutils.itertools")
+    @patch("itential_mcp.utilities.tool.terminal.getcols", return_value=80)
+    @patch("itential_mcp.utilities.tool.itertools")
     @patch("builtins.print")
     async def test_display_tools(self, mock_print, mock_itertools, mock_getcols):
         """Test display_tools function"""
@@ -260,8 +260,8 @@ class TestDisplayFunctions:
         assert "DESCRIPTION" in str(header_call)
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.toolutils.terminal.getcols", return_value=40)
-    @patch("itential_mcp.toolutils.itertools")
+    @patch("itential_mcp.utilities.tool.terminal.getcols", return_value=40)
+    @patch("itential_mcp.utilities.tool.itertools")
     @patch("builtins.print")
     async def test_display_tools_long_description_truncation(
         self, mock_print, mock_itertools, mock_getcols
@@ -285,7 +285,7 @@ class TestDisplayFunctions:
         assert found_truncation
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.toolutils.itertools")
+    @patch("itential_mcp.utilities.tool.itertools")
     @patch("builtins.print")
     async def test_display_tags(self, mock_print, mock_itertools):
         """Test display_tags function"""
@@ -322,7 +322,7 @@ class TestDisplayFunctions:
             assert tag in printed_tags
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.toolutils.itertools")
+    @patch("itential_mcp.utilities.tool.itertools")
     @patch("builtins.print")
     async def test_display_tags_empty(self, mock_print, mock_itertools):
         """Test display_tags with no tools"""
@@ -336,7 +336,7 @@ class TestDisplayFunctions:
         assert "TAGS" in str(header_call)
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.toolutils.itertools")
+    @patch("itential_mcp.utilities.tool.itertools")
     @patch("builtins.print")
     async def test_display_tools_empty(self, mock_print, mock_itertools):
         """Test display_tools with no tools"""

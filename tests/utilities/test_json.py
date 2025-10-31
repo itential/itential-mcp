@@ -5,7 +5,7 @@ import json
 import pytest
 from unittest.mock import patch
 
-from itential_mcp import jsonutils
+from itential_mcp.utilities import json as jsonutils
 from itential_mcp import exceptions
 
 
@@ -119,7 +119,7 @@ class TestLoads:
         error = exc_info.value
         assert len(error.details["input_data"]) <= 200
 
-    @patch('itential_mcp.jsonutils.logging.error')
+    @patch('itential_mcp.utilities.json.logging.error')
     def test_loads_logs_error_on_json_decode_error(self, mock_log_error):
         """Test loads logs error when JSON decode fails"""
         invalid_json = '{"invalid": json}'
@@ -129,8 +129,8 @@ class TestLoads:
         
         mock_log_error.assert_called_once()
 
-    @patch('itential_mcp.jsonutils.json.loads')
-    @patch('itential_mcp.jsonutils.logging.error')
+    @patch('itential_mcp.utilities.json.json.loads')
+    @patch('itential_mcp.utilities.json.logging.error')
     def test_loads_handles_unexpected_exception(self, mock_log_error, mock_json_loads):
         """Test loads handles unexpected exceptions"""
         mock_json_loads.side_effect = RuntimeError("Unexpected error")
@@ -265,7 +265,7 @@ class TestDumps:
         error = exc_info.value
         assert "Failed to serialize object to JSON" in str(error)
 
-    @patch('itential_mcp.jsonutils.logging.error')
+    @patch('itential_mcp.utilities.json.logging.error')
     def test_dumps_logs_error_on_type_error(self, mock_log_error):
         """Test dumps logs error when serialization fails"""
         class NonSerializable:
@@ -276,8 +276,8 @@ class TestDumps:
         
         mock_log_error.assert_called_once()
 
-    @patch('itential_mcp.jsonutils.json.dumps')
-    @patch('itential_mcp.jsonutils.logging.error')
+    @patch('itential_mcp.utilities.json.json.dumps')
+    @patch('itential_mcp.utilities.json.logging.error')
     def test_dumps_handles_unexpected_exception(self, mock_log_error, mock_json_dumps):
         """Test dumps handles unexpected exceptions"""
         mock_json_dumps.side_effect = RuntimeError("Unexpected error")
@@ -387,7 +387,7 @@ class TestModuleStructure:
 
     def test_module_imports(self):
         """Test that jsonutils module imports correctly"""
-        import itential_mcp.jsonutils as ju
+        import itential_mcp.utilities.json as ju
         
         assert hasattr(ju, 'loads')
         assert hasattr(ju, 'dumps')
@@ -422,7 +422,7 @@ class TestModuleStructure:
 
     def test_module_dependencies(self):
         """Test that required dependencies are available"""
-        import itential_mcp.jsonutils as ju
+        import itential_mcp.utilities.json as ju
         
         # Should be able to access these modules through jsonutils
         assert hasattr(ju, 'json')

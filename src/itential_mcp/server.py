@@ -19,7 +19,7 @@ from fastmcp.server.middleware.error_handling import ErrorHandlingMiddleware
 from . import auth
 from . import client
 from . import config
-from . import toolutils
+from .utilities import tool as toolutils
 from . import bindings
 from . import logging
 

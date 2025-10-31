@@ -7,7 +7,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from itential_mcp import commands, server, metadata, toolutils, runner
+from itential_mcp import commands, server, metadata, runner
+from itential_mcp.utilities import tool as toolutils
 
 
 class TestRunCommand:
