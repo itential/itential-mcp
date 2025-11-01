@@ -43,3 +43,12 @@ jobs:
         run: |
             echo "Publishing to PyPI..."
             twine upload dist/*
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          files: dist/*
+          draft: false
+          prerelease: false
