@@ -31,11 +31,11 @@ class TestGatewayManagerTools:
 
         # Set up async methods on gateway manager service
         self.mock_gateway_manager_service.get_services = AsyncMock()
+        self.mock_gateway_manager_service.get_gateways = AsyncMock()
         self.mock_gateway_manager_service.run_service = AsyncMock()
 
         # Attach gateway manager service to client
         self.mock_client.gateway_manager = self.mock_gateway_manager_service
-        self.mock_client.get_gateways = AsyncMock()
 
         # Set up context to return the mock client
         self.mock_context.request_context.lifespan_context.get.return_value = (
@@ -293,7 +293,7 @@ class TestGetGateways(TestGatewayManagerTools):
     async def test_get_gateways_success(self):
         """Test successful retrieval of gateways."""
         mock_data = self.create_mock_gateways_data()
-        self.mock_client.get_gateways.return_value = mock_data
+        self.mock_gateway_manager_service.get_gateways.return_value = mock_data
 
         result = await get_gateways(self.mock_context)
 
@@ -301,7 +301,7 @@ class TestGetGateways(TestGatewayManagerTools):
         self.mock_context.info.assert_called_once_with("inside get_gateways(...)")
 
         # Verify client method was called
-        self.mock_client.get_gateways.assert_called_once()
+        self.mock_gateway_manager_service.get_gateways.assert_called_once()
 
         # Verify result type and content
         assert isinstance(result, GetGatewaysResponse)
@@ -338,7 +338,7 @@ class TestGetGateways(TestGatewayManagerTools):
     async def test_get_gateways_empty_result(self):
         """Test get_gateways with empty result."""
         mock_data = {"results": []}
-        self.mock_client.get_gateways.return_value = mock_data
+        self.mock_gateway_manager_service.get_gateways.return_value = mock_data
 
         result = await get_gateways(self.mock_context)
 
@@ -359,7 +359,7 @@ class TestGetGateways(TestGatewayManagerTools):
                 }
             ]
         }
-        self.mock_client.get_gateways.return_value = mock_data
+        self.mock_gateway_manager_service.get_gateways.return_value = mock_data
 
         result = await get_gateways(self.mock_context)
 
@@ -395,7 +395,7 @@ class TestGetGateways(TestGatewayManagerTools):
                 },
             ]
         }
-        self.mock_client.get_gateways.return_value = mock_data
+        self.mock_gateway_manager_service.get_gateways.return_value = mock_data
 
         result = await get_gateways(self.mock_context)
 
@@ -410,7 +410,7 @@ class TestGetGateways(TestGatewayManagerTools):
     @pytest.mark.asyncio
     async def test_get_gateways_client_error(self):
         """Test get_gateways when client raises an exception."""
-        self.mock_client.get_gateways.side_effect = Exception(
+        self.mock_gateway_manager_service.get_gateways.side_effect = Exception(
             "Failed to fetch gateways"
         )
 
@@ -887,7 +887,10 @@ class TestGatewayManagerErrorHandling:
             ]
         }
 
-        self.mock_client.get_gateways = AsyncMock(return_value=mock_data)
+        self.mock_client.gateway_manager = MagicMock()
+        self.mock_client.gateway_manager.get_gateways = AsyncMock(
+            return_value=mock_data
+        )
 
         with pytest.raises(KeyError):
             await get_gateways(self.mock_context)
