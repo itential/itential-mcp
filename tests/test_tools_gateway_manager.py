@@ -52,61 +52,59 @@ class TestGetServices(TestGatewayManagerTools):
 
     def create_mock_services_data(self):
         """Create mock services data for testing."""
-        return {
-            "result": [
-                {
-                    "service_metadata": {
-                        "name": "backup-service",
-                        "location": "cluster-east",
-                        "type": "ansible-playbook",
-                        "description": "Automated backup service",
-                        "decorator": {
-                            "type": "object",
-                            "properties": {
-                                "backup_path": {"type": "string"},
-                                "retention_days": {"type": "integer", "default": 7},
-                            },
-                            "required": ["backup_path"],
+        return [
+            {
+                "service_metadata": {
+                    "name": "backup-service",
+                    "location": "cluster-east",
+                    "type": "ansible-playbook",
+                    "description": "Automated backup service",
+                    "decorator": {
+                        "type": "object",
+                        "properties": {
+                            "backup_path": {"type": "string"},
+                            "retention_days": {"type": "integer", "default": 7},
                         },
-                    }
-                },
-                {
-                    "service_metadata": {
-                        "name": "deploy-service",
-                        "location": "cluster-west",
-                        "type": "python-script",
-                        "description": "Application deployment service",
-                        "decorator": {
-                            "type": "object",
-                            "properties": {
-                                "app_name": {"type": "string"},
-                                "version": {"type": "string"},
-                                "environment": {
-                                    "type": "string",
-                                    "enum": ["dev", "staging", "prod"],
-                                },
-                            },
-                            "required": ["app_name", "version", "environment"],
-                        },
-                    }
-                },
-                {
-                    "service_metadata": {
-                        "name": "infrastructure-service",
-                        "location": "cluster-central",
-                        "type": "opentofu-plan",
-                        "description": "Infrastructure provisioning service",
-                        "decorator": {
-                            "type": "object",
-                            "properties": {
-                                "terraform_config": {"type": "string"},
-                                "apply": {"type": "boolean", "default": False},
+                        "required": ["backup_path"],
+                    },
+                }
+            },
+            {
+                "service_metadata": {
+                    "name": "deploy-service",
+                    "location": "cluster-west",
+                    "type": "python-script",
+                    "description": "Application deployment service",
+                    "decorator": {
+                        "type": "object",
+                        "properties": {
+                            "app_name": {"type": "string"},
+                            "version": {"type": "string"},
+                            "environment": {
+                                "type": "string",
+                                "enum": ["dev", "staging", "prod"],
                             },
                         },
-                    }
-                },
-            ]
-        }
+                        "required": ["app_name", "version", "environment"],
+                    },
+                }
+            },
+            {
+                "service_metadata": {
+                    "name": "infrastructure-service",
+                    "location": "cluster-central",
+                    "type": "opentofu-plan",
+                    "description": "Infrastructure provisioning service",
+                    "decorator": {
+                        "type": "object",
+                        "properties": {
+                            "terraform_config": {"type": "string"},
+                            "apply": {"type": "boolean", "default": False},
+                        },
+                    },
+                }
+            },
+        ]
 
     @pytest.mark.asyncio
     async def test_get_services_success(self):
@@ -149,7 +147,7 @@ class TestGetServices(TestGatewayManagerTools):
     @pytest.mark.asyncio
     async def test_get_services_empty_result(self):
         """Test get_services with empty result."""
-        mock_data = {"result": []}
+        mock_data = []
         self.mock_client.gateway_manager.get_services.return_value = mock_data
 
         result = await get_services(self.mock_context)
@@ -160,19 +158,17 @@ class TestGetServices(TestGatewayManagerTools):
     @pytest.mark.asyncio
     async def test_get_services_single_service(self):
         """Test get_services with single service."""
-        mock_data = {
-            "result": [
-                {
-                    "service_metadata": {
-                        "name": "single-service",
-                        "location": "single-cluster",
-                        "type": "custom-script",
-                        "description": "Single service test",
-                        "decorator": {},
-                    }
+        mock_data = [
+            {
+                "service_metadata": {
+                    "name": "single-service",
+                    "location": "single-cluster",
+                    "type": "custom-script",
+                    "description": "Single service test",
+                    "decorator": {},
                 }
-            ]
-        }
+            }
+        ]
         self.mock_client.gateway_manager.get_services.return_value = mock_data
 
         result = await get_services(self.mock_context)
@@ -184,44 +180,42 @@ class TestGetServices(TestGatewayManagerTools):
     @pytest.mark.asyncio
     async def test_get_services_with_complex_decorators(self):
         """Test get_services with complex decorator schemas."""
-        mock_data = {
-            "result": [
-                {
-                    "service_metadata": {
-                        "name": "complex-service",
-                        "location": "complex-cluster",
-                        "type": "ansible-playbook",
-                        "description": "Service with complex decorator",
-                        "decorator": {
-                            "type": "object",
-                            "properties": {
-                                "config": {
-                                    "type": "object",
-                                    "properties": {
-                                        "timeout": {
-                                            "type": "integer",
-                                            "minimum": 1,
-                                            "maximum": 3600,
-                                        },
-                                        "retries": {"type": "integer", "default": 3},
+        mock_data = [
+            {
+                "service_metadata": {
+                    "name": "complex-service",
+                    "location": "complex-cluster",
+                    "type": "ansible-playbook",
+                    "description": "Service with complex decorator",
+                    "decorator": {
+                        "type": "object",
+                        "properties": {
+                            "config": {
+                                "type": "object",
+                                "properties": {
+                                    "timeout": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 3600,
                                     },
-                                },
-                                "hosts": {
-                                    "type": "array",
-                                    "items": {"type": "string"},
-                                    "minItems": 1,
-                                },
-                                "variables": {
-                                    "type": "object",
-                                    "additionalProperties": True,
+                                    "retries": {"type": "integer", "default": 3},
                                 },
                             },
-                            "required": ["hosts"],
+                            "hosts": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "minItems": 1,
+                            },
+                            "variables": {
+                                "type": "object",
+                                "additionalProperties": True,
+                            },
                         },
-                    }
+                        "required": ["hosts"],
+                    },
                 }
-            ]
-        }
+            }
+        ]
         self.mock_client.gateway_manager.get_services.return_value = mock_data
 
         result = await get_services(self.mock_context)
@@ -858,14 +852,12 @@ class TestGatewayManagerErrorHandling:
     @pytest.mark.asyncio
     async def test_get_services_missing_service_metadata(self):
         """Test get_services handling malformed service data."""
-        mock_data = {
-            "result": [
-                {
-                    # Missing service_metadata key
-                    "metadata": {"name": "broken-service"}
-                }
-            ]
-        }
+        mock_data = [
+            {
+                # Missing service_metadata key
+                "metadata": {"name": "broken-service"}
+            }
+        ]
 
         self.mock_client.gateway_manager = MagicMock()
         self.mock_client.gateway_manager.get_services = AsyncMock(
