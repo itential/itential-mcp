@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2025-11-04
+
+### Added
+- JWT authentication support (#229)
+- Device type validation for golden config trees (#236)
+- Action executions tool to retrieve instance history (#225)
+- Comprehensive user guide and documentation index (#237)
+
+### Changed
+- GitHub release creation to release workflow (#242)
+- README badges (#241)
+- Core package for fundamental modules (#239)
+- All *utils modules moved into utilities package (#238)
+- Async context manager implementation for Server class (#234)
+- Middleware package creation (#233)
+- README with comprehensive feature updates and container examples (#228)
+
+### Fixed
+- Model to accept dict or list (#235)
+- Typo and incorrect var value on get_jobs tool (#227)
+
 ## [0.7.1] - 2025-10-18
 
 ### Fixed
