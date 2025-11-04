@@ -82,7 +82,7 @@ async def get_gateways(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    data = await client.get_gateways()
+    data = await client.gateway_manager.get_gateways()
 
     results = []
 
