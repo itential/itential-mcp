@@ -44,7 +44,7 @@ async def get_services(
 
     results = []
 
-    for ele in data["result"]:
+    for ele in data:
         results.append(
             models.ServiceElement(
                 name=ele["service_metadata"]["name"],
