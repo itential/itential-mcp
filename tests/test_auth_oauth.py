@@ -4,7 +4,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 
-from itential_mcp.auth import (
+from itential_mcp.server.auth import (
     build_auth_provider,
     _build_oauth_provider,
     _build_oauth_proxy_provider,
@@ -93,7 +93,7 @@ class TestOAuthConfiguration:
 class TestOAuthProviderBuilding:
     """Test OAuth provider building logic."""
     
-    @patch("itential_mcp.auth.OAuthProvider")
+    @patch("itential_mcp.server.auth.OAuthProvider")
     def test_build_oauth_provider_success(self, mock_oauth_provider):
         """Test successful OAuth provider building."""
         auth_config = {
@@ -124,7 +124,7 @@ class TestOAuthProviderBuilding:
         assert "requires the following fields" in str(exc_info.value)
         assert "redirect_uri" in str(exc_info.value)
     
-    @patch("itential_mcp.auth.OAuthProvider")
+    @patch("itential_mcp.server.auth.OAuthProvider")
     def test_build_oauth_provider_with_optional_fields(self, mock_oauth_provider):
         """Test OAuth provider building with optional fields."""
         auth_config = {
@@ -143,7 +143,7 @@ class TestOAuthProviderBuilding:
             required_scopes=["openid", "email"]
         )
     
-    @patch("itential_mcp.auth.OAuthProxy")
+    @patch("itential_mcp.server.auth.OAuthProxy")
     @patch("fastmcp.server.auth.StaticTokenVerifier")
     def test_build_oauth_proxy_provider_success(self, mock_token_verifier, mock_oauth_proxy):
         """Test successful OAuth proxy provider building."""
@@ -281,7 +281,7 @@ class TestFullAuthProviderFactory:
         provider = build_auth_provider(config)
         assert provider is None
     
-    @patch("itential_mcp.auth.JWTVerifier")
+    @patch("itential_mcp.server.auth.JWTVerifier")
     def test_jwt_auth_provider(self, mock_jwt):
         """Test building JWT auth provider."""
         config_data = {
@@ -296,7 +296,7 @@ class TestFullAuthProviderFactory:
         provider = build_auth_provider(config)
         assert provider == mock_provider
     
-    @patch("itential_mcp.auth.OAuthProvider")
+    @patch("itential_mcp.server.auth.OAuthProvider")
     def test_oauth_auth_provider(self, mock_oauth_provider):
         """Test building OAuth auth provider."""
         config_data = {
@@ -311,7 +311,7 @@ class TestFullAuthProviderFactory:
         provider = build_auth_provider(config)
         assert provider == mock_provider
     
-    @patch("itential_mcp.auth.OAuthProxy")
+    @patch("itential_mcp.server.auth.OAuthProxy")
     @patch("fastmcp.server.auth.StaticTokenVerifier")
     def test_oauth_proxy_auth_provider(self, mock_token_verifier, mock_oauth_proxy):
         """Test building OAuth proxy auth provider."""
