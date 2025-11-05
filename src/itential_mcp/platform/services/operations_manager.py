@@ -6,7 +6,7 @@ from typing import Literal, Mapping, Any
 from itential_mcp.core import exceptions
 from itential_mcp.utilities import string as stringutils
 
-from itential_mcp.services import ServiceBase
+from itential_mcp.platform.services import ServiceBase
 
 
 class Service(ServiceBase):

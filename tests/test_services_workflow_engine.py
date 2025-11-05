@@ -4,7 +4,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from itential_mcp.services.workflow_engine import Service
+from itential_mcp.platform.services.workflow_engine import Service
 
 
 class TestWorkflowEngineService:
@@ -300,7 +300,7 @@ class TestWorkflowEngineService:
     @pytest.mark.asyncio
     async def test_service_inherits_from_service_base(self):
         """Test that Service class correctly inherits from ServiceBase."""
-        from itential_mcp.services import ServiceBase
+        from itential_mcp.platform.services import ServiceBase
 
         assert isinstance(self.workflow_service, ServiceBase)
         assert hasattr(self.workflow_service, "client")

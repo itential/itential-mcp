@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from pydantic import BaseModel
 
 from itential_mcp.bindings.endpoint import _get_trigger, start_workflow, new
-from itential_mcp import client
+from itential_mcp.platform import PlatformClient
 from itential_mcp.core import exceptions
 from fastmcp import Context
 
@@ -21,7 +21,7 @@ class MockResponse(BaseModel):
 @pytest.fixture
 def mock_platform_client():
     """Mock PlatformClient for testing."""
-    client_mock = AsyncMock(spec=client.PlatformClient)
+    client_mock = AsyncMock(spec=PlatformClient)
     client_mock.client = AsyncMock()
     return client_mock
 
@@ -40,7 +40,7 @@ def mock_context():
     """Mock FastMCP Context for testing."""
     context = MagicMock(spec=Context)
     context.request_context.lifespan_context.get.return_value = AsyncMock(
-        spec=client.PlatformClient
+        spec=PlatformClient
     )
     return context
 
