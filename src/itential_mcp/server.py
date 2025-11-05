@@ -17,7 +17,7 @@ from fastmcp.server.middleware.timing import DetailedTimingMiddleware
 from fastmcp.server.middleware.error_handling import ErrorHandlingMiddleware
 
 from . import auth
-from . import client
+from .platform import PlatformClient
 from . import config
 from . import bindings
 from .core import logging
@@ -55,7 +55,7 @@ async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
             - client: PlatformClient instance for Itential API calls
     """
     # Use PlatformClient as an async context manager
-    async with client.PlatformClient() as client_instance:
+    async with PlatformClient() as client_instance:
         yield {"client": client_instance}
 
 

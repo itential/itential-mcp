@@ -4,7 +4,7 @@
 
 from typing import Sequence, Mapping, Any
 
-from itential_mcp.services import ServiceBase
+from itential_mcp.platform.services import ServiceBase
 
 
 class Service(ServiceBase):

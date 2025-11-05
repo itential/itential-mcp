@@ -10,10 +10,10 @@ import ipsdk
 from ipsdk.platform import AsyncPlatform
 from ipsdk.connection import Response
 
-from . import config
-from . import response
-from .core import exceptions
-from .core import logging
+from .. import config
+from .. import response
+from ..core import exceptions
+from ..core import logging
 
 
 class PlatformClient(object):
@@ -128,6 +128,7 @@ class PlatformClient(object):
         # Import and register services
         for module_file in python_files:
             module_name = module_file.stem
+
             try:
                 spec = importlib.util.spec_from_file_location(module_name, module_file)
                 if spec is None or spec.loader is None:

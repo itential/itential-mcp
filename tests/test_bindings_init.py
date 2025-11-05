@@ -5,13 +5,13 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from itential_mcp.bindings import bind_to_tool, iterbindings
-from itential_mcp import client
+from itential_mcp.platform import PlatformClient
 
 
 @pytest.fixture
 def mock_platform_client():
     """Mock PlatformClient for testing."""
-    platform_client = AsyncMock(spec=client.PlatformClient)
+    platform_client = AsyncMock(spec=PlatformClient)
     platform_client.client = AsyncMock()
 
     # Mock the response structure for different API calls
@@ -171,7 +171,7 @@ class TestBindToTool:
 class TestIterBindings:
     """Test cases for iterbindings function."""
 
-    @patch("itential_mcp.bindings.client.PlatformClient")
+    @patch("itential_mcp.bindings.PlatformClient")
     @patch("itential_mcp.bindings.bind_to_tool")
     @pytest.mark.asyncio
     async def test_iterbindings_success(
@@ -212,7 +212,7 @@ class TestIterBindings:
         assert results[0][1]["name"] == "tool1"
         assert results[1][1]["name"] == "tool2"
 
-    @patch("itential_mcp.bindings.client.PlatformClient")
+    @patch("itential_mcp.bindings.PlatformClient")
     @patch("itential_mcp.bindings.bind_to_tool")
     @pytest.mark.asyncio
     async def test_iterbindings_empty_tools(
@@ -236,7 +236,7 @@ class TestIterBindings:
         mock_platform_client_class.assert_called_once()
         mock_bind_to_tool.assert_not_called()
 
-    @patch("itential_mcp.bindings.client.PlatformClient")
+    @patch("itential_mcp.bindings.PlatformClient")
     @patch("itential_mcp.bindings.bind_to_tool")
     @pytest.mark.asyncio
     async def test_iterbindings_bind_error_propagates(
@@ -263,7 +263,7 @@ class TestBindingsIntegration:
     """Integration tests for bindings module."""
 
     @patch("itential_mcp.bindings._import_binding")
-    @patch("itential_mcp.bindings.client.PlatformClient")
+    @patch("itential_mcp.bindings.PlatformClient")
     @pytest.mark.asyncio
     async def test_full_binding_workflow(
         self, mock_platform_client_class, mock_import_binding

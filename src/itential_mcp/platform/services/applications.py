@@ -4,7 +4,7 @@
 import asyncio
 
 from itential_mcp.core import exceptions
-from itential_mcp.services import ServiceBase
+from itential_mcp.platform.services import ServiceBase
 
 
 class Service(ServiceBase):
