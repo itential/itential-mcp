@@ -108,6 +108,16 @@ class Server:
         logging.info("Initializing the MCP server instance")
 
         auth_provider = auth.build_auth_provider(self.config)
+        
+        # Validate auth provider compatibility with transport
+        transport = self.config.server.get("transport")
+        if auth_provider and not auth.supports_transport(auth_provider, transport):
+            from .core.exceptions import ConfigurationException
+            raise ConfigurationException(
+                f"Authentication provider {type(auth_provider).__name__} "
+                f"is not supported for transport '{transport}'. "
+                f"OAuth providers require HTTP-based transports (sse or http)."
+            )
 
         # Initialize FastMCP server
         self.mcp = FastMCP(
