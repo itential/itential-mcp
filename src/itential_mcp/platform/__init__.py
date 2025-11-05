@@ -3,4 +3,4 @@
 
 from .client import PlatformClient
 
-__all__ = ["PlatformClient"]
+__all__ = ("PlatformClient",)

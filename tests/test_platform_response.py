@@ -4,7 +4,7 @@
 import pytest
 import httpx
 
-from itential_mcp.response import Response
+from itential_mcp.platform.response import Response
 
 
 @pytest.fixture
