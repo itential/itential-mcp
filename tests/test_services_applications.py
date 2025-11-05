@@ -400,10 +400,10 @@ class TestRestartApplication:
         with patch.object(service, "_get_application_health") as mock_health:
             # Simulate application going through restart states
             mock_health.side_effect = [
-                {"results": [{"state": "RUNNING"}]},     # Initial check
-                {"results": [{"state": "RESTARTING"}]}, # First wait check
-                {"results": [{"state": "STARTING"}]},   # Second wait check  
-                {"results": [{"state": "RUNNING"}]},    # Finally running
+                {"results": [{"state": "RUNNING"}]},  # Initial check
+                {"results": [{"state": "RESTARTING"}]},  # First wait check
+                {"results": [{"state": "STARTING"}]},  # Second wait check
+                {"results": [{"state": "RUNNING"}]},  # Finally running
             ]
 
             with patch("asyncio.sleep", new_callable=AsyncMock):
@@ -425,7 +425,9 @@ class TestRestartApplication:
             # Application is RUNNING before and after restart
             mock_health.side_effect = [
                 {"results": [{"state": "RUNNING"}]},  # Initial check
-                {"results": [{"state": "RUNNING"}]},  # Immediately running after restart
+                {
+                    "results": [{"state": "RUNNING"}]
+                },  # Immediately running after restart
             ]
 
             with patch("asyncio.sleep", new_callable=AsyncMock):
@@ -581,23 +583,29 @@ class TestEdgeCases:
                 await service.start_application("test-application", 0)
 
         # Should call PUT but timeout immediately since timeout=0
-        service.client.put.assert_called_once_with("/applications/test-application/start")
+        service.client.put.assert_called_once_with(
+            "/applications/test-application/start"
+        )
 
     @pytest.mark.asyncio
     async def test_negative_timeout_behavior(self, service, mock_client):
         """Test behavior with negative timeout (demonstrates infinite loop issue)"""
         with patch.object(service, "_get_application_health") as mock_health:
-            # Return STOPPED first, then RUNNING after first attempt 
+            # Return STOPPED first, then RUNNING after first attempt
             mock_health.side_effect = [
                 {"results": [{"state": "STOPPED"}]},
-                {"results": [{"state": "RUNNING"}]},  # Immediately running to break loop
+                {
+                    "results": [{"state": "RUNNING"}]
+                },  # Immediately running to break loop
             ]
 
             # Should complete successfully with negative timeout if app starts immediately
             result = await service.start_application("test-application", -1)
 
         # Should call PUT and succeed if application transitions to RUNNING immediately
-        service.client.put.assert_called_once_with("/applications/test-application/start")
+        service.client.put.assert_called_once_with(
+            "/applications/test-application/start"
+        )
         assert result["results"][0]["state"] == "RUNNING"
 
     @pytest.mark.asyncio
@@ -652,16 +660,16 @@ class TestEdgeCases:
             # Mock different responses for different calls
             mock_health.side_effect = [
                 {"results": [{"state": "RUNNING"}]},  # For first operation
-                {"results": [{"state": "STOPPED"}]}, # For second operation
+                {"results": [{"state": "STOPPED"}]},  # For second operation
             ]
 
             # Run two operations concurrently (though they should be independent)
             task1 = service.start_application("app1", 10)
-            task2 = service.stop_application("app2", 10) 
+            task2 = service.stop_application("app2", 10)
 
             # Both should complete without interfering with each other
             result1, result2 = await asyncio.gather(task1, task2)
-            
+
             # Verify results
             assert result1["results"][0]["state"] == "RUNNING"
             assert result2["results"][0]["state"] == "STOPPED"
@@ -688,11 +696,11 @@ class TestApplicationStateTransitions:
         with patch.object(service, "_get_application_health") as mock_health:
             # Simulate realistic restart state progression
             mock_health.side_effect = [
-                {"results": [{"state": "RUNNING"}]},      # Initial state
-                {"results": [{"state": "STOPPING"}]},     # Stopping phase
-                {"results": [{"state": "STOPPED"}]},      # Stopped phase
-                {"results": [{"state": "STARTING"}]},     # Starting phase
-                {"results": [{"state": "RUNNING"}]},      # Finally running
+                {"results": [{"state": "RUNNING"}]},  # Initial state
+                {"results": [{"state": "STOPPING"}]},  # Stopping phase
+                {"results": [{"state": "STOPPED"}]},  # Stopped phase
+                {"results": [{"state": "STARTING"}]},  # Starting phase
+                {"results": [{"state": "RUNNING"}]},  # Finally running
             ]
 
             with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
@@ -700,14 +708,16 @@ class TestApplicationStateTransitions:
 
             # Should go through multiple state checks
             assert mock_health.call_count == 5
-            assert mock_sleep.call_count == 3  # Sleep after non-RUNNING states (4 checks - 1 final = 3 sleeps)
+            assert (
+                mock_sleep.call_count == 3
+            )  # Sleep after non-RUNNING states (4 checks - 1 final = 3 sleeps)
             assert result["results"][0]["state"] == "RUNNING"
 
     @pytest.mark.asyncio
     async def test_start_from_error_state(self, service):
         """Test starting application from an ERROR state"""
         with patch.object(service, "_get_application_health") as mock_health:
-            # Application in ERROR state initially - will not trigger PUT call  
+            # Application in ERROR state initially - will not trigger PUT call
             mock_health.return_value = {"results": [{"state": "ERROR"}]}
 
             result = await service.start_application("test-app", 10)
