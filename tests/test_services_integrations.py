@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, Mock
 
 from itential_mcp.core import exceptions
 from itential_mcp.platform.services.integrations import Service
-from itential_mcp.response import Response
+from itential_mcp.platform.response import Response
 
 
 class TestService:
