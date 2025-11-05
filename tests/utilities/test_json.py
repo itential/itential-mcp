@@ -428,6 +428,7 @@ class TestModuleStructure:
     def test_module_dependencies(self):
         """Test that required dependencies are available"""
         import itential_mcp.utilities.json as ju
+
         # Should be able to access these modules through jsonutils
         assert hasattr(ju, "json")
         assert hasattr(ju, "traceback")

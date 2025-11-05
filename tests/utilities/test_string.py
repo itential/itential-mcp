@@ -3,7 +3,13 @@
 
 import pytest
 
-from itential_mcp.utilities.string import tostr, tobytes, toint, tobool, is_valid_url_path
+from itential_mcp.utilities.string import (
+    tostr,
+    tobytes,
+    toint,
+    tobool,
+    is_valid_url_path,
+)
 
 
 class TestStringUtils:
