@@ -18,14 +18,14 @@ from fastmcp.server.middleware.logging import LoggingMiddleware
 from fastmcp.server.middleware.timing import DetailedTimingMiddleware
 from fastmcp.server.middleware.error_handling import ErrorHandlingMiddleware
 
-from . import auth
-from .platform import PlatformClient
-from . import config
-from . import bindings
-from .core import logging
-from .core import metadata
-from .utilities import tool as toolutils
-from .middleware.bindings import BindingsMiddleware
+from .auth import build_auth_provider, supports_transport
+from ..platform import PlatformClient
+from .. import config
+from .. import bindings
+from ..core import logging
+from ..core import metadata
+from ..utilities import tool as toolutils
+from ..middleware.bindings import BindingsMiddleware
 
 
 INSTRUCTIONS = """
@@ -103,12 +103,12 @@ class Server:
         """Initialize a new FastMCP server instance with Itential Platform integration."""
         logging.info("Initializing the MCP server instance")
 
-        auth_provider = auth.build_auth_provider(self.config)
-        
+        auth_provider = build_auth_provider(self.config)
+
         # Validate auth provider compatibility with transport
         transport = self.config.server.get("transport")
-        if auth_provider and not auth.supports_transport(auth_provider, transport):
-            from .core.exceptions import ConfigurationException
+        if auth_provider and not supports_transport(auth_provider, transport):
+            from ..core.exceptions import ConfigurationException
             raise ConfigurationException(
                 f"Authentication provider {type(auth_provider).__name__} "
                 f"is not supported for transport '{transport}'. "
@@ -166,7 +166,7 @@ class Server:
         """Initialize tools."""
         logging.info("Adding tools to MCP server")
 
-        tool_paths = [pathlib.Path(__file__).parent / "tools"]
+        tool_paths = [pathlib.Path(__file__).parent.parent / "tools"]
 
         if self.config.server.get("tools_path") is not None:
             tool_paths.append(
