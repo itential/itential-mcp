@@ -4,7 +4,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from itential_mcp.services.operations_manager import Service
+from itential_mcp.platform.services.operations_manager import Service
 from itential_mcp.core import exceptions
 from ipsdk.platform import AsyncPlatform
 
@@ -31,7 +31,7 @@ class TestService:
 
     def test_service_inheritance(self, service):
         """Test Service inherits from ServiceBase"""
-        from itential_mcp.services import ServiceBase
+        from itential_mcp.platform.services import ServiceBase
 
         assert isinstance(service, ServiceBase)
         assert hasattr(service, "client")

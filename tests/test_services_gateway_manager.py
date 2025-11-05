@@ -4,7 +4,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from itential_mcp.services.gateway_manager import Service
+from itential_mcp.platform.services.gateway_manager import Service
 
 
 class TestGatewayManagerService:
@@ -418,7 +418,7 @@ class TestServiceIntegration:
     @pytest.mark.asyncio
     async def test_service_inherits_from_servicebase(self, service):
         """Test that Service properly inherits from ServiceBase"""
-        from itential_mcp.services import ServiceBase
+        from itential_mcp.platform.services import ServiceBase
 
         assert isinstance(service, ServiceBase)
 

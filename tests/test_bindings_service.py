@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pydantic import BaseModel
 
 from itential_mcp.bindings import service
-from itential_mcp import client
+from itential_mcp.platform import PlatformClient
 from itential_mcp.core import exceptions
 from fastmcp import Context
 
@@ -19,7 +19,7 @@ class TestGetService:
     @pytest.fixture
     def mock_platform_client(self):
         """Create a mock platform client"""
-        mock_client = AsyncMock(spec=client.PlatformClient)
+        mock_client = AsyncMock(spec=PlatformClient)
         mock_client.gateway_manager = AsyncMock()
         return mock_client
 
@@ -161,7 +161,7 @@ class TestRunService:
     def mock_context(self):
         """Create a mock FastMCP context"""
         context = MagicMock(spec=Context)
-        platform_client = AsyncMock(spec=client.PlatformClient)
+        platform_client = AsyncMock(spec=PlatformClient)
         platform_client.gateway_manager = AsyncMock()
         context.request_context.lifespan_context.get.return_value = platform_client
         return context
@@ -321,7 +321,7 @@ class TestNew:
     @pytest.fixture
     def mock_platform_client(self):
         """Create a mock platform client"""
-        mock_client = AsyncMock(spec=client.PlatformClient)
+        mock_client = AsyncMock(spec=PlatformClient)
         mock_client.gateway_manager = AsyncMock()
         return mock_client
 
@@ -621,7 +621,7 @@ class TestModuleStructure:
         assert hasattr(bs, "BaseModel")
         assert hasattr(bs, "Context")
         assert hasattr(bs, "config")
-        assert hasattr(bs, "client")
+        assert hasattr(bs, "PlatformClient")
         assert hasattr(bs, "exceptions")
         assert hasattr(bs, "gateway_manager")
 
@@ -633,7 +633,7 @@ class TestServiceIntegration:
     def mock_complete_setup(self):
         """Setup complete mock environment for integration tests"""
         # Mock platform client
-        platform_client = AsyncMock(spec=client.PlatformClient)
+        platform_client = AsyncMock(spec=PlatformClient)
         platform_client.gateway_manager = AsyncMock()
 
         # Mock context
@@ -741,7 +741,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_service_with_unicode_metadata(self):
         """Test handling of services with unicode characters in metadata"""
-        platform_client = AsyncMock(spec=client.PlatformClient)
+        platform_client = AsyncMock(spec=PlatformClient)
         platform_client.gateway_manager = AsyncMock()
 
         @dataclass
@@ -772,7 +772,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_service_with_very_large_decorator(self):
         """Test handling of services with very large decorator schemas"""
-        platform_client = AsyncMock(spec=client.PlatformClient)
+        platform_client = AsyncMock(spec=PlatformClient)
         platform_client.gateway_manager = AsyncMock()
 
         @dataclass

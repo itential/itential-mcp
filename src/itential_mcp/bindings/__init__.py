@@ -10,7 +10,7 @@ from typing import Tuple, Callable, Mapping, Any
 from fastmcp.utilities.logging import get_logger
 
 from .. import config
-from .. import client
+from ..platform import PlatformClient
 
 
 logger = get_logger(__name__)
@@ -45,7 +45,7 @@ def _import_binding(module_name: str) -> ModuleType:
 
 
 async def bind_to_tool(
-    tool: config.Tool, platform_client: client.PlatformClient
+    tool: config.Tool, platform_client: PlatformClient
 ) -> Tuple[Callable, Mapping[str, Any]]:
     """Bind a configuration tool to a callable function with metadata.
 
@@ -55,7 +55,7 @@ async def bind_to_tool(
 
     Args:
         tool (config.Tool): The tool configuration containing type, name, and other settings.
-        platform_client (client.PlatformClient): The platform client for API communication.
+        platform_client (PlatformClient): The platform client for API communication.
 
     Returns:
         Tuple[Callable, Mapping[str, Any]]: A tuple containing the bound function and
@@ -107,6 +107,6 @@ async def iterbindings(cfg: config.Config):
         AttributeError: If a tool type module doesn't have a 'new' function.
         KeyError: If a tool type is not found in globals.
     """
-    platform_client = client.PlatformClient()
+    platform_client = PlatformClient()
     for t in cfg.tools:
         yield await bind_to_tool(t, platform_client)

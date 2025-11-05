@@ -6,7 +6,7 @@ import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 
 from itential_mcp import server
-from itential_mcp.client import PlatformClient
+from itential_mcp.platform import PlatformClient
 from itential_mcp.middleware.bindings import BindingsMiddleware
 
 instructions = """

@@ -7,7 +7,7 @@ import tempfile
 import textwrap
 from unittest.mock import AsyncMock, patch, MagicMock
 
-from itential_mcp.client import PlatformClient
+from itential_mcp.platform import PlatformClient
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def mock_ipsdk_client():
 @pytest.fixture
 def patched_platform_factory(mock_ipsdk_client):
     """Patch ipsdk.platform_factory to return mock client"""
-    with patch("itential_mcp.client.ipsdk.platform_factory") as factory_mock:
+    with patch("itential_mcp.platform.client.ipsdk.platform_factory") as factory_mock:
         factory_mock.return_value = mock_ipsdk_client
         yield factory_mock
 
@@ -35,7 +35,7 @@ def patched_platform_factory(mock_ipsdk_client):
 @pytest.fixture
 def patched_config_get(mock_config):
     """Patch config.get() to return mock config"""
-    with patch("itential_mcp.client.config.get") as config_mock:
+    with patch("itential_mcp.platform.client.config.get") as config_mock:
         config_mock.return_value = mock_config
         yield config_mock
 
@@ -104,7 +104,7 @@ def test_init_plugins_loads_valid_services(
                     self.name = "_private_service"
         """)
 
-        with patch("itential_mcp.client.pathlib.Path.resolve") as resolve_mock:
+        with patch("itential_mcp.platform.client.pathlib.Path.resolve") as resolve_mock:
             # Make resolve() return our temp directory structure
             resolve_mock.return_value.parent = pathlib.Path(temp_dir)
 
@@ -133,7 +133,7 @@ def test_init_plugins_handles_import_errors(
         broken_service_file = services_dir / "broken_service.py"
         broken_service_file.write_text("import nonexistent_module\nclass Service: pass")
 
-        with patch("itential_mcp.client.pathlib.Path.resolve") as resolve_mock:
+        with patch("itential_mcp.platform.client.pathlib.Path.resolve") as resolve_mock:
             resolve_mock.return_value.parent = pathlib.Path(temp_dir)
 
             # Should complete without raising exception
@@ -154,7 +154,7 @@ def test_init_plugins_handles_missing_service_class(
         no_service_file = services_dir / "no_service.py"
         no_service_file.write_text("def some_function(): pass")
 
-        with patch("itential_mcp.client.pathlib.Path.resolve") as resolve_mock:
+        with patch("itential_mcp.platform.client.pathlib.Path.resolve") as resolve_mock:
             resolve_mock.return_value.parent = pathlib.Path(temp_dir)
 
             client = PlatformClient()
@@ -180,7 +180,7 @@ def test_init_plugins_handles_service_instantiation_error(
         """)
         )
 
-        with patch("itential_mcp.client.pathlib.Path.resolve") as resolve_mock:
+        with patch("itential_mcp.platform.client.pathlib.Path.resolve") as resolve_mock:
             resolve_mock.return_value.parent = pathlib.Path(temp_dir)
 
             # Should complete without raising exception

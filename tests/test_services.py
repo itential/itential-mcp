@@ -4,7 +4,7 @@
 import pytest
 from unittest.mock import AsyncMock
 
-from itential_mcp.services import ServiceBase
+from itential_mcp.platform.services import ServiceBase
 from ipsdk.platform import AsyncPlatform
 
 
