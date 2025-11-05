@@ -11,9 +11,9 @@ from ipsdk.platform import AsyncPlatform
 from ipsdk.connection import Response
 
 from .. import config
-from .. import response
 from ..core import exceptions
 from ..core import logging
+from . import response
 
 
 class PlatformClient(object):
