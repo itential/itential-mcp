@@ -36,6 +36,16 @@ ITENTIAL_MCP_SERVER_AUTH_REQUIRED_SCOPES = (
     None  # Comma separated list of required scopes
 )
 
+# OAuth Configuration Defaults
+ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_ID = None  # OAuth client ID for authentication
+ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_SECRET = None  # OAuth client secret for authentication
+ITENTIAL_MCP_SERVER_AUTH_OAUTH_AUTHORIZATION_URL = None  # OAuth authorization endpoint URL
+ITENTIAL_MCP_SERVER_AUTH_OAUTH_TOKEN_URL = None  # OAuth token endpoint URL
+ITENTIAL_MCP_SERVER_AUTH_OAUTH_USERINFO_URL = None  # OAuth userinfo endpoint URL
+ITENTIAL_MCP_SERVER_AUTH_OAUTH_SCOPES = None  # OAuth scopes to request
+ITENTIAL_MCP_SERVER_AUTH_OAUTH_REDIRECT_URI = None  # OAuth redirect URI for callback
+ITENTIAL_MCP_SERVER_AUTH_OAUTH_PROVIDER_TYPE = None  # OAuth provider type for predefined configurations
+
 # Platform Configuration Defaults
 ITENTIAL_MCP_PLATFORM_HOST = "localhost"  # Itential Platform server hostname
 ITENTIAL_MCP_PLATFORM_PORT = 0  # Platform server port (0 = use default for protocol)

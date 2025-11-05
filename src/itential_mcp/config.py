@@ -186,7 +186,7 @@ class Config(object):
         ),
     )
 
-    server_auth_type: Literal["none", "jwt"] = Field(
+    server_auth_type: Literal["none", "jwt", "oauth", "oauth_proxy"] = Field(
         description="Authentication provider type used to secure the MCP server",
         default_factory=default_factory(
             env.getstr,
@@ -194,7 +194,7 @@ class Config(object):
         ),
         json_schema_extra=options(
             "--auth-type",
-            choices=("none", "jwt"),
+            choices=("none", "jwt", "oauth", "oauth_proxy"),
             metavar="<type>",
         ),
     )
@@ -268,6 +268,105 @@ class Config(object):
         json_schema_extra=options(
             "--auth-required-scopes",
             metavar="<scopes>",
+        ),
+    )
+
+    server_auth_oauth_client_id: str | None = Field(
+        description="OAuth client ID for authentication",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_ID",
+        ),
+        json_schema_extra=options(
+            "--auth-oauth-client-id",
+            metavar="<client_id>",
+        ),
+    )
+
+    server_auth_oauth_client_secret: str | None = Field(
+        description="OAuth client secret for authentication",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_SECRET",
+        ),
+        json_schema_extra=options(
+            "--auth-oauth-client-secret",
+            metavar="<client_secret>",
+        ),
+    )
+
+    server_auth_oauth_authorization_url: str | None = Field(
+        description="OAuth authorization endpoint URL",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_AUTH_OAUTH_AUTHORIZATION_URL",
+        ),
+        json_schema_extra=options(
+            "--auth-oauth-authorization-url",
+            metavar="<url>",
+        ),
+    )
+
+    server_auth_oauth_token_url: str | None = Field(
+        description="OAuth token endpoint URL",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_AUTH_OAUTH_TOKEN_URL",
+        ),
+        json_schema_extra=options(
+            "--auth-oauth-token-url",
+            metavar="<url>",
+        ),
+    )
+
+    server_auth_oauth_userinfo_url: str | None = Field(
+        description="OAuth userinfo endpoint URL",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_AUTH_OAUTH_USERINFO_URL",
+        ),
+        json_schema_extra=options(
+            "--auth-oauth-userinfo-url",
+            metavar="<url>",
+        ),
+    )
+
+    server_auth_oauth_scopes: str | None = Field(
+        description="OAuth scopes to request (space or comma separated)",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_AUTH_OAUTH_SCOPES",
+        ),
+        json_schema_extra=options(
+            "--auth-oauth-scopes",
+            metavar="<scopes>",
+        ),
+    )
+
+    server_auth_oauth_redirect_uri: str | None = Field(
+        description="OAuth redirect URI for callback",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_AUTH_OAUTH_REDIRECT_URI",
+        ),
+        json_schema_extra=options(
+            "--auth-oauth-redirect-uri",
+            metavar="<uri>",
+        ),
+    )
+
+    server_auth_oauth_provider_type: Literal[
+        "generic", "google", "azure", "auth0", "github", "okta"
+    ] | None = Field(
+        description="OAuth provider type for predefined configurations",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_AUTH_OAUTH_PROVIDER_TYPE",
+        ),
+        json_schema_extra=options(
+            "--auth-oauth-provider-type",
+            choices=("generic", "google", "azure", "auth0", "github", "okta"),
+            metavar="<type>",
         ),
     )
 
@@ -404,14 +503,31 @@ class Config(object):
             else None
         )
 
+        # Handle OAuth scopes parsing
+        oauth_scopes = None
+        if self.server_auth_oauth_scopes:
+            # Support both space and comma separated scopes
+            scopes_str = self.server_auth_oauth_scopes.replace(",", " ")
+            oauth_scopes = [s.strip() for s in scopes_str.split() if s.strip()]
+
         data: dict[str, Any] = {
             "type": auth_type,
+            # JWT-specific fields
             "jwks_uri": self.server_auth_jwks_uri or None,
             "public_key": self.server_auth_public_key or None,
             "issuer": self.server_auth_issuer or None,
             "audience": audience,
             "algorithm": self.server_auth_algorithm or None,
             "required_scopes": required_scopes,
+            # OAuth-specific fields
+            "client_id": self.server_auth_oauth_client_id or None,
+            "client_secret": self.server_auth_oauth_client_secret or None,
+            "authorization_url": self.server_auth_oauth_authorization_url or None,
+            "token_url": self.server_auth_oauth_token_url or None,
+            "userinfo_url": self.server_auth_oauth_userinfo_url or None,
+            "scopes": oauth_scopes,
+            "redirect_uri": self.server_auth_oauth_redirect_uri or None,
+            "provider_type": self.server_auth_oauth_provider_type or None,
         }
 
         return {k: v for k, v in data.items() if v not in (None, "", [])}
