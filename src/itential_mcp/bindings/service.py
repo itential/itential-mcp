@@ -10,18 +10,18 @@ from pydantic import BaseModel
 from fastmcp import Context
 
 from itential_mcp import config
-from itential_mcp import client
+from itential_mcp.platform import PlatformClient
 from itential_mcp.core import exceptions
 from itential_mcp.utilities import json as jsonutils
 
 from itential_mcp.tools import gateway_manager
 
 
-async def _get_service(platform_client: client.PlatformClient, t: config.EndpointTool):
+async def _get_service(platform_client: PlatformClient, t: config.EndpointTool):
     """Retrieve a service from the platform based on tool configuration.
 
     Args:
-        platform_client (client.PlatformClient): The platform client instance for API communication.
+        platform_client (PlatformClient): The platform client instance for API communication.
         t (config.EndpointTool): The tool configuration containing service identification details.
 
     Returns:
@@ -79,7 +79,7 @@ async def run_service(
 
 
 async def new(
-    t: config.ServiceTool, platform_client: client.PlatformClient
+    t: config.ServiceTool, platform_client: PlatformClient
 ) -> Tuple[Callable, str]:
     """Create a new service binding with callable function and documentation.
 
@@ -89,7 +89,7 @@ async def new(
 
     Args:
         t (config.ServiceTool): The service tool configuration containing service identification.
-        platform_client (client.PlatformClient): The platform client instance for API communication.
+        platform_client (PlatformClient): The platform client instance for API communication.
 
     Returns:
         Tuple[Callable, str]: A tuple containing the service execution function and its

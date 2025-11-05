@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock, Mock
 import ipsdk
 
 from itential_mcp.core import exceptions
-from itential_mcp.services.configuration_manager import Service
-from itential_mcp.services import ServiceBase
+from itential_mcp.platform.services.configuration_manager import Service
+from itential_mcp.platform.services import ServiceBase
 
 
 class TestConfigurationManagerService:

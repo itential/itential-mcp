@@ -4,7 +4,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from itential_mcp.services.health import Service
+from itential_mcp.platform.services.health import Service
 
 
 class TestHealthService:
@@ -555,7 +555,7 @@ class TestHealthService:
     @pytest.mark.asyncio
     async def test_service_inherits_from_service_base(self):
         """Test that Service class correctly inherits from ServiceBase."""
-        from itential_mcp.services import ServiceBase
+        from itential_mcp.platform.services import ServiceBase
 
         assert isinstance(self.health_service, ServiceBase)
         assert hasattr(self.health_service, "client")

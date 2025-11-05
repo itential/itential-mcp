@@ -10,14 +10,14 @@ from pydantic import BaseModel
 from fastmcp import Context
 
 from itential_mcp import config
-from itential_mcp import client
+from itential_mcp.platform import PlatformClient
 from itential_mcp.core import exceptions
 from itential_mcp.utilities import json as jsonutils
 
 from itential_mcp.tools import operations_manager
 
 
-async def _get_trigger(platform_client: client.PlatformClient, t: config.EndpointTool):
+async def _get_trigger(platform_client: PlatformClient, t: config.EndpointTool):
     """Retrieve a workflow trigger configuration from the platform.
 
     Searches for an automation by name and then finds the associated trigger
@@ -25,7 +25,7 @@ async def _get_trigger(platform_client: client.PlatformClient, t: config.Endpoin
     workflow execution.
 
     Args:
-        platform_client (client.PlatformClient): The platform client for API communication.
+        platform_client (PlatformClient): The platform client for API communication.
         t (config.EndpointTool): The endpoint tool configuration containing automation
             and trigger names.
 
@@ -106,7 +106,7 @@ async def start_workflow(
 
 
 async def new(
-    t: config.EndpointTool, platform_client: client.PlatformClient
+    t: config.EndpointTool, platform_client: PlatformClient
 ) -> Tuple[Callable, str]:
     """Create a new bound workflow function with description.
 
@@ -116,7 +116,7 @@ async def new(
 
     Args:
         t (config.EndpointTool): The endpoint tool configuration.
-        platform_client (client.PlatformClient): The platform client for API communication.
+        platform_client (PlatformClient): The platform client for API communication.
 
     Returns:
         Tuple[Callable, str]: A tuple containing the start_workflow function and

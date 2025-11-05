@@ -4,7 +4,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from itential_mcp.services.mop import Service
+from itential_mcp.platform.services.mop import Service
 
 
 class TestMOPService:

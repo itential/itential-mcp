@@ -4,7 +4,7 @@
 import time
 from typing import Dict, Any, List
 
-from itential_mcp.services import ServiceBase
+from itential_mcp.platform.services import ServiceBase
 
 
 class Service(ServiceBase):
