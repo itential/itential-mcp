@@ -42,6 +42,40 @@ class PlatformClient(object):
         self.client = self._init_client()
         self._init_plugins()
 
+    async def __aenter__(self):
+        """Async context manager entry point.
+
+        Args:
+            None
+
+        Returns:
+            PlatformClient: Returns self for use in context manager.
+
+        Raises:
+            None
+        """
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit point.
+
+        Performs cleanup operations when exiting the context manager.
+        Closes the underlying client connection if it has a close method.
+
+        Args:
+            exc_type: Exception type if an exception occurred, None otherwise.
+            exc_val: Exception value if an exception occurred, None otherwise.
+            exc_tb: Exception traceback if an exception occurred, None otherwise.
+
+        Returns:
+            None
+
+        Raises:
+            None
+        """
+        if hasattr(self.client, "close") and callable(getattr(self.client, "close")):
+            await self.client.close()
+
     def _init_client(self) -> AsyncPlatform:
         """Initialize the client connection to Itential Platform.
 

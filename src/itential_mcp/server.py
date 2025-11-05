@@ -19,10 +19,9 @@ from fastmcp.server.middleware.error_handling import ErrorHandlingMiddleware
 from . import auth
 from . import client
 from . import config
-from .utilities import tool as toolutils
 from . import bindings
 from .core import logging
-
+from .utilities import tool as toolutils
 from .middleware.bindings import BindingsMiddleware
 
 
@@ -55,15 +54,9 @@ async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
         dict: Context containing:
             - client: PlatformClient instance for Itential API calls
     """
-    # Create client instance
-    client_instance = client.PlatformClient()
-
-    try:
+    # Use PlatformClient as an async context manager
+    async with client.PlatformClient() as client_instance:
         yield {"client": client_instance}
-
-    finally:
-        # No cleanup needed for client
-        pass
 
 
 class Server:
