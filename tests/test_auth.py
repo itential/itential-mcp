@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from itential_mcp import auth
+from itential_mcp.server import auth
 from itential_mcp.config import Config
 from itential_mcp.core.exceptions import ConfigurationException
 
@@ -21,7 +21,7 @@ class TestBuildAuthProvider:
 
         assert provider is None
 
-    @patch("itential_mcp.auth.JWTVerifier")
+    @patch("itential_mcp.server.auth.JWTVerifier")
     def test_creates_jwt_provider_with_expected_arguments(self, mock_jwt_verifier):
         """JWT provider receives configuration from the Config object."""
         cfg = Config(
@@ -49,7 +49,7 @@ class TestBuildAuthProvider:
         with pytest.raises(ConfigurationException):
             auth.build_auth_provider(cfg)
 
-    @patch("itential_mcp.auth.JWTVerifier", side_effect=ValueError("invalid config"))
+    @patch("itential_mcp.server.auth.JWTVerifier", side_effect=ValueError("invalid config"))
     def test_jwt_verifier_errors_are_wrapped(self, mock_jwt_verifier):
         """JWT verifier errors are wrapped in ConfigurationException."""
         cfg = Config(server_auth_type="jwt")

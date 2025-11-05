@@ -8,7 +8,7 @@ from typing import Mapping, Any
 from fastmcp import Client
 
 from itential_mcp import config
-from itential_mcp import server
+from itential_mcp.server.server import Server
 
 
 async def run(tool: str, params: Mapping[str, Any] | None = None) -> None:
@@ -42,7 +42,7 @@ async def run(tool: str, params: Mapping[str, Any] | None = None) -> None:
 
         ValueError: If there are invalid parameters
     """
-    async with server.Server(config.get()) as srv:
+    async with Server(config.get()) as srv:
         async with Client(srv.mcp) as client:
             # Basic server interaction
             if await client.ping() is False:
