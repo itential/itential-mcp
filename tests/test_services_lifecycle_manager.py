@@ -847,7 +847,7 @@ class TestGetActionExecutions:
             {
                 "_id": "2",
                 "modelName": "other-resource",
-                "instanceName": "other-instance", 
+                "instanceName": "other-instance",
                 "actionName": "update",
                 "status": "running",
             },
@@ -958,9 +958,7 @@ class TestGetActionExecutions:
         mock_response.json.return_value = {"data": test_data, "metadata": {"total": 1}}
         service.client.get.return_value = mock_response
 
-        result = await service.get_action_executions(
-            resource_name="", instance_name=""
-        )
+        result = await service.get_action_executions(resource_name="", instance_name="")
 
         assert result == test_data
         # Should not include the starts-with filters for empty strings

@@ -11,9 +11,9 @@ from ipsdk.platform import AsyncPlatform
 from ipsdk.connection import Response
 
 from .. import config
+from . import response
 from ..core import exceptions
 from ..core import logging
-from . import response
 
 
 class PlatformClient(object):
@@ -197,7 +197,7 @@ class PlatformClient(object):
         try:
             res = await self.client._send_request(method, path, params, json)
         except Exception as exc:
-            raise exceptions.ItentialMcpException(exc.response.text)
+            raise exceptions.ItentialMcpException(str(exc))
         return await self._make_response(res)
 
     async def get(self, path: str, params: dict | None = None) -> response.Response:

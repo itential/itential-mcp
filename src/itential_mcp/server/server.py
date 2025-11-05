@@ -11,19 +11,17 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 from fastmcp import FastMCP
-from starlette.requests import Request
-from starlette.responses import JSONResponse
 
 from fastmcp.server.middleware.logging import LoggingMiddleware
 from fastmcp.server.middleware.timing import DetailedTimingMiddleware
 from fastmcp.server.middleware.error_handling import ErrorHandlingMiddleware
 
 from .auth import build_auth_provider, supports_transport
+from . import routes
 from ..platform import PlatformClient
 from .. import config
 from .. import bindings
 from ..core import logging
-from ..core import metadata
 from ..utilities import tool as toolutils
 from ..middleware.bindings import BindingsMiddleware
 
@@ -63,6 +61,7 @@ async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
 
 
 class Server:
+
     def __init__(self, cfg: config.Config):
         self.config = cfg
         self.mcp = None
@@ -81,6 +80,7 @@ class Server:
         await self.__init_server__()
         await self.__init_tools__()
         await self.__init_bindings__()
+        self.__init_routes__()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -109,6 +109,7 @@ class Server:
         transport = self.config.server.get("transport")
         if auth_provider and not supports_transport(auth_provider, transport):
             from ..core.exceptions import ConfigurationException
+
             raise ConfigurationException(
                 f"Authentication provider {type(auth_provider).__name__} "
                 f"is not supported for transport '{transport}'. "
@@ -136,31 +137,20 @@ class Server:
         )
         self.mcp.add_middleware(BindingsMiddleware(self.config))
 
-        # Add health check endpoint
-        self.__add_health_endpoint__()
+    def __init_routes__(self) -> None:
+        """Initialize and register health check routes.
 
-    def __add_health_endpoint__(self) -> None:
-        """Add health check endpoint to the server."""
+        Registers the Kubernetes-standard health check endpoints with the FastMCP server:
+        - /status/healthz: General health check endpoint
+        - /status/readyz: Readiness probe endpoint
+        - /status/livez: Liveness probe endpoint
 
-        async def health_check(request: Request) -> JSONResponse:
-            """
-            Health check endpoint for monitoring server status.
-
-            Args:
-                request: The incoming HTTP request
-
-            Returns:
-                JSONResponse: A JSON response containing server status information
-            """
-            return JSONResponse({
-                "status": "ok",
-                "service": metadata.name,
-                "version": metadata.version
-            })
-
-        # Register the route using custom_route method
-        route_decorator = self.mcp.custom_route("/health", methods=["GET"])
-        route_decorator(health_check)
+        These endpoints follow Kubernetes best practices for health monitoring
+        and are used by orchestration systems to determine pod status.
+        """
+        self.mcp.custom_route("/status/healthz", methods=["GET"])(routes.get_healthz)
+        self.mcp.custom_route("/status/readyz", methods=["GET"])(routes.get_readyz)
+        self.mcp.custom_route("/status/livez", methods=["GET"])(routes.get_livez)
 
     async def __init_tools__(self) -> None:
         """Initialize tools."""
