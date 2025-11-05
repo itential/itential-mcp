@@ -32,10 +32,15 @@ Detailed configuration guides for different deployment scenarios.
   - Environment variable mappings
   - Example configurations for different environments
 
-- **[JWT Authentication](jwt-authentication.md)** - OAuth 2.0 and JWT authentication setup
-  - OAuth configuration
-  - Token management
+- **[JWT Authentication](jwt-authentication.md)** - JWT token authentication setup
+  - JWT configuration
+  - Token validation
   - Security best practices
+
+- **[OAuth Authentication](oauth-authentication.md)** - OAuth 2.0 authentication setup
+  - OAuth Provider and Proxy modes
+  - Supported providers (Google, Azure, Auth0, GitHub, Okta)
+  - Complete configuration examples
 
 ### 🛠️ Tools & Features
 
