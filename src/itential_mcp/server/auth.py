@@ -10,9 +10,9 @@ from typing import Dict, Any
 
 from fastmcp.server.auth import AuthProvider, JWTVerifier, RemoteAuthProvider, OAuthProxy, OAuthProvider
 
-from .core import logging
-from .config import Config
-from .core.exceptions import ConfigurationException
+from ..core import logging
+from ..config import Config
+from ..core.exceptions import ConfigurationException
 
 
 def build_auth_provider(cfg: Config) -> AuthProvider | None:

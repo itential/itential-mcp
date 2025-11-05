@@ -6,6 +6,7 @@ import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 
 from itential_mcp import server
+from itential_mcp.server import server as server_module
 from itential_mcp.platform import PlatformClient
 from itential_mcp.middleware.bindings import BindingsMiddleware
 
@@ -31,7 +32,7 @@ class TestLifespan:
         """Test that lifespan yields client instance"""
         mcp = MagicMock()
 
-        async with server.lifespan(mcp) as context:
+        async with server_module.lifespan(mcp) as context:
             assert "client" in context
             assert isinstance(context["client"], PlatformClient)
 
@@ -41,7 +42,7 @@ class TestLifespan:
         mcp = MagicMock()
 
         # Test that the async context manager completes without error
-        async with server.lifespan(mcp) as context:
+        async with server_module.lifespan(mcp) as context:
             # Verify we get the expected context
             assert len(context) == 1
             assert "client" in context
@@ -177,9 +178,9 @@ class TestRun:
     """Test the run() function for server execution"""
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.Server")
-    @patch("itential_mcp.server.config.get")
-    @patch("itential_mcp.server.logging.set_level")
+    @patch("itential_mcp.server.server.Server")
+    @patch("itential_mcp.server.server.config.get")
+    @patch("itential_mcp.server.server.logging.set_level")
     async def test_run_stdio_transport_success(
         self, mock_set_level, mock_config_get, mock_server_class
     ):
@@ -209,9 +210,9 @@ class TestRun:
         mock_server_instance.__aexit__.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.Server")
-    @patch("itential_mcp.server.config.get")
-    @patch("itential_mcp.server.logging.set_level")
+    @patch("itential_mcp.server.server.Server")
+    @patch("itential_mcp.server.server.config.get")
+    @patch("itential_mcp.server.server.logging.set_level")
     async def test_run_sse_transport_success(
         self, mock_set_level, mock_config_get, mock_server_class
     ):
@@ -240,9 +241,9 @@ class TestRun:
         mock_server_instance.run.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.Server")
-    @patch("itential_mcp.server.config.get")
-    @patch("itential_mcp.server.logging.set_level")
+    @patch("itential_mcp.server.server.Server")
+    @patch("itential_mcp.server.server.config.get")
+    @patch("itential_mcp.server.server.logging.set_level")
     async def test_run_http_transport_success(
         self, mock_set_level, mock_config_get, mock_server_class
     ):
@@ -272,9 +273,9 @@ class TestRun:
         mock_server_instance.run.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.Server")
-    @patch("itential_mcp.server.config.get")
-    @patch("itential_mcp.server.logging.set_level")
+    @patch("itential_mcp.server.server.Server")
+    @patch("itential_mcp.server.server.config.get")
+    @patch("itential_mcp.server.server.logging.set_level")
     async def test_run_tool_registration_failure(
         self, mock_set_level, mock_config_get, mock_server_class
     ):
@@ -302,9 +303,9 @@ class TestRun:
             mock_exit.assert_called_with(1)
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.Server")
-    @patch("itential_mcp.server.config.get")
-    @patch("itential_mcp.server.logging.set_level")
+    @patch("itential_mcp.server.server.Server")
+    @patch("itential_mcp.server.server.config.get")
+    @patch("itential_mcp.server.server.logging.set_level")
     async def test_run_keyboard_interrupt(
         self, mock_set_level, mock_config_get, mock_server_class
     ):
@@ -328,9 +329,9 @@ class TestRun:
             mock_exit.assert_called_with(0)
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.Server")
-    @patch("itential_mcp.server.config.get")
-    @patch("itential_mcp.server.logging.set_level")
+    @patch("itential_mcp.server.server.Server")
+    @patch("itential_mcp.server.server.config.get")
+    @patch("itential_mcp.server.server.logging.set_level")
     async def test_run_unexpected_exception(
         self, mock_set_level, mock_config_get, mock_server_class
     ):
@@ -358,9 +359,9 @@ class TestRun:
             mock_exit.assert_called_with(1)
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.Server")
-    @patch("itential_mcp.server.config.get")
-    @patch("itential_mcp.server.logging.set_level")
+    @patch("itential_mcp.server.server.Server")
+    @patch("itential_mcp.server.server.config.get")
+    @patch("itential_mcp.server.server.logging.set_level")
     async def test_run_no_tools_loaded(
         self, mock_set_level, mock_config_get, mock_server_class
     ):
@@ -383,9 +384,9 @@ class TestRun:
         mock_server_instance.run.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.Server")
-    @patch("itential_mcp.server.config.get")
-    @patch("itential_mcp.server.logging.set_level")
+    @patch("itential_mcp.server.server.Server")
+    @patch("itential_mcp.server.server.config.get")
+    @patch("itential_mcp.server.server.logging.set_level")
     async def test_run_multiple_tools_registration(
         self, mock_set_level, mock_config_get, mock_server_class
     ):
@@ -409,9 +410,9 @@ class TestRun:
         mock_server_instance.run.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.Server")
-    @patch("itential_mcp.server.config.get")
-    @patch("itential_mcp.server.logging.set_level")
+    @patch("itential_mcp.server.server.Server")
+    @patch("itential_mcp.server.server.config.get")
+    @patch("itential_mcp.server.server.logging.set_level")
     async def test_run_partial_tool_failure(
         self, mock_set_level, mock_config_get, mock_server_class
     ):
@@ -439,9 +440,9 @@ class TestRun:
             mock_exit.assert_called_with(1)
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.Server")
-    @patch("itential_mcp.server.config.get")
-    @patch("itential_mcp.server.logging.set_level")
+    @patch("itential_mcp.server.server.Server")
+    @patch("itential_mcp.server.server.config.get")
+    @patch("itential_mcp.server.server.logging.set_level")
     async def test_run_config_variations(
         self, mock_set_level, mock_config_get, mock_server_class
     ):
@@ -465,9 +466,9 @@ class TestRun:
         mock_server_instance.run.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.Server")
-    @patch("itential_mcp.server.config.get")
-    @patch("itential_mcp.server.logging.set_level")
+    @patch("itential_mcp.server.server.Server")
+    @patch("itential_mcp.server.server.config.get")
+    @patch("itential_mcp.server.server.logging.set_level")
     async def test_run_missing_server_config_keys(
         self, mock_set_level, mock_config_get, mock_server_class
     ):
@@ -495,10 +496,10 @@ class TestIntegration:
 
     @patch("itential_mcp.server.auth.build_auth_provider")
     @pytest.mark.asyncio
-    @patch("itential_mcp.server.bindings.iterbindings")
-    @patch("itential_mcp.server.toolutils.itertools")
-    @patch("itential_mcp.server.config.get")
-    @patch("itential_mcp.server.logging.set_level")
+    @patch("itential_mcp.server.server.bindings.iterbindings")
+    @patch("itential_mcp.server.server.toolutils.itertools")
+    @patch("itential_mcp.server.server.config.get")
+    @patch("itential_mcp.server.server.logging.set_level")
     async def test_full_server_lifecycle(
         self,
         mock_set_level,
@@ -517,6 +518,7 @@ class TestIntegration:
         }
         mock_config.server_log_level = "INFO"
         mock_config.tools = []
+        mock_config.auth = {"type": "none"}
         mock_config_get.return_value = mock_config
         mock_auth_builder.return_value = None
 
@@ -535,7 +537,7 @@ class TestIntegration:
         mock_iterbindings.return_value = empty_aiter()
 
         # Mock FastMCP to simulate server lifecycle
-        with patch("itential_mcp.server.FastMCP") as mock_fastmcp_class:
+        with patch("itential_mcp.server.server.FastMCP") as mock_fastmcp_class:
             mock_mcp = MagicMock()
             mock_mcp.run_async = AsyncMock()
             mock_fastmcp_class.return_value = mock_mcp
@@ -549,8 +551,8 @@ class TestIntegration:
             # Verify FastMCP was created with correct parameters
             mock_fastmcp_class.assert_called_once_with(
                 name="Itential Platform MCP",
-                instructions=server.inspect.cleandoc(server.INSTRUCTIONS),
-                lifespan=server.lifespan,
+                instructions=server_module.inspect.cleandoc(server_module.INSTRUCTIONS),
+                lifespan=server_module.lifespan,
                 include_tags=["system"],
                 exclude_tags=["deprecated"],
                 auth=None,

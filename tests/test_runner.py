@@ -27,7 +27,7 @@ class TestRun:
     @pytest.mark.asyncio
     @patch("sys.stdout", new_callable=StringIO)
     @patch("itential_mcp.runner.Client")
-    @patch("itential_mcp.runner.server.Server")
+    @patch("itential_mcp.runner.Server")
     @patch("itential_mcp.runner.config.get")
     async def test_run_basic_tool_no_params(
         self, mock_config_get, mock_server_class, mock_client_class, mock_stdout
@@ -85,7 +85,7 @@ class TestRun:
     @pytest.mark.asyncio
     @patch("sys.stdout", new_callable=StringIO)
     @patch("itential_mcp.runner.Client")
-    @patch("itential_mcp.runner.server.Server")
+    @patch("itential_mcp.runner.Server")
     @patch("itential_mcp.runner.config.get")
     async def test_run_tool_with_params(
         self, mock_config_get, mock_server_class, mock_client_class, mock_stdout
@@ -145,7 +145,7 @@ class TestRun:
 
     @pytest.mark.asyncio
     @patch("itential_mcp.runner.Client")
-    @patch("itential_mcp.runner.server.Server")
+    @patch("itential_mcp.runner.Server")
     @patch("itential_mcp.runner.config.get")
     async def test_run_server_ping_failure(
         self, mock_config_get, mock_server_class, mock_client_class
@@ -178,7 +178,7 @@ class TestRun:
 
     @pytest.mark.asyncio
     @patch("itential_mcp.runner.Client")
-    @patch("itential_mcp.runner.server.Server")
+    @patch("itential_mcp.runner.Server")
     @patch("itential_mcp.runner.config.get")
     async def test_run_invalid_tool(
         self, mock_config_get, mock_server_class, mock_client_class
@@ -220,7 +220,7 @@ class TestRun:
 
     @pytest.mark.asyncio
     @patch("itential_mcp.runner.Client")
-    @patch("itential_mcp.runner.server.Server")
+    @patch("itential_mcp.runner.Server")
     @patch("itential_mcp.runner.config.get")
     async def test_run_missing_required_params(
         self, mock_config_get, mock_server_class, mock_client_class
@@ -276,7 +276,7 @@ class TestRun:
 
     @pytest.mark.asyncio
     @patch("itential_mcp.runner.Client")
-    @patch("itential_mcp.runner.server.Server")
+    @patch("itential_mcp.runner.Server")
     @patch("itential_mcp.runner.config.get")
     async def test_run_invalid_params(
         self, mock_config_get, mock_server_class, mock_client_class
@@ -322,7 +322,7 @@ class TestRun:
     @pytest.mark.asyncio
     @patch("sys.stdout", new_callable=StringIO)
     @patch("itential_mcp.runner.Client")
-    @patch("itential_mcp.runner.server.Server")
+    @patch("itential_mcp.runner.Server")
     @patch("itential_mcp.runner.config.get")
     async def test_run_tool_no_required_params(
         self, mock_config_get, mock_server_class, mock_client_class, mock_stdout
@@ -376,7 +376,7 @@ class TestRun:
     @pytest.mark.asyncio
     @patch("sys.stdout", new_callable=StringIO)
     @patch("itential_mcp.runner.Client")
-    @patch("itential_mcp.runner.server.Server")
+    @patch("itential_mcp.runner.Server")
     @patch("itential_mcp.runner.config.get")
     async def test_run_multiple_tools_available(
         self, mock_config_get, mock_server_class, mock_client_class, mock_stdout
@@ -433,7 +433,7 @@ class TestRun:
 
     @pytest.mark.asyncio
     @patch("itential_mcp.runner.Client")
-    @patch("itential_mcp.runner.server.Server")
+    @patch("itential_mcp.runner.Server")
     @patch("itential_mcp.runner.config.get")
     async def test_run_invalid_json_params(
         self, mock_config_get, mock_server_class, mock_client_class
@@ -473,7 +473,7 @@ class TestRun:
     @pytest.mark.asyncio
     @patch("sys.stdout", new_callable=StringIO)
     @patch("itential_mcp.runner.Client")
-    @patch("itential_mcp.runner.server.Server")
+    @patch("itential_mcp.runner.Server")
     @patch("itential_mcp.runner.config.get")
     async def test_run_complex_result_formatting(
         self, mock_config_get, mock_server_class, mock_client_class, mock_stdout
@@ -535,7 +535,7 @@ class TestRunEdgeCases:
 
     @pytest.mark.asyncio
     @patch("itential_mcp.runner.Client")
-    @patch("itential_mcp.runner.server.Server")
+    @patch("itential_mcp.runner.Server")
     @patch("itential_mcp.runner.config.get")
     async def test_run_empty_tool_list(
         self, mock_config_get, mock_server_class, mock_client_class
@@ -570,7 +570,7 @@ class TestRunEdgeCases:
     @pytest.mark.asyncio
     @patch("sys.stdout", new_callable=StringIO)
     @patch("itential_mcp.runner.Client")
-    @patch("itential_mcp.runner.server.Server")
+    @patch("itential_mcp.runner.Server")
     @patch("itential_mcp.runner.config.get")
     async def test_run_empty_params_string(
         self, mock_config_get, mock_server_class, mock_client_class, mock_stdout
@@ -621,7 +621,7 @@ class TestRunIntegration:
     @pytest.mark.asyncio
     @patch("sys.stdout", new_callable=StringIO)
     @patch("itential_mcp.runner.Client")
-    @patch("itential_mcp.runner.server.Server")
+    @patch("itential_mcp.runner.Server")
     @patch("itential_mcp.runner.config.get")
     async def test_run_full_workflow(
         self, mock_config_get, mock_server_class, mock_client_class, mock_stdout
