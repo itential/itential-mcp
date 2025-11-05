@@ -11,6 +11,8 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 from fastmcp import FastMCP
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from fastmcp.server.middleware.logging import LoggingMiddleware
 from fastmcp.server.middleware.timing import DetailedTimingMiddleware
@@ -21,6 +23,7 @@ from .platform import PlatformClient
 from . import config
 from . import bindings
 from .core import logging
+from .core import metadata
 from .utilities import tool as toolutils
 from .middleware.bindings import BindingsMiddleware
 
@@ -132,6 +135,32 @@ class Server:
             )
         )
         self.mcp.add_middleware(BindingsMiddleware(self.config))
+
+        # Add health check endpoint
+        self.__add_health_endpoint__()
+
+    def __add_health_endpoint__(self) -> None:
+        """Add health check endpoint to the server."""
+
+        async def health_check(request: Request) -> JSONResponse:
+            """
+            Health check endpoint for monitoring server status.
+
+            Args:
+                request: The incoming HTTP request
+
+            Returns:
+                JSONResponse: A JSON response containing server status information
+            """
+            return JSONResponse({
+                "status": "ok",
+                "service": metadata.name,
+                "version": metadata.version
+            })
+
+        # Register the route using custom_route method
+        route_decorator = self.mcp.custom_route("/health", methods=["GET"])
+        route_decorator(health_check)
 
     async def __init_tools__(self) -> None:
         """Initialize tools."""
