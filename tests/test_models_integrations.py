@@ -8,6 +8,8 @@ from itential_mcp.models.integrations import (
     GetIntegrationModelsElement,
     GetIntegrationModelsResponse,
     CreateIntegrationModelResponse,
+    GetIntegrationsElement,
+    GetIntegrationsResponse,
 )
 
 
@@ -613,3 +615,404 @@ class TestModelValidationEdgeCases:
                 description="Version format test",
             )
             assert element.version == version
+
+
+class TestGetIntegrationsElement:
+    """Test cases for GetIntegrationsElement model"""
+
+    def test_get_integrations_element_valid_creation(self):
+        """Test creating GetIntegrationsElement with valid data"""
+        element = GetIntegrationsElement(
+            name="cisco-switch-01",
+            model="cisco-ios",
+            properties={
+                "hostname": "192.168.1.1",
+                "username": "admin",
+                "protocol": "ssh"
+            },
+        )
+
+        assert element.name == "cisco-switch-01"
+        assert element.model == "cisco-ios"
+        assert element.properties["hostname"] == "192.168.1.1"
+        assert element.properties["username"] == "admin"
+        assert element.properties["protocol"] == "ssh"
+
+    def test_get_integrations_element_missing_required_fields(self):
+        """Test GetIntegrationsElement with missing required fields"""
+        with pytest.raises(ValidationError) as exc_info:
+            GetIntegrationsElement()
+
+        errors = exc_info.value.errors()
+        required_fields = {"name", "model", "properties"}
+        missing_fields = {
+            error["loc"][0] for error in errors if error["type"] == "missing"
+        }
+
+        assert required_fields == missing_fields
+
+    def test_get_integrations_element_serialization(self):
+        """Test GetIntegrationsElement serialization to dict"""
+        element = GetIntegrationsElement(
+            name="test-router",
+            model="juniper-junos",
+            properties={
+                "device_type": "router",
+                "management_ip": "10.0.0.1",
+                "enabled": True
+            },
+        )
+
+        expected_dict = {
+            "name": "test-router",
+            "model": "juniper-junos",
+            "properties": {
+                "device_type": "router",
+                "management_ip": "10.0.0.1",
+                "enabled": True
+            },
+        }
+
+        assert element.model_dump() == expected_dict
+
+    def test_get_integrations_element_json_serialization(self):
+        """Test GetIntegrationsElement JSON serialization"""
+        element = GetIntegrationsElement(
+            name="json-test-device",
+            model="generic-snmp",
+            properties={"community": "public", "version": "v2c"},
+        )
+
+        json_str = element.model_dump_json()
+        assert '"name":"json-test-device"' in json_str
+        assert '"model":"generic-snmp"' in json_str
+        assert '"community":"public"' in json_str
+
+    def test_get_integrations_element_field_validation(self):
+        """Test GetIntegrationsElement field type validation"""
+        # Test non-string name
+        with pytest.raises(ValidationError):
+            GetIntegrationsElement(name=123, model="test", properties={})
+
+        # Test non-string model
+        with pytest.raises(ValidationError):
+            GetIntegrationsElement(name="test", model=456, properties={})
+
+        # Test non-dict properties
+        with pytest.raises(ValidationError):
+            GetIntegrationsElement(name="test", model="test", properties="invalid")
+
+    def test_get_integrations_element_empty_properties(self):
+        """Test GetIntegrationsElement with empty properties dict"""
+        element = GetIntegrationsElement(
+            name="minimal-device", model="minimal-model", properties={}
+        )
+
+        assert element.name == "minimal-device"
+        assert element.model == "minimal-model"
+        assert element.properties == {}
+
+    def test_get_integrations_element_complex_properties(self):
+        """Test GetIntegrationsElement with complex nested properties"""
+        complex_properties = {
+            "connection": {
+                "host": "192.168.1.100",
+                "port": 22,
+                "timeout": 30,
+                "credentials": {
+                    "username": "netadmin",
+                    "auth_method": "key"
+                }
+            },
+            "capabilities": ["ssh", "netconf", "snmp"],
+            "metadata": {
+                "location": "datacenter-1",
+                "rack": "A-12",
+                "environment": "production"
+            },
+            "monitoring": {
+                "enabled": True,
+                "interval": 60,
+                "thresholds": {
+                    "cpu": 80,
+                    "memory": 90,
+                    "disk": 95
+                }
+            }
+        }
+
+        element = GetIntegrationsElement(
+            name="complex-device",
+            model="multi-vendor-network",
+            properties=complex_properties,
+        )
+
+        assert element.name == "complex-device"
+        assert element.model == "multi-vendor-network"
+        assert element.properties["connection"]["host"] == "192.168.1.100"
+        assert "netconf" in element.properties["capabilities"]
+        assert element.properties["monitoring"]["thresholds"]["cpu"] == 80
+
+    def test_get_integrations_element_unicode_support(self):
+        """Test GetIntegrationsElement with Unicode characters"""
+        element = GetIntegrationsElement(
+            name="设备-测试-01",
+            model="multi-语言-model",
+            properties={"描述": "测试设备", "位置": "北京机房 🏢"},
+        )
+
+        assert element.name == "设备-测试-01"
+        assert element.model == "multi-语言-model"
+        assert element.properties["描述"] == "测试设备"
+        assert "🏢" in element.properties["位置"]
+
+    def test_get_integrations_element_realistic_data(self):
+        """Test GetIntegrationsElement with realistic network device data"""
+        element = GetIntegrationsElement(
+            name="core-switch-01",
+            model="cisco-catalyst-9000",
+            properties={
+                "management_ip": "10.1.1.10",
+                "snmp_community": "network_ro",
+                "ssh_port": 22,
+                "device_type": "switch",
+                "os_version": "16.12.09",
+                "serial_number": "FDO2048A1B2",
+                "location": "Main DC - Rack 15",
+                "vlans": [10, 20, 30, 100, 200],
+                "interfaces": {
+                    "GigabitEthernet1/0/1": {"status": "up", "vlan": 10},
+                    "GigabitEthernet1/0/2": {"status": "up", "vlan": 20}
+                }
+            },
+        )
+
+        assert element.name == "core-switch-01"
+        assert element.model == "cisco-catalyst-9000"
+        assert element.properties["management_ip"] == "10.1.1.10"
+        assert 100 in element.properties["vlans"]
+        assert element.properties["interfaces"]["GigabitEthernet1/0/1"]["vlan"] == 10
+
+
+class TestGetIntegrationsResponse:
+    """Test cases for GetIntegrationsResponse model"""
+
+    def test_get_integrations_response_empty_list(self):
+        """Test GetIntegrationsResponse with empty integrations list"""
+        response = GetIntegrationsResponse(root=[])
+        assert response.root == []
+
+    def test_get_integrations_response_single_integration(self):
+        """Test GetIntegrationsResponse with single integration"""
+        integration = GetIntegrationsElement(
+            name="single-device",
+            model="single-model",
+            properties={"ip": "192.168.1.1"},
+        )
+
+        response = GetIntegrationsResponse(root=[integration])
+        assert len(response.root) == 1
+        assert response.root[0].name == "single-device"
+
+    def test_get_integrations_response_multiple_integrations(self):
+        """Test GetIntegrationsResponse with multiple integrations"""
+        integrations = [
+            GetIntegrationsElement(
+                name=f"device-{i}",
+                model=f"model-{i}",
+                properties={"id": i, "status": "active"},
+            )
+            for i in range(5)
+        ]
+
+        response = GetIntegrationsResponse(root=integrations)
+        assert len(response.root) == 5
+
+        for i, integration in enumerate(response.root):
+            assert integration.name == f"device-{i}"
+            assert integration.model == f"model-{i}"
+            assert integration.properties["id"] == i
+
+    def test_get_integrations_response_different_models(self):
+        """Test GetIntegrationsResponse with integrations using different models"""
+        integrations = [
+            GetIntegrationsElement(
+                name="cisco-switch",
+                model="cisco-ios",
+                properties={"vendor": "cisco", "os": "ios"},
+            ),
+            GetIntegrationsElement(
+                name="juniper-router",
+                model="juniper-junos",
+                properties={"vendor": "juniper", "os": "junos"},
+            ),
+            GetIntegrationsElement(
+                name="arista-switch",
+                model="arista-eos",
+                properties={"vendor": "arista", "os": "eos"},
+            ),
+        ]
+
+        response = GetIntegrationsResponse(root=integrations)
+        models = [integration.model for integration in response.root]
+
+        assert "cisco-ios" in models
+        assert "juniper-junos" in models
+        assert "arista-eos" in models
+
+    def test_get_integrations_response_serialization(self):
+        """Test GetIntegrationsResponse serialization"""
+        integration = GetIntegrationsElement(
+            name="serialize-test",
+            model="test-model",
+            properties={"test": True},
+        )
+
+        response = GetIntegrationsResponse(root=[integration])
+        serialized = response.model_dump()
+
+        # GetIntegrationsResponse is a RootModel, so it serializes directly as a list
+        assert isinstance(serialized, list)
+        assert len(serialized) == 1
+        assert serialized[0]["name"] == "serialize-test"
+
+    def test_get_integrations_response_invalid_integration_data(self):
+        """Test GetIntegrationsResponse with invalid integration data"""
+        with pytest.raises(ValidationError):
+            GetIntegrationsResponse(
+                root=[
+                    {
+                        "name": "test-device",
+                        "model": "test-model",
+                        # Missing required properties field
+                    }
+                ]
+            )
+
+    def test_get_integrations_response_iteration(self):
+        """Test that GetIntegrationsResponse can be iterated"""
+        integrations = [
+            GetIntegrationsElement(
+                name=f"iter-device-{i}",
+                model=f"iter-model-{i}",
+                properties={"index": i},
+            )
+            for i in range(3)
+        ]
+
+        response = GetIntegrationsResponse(root=integrations)
+
+        # Test direct access
+        assert len(response.root) == 3
+
+        # Test iteration
+        names = [integration.name for integration in response.root]
+        assert names == ["iter-device-0", "iter-device-1", "iter-device-2"]
+
+    def test_get_integrations_response_mixed_properties(self):
+        """Test GetIntegrationsResponse with integrations having different property structures"""
+        integrations = [
+            GetIntegrationsElement(
+                name="simple-device",
+                model="simple-model",
+                properties={"ip": "192.168.1.1"},
+            ),
+            GetIntegrationsElement(
+                name="complex-device",
+                model="complex-model",
+                properties={
+                    "connection": {"ip": "192.168.1.2", "port": 22},
+                    "capabilities": ["ssh", "snmp"],
+                    "metadata": {"location": "dc1"}
+                },
+            ),
+            GetIntegrationsElement(
+                name="empty-device",
+                model="empty-model",
+                properties={},
+            ),
+        ]
+
+        response = GetIntegrationsResponse(root=integrations)
+        assert len(response.root) == 3
+
+        # Verify different property structures are preserved
+        simple_props = response.root[0].properties
+        complex_props = response.root[1].properties
+        empty_props = response.root[2].properties
+
+        assert simple_props == {"ip": "192.168.1.1"}
+        assert "connection" in complex_props
+        assert "capabilities" in complex_props
+        assert empty_props == {}
+
+
+class TestIntegrationsModelInteroperability:
+    """Test cases for integrations model interoperability"""
+
+    def test_integrations_response_from_elements(self):
+        """Test creating response from individual elements"""
+        elements = [
+            GetIntegrationsElement(
+                name=f"network-device-{i}",
+                model="generic-network",
+                properties={
+                    "ip": f"192.168.1.{i+10}",
+                    "port": 22,
+                    "enabled": i % 2 == 0
+                },
+            )
+            for i in range(3)
+        ]
+
+        response = GetIntegrationsResponse(root=elements)
+
+        assert len(response.root) == 3
+        for i, element in enumerate(response.root):
+            assert element.name == f"network-device-{i}"
+            assert element.model == "generic-network"
+            assert element.properties["ip"] == f"192.168.1.{i+10}"
+
+    def test_integration_model_field_descriptions_exist(self):
+        """Test that integration models have proper field descriptions"""
+        # Test GetIntegrationsElement
+        element_schema = GetIntegrationsElement.model_json_schema()
+        properties = element_schema["properties"]
+
+        for field in ["name", "model", "properties"]:
+            assert field in properties
+            assert "description" in properties[field]
+            assert len(properties[field]["description"]) > 0
+
+    def test_integration_json_schema_generation(self):
+        """Test JSON schema generation for integration models"""
+        models = [
+            GetIntegrationsElement,
+            GetIntegrationsResponse,
+        ]
+
+        for model_class in models:
+            schema = model_class.model_json_schema()
+            assert "type" in schema
+
+            # GetIntegrationsResponse is a RootModel which has different schema structure
+            if model_class == GetIntegrationsResponse:
+                # RootModel schema has "items" instead of "properties"
+                assert "items" in schema
+            else:
+                assert "properties" in schema
+
+    def test_integration_model_equality_behavior(self):
+        """Test integration model equality behavior"""
+        element1 = GetIntegrationsElement(
+            name="test-device", model="test-model", properties={"test": True}
+        )
+        element2 = GetIntegrationsElement(
+            name="test-device", model="test-model", properties={"test": True}
+        )
+        element3 = GetIntegrationsElement(
+            name="different-device", model="different-model", properties={"test": False}
+        )
+
+        assert element1 == element2
+        assert element1 != element3
