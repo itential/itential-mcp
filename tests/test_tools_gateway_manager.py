@@ -297,11 +297,11 @@ class TestGetGateways(TestGatewayManagerTools):
         # Verify client method was called
         self.mock_gateway_manager_service.get_gateways.assert_called_once()
 
-        # Verify result type and content
+        # Verify result type and content - only connected gateways are returned
         assert isinstance(result, GetGatewaysResponse)
-        assert len(result.root) == 4
+        assert len(result.root) == 1
 
-        # Verify first gateway
+        # Verify only the connected gateway is returned
         gateway1 = result.root[0]
         assert isinstance(gateway1, GatewayElement)
         assert gateway1.name == "production-gateway"
@@ -309,24 +309,6 @@ class TestGetGateways(TestGatewayManagerTools):
         assert gateway1.description == "Production environment gateway"
         assert gateway1.status == "connected"
         assert gateway1.enabled is True
-
-        # Verify second gateway
-        gateway2 = result.root[1]
-        assert gateway2.name == "staging-gateway"
-        assert gateway2.status == "disconnected"
-        assert gateway2.enabled is True
-
-        # Verify third gateway
-        gateway3 = result.root[2]
-        assert gateway3.name == "development-gateway"
-        assert gateway3.status == "connecting"
-        assert gateway3.enabled is False
-
-        # Verify fourth gateway
-        gateway4 = result.root[3]
-        assert gateway4.name == "test-gateway"
-        assert gateway4.status == "error"
-        assert gateway4.enabled is True
 
     @pytest.mark.asyncio
     async def test_get_gateways_empty_result(self):
@@ -363,7 +345,7 @@ class TestGetGateways(TestGatewayManagerTools):
 
     @pytest.mark.asyncio
     async def test_get_gateways_various_statuses(self):
-        """Test get_gateways with gateways in various statuses."""
+        """Test get_gateways filters to only return connected gateways."""
         mock_data = {
             "results": [
                 {
@@ -394,12 +376,11 @@ class TestGetGateways(TestGatewayManagerTools):
         result = await get_gateways(self.mock_context)
 
         assert isinstance(result, GetGatewaysResponse)
-        assert len(result.root) == 3
+        assert len(result.root) == 1
 
-        statuses = [gw.status for gw in result.root]
-        assert "connected" in statuses
-        assert "disconnected" in statuses
-        assert "error" in statuses
+        # Only connected gateways should be returned
+        assert result.root[0].status == "connected"
+        assert result.root[0].name == "connected-gw"
 
     @pytest.mark.asyncio
     async def test_get_gateways_client_error(self):
