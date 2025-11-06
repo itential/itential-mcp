@@ -15,13 +15,13 @@ __tags__ = ("integrations",)
 
 
 async def get_integrations(
-    ctx: Annotated[Context, Field(
-        description="The FastMCP Context object"
-    )],
-    model: Annotated[str | None, Field(
-        description="Return only integrations for the specified model",
-        default=None
-    )]
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    model: Annotated[
+        str | None,
+        Field(
+            description="Return only integrations for the specified model", default=None
+        ),
+    ],
 ) -> models.GetIntegrationsResponse:
     """
     Get all integration instances from Itential Platform with optional model filtering.

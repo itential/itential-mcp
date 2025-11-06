@@ -10,6 +10,8 @@ from contextlib import asynccontextmanager
 
 from typing import Any
 
+import uvicorn
+
 from fastmcp import FastMCP
 
 from fastmcp.server.middleware.logging import LoggingMiddleware
@@ -195,23 +197,22 @@ class Server:
 
     async def run(self):
         """Run the server."""
-        kwargs = {
-            "transport": self.config.server.get("transport"),
-            "show_banner": False,
-        }
+        if self.config.server.get("transport") in ("sse", "http"):
+            app = self.mcp.http_app(path=self.config.server.get("path"))
 
-        if kwargs["transport"] in ("sse", "http"):
-            kwargs.update(
-                {
-                    "host": self.config.server.get("host"),
-                    "port": self.config.server.get("port"),
-                }
+            uvicorn_config = uvicorn.Config(
+                app=app,
+                host=self.config.server.get("host"),
+                port=self.config.server.get("port"),
+                ssl_certfile=self.config.server.get("certificate_file"),
+                ssl_keyfile=self.config.server.get("private_key_file"),
             )
 
-            if kwargs["transport"] == "http":
-                kwargs["path"] = self.config.server.get("path")
+            srv = uvicorn.Server(uvicorn_config)
 
-        return await self.mcp.run_async(**kwargs)
+            return await srv.serve()
+        else:
+            return await self.mcp.run_async(transport="stdio", show_banner=False)
 
 
 async def run() -> int:

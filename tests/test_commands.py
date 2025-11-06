@@ -9,7 +9,7 @@ import pytest
 
 from itential_mcp import commands, server, runner
 from itential_mcp.core import metadata
-from itential_mcp.utilities import tool as toolutils
+from itential_mcp.utilities import tool
 
 
 class TestRunCommand:
@@ -120,8 +120,11 @@ class TestVersionCommand:
     def test_version_function_docstring(self):
         """Test that version function has proper docstring"""
         assert commands.version.__doc__ is not None
-        # Note: The docstring currently has a copy-paste error mentioning "run" command
-        assert "itential-mcp" in commands.version.__doc__
+        assert (
+            "Implement the `itential-mcp version` command" in commands.version.__doc__
+        )
+        assert "display_version" in commands.version.__doc__
+        assert "show version information" in commands.version.__doc__
 
     def test_version_returns_coroutine_function(self):
         """Test that the returned function is a coroutine"""
@@ -151,7 +154,7 @@ class TestToolsCommand:
 
         assert isinstance(result, tuple)
         assert len(result) == 3
-        assert result[0] == toolutils.display_tools
+        assert result[0] == tool.display_tools
         assert result[1] is None
         assert result[2] is None
 
@@ -161,7 +164,7 @@ class TestToolsCommand:
 
         for args in test_cases:
             result = commands.tools(args)
-            assert result == (toolutils.display_tools, None, None)
+            assert result == (tool.display_tools, None, None)
 
     def test_tools_function_signature(self):
         """Test that tools function has correct signature"""
@@ -179,7 +182,7 @@ class TestToolsCommand:
         """Test that tools function has proper docstring"""
         assert commands.tools.__doc__ is not None
         assert "Implement the `itential-mcp tools` command" in commands.tools.__doc__
-        assert "display the list of all avaiable tools" in commands.tools.__doc__
+        assert "display the list of all available tools" in commands.tools.__doc__
 
     def test_tools_returns_coroutine_function(self):
         """Test that the returned function is a coroutine"""
@@ -209,7 +212,7 @@ class TestTagsCommand:
 
         assert isinstance(result, tuple)
         assert len(result) == 3
-        assert result[0] == toolutils.display_tags
+        assert result[0] == tool.display_tags
         assert result[1] is None
         assert result[2] is None
 
@@ -219,7 +222,7 @@ class TestTagsCommand:
 
         for args in test_cases:
             result = commands.tags(args)
-            assert result == (toolutils.display_tags, None, None)
+            assert result == (tool.display_tags, None, None)
 
     def test_tags_function_signature(self):
         """Test that tags function has correct signature"""
@@ -237,7 +240,7 @@ class TestTagsCommand:
         """Test that tags function has proper docstring"""
         assert commands.tags.__doc__ is not None
         assert "Implement the `itential-mcp tags` command" in commands.tags.__doc__
-        assert "display the list of all avaiable tags" in commands.tags.__doc__
+        assert "display the list of all available tags" in commands.tags.__doc__
 
     def test_tags_returns_coroutine_function(self):
         """Test that the returned function is a coroutine"""
@@ -374,12 +377,12 @@ class TestModuleStructure:
         """Test that all required modules are imported"""
         assert hasattr(commands, "server")
         assert hasattr(commands, "metadata")
-        assert hasattr(commands, "toolutils")
+        assert hasattr(commands, "tool")
         assert hasattr(commands, "runner")
 
         assert commands.server == server
         assert commands.metadata == metadata
-        assert commands.toolutils == toolutils
+        assert commands.tool == tool
         assert commands.runner == runner
 
     def test_module_functions_exist(self):
