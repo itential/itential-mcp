@@ -171,6 +171,7 @@ class GetIntegrationsElement(BaseModel):
         ),
     ]
 
+
 class GetIntegrationsResponse(RootModel):
     """Response model for the get integrations API endpoint.
 
@@ -192,5 +193,3 @@ class GetIntegrationsResponse(RootModel):
             )
         ),
     ]
-
-

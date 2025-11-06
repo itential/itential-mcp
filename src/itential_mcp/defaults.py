@@ -19,6 +19,12 @@ All configuration values follow the naming convention ITENTIAL_MCP_<section>_<pa
 ITENTIAL_MCP_SERVER_TRANSPORT = "stdio"  # MCP transport protocol: stdio, sse, or http
 ITENTIAL_MCP_SERVER_HOST = "127.0.0.1"  # Server host address for network transports
 ITENTIAL_MCP_SERVER_PORT = 8000  # Server port for network transports
+ITENTIAL_MCP_SERVER_CERTIFICATE_FILE = (
+    ""  # Path to certificate file to use for TLS connections
+)
+ITENTIAL_MCP_SERVER_PRIVATE_KEY_FILE = (
+    ""  # Path to private key file to use for TLS connections
+)
 ITENTIAL_MCP_SERVER_PATH = "/mcp"  # URI path for HTTP-based transports
 ITENTIAL_MCP_SERVER_LOG_LEVEL = "NONE"  # Logging verbosity level
 ITENTIAL_MCP_SERVER_INCLUDE_TAGS = None  # Tool tags to include (None = include all)
