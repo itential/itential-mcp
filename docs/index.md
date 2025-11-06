@@ -32,6 +32,11 @@ Detailed configuration guides for different deployment scenarios.
   - Environment variable mappings
   - Example configurations for different environments
 
+- **[Status Endpoints](status-endpoints.md)** - Health monitoring and operational endpoints
+  - Kubernetes-standard health check endpoints (/status/healthz, /status/readyz, /status/livez)
+  - Production deployment configurations and monitoring integration
+  - Load balancer setup and troubleshooting guides
+
 - **[JWT Authentication](jwt-authentication.md)** - JWT token authentication setup
   - JWT configuration
   - Token validation
@@ -89,8 +94,9 @@ Focus on system health, component management, and platform operations.
 
 **Recommended Reading:**
 1. [User Guide - Platform Administrator Section](user-guide.md#platform-administrator)
-2. [Tools Reference - System & Applications](tools.md#system-management-tools)
-3. [Integration Guide - Security](integration.md#security-considerations)
+2. [Status Endpoints - Health Monitoring](status-endpoints.md)
+3. [Tools Reference - System & Applications](tools.md#system-management-tools)
+4. [Integration Guide - Security](integration.md#security-considerations)
 
 **Key Tools:** `system`, `adapters`, `applications`, `integrations`
 
