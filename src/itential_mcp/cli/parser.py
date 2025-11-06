@@ -8,8 +8,8 @@ from typing import Sequence, Tuple, Mapping, IO
 from dataclasses import fields
 from functools import lru_cache
 
-from . import terminal
-from . import config
+from .terminal import getcols
+from .. import config
 
 
 class Parser(argparse.ArgumentParser):
@@ -116,7 +116,7 @@ class Parser(argparse.ArgumentParser):
                         option = v.option_strings[0]
 
                     if len(option) > 21:
-                        n = terminal.getcols()
+                        n = getcols()
                         helpstr = [
                             helpstr[i : i + n] for i in range(0, len(helpstr), n)
                         ]
@@ -127,9 +127,13 @@ class Parser(argparse.ArgumentParser):
                         print(f"{' ':6}{option:<22}{helpstr}", file=file)
 
                 else:
-                    option = f"{', '.join(v.option_strings)} {v.metavar.upper()}"
+                    if v.metavar is not None:
+                        option = f"{', '.join(v.option_strings)} {v.metavar.upper()}"
+                    else:
+                        option = ", ".join(v.option_strings)
+
                     if len(option) > 15:
-                        n = terminal.getcols()
+                        n = getcols()
                         helpstr = [
                             helpstr[i : i + n] for i in range(0, len(helpstr), n)
                         ]
@@ -151,7 +155,7 @@ class Parser(argparse.ArgumentParser):
                     option = value.option_strings[0]
 
                 if len(option) > 15:
-                    n = terminal.getcols()
+                    n = getcols()
                     helpstr = [helpstr[i : i + n] for i in range(0, len(helpstr), n)]
                     print(f"{' ':6}{option:<22}", file=file)
                     for s in helpstr:
@@ -168,7 +172,7 @@ class Parser(argparse.ArgumentParser):
                     option = ", ".join(value.option_strings)
 
                 if len(option) > 15:
-                    n = terminal.getcols()
+                    n = getcols()
                     helpstr = [helpstr[i : i + n] for i in range(0, len(helpstr), n)]
                     print(f"{' ':6}{option:<22}", file=file)
                     for s in helpstr:
