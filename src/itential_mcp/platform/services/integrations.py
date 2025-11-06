@@ -1,6 +1,7 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from typing import Any
 
 from itential_mcp.core import exceptions
 
@@ -19,6 +20,62 @@ class Service(ServiceBase):
     """
 
     name: str = "integrations"
+
+    async def get_integrations(self, model: str | None = None) -> list[dict[str, Any]]:
+        """
+        Get all integration instances from Itential Platform with optional filtering.
+
+        Integration instances are configured implementations of integration models
+        that define connections to external systems. This method retrieves all
+        instances or filters by a specific model type.
+
+        Args:
+            model (str | None): Optional model name to filter results. If provided,
+                only returns integration instances associated with the specified model.
+                Defaults to None (returns all instances).
+
+        Returns:
+            list[dict[str, Any]]: List of integration instance dictionaries containing:
+                - name: The integration instance name
+                - model: The associated integration model
+                - properties: Configuration schema and properties
+
+        Raises:
+            ConnectionException: If there is an error connecting to the platform
+            AuthenticationException: If authentication credentials are invalid
+        """
+        limit = 100
+        skip = 0
+
+        params = {"limit": limit}
+
+        if model is not None:
+            params.update({
+                "containsField": "model",
+                "contains": model
+            })
+
+        results = list()
+
+        while True:
+            params["skip"] = skip
+
+            res = await self.client.get(
+                "/integrations",
+                params=params,
+            )
+
+            data = res.json()
+
+            results.extend([x["data"] for x in data["results"]])
+
+            if len(results) == data["total"]:
+                break
+
+            skip += limit
+
+        return results
+
 
     async def get_integration_models(self) -> dict:
         """

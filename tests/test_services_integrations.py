@@ -377,3 +377,220 @@ class TestServiceErrorHandling:
             await service.create_integration_model(model)
 
         assert "Creation failed" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_get_integrations_success_no_filter(self, service, mock_client):
+        """Test successful retrieval of all integrations without filtering."""
+        expected_response_data = [
+            {
+                "name": "cisco-switch-01",
+                "model": "cisco-ios",
+                "properties": {
+                    "host": "192.168.1.10",
+                    "username": "admin",
+                    "protocol": "ssh"
+                }
+            },
+            {
+                "name": "juniper-router-01",
+                "model": "juniper-junos",
+                "properties": {
+                    "host": "192.168.1.20",
+                    "username": "netadmin",
+                    "protocol": "netconf"
+                }
+            }
+        ]
+
+        # Mock the paginated API response
+        first_page_response = {
+            "results": [
+                {"data": expected_response_data[0]},
+                {"data": expected_response_data[1]}
+            ],
+            "total": 2
+        }
+
+        mock_response = Mock(spec=Response)
+        mock_response.json.return_value = first_page_response
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_integrations()
+
+        # Verify the call was made with correct parameters
+        mock_client.get.assert_called_once_with(
+            "/integrations",
+            params={"limit": 100, "skip": 0}
+        )
+        assert result == expected_response_data
+
+    @pytest.mark.asyncio
+    async def test_get_integrations_success_with_model_filter(self, service, mock_client):
+        """Test successful retrieval of integrations filtered by model."""
+        expected_response_data = [
+            {
+                "name": "cisco-switch-01",
+                "model": "cisco-ios",
+                "properties": {"host": "192.168.1.10"}
+            },
+            {
+                "name": "cisco-switch-02",
+                "model": "cisco-ios",
+                "properties": {"host": "192.168.1.11"}
+            }
+        ]
+
+        # Mock the filtered API response
+        filtered_response = {
+            "results": [
+                {"data": expected_response_data[0]},
+                {"data": expected_response_data[1]}
+            ],
+            "total": 2
+        }
+
+        mock_response = Mock(spec=Response)
+        mock_response.json.return_value = filtered_response
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_integrations(model="cisco-ios")
+
+        # Verify the call was made with model filter parameters
+        mock_client.get.assert_called_once_with(
+            "/integrations",
+            params={
+                "limit": 100,
+                "skip": 0,
+                "containsField": "model",
+                "contains": "cisco-ios"
+            }
+        )
+        assert result == expected_response_data
+
+    @pytest.mark.asyncio
+    async def test_get_integrations_pagination(self):
+        """Test get_integrations handles pagination correctly."""
+        # Create a fresh mock client for this test
+        fresh_mock_client = Mock()
+        fresh_mock_client.get = AsyncMock()
+        fresh_service = Service(fresh_mock_client)
+        # Create test data that requires pagination
+        first_page_data = [
+            {
+                "name": f"device-{i}",
+                "model": "test-model",
+                "properties": {"id": i}
+            }
+            for i in range(100)
+        ]
+        
+        second_page_data = [
+            {
+                "name": f"device-{i}",
+                "model": "test-model",
+                "properties": {"id": i}
+            }
+            for i in range(100, 150)
+        ]
+
+        # Mock responses for pagination
+        first_response = {
+            "results": [{"data": item} for item in first_page_data],
+            "total": 150  # Total indicates more data available
+        }
+        
+        second_response = {
+            "results": [{"data": item} for item in second_page_data],
+            "total": 150
+        }
+
+        mock_response_1 = Mock(spec=Response)
+        mock_response_1.json.return_value = first_response
+        
+        mock_response_2 = Mock(spec=Response)
+        mock_response_2.json.return_value = second_response
+
+        # Configure mock to return different responses on subsequent calls
+        fresh_mock_client.get.side_effect = [mock_response_1, mock_response_2]
+
+        result = await fresh_service.get_integrations()
+
+        # Verify both pagination calls were made
+        assert fresh_mock_client.get.call_count == 2
+        
+        # Verify the calls were made (params dict is modified in-place so we can't check exact values)
+        # But we can verify the calls were made with the correct path and that it's the GET method
+        calls = fresh_mock_client.get.call_args_list
+        assert len(calls) == 2
+        
+        # Verify all calls were to the correct endpoint
+        for call in calls:
+            assert call[0][0] == "/integrations"  # First positional argument is the path
+            assert "params" in call[1]  # Keyword arguments should include params
+            assert "limit" in call[1]["params"]  # Should have limit parameter
+            assert call[1]["params"]["limit"] == 100  # Limit should be 100
+        
+        # Verify all data was collected
+        assert len(result) == 150
+        assert result == first_page_data + second_page_data
+
+    @pytest.mark.asyncio
+    async def test_get_integrations_empty_response(self, service, mock_client):
+        """Test get_integrations with empty response."""
+        empty_response = {
+            "results": [],
+            "total": 0
+        }
+
+        mock_response = Mock(spec=Response)
+        mock_response.json.return_value = empty_response
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_integrations()
+
+        mock_client.get.assert_called_once_with(
+            "/integrations",
+            params={"limit": 100, "skip": 0}
+        )
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_get_integrations_single_page_exact_limit(self, service, mock_client):
+        """Test get_integrations with exactly one page of results (100 items)."""
+        test_data = [
+            {
+                "name": f"device-{i}",
+                "model": "test-model",
+                "properties": {"id": i}
+            }
+            for i in range(100)
+        ]
+
+        single_page_response = {
+            "results": [{"data": item} for item in test_data],
+            "total": 100  # Exactly matches the page size
+        }
+
+        mock_response = Mock(spec=Response)
+        mock_response.json.return_value = single_page_response
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_integrations()
+
+        # Should only make one call since total matches results length
+        mock_client.get.assert_called_once_with(
+            "/integrations",
+            params={"limit": 100, "skip": 0}
+        )
+        assert result == test_data
+        assert len(result) == 100
+
+    @pytest.mark.asyncio
+    async def test_get_integrations_client_error(self, service, mock_client):
+        """Test get_integrations handles client errors properly."""
+        mock_client.get.side_effect = Exception("Connection failed")
+
+        with pytest.raises(Exception) as exc_info:
+            await service.get_integrations()
+
+        assert "Connection failed" in str(exc_info.value)

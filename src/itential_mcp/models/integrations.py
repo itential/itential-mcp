@@ -123,3 +123,74 @@ class CreateIntegrationModelResponse(BaseModel):
             )
         ),
     ]
+
+
+class GetIntegrationsElement(BaseModel):
+    """Represents a single integration instance element.
+
+    This model represents an individual integration instance returned by the
+    get integrations API endpoint, containing information about the
+    integration's name, associated model, and configuration properties.
+
+    Attributes:
+        name: Name of the integration instance.
+        model: Integration model associated with this instance.
+        properties: The integration model schema and configuration.
+    """
+
+    name: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Name of the integration instance
+                """
+            )
+        ),
+    ]
+
+    model: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Integration model assoicated with this instance
+                """
+            )
+        ),
+    ]
+
+    properties: Annotated[
+        dict,
+        Field(
+            description=inspect.cleandoc(
+                """
+                The integration model schema
+                """
+            )
+        ),
+    ]
+
+class GetIntegrationsResponse(RootModel):
+    """Response model for the get integrations API endpoint.
+
+    This root model wraps a list of GetIntegrationsElement objects representing
+    all integration instances on the Itential Platform server.
+
+    Attributes:
+        root: List of integration instance elements, each containing instance details.
+    """
+
+    root: Annotated[
+        List[GetIntegrationsElement],
+        Field(
+            description=inspect.cleandoc(
+                """
+                A list of elements where each element represents an integration
+                instance from the server
+                """
+            )
+        ),
+    ]
+
+
