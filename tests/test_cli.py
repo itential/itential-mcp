@@ -656,7 +656,7 @@ class TestModuleStructure:
         assert callable(cli.add_platform_group)
         assert hasattr(cli, "add_server_group")
         assert callable(cli.add_server_group)
-        
+
         # Test internal function is available via direct import
         assert callable(_get_arguments_from_config)
 

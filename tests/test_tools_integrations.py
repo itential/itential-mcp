@@ -666,8 +666,8 @@ class TestGetIntegrations:
                 "properties": {
                     "host": "192.168.1.10",
                     "username": "admin",
-                    "protocol": "ssh"
-                }
+                    "protocol": "ssh",
+                },
             },
             {
                 "name": "juniper-router-01",
@@ -675,9 +675,9 @@ class TestGetIntegrations:
                 "properties": {
                     "host": "192.168.1.20",
                     "username": "netadmin",
-                    "protocol": "netconf"
-                }
-            }
+                    "protocol": "netconf",
+                },
+            },
         ]
 
         client = mock_context.request_context.lifespan_context.get.return_value
@@ -695,7 +695,10 @@ class TestGetIntegrations:
         client.integrations.get_integrations.assert_called_once_with(model=None)
 
         # Verify the result is properly transformed
-        from itential_mcp.models.integrations import GetIntegrationsResponse, GetIntegrationsElement
+        from itential_mcp.models.integrations import (
+            GetIntegrationsResponse,
+            GetIntegrationsElement,
+        )
 
         expected_result = GetIntegrationsResponse(
             root=[
@@ -705,8 +708,8 @@ class TestGetIntegrations:
                     properties={
                         "host": "192.168.1.10",
                         "username": "admin",
-                        "protocol": "ssh"
-                    }
+                        "protocol": "ssh",
+                    },
                 ),
                 GetIntegrationsElement(
                     name="juniper-router-01",
@@ -714,8 +717,8 @@ class TestGetIntegrations:
                     properties={
                         "host": "192.168.1.20",
                         "username": "netadmin",
-                        "protocol": "netconf"
-                    }
+                        "protocol": "netconf",
+                    },
                 ),
             ]
         )
@@ -730,13 +733,13 @@ class TestGetIntegrations:
             {
                 "name": "cisco-switch-01",
                 "model": "cisco-ios",
-                "properties": {"host": "192.168.1.10", "username": "admin"}
+                "properties": {"host": "192.168.1.10", "username": "admin"},
             },
             {
                 "name": "cisco-switch-02",
                 "model": "cisco-ios",
-                "properties": {"host": "192.168.1.11", "username": "admin"}
-            }
+                "properties": {"host": "192.168.1.11", "username": "admin"},
+            },
         ]
 
         client = mock_context.request_context.lifespan_context.get.return_value
@@ -754,19 +757,22 @@ class TestGetIntegrations:
         client.integrations.get_integrations.assert_called_once_with(model="cisco-ios")
 
         # Verify the result
-        from itential_mcp.models.integrations import GetIntegrationsResponse, GetIntegrationsElement
+        from itential_mcp.models.integrations import (
+            GetIntegrationsResponse,
+            GetIntegrationsElement,
+        )
 
         expected_result = GetIntegrationsResponse(
             root=[
                 GetIntegrationsElement(
                     name="cisco-switch-01",
                     model="cisco-ios",
-                    properties={"host": "192.168.1.10", "username": "admin"}
+                    properties={"host": "192.168.1.10", "username": "admin"},
                 ),
                 GetIntegrationsElement(
                     name="cisco-switch-02",
                     model="cisco-ios",
-                    properties={"host": "192.168.1.11", "username": "admin"}
+                    properties={"host": "192.168.1.11", "username": "admin"},
                 ),
             ]
         )
@@ -784,7 +790,7 @@ class TestGetIntegrations:
         result = await integrations.get_integrations(mock_context, model=None)
 
         from itential_mcp.models.integrations import GetIntegrationsResponse
-        
+
         assert result == GetIntegrationsResponse(root=[])
 
     @pytest.mark.asyncio
@@ -795,22 +801,18 @@ class TestGetIntegrations:
                 "name": "complex-device",
                 "model": "multi-vendor-network",
                 "properties": {
-                    "connection": {
-                        "host": "192.168.1.100",
-                        "port": 22,
-                        "timeout": 30
-                    },
+                    "connection": {"host": "192.168.1.100", "port": 22, "timeout": 30},
                     "capabilities": ["ssh", "netconf", "snmp"],
                     "metadata": {
                         "location": "datacenter-1",
                         "rack": "A-12",
-                        "environment": "production"
+                        "environment": "production",
                     },
                     "monitoring": {
                         "enabled": True,
-                        "thresholds": {"cpu": 80, "memory": 90}
-                    }
-                }
+                        "thresholds": {"cpu": 80, "memory": 90},
+                    },
+                },
             }
         ]
 
@@ -820,7 +822,10 @@ class TestGetIntegrations:
         result = await integrations.get_integrations(mock_context, model=None)
 
         # Verify complex properties are preserved
-        from itential_mcp.models.integrations import GetIntegrationsResponse, GetIntegrationsElement
+        from itential_mcp.models.integrations import (
+            GetIntegrationsResponse,
+            GetIntegrationsElement,
+        )
 
         expected_result = GetIntegrationsResponse(
             root=[
@@ -831,19 +836,19 @@ class TestGetIntegrations:
                         "connection": {
                             "host": "192.168.1.100",
                             "port": 22,
-                            "timeout": 30
+                            "timeout": 30,
                         },
                         "capabilities": ["ssh", "netconf", "snmp"],
                         "metadata": {
                             "location": "datacenter-1",
                             "rack": "A-12",
-                            "environment": "production"
+                            "environment": "production",
                         },
                         "monitoring": {
                             "enabled": True,
-                            "thresholds": {"cpu": 80, "memory": 90}
-                        }
-                    }
+                            "thresholds": {"cpu": 80, "memory": 90},
+                        },
+                    },
                 )
             ]
         )
@@ -870,18 +875,18 @@ class TestGetIntegrations:
             {
                 "name": "network-switch",
                 "model": "cisco-catalyst",
-                "properties": {"type": "switch", "ports": 48}
+                "properties": {"type": "switch", "ports": 48},
             },
             {
                 "name": "backup-server",
                 "model": "linux-ubuntu",
-                "properties": {"type": "server", "os": "ubuntu-20.04"}
+                "properties": {"type": "server", "os": "ubuntu-20.04"},
             },
             {
                 "name": "cloud-api",
                 "model": "aws-ec2",
-                "properties": {"type": "cloud", "region": "us-east-1"}
-            }
+                "properties": {"type": "cloud", "region": "us-east-1"},
+            },
         ]
 
         client = mock_context.request_context.lifespan_context.get.return_value
@@ -900,11 +905,7 @@ class TestGetIntegrations:
     async def test_get_integrations_with_empty_properties(self, mock_context):
         """Test get_integrations with integrations having empty properties."""
         mock_response = [
-            {
-                "name": "minimal-device",
-                "model": "minimal-model",
-                "properties": {}
-            }
+            {"name": "minimal-device", "model": "minimal-model", "properties": {}}
         ]
 
         client = mock_context.request_context.lifespan_context.get.return_value
@@ -912,14 +913,15 @@ class TestGetIntegrations:
 
         result = await integrations.get_integrations(mock_context, model=None)
 
-        from itential_mcp.models.integrations import GetIntegrationsResponse, GetIntegrationsElement
+        from itential_mcp.models.integrations import (
+            GetIntegrationsResponse,
+            GetIntegrationsElement,
+        )
 
         expected_result = GetIntegrationsResponse(
             root=[
                 GetIntegrationsElement(
-                    name="minimal-device",
-                    model="minimal-model",
-                    properties={}
+                    name="minimal-device", model="minimal-model", properties={}
                 )
             ]
         )
@@ -937,8 +939,8 @@ class TestGetIntegrations:
                 "properties": {
                     "id": i,
                     "status": "active" if i % 2 == 0 else "inactive",
-                    "location": f"rack-{i // 10}"
-                }
+                    "location": f"rack-{i // 10}",
+                },
             }
             for i in range(200)
         ]
@@ -950,13 +952,13 @@ class TestGetIntegrations:
 
         # Verify all 200 integrations are processed correctly
         assert len(result.root) == 200
-        
+
         # Verify first and last elements
         first_integration = result.root[0]
         assert first_integration.name == "device-000"
         assert first_integration.model == "model-0"
         assert first_integration.properties["id"] == 0
-        
+
         last_integration = result.root[199]
         assert last_integration.name == "device-199"
         assert last_integration.model == "model-4"

@@ -148,6 +148,24 @@ class Config(object):
         json_schema_extra=options("--port", metavar="<port>", type=int),
     )
 
+    server_certificate_file: str = Field(
+        description="Path to the certificate file to use for TLS connections",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_CERTIFICATE_FILE",
+        ),
+        json_schema_extra=options("--certificate-file", metavar="<path>"),
+    )
+
+    server_private_key_file: str = Field(
+        description="path to the private key file to use for TLS connections",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_PRIVATE_KEY_FILE",
+        ),
+        json_schema_extra=options("--private-key-file", metavar="<path>"),
+    )
+
     server_path: str = Field(
         description="URI path used to accept requests from",
         default_factory=default_factory(env.getstr, "ITENTIAL_MCP_SERVER_PATH"),
@@ -462,6 +480,12 @@ class Config(object):
             "transport": self.server_transport,
             "host": self.server_host,
             "port": self.server_port,
+            "certificate_file": self.server_certificate_file
+            if self.server_certificate_file
+            else None,
+            "private_key_file": self.server_private_key_file
+            if self.server_private_key_file
+            else None,
             "path": self.server_path,
             "tools_path": self.server_tools_path,
             "log_level": self.server_log_level,
