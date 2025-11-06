@@ -16,7 +16,7 @@ class TestParseArgs:
     """Test cases for parse_args function"""
 
     @patch("itential_mcp.commands.run")
-    @patch("itential_mcp.cli._get_arguments_from_config")
+    @patch("itential_mcp.cli.parser._get_arguments_from_config")
     def test_parse_args_run_command(self, mock_config_args, mock_run_cmd):
         """Test parsing run command"""
         mock_config_args.return_value = []
@@ -61,7 +61,7 @@ class TestParseArgs:
         mock_exit.assert_called_once_with(0)
 
     @patch("itential_mcp.commands.version")
-    @patch("itential_mcp.cli._get_arguments_from_config")
+    @patch("itential_mcp.cli.parser._get_arguments_from_config")
     def test_parse_args_version_command(self, mock_config_args, mock_version_cmd):
         """Test version command parsing"""
         mock_config_args.return_value = []
@@ -77,7 +77,7 @@ class TestParseArgs:
         mock_version_cmd.assert_called_once()
 
     @patch("itential_mcp.commands.tools")
-    @patch("itential_mcp.cli._get_arguments_from_config")
+    @patch("itential_mcp.cli.parser._get_arguments_from_config")
     def test_parse_args_tools_command(self, mock_config_args, mock_tools_cmd):
         """Test tools command parsing"""
         mock_config_args.return_value = []
@@ -93,7 +93,7 @@ class TestParseArgs:
         mock_tools_cmd.assert_called_once()
 
     @patch("itential_mcp.commands.tags")
-    @patch("itential_mcp.cli._get_arguments_from_config")
+    @patch("itential_mcp.cli.parser._get_arguments_from_config")
     def test_parse_args_tags_command(self, mock_config_args, mock_tags_cmd):
         """Test tags command parsing"""
         mock_config_args.return_value = []
@@ -109,7 +109,7 @@ class TestParseArgs:
         mock_tags_cmd.assert_called_once()
 
     @patch("itential_mcp.commands.call")
-    @patch("itential_mcp.cli._get_arguments_from_config")
+    @patch("itential_mcp.cli.parser._get_arguments_from_config")
     def test_parse_args_call_command(self, mock_config_args, mock_call_cmd):
         """Test call command parsing"""
         mock_config_args.return_value = []
@@ -126,7 +126,7 @@ class TestParseArgs:
 
     @patch("os.environ", {})
     @patch("itential_mcp.commands.run")
-    @patch("itential_mcp.cli._get_arguments_from_config")
+    @patch("itential_mcp.cli.parser._get_arguments_from_config")
     def test_parse_args_config_file(self, mock_config_args, mock_run_cmd):
         """Test config file argument"""
         mock_config_args.return_value = []
@@ -142,7 +142,7 @@ class TestParseArgs:
 
     @patch("os.environ", {"ITENTIAL_MCP_TRANSPORT": "sse"})
     @patch("itential_mcp.commands.run")
-    @patch("itential_mcp.cli._get_arguments_from_config")
+    @patch("itential_mcp.cli.parser._get_arguments_from_config")
     def test_parse_args_legacy_environment_variables(
         self, mock_config_args, mock_run_cmd
     ):
@@ -161,7 +161,7 @@ class TestParseArgs:
         assert os.environ.get("ITENTIAL_MCP_SERVER_TRANSPORT") == "sse"
 
     @patch("itential_mcp.commands.run")
-    @patch("itential_mcp.cli._get_arguments_from_config")
+    @patch("itential_mcp.cli.parser._get_arguments_from_config")
     def test_parse_args_invalid_handler(self, mock_config_args, mock_run_cmd):
         """Test error handling for invalid command handler"""
         mock_config_args.return_value = []
@@ -172,7 +172,7 @@ class TestParseArgs:
 
     @patch("os.environ", {})
     @patch("itential_mcp.commands.run")
-    @patch("itential_mcp.cli._get_arguments_from_config")
+    @patch("itential_mcp.cli.parser._get_arguments_from_config")
     def test_parse_args_environment_variable_setting(
         self, mock_config_args, mock_run_cmd
     ):
@@ -350,7 +350,7 @@ class TestIntegration:
 
     @patch("os.environ", {})
     @patch("itential_mcp.commands.run")
-    @patch("itential_mcp.cli._get_arguments_from_config")
+    @patch("itential_mcp.cli.parser._get_arguments_from_config")
     def test_full_argument_processing_integration(self, mock_config_args, mock_run_cmd):
         """Test full argument processing flow"""
         mock_config_args.return_value = []

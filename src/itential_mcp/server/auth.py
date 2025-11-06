@@ -8,7 +8,13 @@ extended with additional providers in the future.
 
 from typing import Dict, Any
 
-from fastmcp.server.auth import AuthProvider, JWTVerifier, RemoteAuthProvider, OAuthProxy, OAuthProvider
+from fastmcp.server.auth import (
+    AuthProvider,
+    JWTVerifier,
+    RemoteAuthProvider,
+    OAuthProxy,
+    OAuthProvider,
+)
 
 from ..core import logging
 from ..config import Config
@@ -90,7 +96,7 @@ def _build_oauth_provider(auth_config: Dict[str, Any]) -> AuthProvider:
     """
     required_fields = ["redirect_uri"]
     missing_fields = [field for field in required_fields if not auth_config.get(field)]
-    
+
     if missing_fields:
         raise ConfigurationException(
             f"OAuth server requires the following fields: {', '.join(missing_fields)}"
@@ -129,9 +135,15 @@ def _build_oauth_proxy_provider(auth_config: Dict[str, Any]) -> AuthProvider:
     Raises:
         ConfigurationException: If OAuth proxy provider initialization fails.
     """
-    required_fields = ["client_id", "client_secret", "authorization_url", "token_url", "redirect_uri"]
+    required_fields = [
+        "client_id",
+        "client_secret",
+        "authorization_url",
+        "token_url",
+        "redirect_uri",
+    ]
     missing_fields = [field for field in required_fields if not auth_config.get(field)]
-    
+
     if missing_fields:
         raise ConfigurationException(
             f"OAuth proxy authentication requires the following fields: {', '.join(missing_fields)}"
@@ -140,13 +152,14 @@ def _build_oauth_proxy_provider(auth_config: Dict[str, Any]) -> AuthProvider:
     # Create a token verifier (can use JWTVerifier or StaticTokenVerifier)
     try:
         from fastmcp.server.auth import StaticTokenVerifier
+
         token_verifier = StaticTokenVerifier()  # Basic token verifier
     except ImportError:
         # Fallback to JWT verifier if StaticTokenVerifier not available
         token_verifier = JWTVerifier()
 
     base_url = auth_config["redirect_uri"].rstrip("/auth/callback")
-    
+
     oauth_kwargs = {
         "upstream_authorization_endpoint": auth_config["authorization_url"],
         "upstream_token_endpoint": auth_config["token_url"],
@@ -175,7 +188,9 @@ def _build_oauth_proxy_provider(auth_config: Dict[str, Any]) -> AuthProvider:
     return provider
 
 
-def _get_provider_config(provider_type: str, auth_config: Dict[str, Any]) -> Dict[str, Any]:
+def _get_provider_config(
+    provider_type: str, auth_config: Dict[str, Any]
+) -> Dict[str, Any]:
     """Get provider-specific OAuth configuration.
 
     Args:
@@ -189,15 +204,15 @@ def _get_provider_config(provider_type: str, auth_config: Dict[str, Any]) -> Dic
         ConfigurationException: If provider type is not supported.
     """
     config = {}
-    
+
     # Add custom scopes if specified
     if auth_config.get("scopes"):
         config["scopes"] = auth_config["scopes"]
-    
+
     # Add custom redirect URI if specified
     if auth_config.get("redirect_uri"):
         config["redirect_uri"] = auth_config["redirect_uri"]
-        
+
     # Provider-specific defaults and overrides
     if provider_type == "google":
         if not auth_config.get("scopes"):
@@ -222,7 +237,7 @@ def _get_provider_config(provider_type: str, auth_config: Dict[str, Any]) -> Dic
             f"Unsupported OAuth provider type: {provider_type}. "
             f"Supported types: google, azure, auth0, github, okta, generic"
         )
-    
+
     return config
 
 
@@ -239,10 +254,10 @@ def supports_transport(auth_provider: AuthProvider, transport: str) -> bool:
     # OAuth providers only work with HTTP-based transports
     if isinstance(auth_provider, (RemoteAuthProvider, OAuthProxy, OAuthProvider)):
         return transport in ("sse", "http")
-    
+
     # JWT can work with any transport
     if isinstance(auth_provider, JWTVerifier):
         return True
-    
+
     # Default: assume compatibility
     return True

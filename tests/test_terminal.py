@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import shutil
 import os
 
-from itential_mcp import terminal
+from itential_mcp.cli import terminal
 
 
 class TestGetcols:
@@ -177,10 +177,10 @@ class TestTerminalModule:
 
     def test_module_has_copyright(self):
         """Test that the module file has copyright header."""
-        import itential_mcp.terminal
+        import itential_mcp.cli.terminal
         import inspect
 
-        source = inspect.getsource(itential_mcp.terminal)
+        source = inspect.getsource(itential_mcp.cli.terminal)
         assert "Copyright (c) 2025 Itential, Inc" in source
         assert "GNU General Public License v3.0+" in source
 
