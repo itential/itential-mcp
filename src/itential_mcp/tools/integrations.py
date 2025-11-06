@@ -14,6 +14,58 @@ from itential_mcp.models import integrations as models
 __tags__ = ("integrations",)
 
 
+async def get_integrations(
+    ctx: Annotated[Context, Field(
+        description="The FastMCP Context object"
+    )],
+    model: Annotated[str | None, Field(
+        description="Return only integrations for the specified model",
+        default=None
+    )]
+) -> models.GetIntegrationsResponse:
+    """
+    Get all integration instances from Itential Platform with optional model filtering.
+
+    This function retrieves integration instances from the Itential Platform.
+    Integration instances are configured implementations of integration models
+    that define connections to external systems.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+        model (str | None): Optional model name to filter results. If provided,
+            only returns integration instances associated with the specified model.
+            Defaults to None (returns all instances).
+
+    Returns:
+        GetIntegrationsResponse: Response containing a list of integration instance
+            objects with the following fields:
+                - name: The integration instance name
+                - model: The associated integration model
+                - properties: Configuration schema and properties
+
+    Raises:
+        Exception: If there is an error retrieving integrations from the platform
+    """
+    await ctx.info("inside get_integrations(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    res = await client.integrations.get_integrations(model=model)
+
+    results = list()
+
+    for ele in res:
+        results.append(
+            models.GetIntegrationsElement(
+                name=ele["name"],
+                model=ele["model"],
+                properties=ele["properties"],
+            )
+        )
+
+    return models.GetIntegrationsResponse(root=results)
+
+
 async def get_integration_models(
     ctx: Annotated[Context, Field(description="The FastMCP Context object")],
 ) -> models.GetIntegrationModelsResponse:

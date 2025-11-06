@@ -633,3 +633,331 @@ class TestIntegrationModelsErrorScenarios:
                 await integrations.create_integration_model(mock_context, model)
 
             assert "model duplicate-api:1.0.0 already exists" in str(exc_info.value)
+
+
+class TestGetIntegrations:
+    """Test cases for the get_integrations tool function."""
+
+    @pytest.fixture
+    def mock_context(self):
+        """Create a mock FastMCP Context for testing."""
+        context = Mock(spec=Context)
+        context.info = AsyncMock()
+
+        # Mock the lifespan context
+        mock_client = Mock()
+        mock_client.integrations = Mock()
+        mock_client.integrations.get_integrations = AsyncMock()
+
+        context.request_context = Mock()
+        context.request_context.lifespan_context = Mock()
+        context.request_context.lifespan_context.get = Mock(return_value=mock_client)
+
+        return context
+
+    @pytest.mark.asyncio
+    async def test_get_integrations_success_no_model_filter(self, mock_context):
+        """Test successful retrieval of integrations without model filter."""
+        # Mock the client response
+        mock_response = [
+            {
+                "name": "cisco-switch-01",
+                "model": "cisco-ios",
+                "properties": {
+                    "host": "192.168.1.10",
+                    "username": "admin",
+                    "protocol": "ssh"
+                }
+            },
+            {
+                "name": "juniper-router-01",
+                "model": "juniper-junos",
+                "properties": {
+                    "host": "192.168.1.20",
+                    "username": "netadmin",
+                    "protocol": "netconf"
+                }
+            }
+        ]
+
+        client = mock_context.request_context.lifespan_context.get.return_value
+        client.integrations.get_integrations.return_value = mock_response
+
+        result = await integrations.get_integrations(mock_context, model=None)
+
+        # Verify context.info was called
+        mock_context.info.assert_called_once_with("inside get_integrations(...)")
+
+        # Verify client was retrieved and method called
+        mock_context.request_context.lifespan_context.get.assert_called_once_with(
+            "client"
+        )
+        client.integrations.get_integrations.assert_called_once_with(model=None)
+
+        # Verify the result is properly transformed
+        from itential_mcp.models.integrations import GetIntegrationsResponse, GetIntegrationsElement
+
+        expected_result = GetIntegrationsResponse(
+            root=[
+                GetIntegrationsElement(
+                    name="cisco-switch-01",
+                    model="cisco-ios",
+                    properties={
+                        "host": "192.168.1.10",
+                        "username": "admin",
+                        "protocol": "ssh"
+                    }
+                ),
+                GetIntegrationsElement(
+                    name="juniper-router-01",
+                    model="juniper-junos",
+                    properties={
+                        "host": "192.168.1.20",
+                        "username": "netadmin",
+                        "protocol": "netconf"
+                    }
+                ),
+            ]
+        )
+
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_get_integrations_success_with_model_filter(self, mock_context):
+        """Test successful retrieval of integrations with model filter."""
+        # Mock the client response (filtered to cisco-ios only)
+        mock_response = [
+            {
+                "name": "cisco-switch-01",
+                "model": "cisco-ios",
+                "properties": {"host": "192.168.1.10", "username": "admin"}
+            },
+            {
+                "name": "cisco-switch-02",
+                "model": "cisco-ios",
+                "properties": {"host": "192.168.1.11", "username": "admin"}
+            }
+        ]
+
+        client = mock_context.request_context.lifespan_context.get.return_value
+        client.integrations.get_integrations.return_value = mock_response
+
+        result = await integrations.get_integrations(mock_context, model="cisco-ios")
+
+        # Verify context.info was called
+        mock_context.info.assert_called_once_with("inside get_integrations(...)")
+
+        # Verify client was retrieved and method called with model filter
+        mock_context.request_context.lifespan_context.get.assert_called_once_with(
+            "client"
+        )
+        client.integrations.get_integrations.assert_called_once_with(model="cisco-ios")
+
+        # Verify the result
+        from itential_mcp.models.integrations import GetIntegrationsResponse, GetIntegrationsElement
+
+        expected_result = GetIntegrationsResponse(
+            root=[
+                GetIntegrationsElement(
+                    name="cisco-switch-01",
+                    model="cisco-ios",
+                    properties={"host": "192.168.1.10", "username": "admin"}
+                ),
+                GetIntegrationsElement(
+                    name="cisco-switch-02",
+                    model="cisco-ios",
+                    properties={"host": "192.168.1.11", "username": "admin"}
+                ),
+            ]
+        )
+
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_get_integrations_empty_response(self, mock_context):
+        """Test get_integrations with empty response."""
+        mock_response = []
+
+        client = mock_context.request_context.lifespan_context.get.return_value
+        client.integrations.get_integrations.return_value = mock_response
+
+        result = await integrations.get_integrations(mock_context, model=None)
+
+        from itential_mcp.models.integrations import GetIntegrationsResponse
+        
+        assert result == GetIntegrationsResponse(root=[])
+
+    @pytest.mark.asyncio
+    async def test_get_integrations_with_complex_properties(self, mock_context):
+        """Test get_integrations with complex nested properties."""
+        mock_response = [
+            {
+                "name": "complex-device",
+                "model": "multi-vendor-network",
+                "properties": {
+                    "connection": {
+                        "host": "192.168.1.100",
+                        "port": 22,
+                        "timeout": 30
+                    },
+                    "capabilities": ["ssh", "netconf", "snmp"],
+                    "metadata": {
+                        "location": "datacenter-1",
+                        "rack": "A-12",
+                        "environment": "production"
+                    },
+                    "monitoring": {
+                        "enabled": True,
+                        "thresholds": {"cpu": 80, "memory": 90}
+                    }
+                }
+            }
+        ]
+
+        client = mock_context.request_context.lifespan_context.get.return_value
+        client.integrations.get_integrations.return_value = mock_response
+
+        result = await integrations.get_integrations(mock_context, model=None)
+
+        # Verify complex properties are preserved
+        from itential_mcp.models.integrations import GetIntegrationsResponse, GetIntegrationsElement
+
+        expected_result = GetIntegrationsResponse(
+            root=[
+                GetIntegrationsElement(
+                    name="complex-device",
+                    model="multi-vendor-network",
+                    properties={
+                        "connection": {
+                            "host": "192.168.1.100",
+                            "port": 22,
+                            "timeout": 30
+                        },
+                        "capabilities": ["ssh", "netconf", "snmp"],
+                        "metadata": {
+                            "location": "datacenter-1",
+                            "rack": "A-12",
+                            "environment": "production"
+                        },
+                        "monitoring": {
+                            "enabled": True,
+                            "thresholds": {"cpu": 80, "memory": 90}
+                        }
+                    }
+                )
+            ]
+        )
+
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_get_integrations_client_error(self, mock_context):
+        """Test get_integrations handles client errors."""
+        client = mock_context.request_context.lifespan_context.get.return_value
+        client.integrations.get_integrations.side_effect = Exception(
+            "Connection failed"
+        )
+
+        with pytest.raises(Exception) as exc_info:
+            await integrations.get_integrations(mock_context, model=None)
+
+        assert "Connection failed" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_get_integrations_with_various_model_types(self, mock_context):
+        """Test get_integrations with integrations of various model types."""
+        mock_response = [
+            {
+                "name": "network-switch",
+                "model": "cisco-catalyst",
+                "properties": {"type": "switch", "ports": 48}
+            },
+            {
+                "name": "backup-server",
+                "model": "linux-ubuntu",
+                "properties": {"type": "server", "os": "ubuntu-20.04"}
+            },
+            {
+                "name": "cloud-api",
+                "model": "aws-ec2",
+                "properties": {"type": "cloud", "region": "us-east-1"}
+            }
+        ]
+
+        client = mock_context.request_context.lifespan_context.get.return_value
+        client.integrations.get_integrations.return_value = mock_response
+
+        result = await integrations.get_integrations(mock_context, model=None)
+
+        # Verify all different model types are handled
+        assert len(result.root) == 3
+        models = [integration.model for integration in result.root]
+        assert "cisco-catalyst" in models
+        assert "linux-ubuntu" in models
+        assert "aws-ec2" in models
+
+    @pytest.mark.asyncio
+    async def test_get_integrations_with_empty_properties(self, mock_context):
+        """Test get_integrations with integrations having empty properties."""
+        mock_response = [
+            {
+                "name": "minimal-device",
+                "model": "minimal-model",
+                "properties": {}
+            }
+        ]
+
+        client = mock_context.request_context.lifespan_context.get.return_value
+        client.integrations.get_integrations.return_value = mock_response
+
+        result = await integrations.get_integrations(mock_context, model=None)
+
+        from itential_mcp.models.integrations import GetIntegrationsResponse, GetIntegrationsElement
+
+        expected_result = GetIntegrationsResponse(
+            root=[
+                GetIntegrationsElement(
+                    name="minimal-device",
+                    model="minimal-model",
+                    properties={}
+                )
+            ]
+        )
+
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_get_integrations_large_dataset(self, mock_context):
+        """Test get_integrations with large number of integrations."""
+        # Create mock data for 200 integrations
+        mock_response = [
+            {
+                "name": f"device-{i:03d}",
+                "model": f"model-{i % 5}",  # 5 different models
+                "properties": {
+                    "id": i,
+                    "status": "active" if i % 2 == 0 else "inactive",
+                    "location": f"rack-{i // 10}"
+                }
+            }
+            for i in range(200)
+        ]
+
+        client = mock_context.request_context.lifespan_context.get.return_value
+        client.integrations.get_integrations.return_value = mock_response
+
+        result = await integrations.get_integrations(mock_context, model=None)
+
+        # Verify all 200 integrations are processed correctly
+        assert len(result.root) == 200
+        
+        # Verify first and last elements
+        first_integration = result.root[0]
+        assert first_integration.name == "device-000"
+        assert first_integration.model == "model-0"
+        assert first_integration.properties["id"] == 0
+        
+        last_integration = result.root[199]
+        assert last_integration.name == "device-199"
+        assert last_integration.model == "model-4"
+        assert last_integration.properties["id"] == 199
