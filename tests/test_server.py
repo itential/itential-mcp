@@ -504,7 +504,6 @@ class TestHealthEndpoints:
         server.mcp = MagicMock()
         return server
 
-
     @pytest.mark.asyncio
     async def test_healthz_endpoint_healthy(self):
         """Test /status/healthz endpoint returns 200 when healthy"""

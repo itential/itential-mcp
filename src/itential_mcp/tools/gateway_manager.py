@@ -100,7 +100,7 @@ async def get_gateways(
                     status=ele["connection_status"],
                     enabled=ele["enabled"],
                 )
-        )
+            )
 
     return models.GetGatewaysResponse(results)
 

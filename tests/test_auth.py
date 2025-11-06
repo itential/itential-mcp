@@ -91,7 +91,9 @@ class TestBuildAuthProvider:
             auth.build_auth_provider(cfg)
             mock_jwt_verifier.assert_called_once()
 
-    @patch("itential_mcp.server.auth.JWTVerifier", side_effect=Exception("general error"))
+    @patch(
+        "itential_mcp.server.auth.JWTVerifier", side_effect=Exception("general error")
+    )
     def test_jwt_general_errors_are_wrapped(self, mock_jwt_verifier):
         """General JWT verifier errors are wrapped in ConfigurationException."""
         cfg = Config(server_auth_type="jwt")
@@ -158,7 +160,9 @@ class TestJWTProviderBuilder:
             required_scopes=["read", "write"],
         )
 
-    @patch("itential_mcp.server.auth.JWTVerifier", side_effect=ValueError("invalid key"))
+    @patch(
+        "itential_mcp.server.auth.JWTVerifier", side_effect=ValueError("invalid key")
+    )
     def test_handles_jwt_value_error(self, mock_jwt_verifier):
         """JWT provider builder handles ValueError exceptions."""
         auth_config = {"type": "jwt"}
@@ -168,7 +172,10 @@ class TestJWTProviderBuilder:
 
         assert "invalid key" in str(exc.value)
 
-    @patch("itential_mcp.server.auth.JWTVerifier", side_effect=RuntimeError("runtime error"))
+    @patch(
+        "itential_mcp.server.auth.JWTVerifier",
+        side_effect=RuntimeError("runtime error"),
+    )
     def test_handles_jwt_general_error(self, mock_jwt_verifier):
         """JWT provider builder handles general exceptions."""
         auth_config = {"type": "jwt"}
@@ -287,7 +294,10 @@ class TestOAuthProviderBuilder:
             base_url="http://localhost:8000", required_scopes=["read", "write"]
         )
 
-    @patch("itential_mcp.server.auth.OAuthProvider", side_effect=ValueError("invalid config"))
+    @patch(
+        "itential_mcp.server.auth.OAuthProvider",
+        side_effect=ValueError("invalid config"),
+    )
     def test_build_oauth_provider_value_error(self, mock_oauth_provider):
         """OAuth provider builder handles ValueError exceptions."""
         auth_config = {
@@ -300,7 +310,10 @@ class TestOAuthProviderBuilder:
 
         assert "invalid config" in str(exc.value)
 
-    @patch("itential_mcp.server.auth.OAuthProvider", side_effect=RuntimeError("runtime error"))
+    @patch(
+        "itential_mcp.server.auth.OAuthProvider",
+        side_effect=RuntimeError("runtime error"),
+    )
     def test_build_oauth_provider_general_error(self, mock_oauth_provider):
         """OAuth provider builder handles general exceptions."""
         auth_config = {

@@ -61,7 +61,6 @@ async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
 
 
 class Server:
-
     def __init__(self, cfg: config.Config):
         self.config = cfg
         self.mcp = None

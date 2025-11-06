@@ -355,9 +355,9 @@ class Config(object):
         ),
     )
 
-    server_auth_oauth_provider_type: Literal[
-        "generic", "google", "azure", "auth0", "github", "okta"
-    ] | None = Field(
+    server_auth_oauth_provider_type: (
+        Literal["generic", "google", "azure", "auth0", "github", "okta"] | None
+    ) = Field(
         description="OAuth provider type for predefined configurations",
         default_factory=default_factory(
             env.getstr,
