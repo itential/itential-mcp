@@ -86,15 +86,20 @@ async def get_gateways(
 
     results = []
 
+    # XXX (privateip) The results are filtered to only return gateways that
+    # have a connection status of `connected` since we do not care about
+    # disconnected gateways.  Additionally if a gateway status is disconnected,
+    # the API does not return the gateway_name property.
     for ele in data["results"]:
-        results.append(
-            models.GatewayElement(
-                name=ele["gateway_name"],
-                cluster=ele["cluster_id"],
-                description=ele["description"],
-                status=ele["connection_status"],
-                enabled=ele["enabled"],
-            )
+        if ele["connection_status"] == "connected":
+            results.append(
+                models.GatewayElement(
+                    name=ele["gateway_name"],
+                    cluster=ele["cluster_id"],
+                    description=ele["description"],
+                    status=ele["connection_status"],
+                    enabled=ele["enabled"],
+                )
         )
 
     return models.GetGatewaysResponse(results)
