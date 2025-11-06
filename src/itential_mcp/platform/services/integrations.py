@@ -50,10 +50,7 @@ class Service(ServiceBase):
         params = {"limit": limit}
 
         if model is not None:
-            params.update({
-                "containsField": "model",
-                "contains": model
-            })
+            params.update({"containsField": "model", "contains": model})
 
         results = list()
 
@@ -75,7 +72,6 @@ class Service(ServiceBase):
             skip += limit
 
         return results
-
 
     async def get_integration_models(self) -> dict:
         """

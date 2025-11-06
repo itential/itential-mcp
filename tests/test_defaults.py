@@ -21,6 +21,14 @@ class TestServerDefaults:
         """Test that server port defaults to 8000."""
         assert defaults.ITENTIAL_MCP_SERVER_PORT == 8000
 
+    def test_server_certificate_file_default(self):
+        """Test that server certificate file defaults to empty string."""
+        assert defaults.ITENTIAL_MCP_SERVER_CERTIFICATE_FILE == ""
+
+    def test_server_private_key_file_default(self):
+        """Test that server private key file defaults to empty string."""
+        assert defaults.ITENTIAL_MCP_SERVER_PRIVATE_KEY_FILE == ""
+
     def test_server_path_default(self):
         """Test that server path defaults to /mcp."""
         assert defaults.ITENTIAL_MCP_SERVER_PATH == "/mcp"
@@ -121,6 +129,8 @@ class TestDefaultsModuleStructure:
             "ITENTIAL_MCP_SERVER_TRANSPORT",
             "ITENTIAL_MCP_SERVER_HOST",
             "ITENTIAL_MCP_SERVER_PORT",
+            "ITENTIAL_MCP_SERVER_CERTIFICATE_FILE",
+            "ITENTIAL_MCP_SERVER_PRIVATE_KEY_FILE",
             "ITENTIAL_MCP_SERVER_PATH",
             "ITENTIAL_MCP_SERVER_LOG_LEVEL",
             "ITENTIAL_MCP_SERVER_INCLUDE_TAGS",
@@ -178,6 +188,14 @@ class TestDefaultValueTypes:
     def test_server_port_is_int(self):
         """Test that server port is an integer."""
         assert isinstance(defaults.ITENTIAL_MCP_SERVER_PORT, int)
+
+    def test_server_certificate_file_is_string(self):
+        """Test that server certificate file is a string."""
+        assert isinstance(defaults.ITENTIAL_MCP_SERVER_CERTIFICATE_FILE, str)
+
+    def test_server_private_key_file_is_string(self):
+        """Test that server private key file is a string."""
+        assert isinstance(defaults.ITENTIAL_MCP_SERVER_PRIVATE_KEY_FILE, str)
 
     def test_server_path_is_string(self):
         """Test that server path is a string."""

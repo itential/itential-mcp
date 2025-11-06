@@ -628,7 +628,7 @@ class TestGetIntegrationsElement:
             properties={
                 "hostname": "192.168.1.1",
                 "username": "admin",
-                "protocol": "ssh"
+                "protocol": "ssh",
             },
         )
 
@@ -659,7 +659,7 @@ class TestGetIntegrationsElement:
             properties={
                 "device_type": "router",
                 "management_ip": "10.0.0.1",
-                "enabled": True
+                "enabled": True,
             },
         )
 
@@ -669,7 +669,7 @@ class TestGetIntegrationsElement:
             "properties": {
                 "device_type": "router",
                 "management_ip": "10.0.0.1",
-                "enabled": True
+                "enabled": True,
             },
         }
 
@@ -719,26 +719,19 @@ class TestGetIntegrationsElement:
                 "host": "192.168.1.100",
                 "port": 22,
                 "timeout": 30,
-                "credentials": {
-                    "username": "netadmin",
-                    "auth_method": "key"
-                }
+                "credentials": {"username": "netadmin", "auth_method": "key"},
             },
             "capabilities": ["ssh", "netconf", "snmp"],
             "metadata": {
                 "location": "datacenter-1",
                 "rack": "A-12",
-                "environment": "production"
+                "environment": "production",
             },
             "monitoring": {
                 "enabled": True,
                 "interval": 60,
-                "thresholds": {
-                    "cpu": 80,
-                    "memory": 90,
-                    "disk": 95
-                }
-            }
+                "thresholds": {"cpu": 80, "memory": 90, "disk": 95},
+            },
         }
 
         element = GetIntegrationsElement(
@@ -782,8 +775,8 @@ class TestGetIntegrationsElement:
                 "vlans": [10, 20, 30, 100, 200],
                 "interfaces": {
                     "GigabitEthernet1/0/1": {"status": "up", "vlan": 10},
-                    "GigabitEthernet1/0/2": {"status": "up", "vlan": 20}
-                }
+                    "GigabitEthernet1/0/2": {"status": "up", "vlan": 20},
+                },
             },
         )
 
@@ -923,7 +916,7 @@ class TestGetIntegrationsResponse:
                 properties={
                     "connection": {"ip": "192.168.1.2", "port": 22},
                     "capabilities": ["ssh", "snmp"],
-                    "metadata": {"location": "dc1"}
+                    "metadata": {"location": "dc1"},
                 },
             ),
             GetIntegrationsElement(
@@ -957,9 +950,9 @@ class TestIntegrationsModelInteroperability:
                 name=f"network-device-{i}",
                 model="generic-network",
                 properties={
-                    "ip": f"192.168.1.{i+10}",
+                    "ip": f"192.168.1.{i + 10}",
                     "port": 22,
-                    "enabled": i % 2 == 0
+                    "enabled": i % 2 == 0,
                 },
             )
             for i in range(3)
@@ -971,7 +964,7 @@ class TestIntegrationsModelInteroperability:
         for i, element in enumerate(response.root):
             assert element.name == f"network-device-{i}"
             assert element.model == "generic-network"
-            assert element.properties["ip"] == f"192.168.1.{i+10}"
+            assert element.properties["ip"] == f"192.168.1.{i + 10}"
 
     def test_integration_model_field_descriptions_exist(self):
         """Test that integration models have proper field descriptions"""

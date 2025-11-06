@@ -702,3 +702,285 @@ class TestIntegration:
             mock_mcp.run_async.assert_called_once_with(
                 transport="stdio", show_banner=False
             )
+
+
+class TestServerClass:
+    """Test the Server class for uvicorn-based server functionality."""
+
+    def test_server_init(self):
+        """Test Server class initialization"""
+        mock_config = MagicMock()
+        mock_config.server = {"transport": "sse", "host": "127.0.0.1", "port": 8000}
+        mock_config.server_log_level = "INFO"
+
+        server_instance = server_module.Server(mock_config)
+
+        assert server_instance.config == mock_config
+        assert server_instance.mcp is None
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.server.server.uvicorn.Server")
+    @patch("itential_mcp.server.server.Server.__aenter__")
+    @patch("itential_mcp.server.server.Server.__aexit__")
+    async def test_server_run_sse_transport_with_uvicorn(
+        self, mock_aexit, mock_aenter, mock_uvicorn_server
+    ):
+        """Test Server.run() method with SSE transport uses uvicorn"""
+        # Setup config for SSE transport
+        mock_config = MagicMock()
+        mock_config.server = {
+            "transport": "sse",
+            "host": "0.0.0.0",
+            "port": 8080,
+            "certificate_file": None,
+            "private_key_file": None,
+            "path": "/mcp",
+        }
+
+        # Create server instance
+        server_instance = server_module.Server(mock_config)
+
+        # Mock MCP instance
+        mock_mcp = MagicMock()
+        mock_mcp.http_app = MagicMock(return_value="test_app")
+        server_instance.mcp = mock_mcp
+
+        # Mock uvicorn Server and Config
+        mock_uvicorn_instance = MagicMock()
+        mock_uvicorn_instance.serve = AsyncMock()
+        mock_uvicorn_server.return_value = mock_uvicorn_instance
+
+        with patch("itential_mcp.server.server.uvicorn.Config") as mock_uvicorn_config:
+            await server_instance.run()
+
+            # Verify uvicorn Config was created correctly
+            mock_uvicorn_config.assert_called_once_with(
+                app="test_app",
+                host="0.0.0.0",
+                port=8080,
+                ssl_certfile=None,
+                ssl_keyfile=None,
+            )
+
+            # Verify uvicorn Server was created and serve was called
+            mock_uvicorn_server.assert_called_once()
+            mock_uvicorn_instance.serve.assert_called_once()
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.server.server.uvicorn.Server")
+    async def test_server_run_http_transport_with_uvicorn(self, mock_uvicorn_server):
+        """Test Server.run() method with HTTP transport uses uvicorn"""
+        # Setup config for HTTP transport
+        mock_config = MagicMock()
+        mock_config.server = {
+            "transport": "http",
+            "host": "localhost",
+            "port": 3000,
+            "certificate_file": "/path/to/cert.pem",
+            "private_key_file": "/path/to/key.pem",
+            "path": "/api",
+        }
+
+        # Create server instance
+        server_instance = server_module.Server(mock_config)
+
+        # Mock MCP instance
+        mock_mcp = MagicMock()
+        mock_mcp.http_app = MagicMock(return_value="test_app")
+        server_instance.mcp = mock_mcp
+
+        # Mock uvicorn Server
+        mock_uvicorn_instance = MagicMock()
+        mock_uvicorn_instance.serve = AsyncMock()
+        mock_uvicorn_server.return_value = mock_uvicorn_instance
+
+        with patch("itential_mcp.server.server.uvicorn.Config") as mock_uvicorn_config:
+            await server_instance.run()
+
+            # Verify uvicorn Config was created with TLS settings
+            mock_uvicorn_config.assert_called_once_with(
+                app="test_app",
+                host="localhost",
+                port=3000,
+                ssl_certfile="/path/to/cert.pem",
+                ssl_keyfile="/path/to/key.pem",
+            )
+
+            # Verify uvicorn Server was created and serve was called
+            mock_uvicorn_server.assert_called_once()
+            mock_uvicorn_instance.serve.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_server_run_stdio_transport_uses_fastmcp(self):
+        """Test Server.run() method with stdio transport uses FastMCP directly"""
+        # Setup config for stdio transport
+        mock_config = MagicMock()
+        mock_config.server = {
+            "transport": "stdio",
+        }
+
+        # Create server instance
+        server_instance = server_module.Server(mock_config)
+
+        # Mock MCP instance
+        mock_mcp = MagicMock()
+        mock_mcp.run_async = AsyncMock()
+        server_instance.mcp = mock_mcp
+
+        await server_instance.run()
+
+        # Verify FastMCP run_async was called for stdio
+        mock_mcp.run_async.assert_called_once_with(transport="stdio", show_banner=False)
+
+    @pytest.mark.asyncio
+    async def test_server_run_missing_mcp_instance(self):
+        """Test Server.run() method when mcp instance is None"""
+        mock_config = MagicMock()
+        mock_config.server = {"transport": "sse", "host": "127.0.0.1", "port": 8000}
+
+        server_instance = server_module.Server(mock_config)
+        # mcp remains None
+
+        # This should not raise an error but would in real usage
+        # Since mcp.http_app would be called
+        with pytest.raises(AttributeError):
+            await server_instance.run()
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.server.server.uvicorn.Server")
+    async def test_server_run_tls_configuration_variations(self, mock_uvicorn_server):
+        """Test Server.run() with various TLS configurations"""
+        test_cases = [
+            # No TLS certificates
+            {
+                "certificate_file": None,
+                "private_key_file": None,
+                "expected_cert": None,
+                "expected_key": None,
+            },
+            # Only certificate file
+            {
+                "certificate_file": "/cert.pem",
+                "private_key_file": None,
+                "expected_cert": "/cert.pem",
+                "expected_key": None,
+            },
+            # Only private key file
+            {
+                "certificate_file": None,
+                "private_key_file": "/key.pem",
+                "expected_cert": None,
+                "expected_key": "/key.pem",
+            },
+            # Both files
+            {
+                "certificate_file": "/cert.pem",
+                "private_key_file": "/key.pem",
+                "expected_cert": "/cert.pem",
+                "expected_key": "/key.pem",
+            },
+        ]
+
+        for case in test_cases:
+            mock_config = MagicMock()
+            mock_config.server = {
+                "transport": "sse",
+                "host": "127.0.0.1",
+                "port": 8000,
+                "certificate_file": case["certificate_file"],
+                "private_key_file": case["private_key_file"],
+                "path": "/mcp",
+            }
+
+            server_instance = server_module.Server(mock_config)
+
+            # Mock MCP instance
+            mock_mcp = MagicMock()
+            mock_mcp.http_app = MagicMock(return_value="test_app")
+            server_instance.mcp = mock_mcp
+
+            # Mock uvicorn Server
+            mock_uvicorn_instance = MagicMock()
+            mock_uvicorn_instance.serve = AsyncMock()
+            mock_uvicorn_server.return_value = mock_uvicorn_instance
+
+            with patch(
+                "itential_mcp.server.server.uvicorn.Config"
+            ) as mock_uvicorn_config:
+                await server_instance.run()
+
+                # Verify uvicorn Config was called with expected values
+                mock_uvicorn_config.assert_called_with(
+                    app="test_app",
+                    host="127.0.0.1",
+                    port=8000,
+                    ssl_certfile=case["expected_cert"],
+                    ssl_keyfile=case["expected_key"],
+                )
+
+            # Reset mocks for next iteration
+            mock_uvicorn_server.reset_mock()
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.server.server.uvicorn.Server")
+    async def test_server_run_http_app_path_configuration(self, mock_uvicorn_server):
+        """Test that Server.run() correctly configures http_app with path"""
+        mock_config = MagicMock()
+        mock_config.server = {
+            "transport": "http",
+            "host": "127.0.0.1",
+            "port": 8000,
+            "certificate_file": None,
+            "private_key_file": None,
+            "path": "/custom-path",
+        }
+
+        server_instance = server_module.Server(mock_config)
+
+        # Mock MCP instance
+        mock_mcp = MagicMock()
+        mock_mcp.http_app = MagicMock(return_value="test_app")
+        server_instance.mcp = mock_mcp
+
+        # Mock uvicorn Server
+        mock_uvicorn_instance = MagicMock()
+        mock_uvicorn_instance.serve = AsyncMock()
+        mock_uvicorn_server.return_value = mock_uvicorn_instance
+
+        with patch("itential_mcp.server.server.uvicorn.Config"):
+            await server_instance.run()
+
+            # Verify http_app was called with the correct path
+            mock_mcp.http_app.assert_called_with(path="/custom-path")
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.server.auth.build_auth_provider")
+    @patch("itential_mcp.server.server.bindings.iterbindings")
+    @patch("itential_mcp.server.server.toolutils.itertools")
+    async def test_server_context_manager(
+        self, mock_itertools, mock_iterbindings, mock_auth_builder
+    ):
+        """Test Server can be used as async context manager"""
+        mock_config = MagicMock()
+        mock_config.server = {"transport": "stdio"}
+        mock_config.auth = {"type": "none"}
+        mock_config.tools = []
+        mock_auth_builder.return_value = None
+
+        # Setup empty tools iterator
+        mock_itertools.return_value = []
+
+        # Setup empty bindings iterator
+        async def empty_aiter():
+            return
+            yield  # unreachable but makes this an async generator
+
+        mock_iterbindings.return_value = empty_aiter()
+
+        server_instance = server_module.Server(mock_config)
+
+        # Test that Server can be used as context manager
+        # In real implementation, this would set up and tear down resources
+        with patch("itential_mcp.server.server.FastMCP"):
+            async with server_instance as srv:
+                assert srv == server_instance
