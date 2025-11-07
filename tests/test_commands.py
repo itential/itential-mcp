@@ -7,7 +7,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from itential_mcp import commands, server, runner
+from itential_mcp.runtime import commands, runner
+from itential_mcp import server
 from itential_mcp.core import metadata
 from itential_mcp.utilities import tool
 

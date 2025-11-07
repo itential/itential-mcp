@@ -119,7 +119,7 @@ class TestCLICommands:
 
     @patch("sys.argv", ["itential-mcp", "call", "test_tool"])
     @patch("asyncio.run")
-    @patch("itential_mcp.runner.run")
+    @patch("itential_mcp.runtime.runner.run")
     def test_itential_mcp_call_tool(self, mock_runner_run, mock_asyncio_run):
         """Test itential-mcp call command with tool"""
         mock_runner_run.return_value = {"result": "success"}
@@ -135,7 +135,7 @@ class TestCLICommands:
         ["itential-mcp", "call", "test_tool", "--params", '{"key": "value"}'],
     )
     @patch("asyncio.run")
-    @patch("itential_mcp.runner.run")
+    @patch("itential_mcp.runtime.runner.run")
     def test_itential_mcp_call_tool_with_params(
         self, mock_runner_run, mock_asyncio_run
     ):
@@ -223,31 +223,25 @@ class TestCLIErrorHandling:
     """Test cases for CLI error handling"""
 
     @patch("sys.argv", ["itential-mcp", "invalid_command"])
-    @patch("traceback.print_exc")
-    @patch("sys.exit")
-    def test_invalid_command_handled(self, mock_exit, mock_print_exc):
+    def test_invalid_command_handled(self):
         """Test that invalid commands are handled gracefully"""
-        app.run()
+        # argparse will call sys.exit(2) for invalid command, which will be caught
+        # and re-raised, then caught again by our exception handler
+        with pytest.raises(SystemExit) as exc_info:
+            app.run()
 
-        # Should exit with error code - check that it was called with 1
-        # May be called multiple times due to argparse error handling
-        assert mock_exit.called
-        calls = [call.args[0] for call in mock_exit.call_args_list if call.args]
-        assert 1 in calls  # Check that exit(1) was called at least once
-        mock_print_exc.assert_called_once()
+        # argparse uses exit code 2 for invalid arguments
+        assert exc_info.value.code == 2
 
     @patch("sys.argv", ["itential-mcp", "call"])
-    @patch("traceback.print_exc")
-    @patch("sys.exit")
-    def test_call_without_tool_handled(self, mock_exit, mock_print_exc):
+    def test_call_without_tool_handled(self):
         """Test that call command without tool name is handled"""
-        app.run()
+        # argparse will call sys.exit(2) for missing required argument
+        with pytest.raises(SystemExit) as exc_info:
+            app.run()
 
-        # Should exit with error code - may be called by argparse first, then by app
-        assert mock_exit.called
-        calls = [call.args[0] for call in mock_exit.call_args_list if call.args]
-        assert 1 in calls  # Check that exit(1) was called at least once
-        mock_print_exc.assert_called_once()
+        # argparse uses exit code 2 for missing required arguments
+        assert exc_info.value.code == 2
 
 
 class TestCLIIntegration:
