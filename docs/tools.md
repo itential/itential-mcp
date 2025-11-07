@@ -7,16 +7,20 @@ This document provides a comprehensive list of all tools available in the Itenti
 The following tags are available for filtering tools based on their functionality:
 
 - `adapters` - Adapter lifecycle management tools
-- `applications` - Application lifecycle management tools
-- `automation_studio` - Command template and automation tools
-- `configuration_manager` - Configuration, compliance, and device management tools
-- `devices` - Device-specific operations (subset of configuration_manager)
+- `applications` - Application lifecycle management tools  
+- `automation_studio` - Command templates, projects, and template management tools
+- `configuration_manager` - Configuration, compliance, device, and golden config management tools
 - `gateway_manager` - Gateway and external service management tools
+- `health` - Platform health and monitoring tools
 - `integrations` - External system integration tools
 - `lifecycle_manager` - Resource lifecycle and instance management tools
 - `operations_manager` - Workflow and job management tools
-- `system` - Platform health and monitoring tools
 - `workflow_engine` - Workflow execution metrics and performance tools
+
+## Tool Count Summary
+
+- **Total Tools**: 56 MCP tools across 17 files
+- **Most Popular Tags**: `configuration_manager` (15 tools), `automation_studio` (8 tools), `lifecycle_manager` (7 tools)
 
 ## Adapters Management (`adapters.py`)
 **Group Tags:** `adapters`
@@ -97,6 +101,7 @@ The following tags are available for filtering tools based on their functionalit
 ## Integrations (`integrations.py`)
 **Group Tags:** `integrations`
 
+- **get_integrations** - Get all integration instances from Itential Platform with optional model filtering
 - **get_integration_models** - Get all integration models from Itential Platform with OpenAPI specifications
 - **create_integration_model** - Create a new integration model from an OpenAPI specification with validation
 
@@ -109,6 +114,7 @@ The following tags are available for filtering tools based on their functionalit
 - **get_instances** - Get all instances of a Lifecycle Manager resource with instance data and last actions
 - **describe_instance** - Get detailed information about a specific resource instance
 - **run_action** - Execute a lifecycle action on a resource instance with input parameters and job tracking
+- **get_action_executions** - Get action execution history from Lifecycle Manager filtered by resource and instance
 
 ## Operations Manager (`operations_manager.py`)
 **Group Tags:** `operations_manager`
@@ -125,8 +131,8 @@ The following tags are available for filtering tools based on their functionalit
 - **get_projects** - Get all Automation Studio projects from Itential Platform with project metadata
 - **describe_project** - Get detailed information about a specific project including all components and artifacts
 
-## System Health (`system.py`)
-**Group Tags:** `system`
+## Platform Health (`health.py`)
+**Group Tags:** `health`
 
 - **get_health** - Get comprehensive health information including system status, resource utilization, and component status
 
@@ -139,3 +145,58 @@ The following tags are available for filtering tools based on their functionalit
 - **get_task_metrics_for_workflow** - Get task metrics for a specific workflow with task performance data
 - **get_task_metrics_for_app** - Get task metrics for a specific application across all workflows
 - **get_task_metrics_for_task** - Get metrics for a specific named task across all workflows
+
+## Quick Reference by Category
+
+### System Management Tools
+| Tag | Tools | Description |
+|-----|--------|-------------|
+| `health` | 1 tool | Platform health monitoring |
+
+### Device & Network Management Tools  
+| Tag | Tools | Description |
+|-----|--------|-------------|
+| `configuration_manager` | 15 tools | Devices, device groups, compliance, golden config, template rendering |
+
+### Workflow & Automation Tools
+| Tag | Tools | Description |
+|-----|--------|-------------|
+| `operations_manager` | 5 tools | Workflow execution and job management |
+| `workflow_engine` | 6 tools | Workflow and task performance metrics |
+| `automation_studio` | 8 tools | Command templates, projects, and template management |
+
+### Platform Management Tools
+| Tag | Tools | Description |
+|-----|--------|-------------|
+| `adapters` | 4 tools | Adapter lifecycle management |
+| `applications` | 4 tools | Application lifecycle management |
+| `lifecycle_manager` | 7 tools | Resource lifecycle and instance management |
+
+### External Integration Tools
+| Tag | Tools | Description |
+|-----|--------|-------------|
+| `gateway_manager` | 3 tools | Gateway and external service management |
+| `integrations` | 3 tools | Integration model and instance management |
+
+## Usage Examples
+
+### Filter Tools by Role
+```bash
+# Network Engineers - Device management focus
+itential-mcp --include-tags "configuration_manager"
+
+# Platform Administrators - System health focus  
+itential-mcp --include-tags "health,adapters,applications"
+
+# Automation Developers - Workflow focus
+itential-mcp --include-tags "operations_manager,workflow_engine,automation_studio"
+
+# Platform Operators - Daily operations
+itential-mcp --include-tags "operations_manager,configuration_manager"
+```
+
+### Exclude Beta/Experimental Tools
+```bash
+# Exclude experimental features
+itential-mcp --exclude-tags "experimental,beta"
+```
