@@ -23,12 +23,13 @@ Build automation workflows, integrate with external systems, manage application 
 ## 📒 Key Features
 
 ### **Core Capabilities**
-- **Advanced Tool Selection**: Filter and control available tools using flexible tagging system with 10+ tag groups
-- **Multiple Transport Methods**: stdio, SSE, and HTTP transports for different deployment scenarios
+- **56+ Automation Tools**: Comprehensive toolkit across 10 tag categories for all network automation needs
+- **Advanced Tool Selection**: Filter and control available tools using flexible tagging system
+- **Multiple Transport Methods**: stdio, SSE, and HTTP transports with optional TLS encryption
 - **Dynamic Tool Discovery**: Automatically discovers and registers tools without code modifications
-- **Flexible Authentication**: Supports both basic authentication and OAuth 2.0 for Itential Platform
+- **Flexible Authentication**: Supports basic auth, OAuth 2.0, JWT, and role-based access for Itential Platform
 - **Comprehensive Configuration**: CLI parameters, environment variables, or configuration files
-- **Role-Based Access**: Tailored tool configurations for Platform SREs, Builders, Developers, and Operators
+- **Role-Based Access**: Tailored tool configurations for Platform Administrators, Network Engineers, and Developers
 
 ### **Network Automation & Device Management**
 - **Device Configuration**: Apply configurations, backup device settings, and retrieve current configurations
@@ -212,10 +213,10 @@ itential-mcp run --transport sse --host 0.0.0.0 --port 8000
  | Option           | Description                                       | Default           |
  |------------------|---------------------------------------------------|-------------------|
  | `--transport`    | Transport protocol (stdio, sse, http)             | stdio             |
- | `--host`         | Host address to listen on                         | localhost         |
+ | `--host`         | Host address to listen on                         | 127.0.0.1         |
  | `--port`         | Port to listen on                                 | 8000              |
- | `--path`         | The streamable HTTP path to use                   | /mcp              |
- | `--log-level`    | Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL) | INFO              |
+ | `--path`         | The HTTP path to use                              | /mcp              |
+ | `--log-level`    | Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL, NONE) | NONE              |
  | `--include-tags` | Tags to include registered tools                  | none              |
  | `--exclude-tags` | Tags to exclude registered tools                  | experimental,beta |
 
@@ -272,8 +273,8 @@ The Itential MCP server provides powerful tool filtering capabilities through a 
 Control tool availability using include and exclude tags:
 
 ```bash
-# Include only system and device management tools
-itential-mcp run --include-tags "system,configuration_manager,devices"
+# Include only health and device management tools  
+itential-mcp run --include-tags "health,configuration_manager"
 
 # Exclude experimental and beta tools (default behavior)
 itential-mcp run --exclude-tags "experimental,beta,lifecycle_manager"
@@ -281,78 +282,80 @@ itential-mcp run --exclude-tags "experimental,beta,lifecycle_manager"
 
 ### **Available Tag Groups**
 
-| Tag Group | Description | Use Case |
-|-----------|-------------|----------|
-| `system` | Platform health and monitoring | Platform administrators |
-| `configuration_manager` | Device and compliance management | Network engineers |
-| `devices` | Device-specific operations | NOC teams |
-| `operations_manager` | Workflow and job management | Automation developers |
-| `adapters` | Adapter lifecycle management | Integration specialists |
-| `applications` | Application lifecycle management | Application owners |
-| `automation_studio` | Command templates and automation | Network operators |
-| `gateway_manager` | External service management | System integrators |
-| `integrations` | External system integrations | API developers |
-| `lifecycle_manager` | Stateful product CRUD operations and state tracking | Product managers |
-| `workflow_engine` | Workflow execution metrics | Performance analysts |
+| Tag Group | Tool Count | Description | Use Case |
+|-----------|------------|-------------|----------|
+| `health` | 1 | Platform health and monitoring | Platform administrators |
+| `configuration_manager` | 15 | Device, compliance, and config management | Network engineers |
+| `operations_manager` | 5 | Workflow and job management | Automation developers |
+| `automation_studio` | 8 | Command templates, projects, templates | Network operators |
+| `lifecycle_manager` | 7 | Resource lifecycle and instance management | Product managers |
+| `workflow_engine` | 6 | Workflow execution metrics | Performance analysts |
+| `adapters` | 4 | Adapter lifecycle management | Integration specialists |
+| `applications` | 4 | Application lifecycle management | Application owners |
+| `gateway_manager` | 3 | External service management | System integrators |
+| `integrations` | 3 | External system integrations | API developers |
 
 ### **Role-Based Configurations**
 
 The following role-based configurations provide tailored tool access based on specific job functions and responsibilities:
 
-**Platform SRE:**
-*Use Cases: Platform & application administration, Adapter management, Integration management, Troubleshooting, Platform overall health and functionality*
+**Platform Administrator:**
+*System health monitoring, component management, platform operations*
 
 ```bash
-itential-mcp run --include-tags "system,adapters,applications,integrations"
+itential-mcp run --include-tags "health,adapters,applications,integrations"
 ```
 
-*Available Tools: get_health, restart_application, start_application, stop_application, create_integration_model, get_job_metrics, get_task_metrics, restart_adapter, start_adapter, stop_adapter, get_task_metrics_for_app, get_task_metrics_for_task, get_task_metrics_for_workflow*
+*Key Tools: Platform health monitoring, adapter/application lifecycle, integration management*
 
-**Platform Builder:**
-*Use Cases: Asset development, Asset promotion, Workflow metrics analysis, Resource lifecycle management*
+**Network Engineer:**
+*Device management, configurations, compliance, network automation*
 
 ```bash
-itential-mcp run --include-tags "operations_manager,automation_studio,configuration_manager,workflow_engine,lifecycle_manager"
+itential-mcp run --include-tags "configuration_manager,automation_studio"
 ```
 
-*Available Tools: create_resource, get_workflows, describe_command_template, run_command_template, run_command, render_template, create_device_group, get_resources, describe_resource, get_instances, backup_device_configuration, apply_device_configuration, get_compliance_plans, run_compliance_plan, get_adapters, get_applications, get_integration_models, get_job_metrics, get_job_metrics_for_workflow, get_task_metrics, get_task_metrics_for_workflow, get_task_metrics_for_app, get_task_metrics_for_task, describe_instance, run_action*
+*Key Tools: Device configuration, compliance plans, command templates, golden config management*
 
 **Automation Developer:**
-*Use Cases: Asset development, Asset promotion, External service management*
+*Workflow building, performance analysis, platform extension*
 
 ```bash
-itential-mcp run --include-tags "operations_manager,gateway_manager"
+itential-mcp run --include-tags "operations_manager,workflow_engine,lifecycle_manager,gateway_manager"
 ```
 
-*Available Tools: create_resource, get_services, get_gateways, run_service*
+*Key Tools: Workflow execution, performance metrics, resource lifecycle, external service integration*
 
 **Platform Operator:**
-*Use Cases: Execute jobs, Run compliance, Consume data*
+*Daily operations, job monitoring, report generation*
 
 ```bash
-itential-mcp run --include-tags "operations_manager,devices,configuration_manager,automation_studio"
+itential-mcp run --include-tags "operations_manager,configuration_manager"
 ```
 
-*Available Tools: get_workflows, start_workflow, get_jobs, describe_job, get_devices, get_device_configuration, get_device_groups, get_command_templates, run_command_template, describe_compliance_report*
+*Key Tools: Workflow execution, job monitoring, device operations, compliance reporting*
 
 ## 📚 Documentation & Integration
 
 ### **Complete Tool Reference**
 The entire list of available tools can be found in the [tools documentation](docs/tools.md) along with detailed tag associations.
 
-### **Client Integration Guides**
+### **Configuration & Security**
 - [MCP Client Integration](docs/integration.md) - Configure Claude, Continue.dev, and other MCP clients
+- [TLS Configuration](docs/tls.md) - Enable secure HTTPS connections with certificates
+- [JWT Authentication](docs/jwt-authentication.md) - JWT token authentication setup
+- [OAuth Authentication](docs/oauth-authentication.md) - OAuth 2.0 with multiple providers
 - [Configuration Examples](docs/mcp.conf.example) - Complete configuration file reference
-- [Tagging System](docs/tags.md) - Advanced tagging and filtering guide
-- [Workflow Execution](docs/exposing-workflows.md) - Running automation workflows
+- [Status Endpoints](docs/status-endpoints.md) - Health monitoring for production deployments
+
+### **Advanced Features**
+- [Tagging System](docs/tags.md) - Advanced tool filtering and selection strategies
+- [Workflow Execution](docs/exposing-workflows.md) - Execute and monitor Itential workflows
+- [Custom Tools Development](docs/custom-tools.md) - Create and integrate custom MCP tools
 
 ### **Example Prompts**
 - [Claude Desktop Prompt](docs/claude-example.prompt) - Optimized prompt for Claude integration
 - [GPT Integration Prompt](docs/gpt-example.prompt) - Optimized prompt for GPT integration
-
-## 💡 Available Tools
-The entire list of available tools can be found in the [tools](docs/tools.md)
-file along with the tag groups associated with those tools.
 
 ## 🛠️ Adding new Tools
 Adding a new tool is simple:
