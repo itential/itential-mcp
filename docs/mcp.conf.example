@@ -11,7 +11,7 @@
 
 # Configures the transport to use when starting the MCP server.  This
 # configuration option accepts one of three valid values: `sse`, `stdio`  
-# or `streamable-http`
+# or `http`
 #
 # Default value: stdio
 # Environment variable: ITENTIAL_MCP_SERVER_TRANSPORT
@@ -20,25 +20,43 @@
 
 # Sets the IP address to listen for connections on.  This value must be a valid
 # IP address used by MCP clients to connect to this server.  This value is only
-# valid when transport is set to `sse`.  
+# valid when transport is set to `sse` or `http`.  
 #
-# Default value: localhost
+# Default value: 127.0.0.1
 # Environment variable: ITENTIAL_MCP_SERVER_HOST
 #
-# host = localhost
+# host = 127.0.0.1
 
 # Sets the port to use when listening for connections.  Setting this value will
 # configure the port the MCP server will listen for connections on.  This value
-# is only valid when the transport is set to `sse`, otherwise it is ignored.  
+# is only valid when the transport is set to `sse` or `http`, otherwise it is ignored.  
 #
 # Default value: 8000
 # Environment variable: ITENTIAL_MCP_SERVER_PORT
 #
 # port = 8000
 
+# Configures the path to the certificate file to use for TLS connections.  This
+# value must be the full path to a valid certificate file that the MCP server
+# can use to establish secure TLS connections with clients.
+#
+# Default value: (empty string)
+# Environment variable: ITENTIAL_MCP_SERVER_CERTIFICATE_FILE
+#
+# certificate_file = /path/to/certificate.pem
+
+# Configures the path to the private key file to use for TLS connections.  This
+# value must be the full path to a valid private key file that corresponds to
+# the certificate file specified above.
+#
+# Default value: (empty string)
+# Environment variable: ITENTIAL_MCP_SERVER_PRIVATE_KEY_FILE
+#
+# private_key_file = /path/to/private_key.pem
+
 # Configure the URL path for the server to listen for client requests on.  This
-# value is appened to the host to create the full URL path for sending requests
-# to.
+# value is appended to the host to create the full URL path for sending requests
+# to. This value is only valid when the transport is set to `sse` or `http`.
 #
 # Default value: /mcp
 # Environment variable: ITENTIAL_MCP_SERVER_PATH
@@ -47,12 +65,12 @@
 
 # Configures the logging level for output of log messages when running the
 # server.  This configuration option accepts one of the following values:
-# `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.  
+# `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`, `NONE`.  
 #
-# Default value: INFO
+# Default value: NONE
 # Environment variable: ITENTIAL_MCP_SERVER_LOG_LEVEL
 #
-# log_level = INFO
+# log_level = NONE
 
 # Configures the list of tags to including when starting the server.  This
 # value will control which tools are available when the server is started.
@@ -74,6 +92,141 @@
 # Environment variable: ITENTIAL_MCP_SERVER_EXCLUDE_TAGS
 #
 # exclude_tags = experimental, beta
+
+# Configures the path to load additional tools from.  This configuration
+# option allows you to specify a custom directory where additional tool 
+# modules can be loaded from at server startup.  Tools in this directory
+# will be automatically discovered and registered with the MCP server.
+#
+# Default value: null
+# Environment variable: ITENTIAL_MCP_SERVER_TOOLS_PATH
+#
+# tools_path = /path/to/custom/tools
+
+# Configures the authentication provider type used to secure the MCP server.
+# This setting controls which authentication method the server will use to
+# validate client requests.  Valid values are: none, jwt, oauth, oauth_proxy.
+#
+# Default value: none
+# Environment variable: ITENTIAL_MCP_SERVER_AUTH_TYPE
+#
+# auth_type = none
+
+# Configures the JWKS URI used to dynamically fetch signing keys for JWT
+# validation.  This is used when auth_type is set to "jwt" and you want to
+# fetch keys dynamically from a well-known endpoint.
+#
+# Default value: null
+# Environment variable: ITENTIAL_MCP_SERVER_AUTH_JWKS_URI
+#
+# auth_jwks_uri = https://example.com/.well-known/jwks.json
+
+# Configures a static PEM encoded public key or shared secret for JWT
+# validation.  This is used when auth_type is set to "jwt" and you want to
+# use a static key instead of fetching from a JWKS URI.
+#
+# Default value: null
+# Environment variable: ITENTIAL_MCP_SERVER_AUTH_PUBLIC_KEY
+#
+# auth_public_key = -----BEGIN PUBLIC KEY-----...-----END PUBLIC KEY-----
+
+# Configures the expected JWT issuer claim (iss).  When validating JWTs, the
+# server will verify that the issuer claim matches this value exactly.
+#
+# Default value: null
+# Environment variable: ITENTIAL_MCP_SERVER_AUTH_ISSUER
+#
+# auth_issuer = https://auth.example.com
+
+# Configures the expected JWT audience claims (aud).  You can specify multiple
+# audiences by separating them with commas.  The JWT must contain at least one
+# of these audience values.
+#
+# Default value: null
+# Environment variable: ITENTIAL_MCP_SERVER_AUTH_AUDIENCE
+#
+# auth_audience = mcp-server,api-gateway
+
+# Configures the expected JWT signing algorithm.  Common values include RS256
+# for RSA signatures and HS256 for HMAC signatures.
+#
+# Default value: null
+# Environment variable: ITENTIAL_MCP_SERVER_AUTH_ALGORITHM
+#
+# auth_algorithm = RS256
+
+# Configures comma separated list of scopes required on every JWT.  All
+# specified scopes must be present in the JWT for it to be considered valid.
+#
+# Default value: null
+# Environment variable: ITENTIAL_MCP_SERVER_AUTH_REQUIRED_SCOPES
+#
+# auth_required_scopes = read,write,admin
+
+# Configures the OAuth client ID for authentication.  This is used when
+# auth_type is set to "oauth" or "oauth_proxy".
+#
+# Default value: null
+# Environment variable: ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_ID
+#
+# auth_oauth_client_id = your-client-id
+
+# Configures the OAuth client secret for authentication.  This is used when
+# auth_type is set to "oauth" or "oauth_proxy".
+#
+# Default value: null
+# Environment variable: ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_SECRET
+#
+# auth_oauth_client_secret = your-client-secret
+
+# Configures the OAuth authorization endpoint URL.  This is where users will
+# be redirected to authenticate when using OAuth flow.
+#
+# Default value: null
+# Environment variable: ITENTIAL_MCP_SERVER_AUTH_OAUTH_AUTHORIZATION_URL
+#
+# auth_oauth_authorization_url = https://auth.example.com/oauth/authorize
+
+# Configures the OAuth token endpoint URL.  This endpoint is used to exchange
+# authorization codes for access tokens.
+#
+# Default value: null
+# Environment variable: ITENTIAL_MCP_SERVER_AUTH_OAUTH_TOKEN_URL
+#
+# auth_oauth_token_url = https://auth.example.com/oauth/token
+
+# Configures the OAuth userinfo endpoint URL.  This endpoint is used to fetch
+# user information after successful authentication.
+#
+# Default value: null
+# Environment variable: ITENTIAL_MCP_SERVER_AUTH_OAUTH_USERINFO_URL
+#
+# auth_oauth_userinfo_url = https://auth.example.com/oauth/userinfo
+
+# Configures OAuth scopes to request during the authentication flow.  Scopes
+# can be separated by spaces or commas.
+#
+# Default value: null
+# Environment variable: ITENTIAL_MCP_SERVER_AUTH_OAUTH_SCOPES
+#
+# auth_oauth_scopes = openid profile email
+
+# Configures the OAuth redirect URI for callback after authentication.  This
+# must match the redirect URI configured in your OAuth provider.
+#
+# Default value: null
+# Environment variable: ITENTIAL_MCP_SERVER_AUTH_OAUTH_REDIRECT_URI
+#
+# auth_oauth_redirect_uri = http://localhost:8000/auth/callback
+
+# Configures the OAuth provider type for predefined configurations.  This
+# allows using predefined settings for common OAuth providers.  Valid values
+# are: generic, google, azure, auth0, github, okta.
+#
+# Default value: null
+# Environment variable: ITENTIAL_MCP_SERVER_AUTH_OAUTH_PROVIDER_TYPE
+#
+# auth_oauth_provider_type = google
 
 
 # The platform section handles configuration options for connecting to an
