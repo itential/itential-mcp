@@ -9,7 +9,11 @@ import pytest
 
 from itential_mcp import cli
 from itential_mcp.cli import Parser
-from itential_mcp.cli.parser import _get_arguments_from_config
+from itential_mcp.cli.argument_groups import (
+    _get_arguments_from_config,
+    add_platform_group,
+    add_server_group,
+)
 from itential_mcp.cli import terminal
 from itential_mcp import config
 from dataclasses import fields
@@ -248,7 +252,7 @@ class TestParser:
 class TestGetArgumentsFromConfig:
     """Test cases for _get_arguments_from_config function"""
 
-    @patch("itential_mcp.cli.parser.fields")
+    @patch("itential_mcp.cli.argument_groups.fields")
     def test_get_arguments_from_config_basic(self, mock_fields):
         """Test basic functionality of _get_arguments_from_config"""
         # Mock a config field
@@ -277,7 +281,7 @@ class TestGetArgumentsFromConfig:
         assert result[0][2]["help"] == "Server host address (default=127.0.0.1)"
         assert result[0][2]["type"] is str
 
-    @patch("itential_mcp.cli.parser.fields")
+    @patch("itential_mcp.cli.argument_groups.fields")
     def test_get_arguments_from_config_no_cli_enabled(self, mock_fields):
         """Test _get_arguments_from_config with CLI disabled fields"""
         mock_field = Mock()
@@ -292,7 +296,7 @@ class TestGetArgumentsFromConfig:
 
         assert len(result) == 0
 
-    @patch("itential_mcp.cli.parser.fields")
+    @patch("itential_mcp.cli.argument_groups.fields")
     def test_get_arguments_from_config_no_schema_extra(self, mock_fields):
         """Test _get_arguments_from_config with fields having no json_schema_extra"""
         mock_field = Mock()
@@ -307,7 +311,7 @@ class TestGetArgumentsFromConfig:
 
         assert len(result) == 0
 
-    @patch("itential_mcp.cli.parser.fields")
+    @patch("itential_mcp.cli.argument_groups.fields")
     def test_get_arguments_from_config_no_description(self, mock_fields):
         """Test _get_arguments_from_config with fields having no description"""
         mock_field = Mock()
@@ -328,7 +332,7 @@ class TestGetArgumentsFromConfig:
         assert len(result) == 1
         assert result[0][2]["help"] == "NO HELP AVAILABLE!!"
 
-    @patch("itential_mcp.cli.parser.fields")
+    @patch("itential_mcp.cli.argument_groups.fields")
     def test_get_arguments_from_config_multiple_fields(self, mock_fields):
         """Test _get_arguments_from_config with multiple valid fields"""
         # Create multiple mock fields
@@ -376,7 +380,7 @@ class TestGetArgumentsFromConfig:
         assert result[1][1] == ["--username"]
         assert result[1][2]["required"] is True
 
-    @patch("itential_mcp.cli.parser.fields")
+    @patch("itential_mcp.cli.argument_groups.fields")
     def test_get_arguments_from_config_caching(self, mock_fields):
         """Test that _get_arguments_from_config uses LRU caching"""
         mock_field = Mock()
@@ -400,7 +404,7 @@ class TestGetArgumentsFromConfig:
         assert mock_fields.call_count == 1
         assert result1 == result2
 
-    @patch("itential_mcp.cli.parser.fields")
+    @patch("itential_mcp.cli.argument_groups.fields")
     def test_get_arguments_from_config_no_options(self, mock_fields):
         """Test _get_arguments_from_config when x-itential-mcp-options is None"""
         mock_field = Mock()
@@ -428,7 +432,7 @@ class TestGetArgumentsFromConfig:
 class TestAddPlatformArguments:
     """Test cases for add_platform_group function"""
 
-    @patch("itential_mcp.cli.parser._get_arguments_from_config")
+    @patch("itential_mcp.cli.argument_groups._get_arguments_from_config")
     def test_add_platform_group_basic(self, mock_get_args):
         """Test basic functionality of add_platform_group"""
         # Mock config arguments
@@ -455,7 +459,7 @@ class TestAddPlatformArguments:
         mock_group = Mock()
         mock_cmd.add_argument_group.return_value = mock_group
 
-        cli.add_platform_group(mock_cmd)
+        add_platform_group(mock_cmd)
 
         # Verify argument group was created
         mock_cmd.add_argument_group.assert_called_once_with(
@@ -473,7 +477,7 @@ class TestAddPlatformArguments:
         assert calls[1][0] == ("--platform-port",)
         assert calls[1][1] == {"dest": "platform_port", "help": "Platform port"}
 
-    @patch("itential_mcp.cli.parser._get_arguments_from_config")
+    @patch("itential_mcp.cli.argument_groups._get_arguments_from_config")
     def test_add_platform_group_no_platform_args(self, mock_get_args):
         """Test add_platform_group when no platform arguments are available"""
         # Mock config with no platform arguments
@@ -494,7 +498,7 @@ class TestAddPlatformArguments:
         mock_group = Mock()
         mock_cmd.add_argument_group.return_value = mock_group
 
-        cli.add_platform_group(mock_cmd)
+        add_platform_group(mock_cmd)
 
         # Argument group should still be created
         mock_cmd.add_argument_group.assert_called_once()
@@ -502,7 +506,7 @@ class TestAddPlatformArguments:
         # But no arguments should be added
         mock_group.add_argument.assert_not_called()
 
-    @patch("itential_mcp.cli.parser._get_arguments_from_config")
+    @patch("itential_mcp.cli.argument_groups._get_arguments_from_config")
     def test_add_platform_group_multiple_platform_args(self, mock_get_args):
         """Test add_platform_group with multiple platform arguments"""
         mock_get_args.return_value = [
@@ -537,7 +541,7 @@ class TestAddPlatformArguments:
         mock_group = Mock()
         mock_cmd.add_argument_group.return_value = mock_group
 
-        cli.add_platform_group(mock_cmd)
+        add_platform_group(mock_cmd)
 
         # Should add 4 platform arguments
         assert mock_group.add_argument.call_count == 4
@@ -546,7 +550,7 @@ class TestAddPlatformArguments:
 class TestAddServerArguments:
     """Test cases for add_server_group function"""
 
-    @patch("itential_mcp.cli.parser._get_arguments_from_config")
+    @patch("itential_mcp.cli.argument_groups._get_arguments_from_config")
     def test_add_server_group_basic(self, mock_get_args):
         """Test basic functionality of add_server_group"""
         mock_get_args.return_value = [
@@ -571,7 +575,7 @@ class TestAddServerArguments:
         mock_group = Mock()
         mock_cmd.add_argument_group.return_value = mock_group
 
-        cli.add_server_group(mock_cmd)
+        add_server_group(mock_cmd)
 
         # Verify argument group was created
         mock_cmd.add_argument_group.assert_called_once_with(
@@ -581,7 +585,7 @@ class TestAddServerArguments:
         # Verify only server arguments were added
         assert mock_group.add_argument.call_count == 2
 
-    @patch("itential_mcp.cli.parser._get_arguments_from_config")
+    @patch("itential_mcp.cli.argument_groups._get_arguments_from_config")
     def test_add_server_group_no_server_args(self, mock_get_args):
         """Test add_server_group when no server arguments are available"""
         mock_get_args.return_value = [
@@ -601,12 +605,12 @@ class TestAddServerArguments:
         mock_group = Mock()
         mock_cmd.add_argument_group.return_value = mock_group
 
-        cli.add_server_group(mock_cmd)
+        add_server_group(mock_cmd)
 
         mock_cmd.add_argument_group.assert_called_once()
         mock_group.add_argument.assert_not_called()
 
-    @patch("itential_mcp.cli.parser._get_arguments_from_config")
+    @patch("itential_mcp.cli.argument_groups._get_arguments_from_config")
     def test_add_server_group_multiple_server_args(self, mock_get_args):
         """Test add_server_group with multiple server arguments"""
         mock_get_args.return_value = [
@@ -633,7 +637,7 @@ class TestAddServerArguments:
         mock_group = Mock()
         mock_cmd.add_argument_group.return_value = mock_group
 
-        cli.add_server_group(mock_cmd)
+        add_server_group(mock_cmd)
 
         # Should add 4 server arguments
         assert mock_group.add_argument.call_count == 4
@@ -652,10 +656,8 @@ class TestModuleStructure:
     def test_module_functions_exist(self):
         """Test that all expected functions exist"""
         # Test public functions in cli package
-        assert hasattr(cli, "add_platform_group")
-        assert callable(cli.add_platform_group)
-        assert hasattr(cli, "add_server_group")
-        assert callable(cli.add_server_group)
+        assert callable(add_platform_group)
+        assert callable(add_server_group)
 
         # Test internal function is available via direct import
         assert callable(_get_arguments_from_config)
@@ -750,7 +752,7 @@ class TestParserIntegration:
         assert "--host" in help_output
         assert "--port" in help_output
 
-    @patch("itential_mcp.cli.parser._get_arguments_from_config")
+    @patch("itential_mcp.cli.argument_groups._get_arguments_from_config")
     def test_argument_functions_integration(self, mock_get_args):
         """Test integration of add_platform_group and add_server_group"""
         mock_get_args.return_value = [
@@ -779,10 +781,10 @@ class TestParserIntegration:
         parser = Parser(prog="test-app")
 
         # Add platform arguments
-        cli.add_platform_group(parser)
+        add_platform_group(parser)
 
         # Add server arguments
-        cli.add_server_group(parser)
+        add_server_group(parser)
 
         # Test parsing
         args = parser.parse_args(
@@ -827,7 +829,7 @@ class TestErrorHandling:
         with pytest.raises(KeyError):
             parser.print_help()
 
-    @patch("itential_mcp.cli.parser.fields")
+    @patch("itential_mcp.cli.argument_groups.fields")
     def test_get_arguments_from_config_exception_handling(self, mock_fields):
         """Test _get_arguments_from_config handles malformed field data"""
         # Mock a field with missing attributes

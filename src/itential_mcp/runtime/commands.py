@@ -4,9 +4,9 @@
 from typing import Any, Coroutine, Sequence, Mapping, Tuple
 
 from . import runner
-from . import server
-from .core import metadata
-from .utilities import tool
+from .. import server
+from ..core import metadata
+from ..utilities import tool
 
 
 def run(args: Any) -> Tuple[Coroutine, Sequence, Mapping]:
