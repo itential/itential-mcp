@@ -9,14 +9,15 @@ from io import StringIO
 import pytest
 
 from itential_mcp import app
+from itential_mcp import runtime
 from itential_mcp.cli import Parser
 
 
 class TestParseArgs:
     """Test cases for parse_args function"""
 
-    @patch("itential_mcp.commands.run")
-    @patch("itential_mcp.cli.parser._get_arguments_from_config")
+    @patch("itential_mcp.runtime.commands.run")
+    @patch("itential_mcp.cli.argument_groups._get_arguments_from_config")
     def test_parse_args_run_command(self, mock_config_args, mock_run_cmd):
         """Test parsing run command"""
         mock_config_args.return_value = []
@@ -26,7 +27,7 @@ class TestParseArgs:
 
         mock_run_cmd.return_value = (mock_async_func, None, None)
 
-        result = app.parse_args(["run"])
+        result = runtime.parse_args(["run"])
 
         assert result is not None
         assert len(result) == 3
@@ -43,7 +44,7 @@ class TestParseArgs:
         mock_exit.side_effect = SystemExit(0)
 
         with pytest.raises(SystemExit):
-            app.parse_args(["--help"])
+            runtime.parse_args(["--help"])
 
         mock_print_help.assert_called_once()
         mock_exit.assert_called_once_with(0)
@@ -55,13 +56,13 @@ class TestParseArgs:
         mock_exit.side_effect = SystemExit(0)
 
         with pytest.raises(SystemExit):
-            app.parse_args([])
+            runtime.parse_args([])
 
         mock_print_help.assert_called_once()
         mock_exit.assert_called_once_with(0)
 
-    @patch("itential_mcp.commands.version")
-    @patch("itential_mcp.cli.parser._get_arguments_from_config")
+    @patch("itential_mcp.runtime.commands.version")
+    @patch("itential_mcp.cli.argument_groups._get_arguments_from_config")
     def test_parse_args_version_command(self, mock_config_args, mock_version_cmd):
         """Test version command parsing"""
         mock_config_args.return_value = []
@@ -71,13 +72,13 @@ class TestParseArgs:
 
         mock_version_cmd.return_value = (mock_async_func, None, None)
 
-        result = app.parse_args(["version"])
+        result = runtime.parse_args(["version"])
 
         assert result is not None
         mock_version_cmd.assert_called_once()
 
-    @patch("itential_mcp.commands.tools")
-    @patch("itential_mcp.cli.parser._get_arguments_from_config")
+    @patch("itential_mcp.runtime.commands.tools")
+    @patch("itential_mcp.cli.argument_groups._get_arguments_from_config")
     def test_parse_args_tools_command(self, mock_config_args, mock_tools_cmd):
         """Test tools command parsing"""
         mock_config_args.return_value = []
@@ -87,13 +88,13 @@ class TestParseArgs:
 
         mock_tools_cmd.return_value = (mock_async_func, None, None)
 
-        result = app.parse_args(["tools"])
+        result = runtime.parse_args(["tools"])
 
         assert result is not None
         mock_tools_cmd.assert_called_once()
 
-    @patch("itential_mcp.commands.tags")
-    @patch("itential_mcp.cli.parser._get_arguments_from_config")
+    @patch("itential_mcp.runtime.commands.tags")
+    @patch("itential_mcp.cli.argument_groups._get_arguments_from_config")
     def test_parse_args_tags_command(self, mock_config_args, mock_tags_cmd):
         """Test tags command parsing"""
         mock_config_args.return_value = []
@@ -103,13 +104,13 @@ class TestParseArgs:
 
         mock_tags_cmd.return_value = (mock_async_func, None, None)
 
-        result = app.parse_args(["tags"])
+        result = runtime.parse_args(["tags"])
 
         assert result is not None
         mock_tags_cmd.assert_called_once()
 
-    @patch("itential_mcp.commands.call")
-    @patch("itential_mcp.cli.parser._get_arguments_from_config")
+    @patch("itential_mcp.runtime.commands.call")
+    @patch("itential_mcp.cli.argument_groups._get_arguments_from_config")
     def test_parse_args_call_command(self, mock_config_args, mock_call_cmd):
         """Test call command parsing"""
         mock_config_args.return_value = []
@@ -119,14 +120,14 @@ class TestParseArgs:
 
         mock_call_cmd.return_value = (mock_async_func, ("test_tool", None), None)
 
-        result = app.parse_args(["call", "test_tool"])
+        result = runtime.parse_args(["call", "test_tool"])
 
         assert result is not None
         mock_call_cmd.assert_called_once()
 
     @patch("os.environ", {})
-    @patch("itential_mcp.commands.run")
-    @patch("itential_mcp.cli.parser._get_arguments_from_config")
+    @patch("itential_mcp.runtime.commands.run")
+    @patch("itential_mcp.cli.argument_groups._get_arguments_from_config")
     def test_parse_args_config_file(self, mock_config_args, mock_run_cmd):
         """Test config file argument"""
         mock_config_args.return_value = []
@@ -140,39 +141,19 @@ class TestParseArgs:
 
         assert os.environ.get("ITENTIAL_MCP_CONFIG") == "/path/to/config.ini"
 
-    @patch("os.environ", {"ITENTIAL_MCP_TRANSPORT": "sse"})
-    @patch("itential_mcp.commands.run")
-    @patch("itential_mcp.cli.parser._get_arguments_from_config")
-    def test_parse_args_legacy_environment_variables(
-        self, mock_config_args, mock_run_cmd
-    ):
-        """Test legacy environment variable migration"""
-        mock_config_args.return_value = []
-
-        async def mock_async_func():
-            return 0
-
-        mock_run_cmd.return_value = (mock_async_func, None, None)
-
-        app.parse_args(["run"])
-
-        # Legacy var should be moved to new var
-        assert "ITENTIAL_MCP_TRANSPORT" not in os.environ
-        assert os.environ.get("ITENTIAL_MCP_SERVER_TRANSPORT") == "sse"
-
-    @patch("itential_mcp.commands.run")
-    @patch("itential_mcp.cli.parser._get_arguments_from_config")
+    @patch("itential_mcp.runtime.commands.run")
+    @patch("itential_mcp.cli.argument_groups._get_arguments_from_config")
     def test_parse_args_invalid_handler(self, mock_config_args, mock_run_cmd):
         """Test error handling for invalid command handler"""
         mock_config_args.return_value = []
         mock_run_cmd.return_value = (lambda: None, None, None)  # Not async
 
         with pytest.raises(TypeError, match="handler must be callable and awaitable"):
-            app.parse_args(["run"])
+            runtime.parse_args(["run"])
 
     @patch("os.environ", {})
-    @patch("itential_mcp.commands.run")
-    @patch("itential_mcp.cli.parser._get_arguments_from_config")
+    @patch("itential_mcp.runtime.commands.run")
+    @patch("itential_mcp.cli.argument_groups._get_arguments_from_config")
     def test_parse_args_environment_variable_setting(
         self, mock_config_args, mock_run_cmd
     ):
@@ -201,31 +182,12 @@ class TestParseArgs:
             ]
             mock_parse.return_value = mock_args
 
-            app.parse_args(["run"])
+            runtime.parse_args(["run"])
 
             # Only server_ and platform_ args should be set as env vars
             assert os.environ.get("ITENTIAL_MCP_SERVER_HOST") == "example.com"
             assert os.environ.get("ITENTIAL_MCP_PLATFORM_USERNAME") == "testuser"
             assert "ITENTIAL_MCP_OTHER_ARG" not in os.environ
-
-
-class TestLegacyEnvVars:
-    """Test cases for legacy environment variable constants"""
-
-    def test_legacy_env_vars_constant(self):
-        """Test LEGACY_ENV_VARS constant"""
-        assert isinstance(app.LEGACY_ENV_VARS, frozenset)
-        assert len(app.LEGACY_ENV_VARS) == 4
-
-        # Check specific mappings
-        expected_mappings = {
-            ("ITENTIAL_MCP_TRANSPORT", "ITENTIAL_MCP_SERVER_TRANSPORT"),
-            ("ITENTIAL_MCP_HOST", "ITENTIAL_MCP_SERVER_HOST"),
-            ("ITENTIAL_MCP_PORT", "ITENTIAL_MCP_SERVER_PORT"),
-            ("ITENTIAL_MCP_LOG_LEVEL", "ITENTIAL_MCP_SERVER_LOG_LEVEL"),
-        }
-
-        assert app.LEGACY_ENV_VARS == expected_mappings
 
 
 class TestRun:
@@ -267,20 +229,28 @@ class TestRun:
         mock_parse_args.assert_called_once_with(["run", "--config", "/path/config.ini"])
         mock_asyncio_run.assert_called_once()
 
-    @patch("traceback.print_exc")
-    @patch("sys.exit")
     @patch("itential_mcp.app.parse_args")
     @patch("sys.argv", ["itential-mcp", "run"])
-    def test_run_exception_handling(
-        self, mock_parse_args, mock_sys_exit, mock_print_exc
-    ):
+    def test_run_exception_handling(self, mock_parse_args):
         """Test exception handling in run"""
         mock_parse_args.side_effect = Exception("Test exception")
 
-        app.run()
+        result = app.run()
 
+        assert result == 1
+
+    @patch("traceback.print_exc")
+    @patch("os.environ", {"ITENTIAL_MCP_DEBUG": "true"})
+    @patch("itential_mcp.app.parse_args")
+    @patch("sys.argv", ["itential-mcp", "run"])
+    def test_run_exception_handling_debug_mode(self, mock_parse_args, mock_print_exc):
+        """Test exception handling in run with debug mode enabled"""
+        mock_parse_args.side_effect = Exception("Test exception")
+
+        result = app.run()
+
+        assert result == 1
         mock_print_exc.assert_called_once()
-        mock_sys_exit.assert_called_once_with(1)
 
     @patch("asyncio.run")
     @patch("itential_mcp.app.parse_args")
@@ -349,8 +319,8 @@ class TestIntegration:
     """Integration test cases"""
 
     @patch("os.environ", {})
-    @patch("itential_mcp.commands.run")
-    @patch("itential_mcp.cli.parser._get_arguments_from_config")
+    @patch("itential_mcp.runtime.commands.run")
+    @patch("itential_mcp.cli.argument_groups._get_arguments_from_config")
     def test_full_argument_processing_integration(self, mock_config_args, mock_run_cmd):
         """Test full argument processing flow"""
         mock_config_args.return_value = []
@@ -375,7 +345,7 @@ class TestIntegration:
             ]
             mock_parse.return_value = mock_args
 
-            result = app.parse_args(["run"])
+            result = runtime.parse_args(["run"])
 
             # Verify function returned
             assert result is not None
