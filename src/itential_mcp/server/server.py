@@ -4,6 +4,7 @@
 import sys
 import inspect
 import pathlib
+import asyncio
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -20,6 +21,7 @@ from fastmcp.server.middleware.error_handling import ErrorHandlingMiddleware
 
 from .auth import build_auth_provider, supports_transport
 from . import routes
+from .keepalive import start_keepalive
 from ..platform import PlatformClient
 from .. import config
 from .. import bindings
@@ -49,6 +51,7 @@ async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
 
     Creates and manages the client connection to Itential Platform,
     yielding it to FastMCP for inclusion in the request context.
+    Also starts the keepalive task if configured.
 
     Args:
         mcp (FastMCP): The FastMCP server instance
@@ -59,7 +62,25 @@ async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
     """
     # Use PlatformClient as an async context manager
     async with PlatformClient() as client_instance:
-        yield {"client": client_instance}
+        keepalive_task = None
+        try:
+            # Start keepalive task if interval is configured (> 0)
+            cfg = config.get()
+            keepalive_interval = cfg.server.get("keepalive_interval", 0)
+            if keepalive_interval > 0:
+                keepalive_task = start_keepalive(client_instance, keepalive_interval)
+
+            yield {"client": client_instance}
+
+        finally:
+            # Cancel keepalive task if it was started
+            if keepalive_task and not keepalive_task.done():
+                logging.info("Stopping keepalive task")
+                keepalive_task.cancel()
+                try:
+                    await keepalive_task
+                except asyncio.CancelledError:
+                    pass
 
 
 class Server:

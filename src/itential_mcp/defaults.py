@@ -30,6 +30,7 @@ ITENTIAL_MCP_SERVER_LOG_LEVEL = "NONE"  # Logging verbosity level
 ITENTIAL_MCP_SERVER_INCLUDE_TAGS = None  # Tool tags to include (None = include all)
 ITENTIAL_MCP_SERVER_EXCLUDE_TAGS = "experimental,beta"  # Tool tags to exclude
 ITENTIAL_MCP_SERVER_TOOLS_PATH = None  # Custom path to load additional tools from
+ITENTIAL_MCP_SERVER_KEEPALIVE_INTERVAL = 300  # Keepalive interval in seconds (0 = disabled)
 ITENTIAL_MCP_SERVER_AUTH_TYPE = "none"  # Authentication provider type
 ITENTIAL_MCP_SERVER_AUTH_JWKS_URI = None  # JWKS URI for JWT validation
 ITENTIAL_MCP_SERVER_AUTH_PUBLIC_KEY = (
