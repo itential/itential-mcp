@@ -13,9 +13,10 @@ import logging
 
 from pathlib import Path
 from functools import partial
-from typing import Literal
+from typing import Literal, Dict, Optional, List
 
 from . import metadata
+from . import heuristics
 
 logging_message_format = "%(asctime)s: [%(name)s] %(levelname)s: %(message)s"
 logging.getLogger(metadata.name).setLevel(100)
@@ -37,6 +38,31 @@ CRITICAL = logging.CRITICAL
 FATAL = logging.FATAL
 NONE = logging.NONE
 
+# Global flag to control sensitive data filtering
+_sensitive_data_filtering_enabled = True
+
+
+def _sync_scan_and_redact(text: str) -> str:
+    """Scan and redact sensitive data from text for logging.
+
+    This function calls the heuristics scanner to redact sensitive
+    information before writing to logs.
+
+    Args:
+        text (str): The text to scan and redact.
+
+    Returns:
+        str: The text with sensitive data redacted.
+
+    Raises:
+        None
+    """
+    try:
+        return heuristics.scan_and_redact(text)
+    except Exception:
+        # If anything goes wrong, return the original text to avoid breaking logging
+        return text
+
 
 def log(lvl: int, msg: str) -> None:
     """Send the log message with the specified level
@@ -45,11 +71,19 @@ def log(lvl: int, msg: str) -> None:
     logging level.  This function should not be directly invoked.  Use one
     of the partials to send a log message with a given level.
 
+    The message is automatically scanned for sensitive data and redacted
+    before being logged to prevent data leakage.
+
     Args:
         lvl (int): The logging level of the message
         msg (str): The message to write to the logger
     """
-    logging.getLogger(metadata.name).log(lvl, msg)
+    # Scan and redact sensitive data from the message if filtering is enabled
+    if _sensitive_data_filtering_enabled:
+        redacted_msg = _sync_scan_and_redact(msg)
+    else:
+        redacted_msg = msg
+    logging.getLogger(metadata.name).log(lvl, redacted_msg)
 
 
 debug = partial(log, logging.DEBUG)
@@ -378,6 +412,112 @@ def add_stderr_handler(
     logger.propagate = False
 
     logger.log(logging.INFO, "Stderr logging handler added")
+
+
+def enable_sensitive_data_filtering() -> None:
+    """Enable sensitive data filtering in log messages.
+
+    When enabled, log messages will be scanned for potentially sensitive
+    information and redacted before being written to the log.
+
+    Returns:
+        None
+
+    Raises:
+        None
+    """
+    global _sensitive_data_filtering_enabled
+    _sensitive_data_filtering_enabled = True
+
+
+def disable_sensitive_data_filtering() -> None:
+    """Disable sensitive data filtering in log messages.
+
+    When disabled, log messages will be written as-is without scanning
+    for sensitive information. Use with caution in production environments.
+
+    Returns:
+        None
+
+    Raises:
+        None
+    """
+    global _sensitive_data_filtering_enabled
+    _sensitive_data_filtering_enabled = False
+
+
+def is_sensitive_data_filtering_enabled() -> bool:
+    """Check if sensitive data filtering is currently enabled.
+
+    Returns:
+        bool: True if filtering is enabled, False otherwise.
+
+    Raises:
+        None
+    """
+    return _sensitive_data_filtering_enabled
+
+
+def configure_sensitive_data_patterns(
+    custom_patterns: Optional[Dict[str, str]] = None,
+) -> None:
+    """Configure custom patterns for sensitive data detection.
+
+    Args:
+        custom_patterns (Optional[Dict[str, str]]): Custom regex patterns to add
+            to the sensitive data scanner, where keys are pattern names and
+            values are regex patterns.
+
+    Returns:
+        None
+
+    Raises:
+        re.error: If any of the custom patterns are invalid regex.
+    """
+    heuristics.configure_scanner(custom_patterns)
+
+
+def get_sensitive_data_patterns() -> List[str]:
+    """Get a list of all sensitive data patterns currently configured.
+
+    Returns:
+        List[str]: List of pattern names that are being scanned for.
+
+    Raises:
+        None
+    """
+    return heuristics.get_scanner().list_patterns()
+
+
+def add_sensitive_data_pattern(name: str, pattern: str) -> None:
+    """Add a new sensitive data pattern to scan for.
+
+    Args:
+        name (str): Name of the pattern for identification.
+        pattern (str): Regular expression pattern to match sensitive data.
+
+    Returns:
+        None
+
+    Raises:
+        re.error: If the regex pattern is invalid.
+    """
+    heuristics.get_scanner().add_pattern(name, pattern)
+
+
+def remove_sensitive_data_pattern(name: str) -> bool:
+    """Remove a sensitive data pattern from scanning.
+
+    Args:
+        name (str): Name of the pattern to remove.
+
+    Returns:
+        bool: True if the pattern was removed, False if it didn't exist.
+
+    Raises:
+        None
+    """
+    return heuristics.get_scanner().remove_pattern(name)
 
 
 def initialize() -> None:
