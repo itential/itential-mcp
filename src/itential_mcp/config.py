@@ -204,6 +204,16 @@ class Config(object):
         ),
     )
 
+    server_keepalive_interval: int = Field(
+        description="Keepalive interval in seconds to prevent session timeout (0 = disabled)",
+        default_factory=default_factory(env.getint, "ITENTIAL_MCP_SERVER_KEEPALIVE_INTERVAL"),
+        json_schema_extra=options(
+            "--keepalive-interval",
+            metavar="<seconds>",
+            type=int,
+        ),
+    )
+
     server_auth_type: Literal["none", "jwt", "oauth", "oauth_proxy"] = Field(
         description="Authentication provider type used to secure the MCP server",
         default_factory=default_factory(
@@ -489,6 +499,7 @@ class Config(object):
             "path": self.server_path,
             "tools_path": self.server_tools_path,
             "log_level": self.server_log_level,
+            "keepalive_interval": self.server_keepalive_interval,
             "include_tags": self._coerce_to_set(self.server_include_tags)
             if self.server_include_tags
             else None,
