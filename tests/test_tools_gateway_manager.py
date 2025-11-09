@@ -850,12 +850,13 @@ class TestGatewayManagerErrorHandling:
 
     @pytest.mark.asyncio
     async def test_get_gateways_missing_gateway_fields(self):
-        """Test get_gateways handling malformed gateway data."""
+        """Test get_gateways handling malformed gateway data with missing fields."""
         mock_data = {
             "results": [
                 {
                     "gateway_name": "incomplete-gateway",
-                    # Missing cluster_id, description, connection_status, enabled
+                    "connection_status": "connected",
+                    # Missing cluster_id, description, enabled - should use defaults
                 }
             ]
         }
@@ -865,8 +866,16 @@ class TestGatewayManagerErrorHandling:
             return_value=mock_data
         )
 
-        with pytest.raises(KeyError):
-            await get_gateways(self.mock_context)
+        # Should not raise an error, but handle missing fields gracefully with defaults
+        result = await get_gateways(self.mock_context)
+        
+        # Verify it returns a result with default values for missing fields
+        assert isinstance(result, GetGatewaysResponse)
+        assert len(result.root) == 1
+        assert result.root[0].name == "incomplete-gateway"
+        assert result.root[0].cluster == ""  # Default value
+        assert result.root[0].description == ""  # Default value
+        assert result.root[0].enabled is False  # Default value
 
     @pytest.mark.asyncio
     async def test_run_service_missing_result_fields(self):
