@@ -103,6 +103,15 @@
 #
 # tools_path = /path/to/custom/tools
 
+# Configures the keepalive interval in seconds to prevent session timeout.
+# The server will periodically make authenticated requests to the platform
+# to keep the session active. Set to 0 to disable keepalive functionality.
+#
+# Default value: 300
+# Environment variable: ITENTIAL_MCP_SERVER_KEEPALIVE_INTERVAL
+#
+# keepalive_interval = 300
+
 # Configures the authentication provider type used to secure the MCP server.
 # This setting controls which authentication method the server will use to
 # validate client requests.  Valid values are: none, jwt, oauth, oauth_proxy.
