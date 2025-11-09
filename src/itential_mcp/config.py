@@ -206,7 +206,9 @@ class Config(object):
 
     server_keepalive_interval: int = Field(
         description="Keepalive interval in seconds to prevent session timeout (0 = disabled)",
-        default_factory=default_factory(env.getint, "ITENTIAL_MCP_SERVER_KEEPALIVE_INTERVAL"),
+        default_factory=default_factory(
+            env.getint, "ITENTIAL_MCP_SERVER_KEEPALIVE_INTERVAL"
+        ),
         json_schema_extra=options(
             "--keepalive-interval",
             metavar="<seconds>",

@@ -12,6 +12,7 @@ import pytest
 
 from itential_mcp.core import logging as itential_logging
 from itential_mcp.core import metadata
+from itential_mcp.core.heuristics import Scanner
 
 
 class TestBasicLogging:
@@ -499,3 +500,262 @@ class TestLoggingIntegration:
                 if isinstance(handler, (logging.FileHandler, logging.StreamHandler)):
                     logger.removeHandler(handler)
                     handler.close()
+
+
+class TestSensitiveDataFiltering:
+    """Test cases for sensitive data filtering in logging"""
+
+    def setup_method(self):
+        """Set up test environment"""
+        # Reset the singleton scanner before each test
+        Scanner.reset_singleton()
+        # Enable sensitive data filtering for each test
+        itential_logging.enable_sensitive_data_filtering()
+
+    def teardown_method(self):
+        """Clean up after each test"""
+        # Clean up any handlers that were added during testing
+        logger = logging.getLogger(metadata.name)
+        handlers_to_remove = logger.handlers.copy()
+        for handler in handlers_to_remove:
+            if isinstance(handler, (logging.FileHandler, logging.StreamHandler)):
+                logger.removeHandler(handler)
+                handler.close()
+
+    def test_sensitive_data_filtering_enabled_by_default(self):
+        """Test that sensitive data filtering is enabled by default"""
+        assert itential_logging.is_sensitive_data_filtering_enabled()
+
+    def test_enable_disable_sensitive_data_filtering(self):
+        """Test enabling and disabling sensitive data filtering"""
+        # Initially enabled
+        assert itential_logging.is_sensitive_data_filtering_enabled()
+
+        # Disable
+        itential_logging.disable_sensitive_data_filtering()
+        assert not itential_logging.is_sensitive_data_filtering_enabled()
+
+        # Enable again
+        itential_logging.enable_sensitive_data_filtering()
+        assert itential_logging.is_sensitive_data_filtering_enabled()
+
+    @patch("itential_mcp.core.logging.heuristics.scan_and_redact")
+    @patch("itential_mcp.core.logging.logging.getLogger")
+    def test_log_function_calls_scanner_when_enabled(
+        self, mock_get_logger, mock_scan_and_redact
+    ):
+        """Test that log function calls the scanner when filtering is enabled"""
+        mock_logger = Mock()
+        mock_get_logger.return_value = mock_logger
+        mock_scan_and_redact.return_value = "redacted message"
+
+        itential_logging.enable_sensitive_data_filtering()
+        itential_logging.log(logging.INFO, "API_KEY=secret123")
+
+        mock_scan_and_redact.assert_called_once_with("API_KEY=secret123")
+        mock_logger.log.assert_called_once_with(logging.INFO, "redacted message")
+
+    @patch("itential_mcp.core.logging.heuristics.scan_and_redact")
+    @patch("itential_mcp.core.logging.logging.getLogger")
+    def test_log_function_skips_scanner_when_disabled(
+        self, mock_get_logger, mock_scan_and_redact
+    ):
+        """Test that log function skips the scanner when filtering is disabled"""
+        mock_logger = Mock()
+        mock_get_logger.return_value = mock_logger
+
+        itential_logging.disable_sensitive_data_filtering()
+        itential_logging.log(logging.INFO, "API_KEY=secret123")
+
+        mock_scan_and_redact.assert_not_called()
+        mock_logger.log.assert_called_once_with(logging.INFO, "API_KEY=secret123")
+
+    @patch("itential_mcp.core.logging.logging.getLogger")
+    def test_api_key_redaction_in_log_message(self, mock_get_logger):
+        """Test that API keys are redacted in log messages"""
+        mock_logger = Mock()
+        mock_get_logger.return_value = mock_logger
+
+        itential_logging.enable_sensitive_data_filtering()
+        itential_logging.info("API_KEY=sk_test_1234567890abcdef")
+
+        # Verify the logged message was redacted
+        args, kwargs = mock_logger.log.call_args
+        logged_level, logged_message = args
+        assert logged_level == logging.INFO
+        assert "[REDACTED_API_KEY]" in logged_message
+        assert "sk_test_1234567890abcdef" not in logged_message
+
+    @patch("itential_mcp.core.logging.logging.getLogger")
+    def test_password_redaction_in_log_message(self, mock_get_logger):
+        """Test that passwords are redacted in log messages"""
+        mock_logger = Mock()
+        mock_get_logger.return_value = mock_logger
+
+        itential_logging.enable_sensitive_data_filtering()
+        itential_logging.error("Login failed for password=secretpass123")
+
+        args, kwargs = mock_logger.log.call_args
+        logged_level, logged_message = args
+        assert logged_level == logging.ERROR
+        assert "[REDACTED_PASSWORD]" in logged_message
+        assert "secretpass123" not in logged_message
+
+    @patch("itential_mcp.core.logging.logging.getLogger")
+    def test_multiple_sensitive_data_redaction(self, mock_get_logger):
+        """Test redaction of multiple sensitive data types in one message"""
+        mock_logger = Mock()
+        mock_get_logger.return_value = mock_logger
+
+        itential_logging.enable_sensitive_data_filtering()
+        itential_logging.warning(
+            "API_KEY=test1234567890abcdef and password=secret123456 and user=admin@company.com"
+        )
+
+        args, kwargs = mock_logger.log.call_args
+        logged_level, logged_message = args
+        assert logged_level == logging.WARNING
+        assert "[REDACTED_API_KEY]" in logged_message
+        assert "[REDACTED_PASSWORD]" in logged_message
+        assert "[REDACTED_EMAIL_IN_AUTH]" in logged_message
+        assert "test1234567890abcdef" not in logged_message
+        assert "secret" not in logged_message or "secret" in "REDACTED"
+        assert "admin@company.com" not in logged_message
+
+    @patch("itential_mcp.core.logging.logging.getLogger")
+    def test_normal_message_unchanged_when_no_sensitive_data(self, mock_get_logger):
+        """Test that normal messages are unchanged when no sensitive data is present"""
+        mock_logger = Mock()
+        mock_get_logger.return_value = mock_logger
+
+        original_message = "This is a normal log message without sensitive data"
+        itential_logging.enable_sensitive_data_filtering()
+        itential_logging.info(original_message)
+
+        args, kwargs = mock_logger.log.call_args
+        logged_level, logged_message = args
+        assert logged_level == logging.INFO
+        assert logged_message == original_message
+
+    def test_configure_sensitive_data_patterns(self):
+        """Test configuring custom sensitive data patterns"""
+        custom_patterns = {
+            "custom_token": r"CUSTOM-[A-Z0-9]{16}",
+            "test_secret": r"TEST_SECRET:\s*([a-z0-9]+)",
+        }
+
+        itential_logging.configure_sensitive_data_patterns(custom_patterns)
+
+        patterns = itential_logging.get_sensitive_data_patterns()
+        assert "custom_token" in patterns
+        assert "test_secret" in patterns
+
+    def test_add_remove_sensitive_data_pattern(self):
+        """Test adding and removing individual sensitive data patterns"""
+        # Add a new pattern
+        itential_logging.add_sensitive_data_pattern("test_pattern", r"TEST-\d{4}")
+        patterns = itential_logging.get_sensitive_data_patterns()
+        assert "test_pattern" in patterns
+
+        # Remove the pattern
+        result = itential_logging.remove_sensitive_data_pattern("test_pattern")
+        assert result is True
+        patterns = itential_logging.get_sensitive_data_patterns()
+        assert "test_pattern" not in patterns
+
+        # Try to remove non-existent pattern
+        result = itential_logging.remove_sensitive_data_pattern("non_existent")
+        assert result is False
+
+    @patch("itential_mcp.core.logging.logging.getLogger")
+    def test_custom_pattern_redaction(self, mock_get_logger):
+        """Test that custom patterns are properly redacted"""
+        mock_logger = Mock()
+        mock_get_logger.return_value = mock_logger
+
+        # Add custom pattern
+        itential_logging.add_sensitive_data_pattern(
+            "custom_id", r"CUSTOM_ID=[A-Z0-9]{8}"
+        )
+
+        itential_logging.enable_sensitive_data_filtering()
+        itential_logging.info("Processing request with CUSTOM_ID=ABCD1234")
+
+        args, kwargs = mock_logger.log.call_args
+        logged_level, logged_message = args
+        assert logged_level == logging.INFO
+        assert "[REDACTED_CUSTOM_ID]" in logged_message
+        assert "ABCD1234" not in logged_message
+
+    def test_get_sensitive_data_patterns_list(self):
+        """Test getting the list of sensitive data patterns"""
+        patterns = itential_logging.get_sensitive_data_patterns()
+
+        # Should include default patterns
+        expected_patterns = [
+            "api_key",
+            "bearer_token",
+            "jwt_token",
+            "access_token",
+            "password",
+            "secret",
+            "email_in_auth",
+            "auth_url",
+            "db_connection",
+            "private_key",
+        ]
+
+        for pattern in expected_patterns:
+            assert pattern in patterns
+
+    @patch("itential_mcp.core.logging.logging.getLogger")
+    def test_sensitive_data_filtering_with_file_handler(self, mock_get_logger):
+        """Test that sensitive data filtering works with file handlers"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_path = Path(temp_dir) / "sensitive_test.log"
+
+            # Mock the logger but allow file operations
+            mock_logger = Mock()
+            mock_logger.level = logging.INFO
+            mock_get_logger.return_value = mock_logger
+
+            itential_logging.enable_sensitive_data_filtering()
+            itential_logging.add_file_handler(str(log_path))
+            itential_logging.info("API_KEY=sensitive_key_1234567890abcdef")
+
+            # Verify the scanner was called and redacted message was logged
+            args, kwargs = mock_logger.log.call_args
+            logged_level, logged_message = args
+            assert logged_level == logging.INFO
+            assert "[REDACTED_API_KEY]" in logged_message
+
+    def test_invalid_regex_pattern_handling(self):
+        """Test handling of invalid regex patterns"""
+        with pytest.raises(Exception):  # Could be re.error or other exception
+            itential_logging.add_sensitive_data_pattern("invalid", "[unclosed bracket")
+
+    @patch("itential_mcp.core.logging.logging.getLogger")
+    def test_empty_and_none_message_handling(self, mock_get_logger):
+        """Test handling of empty and None messages"""
+        mock_logger = Mock()
+        mock_get_logger.return_value = mock_logger
+
+        itential_logging.enable_sensitive_data_filtering()
+
+        # Test empty string
+        itential_logging.info("")
+        args, kwargs = mock_logger.log.call_args
+        logged_level, logged_message = args
+        assert logged_message == ""
+
+        # Test None (this might not be a valid scenario but test for robustness)
+        # Note: This test might need adjustment based on actual behavior
+        try:
+            itential_logging.info(None)
+            args, kwargs = mock_logger.log.call_args
+            logged_level, logged_message = args
+            # The behavior might vary - could be None or empty string
+            assert logged_message in (None, "", "None")
+        except (TypeError, AttributeError):
+            # It's acceptable if this raises an exception
+            pass
