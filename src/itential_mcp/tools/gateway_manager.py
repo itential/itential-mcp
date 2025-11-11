@@ -90,12 +90,15 @@ async def get_gateways(
     # have a connection status of `connected` since we do not care about
     # disconnected gateways.  Additionally if a gateway status is disconnected,
     # the API does not return the name property.
-    
+
     # Handle both response formats: direct array or wrapped in "results" key
     gateway_list = data.get("results", data) if isinstance(data, dict) else data
-    
+
     for ele in gateway_list:
-        if ele.get("connection_status") == "connected" or ele.get("status") == "connected":
+        if (
+            ele.get("connection_status") == "connected"
+            or ele.get("status") == "connected"
+        ):
             results.append(
                 models.GatewayElement(
                     name=ele.get("name", ele.get("gateway_name", "")),
