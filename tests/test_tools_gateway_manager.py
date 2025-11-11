@@ -868,7 +868,7 @@ class TestGatewayManagerErrorHandling:
 
         # Should not raise an error, but handle missing fields gracefully with defaults
         result = await get_gateways(self.mock_context)
-        
+
         # Verify it returns a result with default values for missing fields
         assert isinstance(result, GetGatewaysResponse)
         assert len(result.root) == 1
