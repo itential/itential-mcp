@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2025-11-11
+
+### Added
+- TLS certificate support (#259)
+- Integrations tool with model filtering (#258)
+- Kubernetes-standard health check endpoints (#253)
+- Async context manager support to PlatformClient (#247)
+- OAuth 2.0 auth support for HTTP transports (#246)
+
+### Changed
+- API returns get_gateways data inconsistently, gw name and cluster id (#264)
+- Sensitive data scanner to filter log messages (#263)
+- Keepalive functionality to prevent session timeouts (#262)
+- Reorganize core modules into runtime package (#261)
+- Comprehensive documentation updates and improvements (#260)
+- Reorganize CLI modules into cli/ package (#257)
+- Comprehensive status endpoints documentation for operators (#256)
+- Comprehensive OAuth authentication guide (#254)
+- Convert server.py to server package structure (#252)
+- Move response module to platform package (#250)
+- Move client and services to platform package (#248)
+
+### Fixed
+- Filter disconnected gateways in get_gateways function (#255)
+- Comprehensive auth module test coverage (#251)
+- Modified result object from get_service call to be [] (#245)
+- Incorrect function reference for get_gateways tool call (#244)
+
 ## [0.8.0] - 2025-11-04
 
 ### Added
