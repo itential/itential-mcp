@@ -638,11 +638,16 @@ def _get_tools_from_env() -> dict:
     and returns a nested dictionary structure organized by tool name.
 
     Expected format: ITENTIAL_MCP_TOOL_<tool_name>_<key>=<value>
+    
+    The parsing splits on the LAST underscore to support underscores in tool names.
+    For example: ITENTIAL_MCP_TOOL_RUN_CLI_COMMAND_TYPE splits into:
+    - tool_name: RUN_CLI_COMMAND
+    - key: TYPE
 
     Returns:
         Nested dictionary where keys are tool names and values are
         dictionaries of configuration key-value pairs for each tool.
-        Example: {"my_tool": {"name": "value", "type": "endpoint"}}
+        Example: {"RUN_CLI_COMMAND": {"type": "service", "name": "..."}}
 
     Raises:
         ValueError: If environment variable format is invalid or missing required parts.
@@ -655,17 +660,18 @@ def _get_tools_from_env() -> dict:
         if not env_key.startswith(prefix):
             continue
 
-        # Remove prefix and split remaining parts
+        # Remove prefix
         remaining = env_key[len(prefix) :]
-        parts = remaining.split("_", 2)  # Split into at most 3 parts
-
-        if len(parts) < 2:
+        
+        # Split on the LAST underscore to support underscores in tool names
+        if "_" not in remaining:
             raise ValueError(
                 f"Invalid tool environment variable format: {env_key}. "
                 f"Expected format: {prefix}<tool_name>_<key>=<value>"
             )
-
-        tool_name, config_key = parts[0], parts[1]
+        
+        # Split from the right on the last underscore
+        tool_name, config_key = remaining.rsplit("_", 1)
 
         if not tool_name or not config_key:
             raise ValueError(f"Tool name and config key cannot be empty in: {env_key}")
@@ -674,7 +680,9 @@ def _get_tools_from_env() -> dict:
         if tool_name not in tool_config:
             tool_config[tool_name] = {}
 
-        tool_config[tool_name][config_key] = env_value
+        # Convert config_key to lowercase for consistency
+        config_key_lower = config_key.lower()
+        tool_config[tool_name][config_key_lower] = env_value
 
     return tool_config
 
