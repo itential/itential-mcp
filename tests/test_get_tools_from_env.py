@@ -38,10 +38,10 @@ class TestGetToolsFromEnv:
             if key.startswith("ITENTIAL_MCP_TOOL_"):
                 monkeypatch.delenv(key, raising=False)
 
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_mytool_name", "My Tool")
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_mytool_type", "endpoint")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_mytool_NAME", "My Tool")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_mytool_TYPE", "endpoint")
         monkeypatch.setenv(
-            "ITENTIAL_MCP_TOOL_mytool_description", "Test tool description"
+            "ITENTIAL_MCP_TOOL_mytool_DESCRIPTION", "Test tool description"
         )
 
         result = _get_tools_from_env()
@@ -63,13 +63,13 @@ class TestGetToolsFromEnv:
                 monkeypatch.delenv(key, raising=False)
 
         # Tool 1
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_tool1_name", "Tool One")
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_tool1_type", "endpoint")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_tool1_NAME", "Tool One")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_tool1_TYPE", "endpoint")
 
         # Tool 2
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_tool2_name", "Tool Two")
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_tool2_type", "endpoint")
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_tool2_automation", "test-automation")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_tool2_NAME", "Tool Two")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_tool2_TYPE", "endpoint")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_tool2_AUTOMATION", "test-automation")
 
         result = _get_tools_from_env()
 
@@ -83,21 +83,30 @@ class TestGetToolsFromEnv:
         }
         assert result == expected
 
-    def test_get_tools_from_env_with_underscores_in_keys(self, monkeypatch):
-        """Test _get_tools_from_env handles keys with multiple underscores."""
+    def test_get_tools_from_env_config_keys_no_underscores(self, monkeypatch):
+        """Test _get_tools_from_env with simple config keys (no underscores in keys).
+        
+        Note: With rsplit on last underscore to support underscores in tool names,
+        config keys cannot contain underscores.
+        """
         # Clear existing variables
         for key in list(os.environ.keys()):
             if key.startswith("ITENTIAL_MCP_TOOL_"):
                 monkeypatch.delenv(key, raising=False)
 
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_mytool_complex_key", "complex value")
-        monkeypatch.setenv(
-            "ITENTIAL_MCP_TOOL_mytool_another_complex_key", "another value"
-        )
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_mytool_NAME", "My Tool")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_mytool_DESCRIPTION", "A description")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_mytool_TYPE", "endpoint")
 
         result = _get_tools_from_env()
 
-        expected = {"mytool": {"complex": "complex value", "another": "another value"}}
+        expected = {
+            "mytool": {
+                "name": "My Tool",
+                "description": "A description",
+                "type": "endpoint",
+            }
+        }
         assert result == expected
 
     def test_get_tools_from_env_ignores_non_tool_variables(self, monkeypatch):
@@ -113,7 +122,7 @@ class TestGetToolsFromEnv:
         monkeypatch.setenv("OTHER_TOOL_CONFIG", "should be ignored")
 
         # Set one tool variable
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_test_name", "Test Tool")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_test_NAME", "Test Tool")
 
         result = _get_tools_from_env()
 
@@ -145,13 +154,13 @@ class TestGetToolsFromEnv:
             if key.startswith("ITENTIAL_MCP_TOOL_"):
                 monkeypatch.delenv(key, raising=False)
 
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL__key", "value")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL__KEY", "value")
 
         with pytest.raises(ValueError) as exc_info:
             _get_tools_from_env()
 
         assert "Tool name and config key cannot be empty" in str(exc_info.value)
-        assert "ITENTIAL_MCP_TOOL__key" in str(exc_info.value)
+        assert "ITENTIAL_MCP_TOOL__KEY" in str(exc_info.value)
 
     def test_get_tools_from_env_empty_config_key(self, monkeypatch):
         """Test _get_tools_from_env raises ValueError for empty config key."""
@@ -175,8 +184,8 @@ class TestGetToolsFromEnv:
             if key.startswith("ITENTIAL_MCP_TOOL_"):
                 monkeypatch.delenv(key, raising=False)
 
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_mytool_name", "")
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_mytool_description", "")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_mytool_NAME", "")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_mytool_DESCRIPTION", "")
 
         result = _get_tools_from_env()
 
@@ -191,13 +200,13 @@ class TestGetToolsFromEnv:
                 monkeypatch.delenv(key, raising=False)
 
         monkeypatch.setenv(
-            "ITENTIAL_MCP_TOOL_mytool_name", "Tool with spaces & special chars!"
+            "ITENTIAL_MCP_TOOL_mytool_NAME", "Tool with spaces & special chars!"
         )
         monkeypatch.setenv(
-            "ITENTIAL_MCP_TOOL_mytool_description",
+            "ITENTIAL_MCP_TOOL_mytool_DESCRIPTION",
             "Description with\nnewlines\tand\ttabs",
         )
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_mytool_config", "key=value,other=123")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_mytool_CONFIG", "key=value,other=123")
 
         result = _get_tools_from_env()
 
@@ -217,12 +226,39 @@ class TestGetToolsFromEnv:
             if key.startswith("ITENTIAL_MCP_TOOL_"):
                 monkeypatch.delenv(key, raising=False)
 
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_tool123_name", "Tool 123")
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_abc123def_type", "endpoint")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_tool123_NAME", "Tool 123")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_abc123def_TYPE", "endpoint")
 
         result = _get_tools_from_env()
 
         expected = {"tool123": {"name": "Tool 123"}, "abc123def": {"type": "endpoint"}}
+        assert result == expected
+
+    def test_get_tools_from_env_underscores_in_tool_names(self, monkeypatch):
+        """Test _get_tools_from_env with underscores in tool names."""
+        # Clear existing variables
+        for key in list(os.environ.keys()):
+            if key.startswith("ITENTIAL_MCP_TOOL_"):
+                monkeypatch.delenv(key, raising=False)
+
+        # Test the exact scenario from the user's config
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_RUN_CLI_COMMAND_TYPE", "service")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_RUN_CLI_COMMAND_NAME", "run-cli-command")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_RUN_CLI_COMMAND_CLUSTER", "autocon_cluster")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_RUN_CLI_COMMAND_DESCRIPTION", "Execute CLI command on network devices")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_RUN_CLI_COMMAND_TAGS", "custom")
+
+        result = _get_tools_from_env()
+
+        expected = {
+            "RUN_CLI_COMMAND": {
+                "type": "service",
+                "name": "run-cli-command",
+                "cluster": "autocon_cluster",
+                "description": "Execute CLI command on network devices",
+                "tags": "custom",
+            }
+        }
         assert result == expected
 
 
@@ -249,13 +285,13 @@ class TestConfigIntegration:
             cp.write(f)
 
         # Set environment variables for tools
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_envtool_name", "Env Tool")
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_envtool_type", "endpoint")
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_envtool_automation", "env-automation")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_envtool_NAME", "Env Tool")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_envtool_TYPE", "endpoint")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_envtool_AUTOMATION", "env-automation")
 
         # Override file tool with env vars
         monkeypatch.setenv(
-            "ITENTIAL_MCP_TOOL_filetool_description", "Overridden by env"
+            "ITENTIAL_MCP_TOOL_filetool_DESCRIPTION", "Overridden by env"
         )
 
         monkeypatch.setenv("ITENTIAL_MCP_CONFIG", str(config_path))
@@ -292,13 +328,13 @@ class TestConfigIntegration:
         monkeypatch.delenv("ITENTIAL_MCP_CONFIG", raising=False)
 
         # Set environment variables for tools
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_envtool1_name", "Env Tool 1")
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_envtool1_type", "endpoint")
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_envtool1_automation", "automation1")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_envtool1_NAME", "Env Tool 1")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_envtool1_TYPE", "endpoint")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_envtool1_AUTOMATION", "automation1")
 
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_envtool2_name", "Env Tool 2")
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_envtool2_type", "endpoint")
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_envtool2_automation", "automation2")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_envtool2_NAME", "Env Tool 2")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_envtool2_TYPE", "endpoint")
+        monkeypatch.setenv("ITENTIAL_MCP_TOOL_envtool2_AUTOMATION", "automation2")
 
         cfg = config_module.get()
 
