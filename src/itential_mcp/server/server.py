@@ -28,6 +28,7 @@ from .. import bindings
 from ..core import logging
 from ..utilities import tool as toolutils
 from ..middleware.bindings import BindingsMiddleware
+from ..middleware.serialization import SerializationMiddleware
 
 
 INSTRUCTIONS = """
@@ -158,6 +159,7 @@ class Server:
             )
         )
         self.mcp.add_middleware(BindingsMiddleware(self.config))
+        self.mcp.add_middleware(SerializationMiddleware(self.config))
 
     def __init_routes__(self) -> None:
         """Initialize and register health check routes.

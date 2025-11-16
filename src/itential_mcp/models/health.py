@@ -652,7 +652,21 @@ class LoggerConfig(BaseModel):
     @field_validator("syslog", mode="before")
     @classmethod
     def convert_empty_dict_to_string(cls, value):
-        """Convert empty dict to empty string for syslog field."""
+        """Convert empty dict to empty string for syslog field.
+
+        This validator normalizes the syslog field by converting empty
+        dictionaries to empty strings for consistent data representation.
+
+        Args:
+            value: The value to validate, expected to be either a string or dict.
+
+        Returns:
+            str: Empty string if value is an empty dict, otherwise returns
+                the original value unchanged.
+
+        Raises:
+            None
+        """
         if isinstance(value, dict) and not value:
             return ""
         return value

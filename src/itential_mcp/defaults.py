@@ -33,6 +33,9 @@ ITENTIAL_MCP_SERVER_TOOLS_PATH = None  # Custom path to load additional tools fr
 ITENTIAL_MCP_SERVER_KEEPALIVE_INTERVAL = (
     300  # Keepalive interval in seconds (0 = disabled)
 )
+ITENTIAL_MCP_SERVER_RESPONSE_FORMAT = (
+    "json"  # Response serialization format: json, toon, or auto
+)
 ITENTIAL_MCP_SERVER_AUTH_TYPE = "none"  # Authentication provider type
 ITENTIAL_MCP_SERVER_AUTH_JWKS_URI = None  # JWKS URI for JWT validation
 ITENTIAL_MCP_SERVER_AUTH_PUBLIC_KEY = (
