@@ -744,6 +744,8 @@ def get() -> Config:
 
                 if t["type"] == "endpoint":
                     tools.append(EndpointTool(**t))
+                elif t["type"] == "service":
+                    tools.append(ServiceTool(**t))
                 else:
                     tools.append(Tool(**t))
 
