@@ -5,6 +5,7 @@ description = "Itential MCP Server"
 dependencies = [
     "fastmcp",
     "ipsdk",
+    "toonify[pydantic]",
 ]
 
 dynamic = [ "version" ]
