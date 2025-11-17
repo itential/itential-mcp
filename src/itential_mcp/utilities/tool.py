@@ -153,7 +153,8 @@ async def display_tools():
     """
     tools = {}
     maxlen = 0
-    path = pathlib.Path(__file__).parent / "tools"
+
+    path = pathlib.Path(__file__).parent.parent / "tools"
 
     for f, _ in itertools(path):
         if len(f.__name__) > maxlen:
@@ -196,7 +197,8 @@ async def display_tags():
     print("TAGS")
 
     tags = set()
-    path = pathlib.Path(__file__).parent / "tools"
+
+    path = pathlib.Path(__file__).parent.parent / "tools"
 
     for _, t in itertools(path):
         tags = tags.union(t)
