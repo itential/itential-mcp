@@ -85,7 +85,7 @@ class TestGetToolsFromEnv:
 
     def test_get_tools_from_env_config_keys_no_underscores(self, monkeypatch):
         """Test _get_tools_from_env with simple config keys (no underscores in keys).
-        
+
         Note: With rsplit on last underscore to support underscores in tool names,
         config keys cannot contain underscores.
         """
@@ -244,8 +244,13 @@ class TestGetToolsFromEnv:
         # Test the exact scenario from the user's config
         monkeypatch.setenv("ITENTIAL_MCP_TOOL_RUN_CLI_COMMAND_TYPE", "service")
         monkeypatch.setenv("ITENTIAL_MCP_TOOL_RUN_CLI_COMMAND_NAME", "run-cli-command")
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_RUN_CLI_COMMAND_CLUSTER", "autocon_cluster")
-        monkeypatch.setenv("ITENTIAL_MCP_TOOL_RUN_CLI_COMMAND_DESCRIPTION", "Execute CLI command on network devices")
+        monkeypatch.setenv(
+            "ITENTIAL_MCP_TOOL_RUN_CLI_COMMAND_CLUSTER", "autocon_cluster"
+        )
+        monkeypatch.setenv(
+            "ITENTIAL_MCP_TOOL_RUN_CLI_COMMAND_DESCRIPTION",
+            "Execute CLI command on network devices",
+        )
         monkeypatch.setenv("ITENTIAL_MCP_TOOL_RUN_CLI_COMMAND_TAGS", "custom")
 
         result = _get_tools_from_env()

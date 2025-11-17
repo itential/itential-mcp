@@ -638,7 +638,7 @@ def _get_tools_from_env() -> dict:
     and returns a nested dictionary structure organized by tool name.
 
     Expected format: ITENTIAL_MCP_TOOL_<tool_name>_<key>=<value>
-    
+
     The parsing splits on the LAST underscore to support underscores in tool names.
     For example: ITENTIAL_MCP_TOOL_RUN_CLI_COMMAND_TYPE splits into:
     - tool_name: RUN_CLI_COMMAND
@@ -662,14 +662,14 @@ def _get_tools_from_env() -> dict:
 
         # Remove prefix
         remaining = env_key[len(prefix) :]
-        
+
         # Split on the LAST underscore to support underscores in tool names
         if "_" not in remaining:
             raise ValueError(
                 f"Invalid tool environment variable format: {env_key}. "
                 f"Expected format: {prefix}<tool_name>_<key>=<value>"
             )
-        
+
         # Split from the right on the last underscore
         tool_name, config_key = remaining.rsplit("_", 1)
 
