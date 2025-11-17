@@ -216,6 +216,19 @@ class Config(object):
         ),
     )
 
+    server_response_format: Literal["json", "toon"] = Field(
+        description="Response serialization format (json, toon)",
+        default_factory=default_factory(
+            env.getstr,
+            "ITENTIAL_MCP_SERVER_RESPONSE_FORMAT",
+        ),
+        json_schema_extra=options(
+            "--response-format",
+            choices=("json", "toon"),
+            metavar="<format>",
+        ),
+    )
+
     server_auth_type: Literal["none", "jwt", "oauth", "oauth_proxy"] = Field(
         description="Authentication provider type used to secure the MCP server",
         default_factory=default_factory(
