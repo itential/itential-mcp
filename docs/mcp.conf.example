@@ -112,6 +112,17 @@
 #
 # keepalive_interval = 300
 
+# Configures the response serialization format used when returning data from
+# tool calls.  This configuration option accepts one of two valid values:
+# `json` or `toon`.  When set to `json`, responses are returned in standard
+# JSON format.  When set to `toon`, responses are serialized using the TOON
+# (Text Object Oriented Notation) format for improved readability.
+#
+# Default value: json
+# Environment variable: ITENTIAL_MCP_SERVER_RESPONSE_FORMAT
+#
+# response_format = json
+
 # Configures the authentication provider type used to secure the MCP server.
 # This setting controls which authentication method the server will use to
 # validate client requests.  Valid values are: none, jwt, oauth, oauth_proxy.
