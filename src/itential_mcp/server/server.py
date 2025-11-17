@@ -103,7 +103,7 @@ class Server:
         await self.__init_server__()
         await self.__init_tools__()
         await self.__init_bindings__()
-        self.__init_routes__()
+        await self.__init_routes__()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -161,7 +161,7 @@ class Server:
         self.mcp.add_middleware(BindingsMiddleware(self.config))
         self.mcp.add_middleware(SerializationMiddleware(self.config))
 
-    def __init_routes__(self) -> None:
+    async def __init_routes__(self) -> None:
         """Initialize and register health check routes.
 
         Registers the Kubernetes-standard health check endpoints with the FastMCP server:
