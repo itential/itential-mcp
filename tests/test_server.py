@@ -760,6 +760,7 @@ class TestServerClass:
                 port=8080,
                 ssl_certfile=None,
                 ssl_keyfile=None,
+                ws="wsproto",
             )
 
             # Verify uvicorn Server was created and serve was called
@@ -804,6 +805,7 @@ class TestServerClass:
                 port=3000,
                 ssl_certfile="/path/to/cert.pem",
                 ssl_keyfile="/path/to/key.pem",
+                ws="wsproto",
             )
 
             # Verify uvicorn Server was created and serve was called
@@ -916,6 +918,7 @@ class TestServerClass:
                     port=8000,
                     ssl_certfile=case["expected_cert"],
                     ssl_keyfile=case["expected_key"],
+                    ws="wsproto",
                 )
 
             # Reset mocks for next iteration
