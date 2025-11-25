@@ -229,6 +229,7 @@ class Server:
                 port=self.config.server.get("port"),
                 ssl_certfile=self.config.server.get("certificate_file"),
                 ssl_keyfile=self.config.server.get("private_key_file"),
+                ws="wsproto",
             )
 
             srv = uvicorn.Server(uvicorn_config)
