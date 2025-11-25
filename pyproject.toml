@@ -6,6 +6,7 @@ dependencies = [
     "fastmcp",
     "ipsdk",
     "toon-python",
+    "wsproto",
 ]
 
 dynamic = [ "version" ]
