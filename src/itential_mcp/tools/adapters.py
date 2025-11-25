@@ -121,7 +121,7 @@ async def stop_adapter(
     await ctx.info("inside stop_adapter(...)")
     client = ctx.request_context.lifespan_context.get("client")
     data = await client.adapters.stop_adapter(name=name, timeout=timeout)
-    return models.StopAdapterResponse(name=data["name"], state=data["state"])
+    return models.StopAdapterResponse(name=data["id"], state=data["state"])
 
 
 async def restart_adapter(
@@ -160,4 +160,4 @@ async def restart_adapter(
     await ctx.info("inside restart_adapter(...)")
     client = ctx.request_context.lifespan_context.get("client")
     data = await client.adapters.restart_adapter(name=name, timeout=timeout)
-    return models.RestartAdapterResponse(name=data["name"], state=data["state"])
+    return models.RestartAdapterResponse(name=data["id"], state=data["state"])
