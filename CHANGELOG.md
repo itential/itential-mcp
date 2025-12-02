@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2025-12-02
+
+### Added
+- Serialization middleware with toon support (#268)
+- Toon documentation references (#269)
+
+### Changed
+- Bump actions/checkout from 5 to 6 (#273)
+- Migrate from toonify to toon-python (#270)
+- Convert __init_routes__ method to async (#271)
+
+### Fixed
+- Resolve websockets deprecation warning (#274)
+- Service tool env config (#272)
+- Correct tool discovery path in utilities (#267)
+- Env var parsing (#266)
+
 ## [0.9.0] - 2025-11-11
 
 ### Added
