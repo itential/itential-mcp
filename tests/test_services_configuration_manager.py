@@ -461,6 +461,11 @@ class TestConfigurationManagerService:
             }
         )
 
+        # Mock client.put for set_golden_config_template
+        mock_put_response = Mock()
+        mock_put_response.json.return_value = {"template": "interface template"}
+        mock_client.put = AsyncMock(return_value=mock_put_response)
+
         result = await service.add_golden_config_node(
             tree_name="test-tree",
             version="v1.0",

@@ -150,16 +150,26 @@ class TestCLICommands:
 
     @patch("sys.argv", ["itential-mcp", "run"])
     @patch("asyncio.run")
-    @patch("itential_mcp.server.run")
-    def test_itential_mcp_run_server(self, mock_server_run, mock_asyncio_run):
+    def test_itential_mcp_run_server(self, mock_asyncio_run):
         """Test itential-mcp run command to start server"""
-        mock_server_run.return_value = None
-        mock_asyncio_run.return_value = 0
 
-        result = app.run()
+        # Create a proper async function to replace server.run
+        async def mock_server_func():
+            return None
 
-        assert result == 0
-        mock_asyncio_run.assert_called_once()
+        # Patch server.run in the commands module where it's imported
+        with patch("itential_mcp.runtime.commands.server.run", new=mock_server_func):
+            # Configure mock to consume coroutine properly
+            def consume_coroutine(coro):
+                coro.close()
+                return 0
+
+            mock_asyncio_run.side_effect = consume_coroutine
+
+            result = app.run()
+
+            assert result == 0
+            mock_asyncio_run.assert_called_once()
 
 
 class TestCLIHelpOutput:
