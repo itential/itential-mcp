@@ -131,7 +131,7 @@ async def apply_device_configuration(
     """
     await ctx.info("inside apply_device_configuration(...)")
     client = ctx.request_context.lifespan_context.get("client")
-    res = client.configuration_manager.apply_device_configuration(
+    res = await client.configuration_manager.apply_device_configuration(
         device=device, config=config
     )
     return models.ApplyDeviceConfigurationResponse(**res)
