@@ -1,11 +1,13 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from __future__ import annotations
+
 import inspect
 
-from typing import Literal, List, Annotated, Optional
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, RootModel, Field
+from pydantic import BaseModel, Field, RootModel
 
 
 class GetIntegrationModelsElement(BaseModel):
@@ -56,7 +58,7 @@ class GetIntegrationModelsElement(BaseModel):
     ]
 
     description: Annotated[
-        Optional[str],
+        str | None,
         Field(
             default=None,
             description=inspect.cleandoc(
@@ -79,7 +81,7 @@ class GetIntegrationModelsResponse(RootModel):
     """
 
     root: Annotated[
-        List[GetIntegrationModelsElement],
+        list[GetIntegrationModelsElement],
         Field(
             description=inspect.cleandoc(
                 """
@@ -183,7 +185,7 @@ class GetIntegrationsResponse(RootModel):
     """
 
     root: Annotated[
-        List[GetIntegrationsElement],
+        list[GetIntegrationsElement],
         Field(
             description=inspect.cleandoc(
                 """

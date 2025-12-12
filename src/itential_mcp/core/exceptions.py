@@ -9,7 +9,9 @@ providing structured error handling with clear categorization and appropriate
 HTTP status code mappings for REST API contexts.
 """
 
-from typing import Optional, Dict, Any
+from __future__ import annotations
+
+from typing import Any
 
 
 class ItentialMcpException(Exception):
@@ -32,8 +34,8 @@ class ItentialMcpException(Exception):
         self,
         message: str = "",
         *args,
-        details: Optional[Dict[str, Any]] = None,
-        http_status: Optional[int] = None,
+        details: dict[str, Any] | None = None,
+        http_status: int | None = None,
     ):
         # Handle backward compatibility with multiple positional arguments
         if args:
@@ -57,7 +59,7 @@ class ItentialMcpException(Exception):
         """Return the error message for string representation."""
         return self.message
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert exception to dictionary for API responses."""
         return {
             "error": self.__class__.__name__,
@@ -297,7 +299,7 @@ def get_exception_for_http_status(status_code: int) -> type[ItentialMcpException
 
 
 def create_exception_from_response(
-    status_code: int, message: str, details: Optional[Dict[str, Any]] = None
+    status_code: int, message: str, details: dict[str, Any] | None = None
 ) -> ItentialMcpException:
     """
     Create an appropriate exception from an HTTP response.

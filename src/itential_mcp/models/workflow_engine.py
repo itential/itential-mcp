@@ -1,11 +1,13 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from __future__ import annotations
+
 import inspect
 
-from typing import Annotated, List, Mapping, Any
+from typing import Annotated, Any, Mapping
 
-from pydantic import BaseModel, RootModel, Field
+from pydantic import BaseModel, Field, RootModel
 
 
 class JobMetricElement(BaseModel):
@@ -65,7 +67,7 @@ class JobMetricElement(BaseModel):
     ]
 
     metrics: Annotated[
-        List[Mapping[str, Any]],
+        list[Mapping[str, Any]],
         Field(
             description=inspect.cleandoc(
                 """
@@ -139,7 +141,7 @@ class GetJobMetricsResponse(RootModel):
     """
 
     root: Annotated[
-        List[JobMetricElement],
+        list[JobMetricElement],
         Field(
             description=inspect.cleandoc(
                 """
@@ -254,7 +256,7 @@ class TaskMetricElement(BaseModel):
     ]
 
     metrics: Annotated[
-        List[Mapping[str, Any]],
+        list[Mapping[str, Any]],
         Field(
             description=inspect.cleandoc(
                 """
@@ -329,7 +331,7 @@ class GetTaskMetricsResponse(RootModel):
     """
 
     root: Annotated[
-        List[TaskMetricElement],
+        list[TaskMetricElement],
         Field(
             description=inspect.cleandoc(
                 """
