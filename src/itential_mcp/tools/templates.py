@@ -1,9 +1,11 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from __future__ import annotations
+
 import inspect
 
-from typing import Annotated, Literal, List, Mapping, Any
+from typing import Annotated, Literal, Mapping, Any
 
 from pydantic import Field
 
@@ -21,7 +23,7 @@ async def get_templates(
         Literal["textfsm", "jinja2"] | None,
         Field(description="Retrieve only templates of this type", default=None),
     ],
-) -> List[Mapping[str, Any]]:
+) -> list[Mapping[str, Any]]:
     """Get all templates from Automation Studio.
 
     Retrieves all templates from the Automation Studio, with optional filtering
@@ -42,7 +44,7 @@ async def get_templates(
             templating. Defaults to None to retrieve all template types.
 
     Returns:
-        List[Mapping[str, Any]]: A list of template objects containing template
+        list[Mapping[str, Any]]: A list of template objects containing template
             metadata including id, name, description, and type fields transformed
             into GetTemplatesElement model objects.
 

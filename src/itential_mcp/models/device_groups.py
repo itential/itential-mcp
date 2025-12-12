@@ -1,10 +1,12 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-import inspect
-from typing import Annotated, List
+from __future__ import annotations
 
-from pydantic import BaseModel, RootModel, Field
+import inspect
+from typing import Annotated
+
+from pydantic import BaseModel, Field, RootModel
 
 
 class DeviceGroupElement(BaseModel):
@@ -41,7 +43,7 @@ class DeviceGroupElement(BaseModel):
     ]
 
     devices: Annotated[
-        List[str],
+        list[str],
         Field(
             description=inspect.cleandoc(
                 """
@@ -74,7 +76,7 @@ class GetDeviceGroupsResponse(RootModel):
     """
 
     root: Annotated[
-        List[DeviceGroupElement],
+        list[DeviceGroupElement],
         Field(
             description=inspect.cleandoc(
                 """

@@ -1,8 +1,10 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from __future__ import annotations
+
 import time
-from typing import Dict, Any, List
+from typing import Any
 
 from itential_mcp.platform.services import ServiceBase
 
@@ -47,7 +49,7 @@ class Service(ServiceBase):
 
         return data["data"][0]["_id"]
 
-    async def get_command_templates(self) -> List[Dict[str, Any]]:
+    async def get_command_templates(self) -> list[dict[str, Any]]:
         """
         Get all command templates from Itential Platform.
 
@@ -71,7 +73,7 @@ class Service(ServiceBase):
 
     async def describe_command_template(
         self, name: str, project: str | None = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get detailed information about a specific command template.
 
@@ -105,8 +107,8 @@ class Service(ServiceBase):
         return data[0]
 
     async def run_command_template(
-        self, name: str, devices: List[str], project: str | None = None
-    ) -> Dict[str, Any]:
+        self, name: str, devices: list[str], project: str | None = None
+    ) -> dict[str, Any]:
         """
         Execute a command template against specified devices with rule evaluation.
 
@@ -145,7 +147,7 @@ class Service(ServiceBase):
 
         return res.json()
 
-    async def run_command(self, cmd: str, devices: List[str]) -> List[Dict[str, Any]]:
+    async def run_command(self, cmd: str, devices: list[str]) -> list[dict[str, Any]]:
         """
         Run a single command against multiple devices.
 
@@ -174,13 +176,13 @@ class Service(ServiceBase):
     async def create_command_template(
         self,
         name: str,
-        commands: List[Dict[str, Any]],
+        commands: list[dict[str, Any]],
         project: str | None = None,
         description: str | None = None,
         os: str = "",
         pass_rule: bool = True,
         ignore_warnings: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Create a new command template in Itential Platform.
 
@@ -189,7 +191,7 @@ class Service(ServiceBase):
 
         Args:
             name (str): Name for the command template
-            commands (List[Dict[str, Any]]): List of commands with their validation rules
+            commands (list[dict[str, Any]]): List of commands with their validation rules
             project (str | None): Project name to create the template in (None for global)
             description (str | None): Optional description for the template
             os (str): Operating system type (default: empty string)
@@ -238,13 +240,13 @@ class Service(ServiceBase):
     async def update_command_template(
         self,
         name: str,
-        commands: List[Dict[str, Any]],
+        commands: list[dict[str, Any]],
         project: str | None = None,
         description: str | None = None,
         os: str = "",
         pass_rule: bool = True,
         ignore_warnings: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Update an existing command template in Itential Platform.
 
@@ -253,7 +255,7 @@ class Service(ServiceBase):
 
         Args:
             name (str): Name of the command template to update
-            commands (List[Dict[str, Any]]): List of commands with their validation rules
+            commands (list[dict[str, Any]]): List of commands with their validation rules
             project (str | None): Project name containing the template (None for global)
             description (str | None): Optional description for the template
             os (str): Operating system type (default: empty string)

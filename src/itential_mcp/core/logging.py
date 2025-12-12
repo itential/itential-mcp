@@ -8,12 +8,14 @@ including custom log levels, file handlers, and logger management for the applic
 and its dependencies.
 """
 
+from __future__ import annotations
+
 import sys
 import logging
 
 from pathlib import Path
 from functools import partial
-from typing import Literal, Dict, Optional, List
+from typing import Literal
 
 from . import metadata
 from . import heuristics
@@ -197,8 +199,8 @@ def add_file_handler(
 
     Args:
         file_path (str): Path to the log file. Parent directories will be created if they don't exist.
-        level (Optional[int]): Logging level for the file handler. If None, uses the logger's current level.
-        format_string (Optional[str]): Custom format string for the file handler.
+        level (int | None): Logging level for the file handler. If None, uses the logger's current level.
+        format_string (str | None): Custom format string for the file handler.
                                      If None, uses the default logging_message_format.
 
     Returns:
@@ -273,7 +275,7 @@ def configure_file_logging(
         file_path (str): Path to the log file. Parent directories will be created if they don't exist.
         level (int): Logging level (e.g., logging.INFO, logging.DEBUG). Default is INFO.
         propagate (bool): Setting this value to True will also turn on logging for httpx and httpcore.
-        format_string (Optional[str]): Custom format string for the file handler.
+        format_string (str | None): Custom format string for the file handler.
                                      If None, uses the default logging_message_format.
 
     Returns:
@@ -337,8 +339,8 @@ def add_stdout_handler(
     Add a stdout handler to the logger.
 
     Args:
-        level (Optional[int]): Logging level for the stdout handler. If None, uses the logger's current level.
-        format_string (Optional[str]): Custom format string for the stdout handler.
+        level (int | None): Logging level for the stdout handler. If None, uses the logger's current level.
+        format_string (str | None): Custom format string for the stdout handler.
                                      If None, uses the default logging_message_format.
 
     Returns:
@@ -379,8 +381,8 @@ def add_stderr_handler(
     Add a stderr handler to the logger.
 
     Args:
-        level (Optional[int]): Logging level for the stderr handler. If None, uses the logger's current level.
-        format_string (Optional[str]): Custom format string for the stderr handler.
+        level (int | None): Logging level for the stderr handler. If None, uses the logger's current level.
+        format_string (str | None): Custom format string for the stderr handler.
                                      If None, uses the default logging_message_format.
 
     Returns:
@@ -459,12 +461,12 @@ def is_sensitive_data_filtering_enabled() -> bool:
 
 
 def configure_sensitive_data_patterns(
-    custom_patterns: Optional[Dict[str, str]] = None,
+    custom_patterns: dict[str, str] | None = None,
 ) -> None:
     """Configure custom patterns for sensitive data detection.
 
     Args:
-        custom_patterns (Optional[Dict[str, str]]): Custom regex patterns to add
+        custom_patterns (dict[str, str] | None): Custom regex patterns to add
             to the sensitive data scanner, where keys are pattern names and
             values are regex patterns.
 
@@ -477,11 +479,11 @@ def configure_sensitive_data_patterns(
     heuristics.configure_scanner(custom_patterns)
 
 
-def get_sensitive_data_patterns() -> List[str]:
+def get_sensitive_data_patterns() -> list[str]:
     """Get a list of all sensitive data patterns currently configured.
 
     Returns:
-        List[str]: List of pattern names that are being scanned for.
+        list[str]: List of pattern names that are being scanned for.
 
     Raises:
         None

@@ -1,11 +1,13 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from __future__ import annotations
+
 import inspect
 
-from typing import List, Annotated, Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, RootModel, Field
+from pydantic import BaseModel, Field, RootModel
 
 
 class GetTemplatesElement(BaseModel):
@@ -81,7 +83,7 @@ class GetTemplatesResponse(RootModel):
     """
 
     root: Annotated[
-        List[GetTemplatesElement],
+        list[GetTemplatesElement],
         Field(
             description=inspect.cleandoc(
                 """

@@ -1,9 +1,11 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from __future__ import annotations
+
 import inspect
 
-from typing import Any, List, Annotated
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 
@@ -91,7 +93,7 @@ class GetCommandTemplatesResponse(BaseModel):
     """
 
     templates: Annotated[
-        List[CommandTemplate],
+        list[CommandTemplate],
         Field(
             description=inspect.cleandoc(
                 """
@@ -141,7 +143,7 @@ class CommandTemplateDetail(BaseModel):
     ]
 
     commands: Annotated[
-        List[dict[str, Any]],
+        list[dict[str, Any]],
         Field(
             description=inspect.cleandoc(
                 """
@@ -323,7 +325,7 @@ class CommandResult(BaseModel):
     ]
 
     rules: Annotated[
-        List[RuleEvaluation],
+        list[RuleEvaluation],
         Field(
             description=inspect.cleandoc(
                 """
@@ -370,7 +372,7 @@ class RunCommandTemplateResponse(BaseModel):
     ]
 
     command_results: Annotated[
-        List[CommandResult],
+        list[CommandResult],
         Field(
             description=inspect.cleandoc(
                 """
@@ -438,7 +440,7 @@ class RunCommandResponse(BaseModel):
     """
 
     results: Annotated[
-        List[DeviceCommandResult],
+        list[DeviceCommandResult],
         Field(
             description=inspect.cleandoc(
                 """
@@ -477,7 +479,7 @@ class CreateCommandTemplateRequest(BaseModel):
     ]
 
     commands: Annotated[
-        List[dict[str, Any]],
+        list[dict[str, Any]],
         Field(
             description=inspect.cleandoc(
                 """
@@ -573,7 +575,7 @@ class CreateCommandTemplateResponse(BaseModel):
     ]
 
     ops: Annotated[
-        List[dict[str, Any]],
+        list[dict[str, Any]],
         Field(
             description=inspect.cleandoc(
                 """
@@ -636,7 +638,7 @@ class UpdateCommandTemplateRequest(BaseModel):
     ]
 
     commands: Annotated[
-        List[dict[str, Any]],
+        list[dict[str, Any]],
         Field(
             description=inspect.cleandoc(
                 """
