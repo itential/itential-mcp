@@ -1,8 +1,10 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from __future__ import annotations
+
 import inspect
-from typing import Annotated, Literal, List, Optional, Dict, Union
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -70,7 +72,7 @@ class PlatformStatus(BaseModel):
     ]
 
     server_name: Annotated[
-        Optional[str],
+        str | None,
         Field(
             alias="serverName",
             description=inspect.cleandoc(
@@ -83,7 +85,7 @@ class PlatformStatus(BaseModel):
     ]
 
     services: Annotated[
-        List[ServiceStatus],
+        list[ServiceStatus],
         Field(
             description=inspect.cleandoc(
                 """
@@ -300,7 +302,7 @@ class SystemInfo(BaseModel):
     ]
 
     load_avg: Annotated[
-        List[float],
+        list[float],
         Field(
             alias="loadavg",
             description=inspect.cleandoc(
@@ -312,7 +314,7 @@ class SystemInfo(BaseModel):
     ]
 
     cpus: Annotated[
-        List[CpuInfo],
+        list[CpuInfo],
         Field(
             description=inspect.cleandoc(
                 """
@@ -435,7 +437,7 @@ class ServerVersions(BaseModel):
     ada: Annotated[str, Field(description="Ada URL parser version")]
     ares: Annotated[str, Field(description="c-ares DNS resolver version")]
     base64: Annotated[
-        Optional[str],
+        str | None,
         Field(description="Base64 encoding library version", default=None),
     ]
     brotli: Annotated[str, Field(description="Brotli compression library version")]
@@ -450,10 +452,10 @@ class ServerVersions(BaseModel):
     napi: Annotated[str, Field(description="Node-API version")]
     nghttp2: Annotated[str, Field(description="HTTP/2 library version")]
     nghttp3: Annotated[
-        Optional[str], Field(description="HTTP/3 library version", default=None)
+        str | None, Field(description="HTTP/3 library version", default=None)
     ]
     ngtcp2: Annotated[
-        Optional[str], Field(description="QUIC library version", default=None)
+        str | None, Field(description="QUIC library version", default=None)
     ]
     openssl: Annotated[str, Field(description="OpenSSL cryptographic library version")]
     simdutf: Annotated[str, Field(description="SIMD UTF validation library version")]
@@ -576,7 +578,7 @@ class ServerInfo(BaseModel):
     ]
 
     dependencies: Annotated[
-        Dict[str, str],
+        dict[str, str],
         Field(
             description=inspect.cleandoc(
                 """
@@ -639,7 +641,7 @@ class LoggerConfig(BaseModel):
     ]
 
     syslog: Annotated[
-        Union[str, Dict],
+        str | dict,
         Field(
             description=inspect.cleandoc(
                 """
@@ -760,7 +762,7 @@ class ApplicationInfo(BaseModel):
     ]
 
     connection: Annotated[
-        Optional[ConnectionInfo],
+        ConnectionInfo | None,
         Field(
             description=inspect.cleandoc(
                 """
@@ -1075,7 +1077,7 @@ class HealthResponse(BaseModel):
     ]
 
     applications: Annotated[
-        List[ApplicationInfo],
+        list[ApplicationInfo],
         Field(
             description=inspect.cleandoc(
                 """
@@ -1087,7 +1089,7 @@ class HealthResponse(BaseModel):
     ]
 
     adapters: Annotated[
-        List[AdapterInfo],
+        list[AdapterInfo],
         Field(
             description=inspect.cleandoc(
                 """

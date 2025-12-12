@@ -1,11 +1,13 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from __future__ import annotations
+
 import inspect
 
-from typing import List, Annotated
+from typing import Annotated
 
-from pydantic import BaseModel, RootModel, Field
+from pydantic import BaseModel, Field, RootModel
 
 
 class GoldenConfigTree(BaseModel):
@@ -44,7 +46,7 @@ class GoldenConfigTree(BaseModel):
     ]
 
     versions: Annotated[
-        List[str],
+        list[str],
         Field(
             description=inspect.cleandoc(
                 """
@@ -55,7 +57,7 @@ class GoldenConfigTree(BaseModel):
     ]
 
 
-class GetGoldenConfigTreesResponse(RootModel[List[GoldenConfigTree]]):
+class GetGoldenConfigTreesResponse(RootModel[list[GoldenConfigTree]]):
     """Response model for get_golden_config_trees function.
 
     This model represents the complete response from the get_golden_config_trees
@@ -63,7 +65,7 @@ class GetGoldenConfigTreesResponse(RootModel[List[GoldenConfigTree]]):
     in the Configuration Manager.
     """
 
-    root: List[GoldenConfigTree]
+    root: list[GoldenConfigTree]
 
 
 class CreateGoldenConfigTreeResponse(BaseModel):

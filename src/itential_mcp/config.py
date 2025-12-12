@@ -1,6 +1,8 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from __future__ import annotations
+
 import os
 import configparser
 import re
@@ -8,7 +10,7 @@ import re
 from functools import lru_cache, partial
 from pathlib import Path
 
-from typing import Literal, List, Callable, Any
+from typing import Literal, Callable, Any
 
 from pydantic import Field, field_validator
 from pydantic.dataclasses import dataclass
@@ -482,7 +484,7 @@ class Config(object):
         json_schema_extra=options("--platform-timeout", metavar="<secs>"),
     )
 
-    tools: List[Tool] = Field(
+    tools: list[Tool] = Field(
         description="List of Itential Platform assets to be exposed as tools",
         default_factory=list,
     )
