@@ -2,7 +2,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 from dataclasses import dataclass
 
 from pydantic import BaseModel
@@ -695,7 +695,8 @@ class TestServiceIntegration:
         with patch(
             "itential_mcp.bindings.service.gateway_manager.run_service"
         ) as mock_run:
-            mock_result = MagicMock(spec=BaseModel)
+            # Use Mock without spec to avoid AsyncMock creation
+            mock_result = Mock()
             mock_run.return_value = mock_result
 
             result = await service.run_service(
