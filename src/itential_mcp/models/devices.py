@@ -1,11 +1,13 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from __future__ import annotations
+
 import inspect
 
-from typing import List, Annotated
+from typing import Annotated
 
-from pydantic import BaseModel, RootModel, Field
+from pydantic import BaseModel, Field, RootModel
 
 
 class Device(BaseModel):
@@ -73,14 +75,14 @@ class Device(BaseModel):
     model_config = {"extra": "allow"}
 
 
-class GetDevicesResponse(RootModel[List[Device]]):
+class GetDevicesResponse(RootModel[list[Device]]):
     """Response model for get_devices function.
 
     This model represents the complete response from the get_devices function,
     which returns a list of devices available in the Configuration Manager.
     """
 
-    root: List[Device]
+    root: list[Device]
 
 
 class GetDeviceConfigurationResponse(RootModel[str]):

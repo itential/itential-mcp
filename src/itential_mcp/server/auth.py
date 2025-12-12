@@ -6,7 +6,9 @@ OAuth 2.0 flows via RemoteAuthProvider and OAuthProxy, and is designed to be
 extended with additional providers in the future.
 """
 
-from typing import Dict, Any
+from __future__ import annotations
+
+from typing import Any
 
 from fastmcp.server.auth import (
     AuthProvider,
@@ -55,11 +57,11 @@ def build_auth_provider(cfg: Config) -> AuthProvider | None:
         )
 
 
-def _build_jwt_provider(auth_config: Dict[str, Any]) -> AuthProvider:
+def _build_jwt_provider(auth_config: dict[str, Any]) -> AuthProvider:
     """Build a JWT authentication provider.
 
     Args:
-        auth_config (Dict[str, Any]): Authentication configuration dictionary.
+        auth_config (dict[str, Any]): Authentication configuration dictionary.
 
     Returns:
         AuthProvider: Configured JWT authentication provider.
@@ -82,11 +84,11 @@ def _build_jwt_provider(auth_config: Dict[str, Any]) -> AuthProvider:
     return provider
 
 
-def _build_oauth_provider(auth_config: Dict[str, Any]) -> AuthProvider:
+def _build_oauth_provider(auth_config: dict[str, Any]) -> AuthProvider:
     """Build a full OAuth 2.0 authorization server.
 
     Args:
-        auth_config (Dict[str, Any]): Authentication configuration dictionary.
+        auth_config (dict[str, Any]): Authentication configuration dictionary.
 
     Returns:
         AuthProvider: Configured OAuth authorization server provider.
@@ -123,11 +125,11 @@ def _build_oauth_provider(auth_config: Dict[str, Any]) -> AuthProvider:
     return provider
 
 
-def _build_oauth_proxy_provider(auth_config: Dict[str, Any]) -> AuthProvider:
+def _build_oauth_proxy_provider(auth_config: dict[str, Any]) -> AuthProvider:
     """Build an OAuthProxy for upstream OAuth providers.
 
     Args:
-        auth_config (Dict[str, Any]): Authentication configuration dictionary.
+        auth_config (dict[str, Any]): Authentication configuration dictionary.
 
     Returns:
         AuthProvider: Configured OAuth proxy authentication provider.
@@ -189,16 +191,16 @@ def _build_oauth_proxy_provider(auth_config: Dict[str, Any]) -> AuthProvider:
 
 
 def _get_provider_config(
-    provider_type: str, auth_config: Dict[str, Any]
-) -> Dict[str, Any]:
+    provider_type: str, auth_config: dict[str, Any]
+) -> dict[str, Any]:
     """Get provider-specific OAuth configuration.
 
     Args:
         provider_type (str): The OAuth provider type (google, azure, etc.)
-        auth_config (Dict[str, Any]): Full authentication configuration.
+        auth_config (dict[str, Any]): Full authentication configuration.
 
     Returns:
-        Dict[str, Any]: Provider-specific configuration parameters.
+        dict[str, Any]: Provider-specific configuration parameters.
 
     Raises:
         ConfigurationException: If provider type is not supported.

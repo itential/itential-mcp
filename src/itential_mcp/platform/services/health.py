@@ -1,7 +1,9 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from typing import Dict, Any
+from __future__ import annotations
+
+from typing import Any
 
 from itential_mcp.platform.services import ServiceBase
 
@@ -16,7 +18,7 @@ class Service(ServiceBase):
 
     name: str = "health"
 
-    async def get_status_health(self) -> Dict[str, Any]:
+    async def get_status_health(self) -> dict[str, Any]:
         """
         Get overall platform status information.
 
@@ -29,7 +31,7 @@ class Service(ServiceBase):
         res = await self.client.get("/health/status")
         return res.json()
 
-    async def get_system_health(self) -> Dict[str, Any]:
+    async def get_system_health(self) -> dict[str, Any]:
         """
         Get system-level hardware and OS information.
 
@@ -42,7 +44,7 @@ class Service(ServiceBase):
         res = await self.client.get("/health/system")
         return res.json()
 
-    async def get_server_health(self) -> Dict[str, Any]:
+    async def get_server_health(self) -> dict[str, Any]:
         """
         Get Node.js server runtime information and performance metrics.
 
@@ -55,7 +57,7 @@ class Service(ServiceBase):
         res = await self.client.get("/health/server")
         return res.json()
 
-    async def get_applications_health(self) -> Dict[str, Any]:
+    async def get_applications_health(self) -> dict[str, Any]:
         """
         Get comprehensive application health and status information.
 
@@ -68,7 +70,7 @@ class Service(ServiceBase):
         res = await self.client.get("/health/applications")
         return res.json()
 
-    async def get_adapters_health(self) -> Dict[str, Any]:
+    async def get_adapters_health(self) -> dict[str, Any]:
         """
         Get comprehensive adapter health and connectivity information.
 

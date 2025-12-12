@@ -1,7 +1,9 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from typing import Mapping, Any, List, Literal
+from __future__ import annotations
+
+from typing import Mapping, Any, Literal
 
 from itential_mcp.core import exceptions
 
@@ -364,7 +366,7 @@ class Service(ServiceBase):
 
         return res.json()["updated"]
 
-    async def get_projects(self) -> List[Mapping[str, Any]]:
+    async def get_projects(self) -> list[Mapping[str, Any]]:
         """Get all projects from Automation Studio.
 
         Retrieves all projects from the Automation Studio. Projects in Automation
@@ -377,7 +379,7 @@ class Service(ServiceBase):
         on the total count returned by the API.
 
         Returns:
-            List[Mapping[str, Any]]: A list of project objects containing project
+            list[Mapping[str, Any]]: A list of project objects containing project
                 metadata including unique identifier, name, description, and other
                 project-specific attributes.
 

@@ -1,9 +1,11 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from __future__ import annotations
+
 import inspect
 
-from typing import List, Annotated
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -79,7 +81,7 @@ class GetCompliancePlansResponse(BaseModel):
     """
 
     plans: Annotated[
-        List[CompliancePlan],
+        list[CompliancePlan],
         Field(
             description=inspect.cleandoc(
                 """

@@ -3,7 +3,9 @@
 
 """Constants used throughout the Itential MCP application."""
 
-from typing import Dict, Any
+from __future__ import annotations
+
+from typing import Any
 from dataclasses import dataclass
 
 # Application constants
@@ -32,7 +34,7 @@ class CommandConfig:
 
     name: str
     description: str
-    arguments: Dict[str, Any]
+    arguments: dict[str, Any]
     add_platform_group: bool = False
     add_server_group: bool = False
 

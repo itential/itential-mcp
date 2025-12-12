@@ -1,11 +1,13 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from __future__ import annotations
+
 import inspect
 
-from typing import Annotated, List, Literal, Mapping, Any
+from typing import Annotated, Any, Literal, Mapping
 
-from pydantic import BaseModel, RootModel, Field
+from pydantic import BaseModel, Field, RootModel
 
 
 class WorkflowElement(BaseModel):
@@ -99,7 +101,7 @@ class GetWorkflowsResponse(RootModel):
     """
 
     root: Annotated[
-        List[WorkflowElement],
+        list[WorkflowElement],
         Field(
             description=inspect.cleandoc(
                 """
@@ -322,7 +324,7 @@ class GetJobsResponse(RootModel):
     """
 
     root: Annotated[
-        List[JobElement],
+        list[JobElement],
         Field(
             description=inspect.cleandoc(
                 """

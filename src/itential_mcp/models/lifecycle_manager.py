@@ -1,11 +1,13 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from __future__ import annotations
+
 import inspect
 
-from typing import Annotated, List, Literal, Mapping, Any
+from typing import Annotated, Any, Literal, Mapping
 
-from pydantic import BaseModel, RootModel, Field
+from pydantic import BaseModel, Field, RootModel
 
 
 class GetResourcesElement(BaseModel):
@@ -57,7 +59,7 @@ class GetResourcesResponse(RootModel):
     """
 
     root: Annotated[
-        List[GetResourcesElement],
+        list[GetResourcesElement],
         Field(
             description=inspect.cleandoc(
                 """
@@ -120,7 +122,7 @@ class Action(BaseModel):
     ]
 
     input_schema: Annotated[
-        Mapping[str, Any] | List[Any],
+        Mapping[str, Any] | list[Any],
         Field(
             description=inspect.cleandoc(
                 """
@@ -171,7 +173,7 @@ class DescribeResourceResponse(BaseModel):
     ]
 
     actions: Annotated[
-        List[Action],
+        list[Action],
         Field(
             description=inspect.cleandoc(
                 """
@@ -302,7 +304,7 @@ class GetInstancesResponse(RootModel):
     """
 
     root: Annotated[
-        List[GetInstancesElement],
+        list[GetInstancesElement],
         Field(
             description=inspect.cleandoc(
                 """
@@ -763,7 +765,7 @@ class ActionExecutionElement(BaseModel):
     ]
 
     errors: Annotated[
-        List[ActionExecutionError],
+        list[ActionExecutionError],
         Field(
             description=inspect.cleandoc(
                 """
@@ -775,7 +777,7 @@ class ActionExecutionElement(BaseModel):
     ]
 
     initial_instance_data: Annotated[
-        Mapping[str, Any] | List[str] | None,
+        Mapping[str, Any] | list[str] | None,
         Field(
             description=inspect.cleandoc(
                 """
@@ -788,7 +790,7 @@ class ActionExecutionElement(BaseModel):
     ]
 
     final_instance_data: Annotated[
-        Mapping[str, Any] | List[str] | None,
+        Mapping[str, Any] | list[str] | None,
         Field(
             description=inspect.cleandoc(
                 """
@@ -814,7 +816,7 @@ class GetActionExecutionsResponse(RootModel):
     """
 
     root: Annotated[
-        List[ActionExecutionElement],
+        list[ActionExecutionElement],
         Field(
             description=inspect.cleandoc(
                 """
