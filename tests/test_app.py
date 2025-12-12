@@ -175,11 +175,14 @@ class TestParseArgs:
             mock_args.server_log_level = (
                 "INFO"  # Set required attribute with valid log level
             )
-            mock_args._get_kwargs.return_value = [
-                ("server_host", "example.com"),
-                ("platform_username", "testuser"),
-                ("other_arg", "value"),
-            ]
+            # Use Mock() with side_effect to return a list, avoiding AsyncMock creation
+            mock_args._get_kwargs = Mock(
+                return_value=[
+                    ("server_host", "example.com"),
+                    ("platform_username", "testuser"),
+                    ("other_arg", "value"),
+                ]
+            )
             mock_parse.return_value = mock_args
 
             runtime.parse_args(["run"])
@@ -203,7 +206,13 @@ class TestRun:
             return 0
 
         mock_parse_args.return_value = (mock_func, (), {})
-        mock_asyncio_run.return_value = 0
+
+        # Configure mock to consume coroutine properly
+        def consume_coroutine(coro):
+            coro.close()
+            return 0
+
+        mock_asyncio_run.side_effect = consume_coroutine
 
         result = app.run()
 
@@ -221,7 +230,13 @@ class TestRun:
             return 0
 
         mock_parse_args.return_value = (mock_func, ("arg1",), {"key": "value"})
-        mock_asyncio_run.return_value = 0
+
+        # Configure mock to consume coroutine properly
+        def consume_coroutine(coro):
+            coro.close()
+            return 0
+
+        mock_asyncio_run.side_effect = consume_coroutine
 
         result = app.run()
 
@@ -262,7 +277,13 @@ class TestRun:
             return 0
 
         mock_parse_args.return_value = (mock_func, (), {})
-        mock_asyncio_run.return_value = 0
+
+        # Configure mock to consume coroutine properly
+        def consume_coroutine(coro):
+            coro.close()
+            return 0
+
+        mock_asyncio_run.side_effect = consume_coroutine
 
         result = app.run()
 
@@ -339,10 +360,13 @@ class TestIntegration:
             mock_args.server_log_level = (
                 "INFO"  # Set required attribute with valid log level
             )
-            mock_args._get_kwargs.return_value = [
-                ("server_host", "example.com"),
-                ("platform_username", "testuser"),
-            ]
+            # Use Mock() to avoid AsyncMock creation
+            mock_args._get_kwargs = Mock(
+                return_value=[
+                    ("server_host", "example.com"),
+                    ("platform_username", "testuser"),
+                ]
+            )
             mock_parse.return_value = mock_args
 
             result = runtime.parse_args(["run"])
