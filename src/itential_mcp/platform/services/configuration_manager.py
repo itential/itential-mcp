@@ -1,8 +1,6 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-import json
-
 import ipsdk
 
 from itential_mcp.core import exceptions
@@ -152,8 +150,11 @@ class Service(ServiceBase):
                 json={"name": name, "deviceType": device_type},
             )
             tree_id = res.json()["id"]
-        except ipsdk.exceptions.ServerError as exc:
-            msg = json.loads(exc.details["response_body"])
+        except ipsdk.exceptions.IpsdkError as exc:
+            if hasattr(exc, "response") and exc.response is not None:
+                msg = exc.response.json()
+            else:
+                msg = {"error": str(exc)}
             raise exceptions.ServerException(msg)
 
         if variables:
@@ -284,8 +285,11 @@ class Service(ServiceBase):
                 f"/configuration_manager/configs/{tree_id}/{version}/{path}",
                 json={"name": name},
             )
-        except ipsdk.exceptions.ServerError as exc:
-            msg = json.loads(exc.details["response_body"])
+        except ipsdk.exceptions.IpsdkError as exc:
+            if hasattr(exc, "response") and exc.response is not None:
+                msg = exc.response.json()
+            else:
+                msg = {"error": str(exc)}
             raise exceptions.ServerException(msg)
 
         if template:
