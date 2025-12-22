@@ -1,10 +1,10 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-import json
 import pytest
 from unittest.mock import AsyncMock, Mock
 
+import httpx
 import ipsdk
 
 from itential_mcp.core import exceptions
@@ -338,9 +338,13 @@ class TestConfigurationManagerService:
         mock_client.get.return_value = parser_mock_response
 
         error_response = {"error": "Tree name already exists"}
-        server_error = ipsdk.exceptions.ServerError(
-            "Server Error", details={"response_body": json.dumps(error_response)}
+        # Create a proper HTTPStatusError with response
+        request = httpx.Request("POST", "http://example.com/api")
+        response = httpx.Response(500, json=error_response)
+        http_error = httpx.HTTPStatusError(
+            "Server Error", request=request, response=response
         )
+        server_error = ipsdk.exceptions.IpsdkError("Server Error", http_error)
         mock_client.post.side_effect = server_error
 
         with pytest.raises(exceptions.ServerException) as exc_info:
@@ -541,9 +545,13 @@ class TestConfigurationManagerService:
 
         service.get_golden_config_trees = AsyncMock(return_value=trees_data)
 
-        server_error = ipsdk.exceptions.ServerError(
-            "Server Error", details={"response_body": json.dumps(error_response)}
+        # Create a proper HTTPStatusError with response
+        request = httpx.Request("POST", "http://example.com/api")
+        response = httpx.Response(500, json=error_response)
+        http_error = httpx.HTTPStatusError(
+            "Server Error", request=request, response=response
         )
+        server_error = ipsdk.exceptions.IpsdkError("Server Error", http_error)
         mock_client.post.side_effect = server_error
 
         with pytest.raises(exceptions.ServerException) as exc_info:
