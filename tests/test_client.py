@@ -46,8 +46,8 @@ def test_init_client(
     """Test that PlatformClient properly initializes the ipsdk client"""
     client = PlatformClient()
 
-    # Verify config was retrieved
-    patched_config_get.assert_called_once()
+    # Verify config was retrieved (called twice: once in __init__ for timeout, once in _init_client)
+    assert patched_config_get.call_count == 2
 
     # Verify platform_factory was called with correct parameters
     patched_platform_factory.assert_called_once_with(
@@ -56,6 +56,9 @@ def test_init_client(
 
     # Verify client attribute is set correctly
     assert client.client is mock_ipsdk_client
+
+    # Verify timeout was set
+    assert client.timeout == mock_config.platform_timeout
 
 
 def test_init_plugins_no_services_directory(
