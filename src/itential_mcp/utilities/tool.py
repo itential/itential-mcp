@@ -80,58 +80,82 @@ def get_json_schema(fn: Callable) -> str:
 
 def itertools(path: str) -> Iterator[Tuple[Callable, Sequence]]:
     """
-    Iterate through all discovered tools
+    Iterate through all discovered tools.
 
-    This function will recursively load all modules found in the `tools`
-    folder as long as they module name does not start with underscore (_).  It
-    will then inspect the module to find all public functions and attach
-    them to the instance of mcp as a tool.
+    This function implements dynamic tool discovery by scanning a directory
+    for Python modules and extracting callable functions. It supports a
+    hierarchical tagging system where tags can be defined at both the module
+    level and function level.
+
+    **Tool Discovery Process:**
+    1. Scan directory for .py files (excluding __init__.py and _private.py)
+    2. Dynamically import each module using importlib
+    3. Extract module-level __tags__ if present
+    4. Inspect module for public functions (not starting with _)
+    5. Combine module tags with function-level tags
+    6. Yield function and complete tag set
+
+    **Tagging Hierarchy:**
+    - Module-level tags (__tags__): Apply to all functions in the module
+    - Function-level tags (@tags decorator): Additional tags for specific functions
+    - Function name: Automatically added as a tag
+    - All tags are accumulated into a set per function
 
     Args:
-        path (str): The path to look for tools in.
+        path (str): The filesystem path to scan for tool modules.
 
-    Returns:
-        tuple: The list of functions and associated tags
+    Yields:
+        Tuple[Callable, Sequence]: Each iteration yields a tuple of:
+            - Callable: The tool function ready for registration
+            - Sequence: Set of tags associated with this tool
 
     Raises:
-        None
+        None: Errors during module loading are silently ignored to allow
+            partial tool loading if some modules fail.
     """
-    # Get a list of all files in the directory
+    # Step 1: Discover all Python module files in the tools directory
+    # Filter out __init__.py and any files without .py extension
     module_files = [
         f[:-3] for f in os.listdir(path) if f.endswith(".py") and f != "__init__.py"
     ]
 
-    # Import the modules, add them to globals and mcp
+    # Step 2: Import each discovered module and extract tools
     for module_name in module_files:
+        # Skip private modules (those starting with underscore)
         if not module_name.startswith("_"):
+            # Dynamically import the module using importlib.util
+            # This allows runtime discovery without hardcoded imports
             spec = importlib.util.spec_from_file_location(
                 module_name, os.path.join(path, f"{module_name}.py")
             )
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
 
-            # Get module-level tags once (these apply to all functions in the module)
+            # Step 3: Extract module-level tags that apply to all functions
+            # Module-level tags are defined via __tags__ = ("tag1", "tag2")
             module_tags = set()
             if hasattr(module, "__tags__"):
                 module_tags = set(module.__tags__)
 
-            # Inspect the module to retreive all of the functions.
+            # Step 4: Inspect module for all function members
             for name, f in inspect.getmembers(module, inspect.isfunction):
+                # Only process public functions defined in this module
+                # Skip: private functions (_func), imported functions
                 if not name.startswith("_") and f.__module__ == module_name:
-                    # Create a NEW tags set for THIS function (prevents tag pollution)
+                    # Step 5: Build complete tag set for this function
+                    # IMPORTANT: Copy module_tags to prevent cross-function pollution
                     tags = module_tags.copy()
 
-                    # add the function name to the set of tags
+                    # Add function name as a tag (enables filtering by function name)
                     tags.add(name)
 
-                    # add any custom tags that have been attached to the
-                    # function using the tags decorator
+                    # Add any decorator-applied tags from @tags() decorator
                     if hasattr(f, "tags"):
                         for ele in f.tags:
                             tags.add(ele)
 
-                    # add the function as a new mcp tool along with the set of
-                    # tags associated with the function.
+                    # Step 6: Yield the function and its complete tag set
+                    # The caller (server initialization) will register this as an MCP tool
                     yield f, tags
 
 

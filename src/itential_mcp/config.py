@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 import configparser
 import re
+import ipaddress
 
 from functools import lru_cache, partial
 from pathlib import Path
@@ -434,6 +435,72 @@ class Config(object):
         ),
     )
 
+    @field_validator("platform_port")
+    @classmethod
+    def validate_port(cls, v: int) -> int:
+        """Validate that platform_port is in the valid TCP port range.
+
+        Args:
+            v (int): The port number to validate.
+
+        Returns:
+            int: The validated port number.
+
+        Raises:
+            ValueError: If the port is not in the range 1-65535.
+        """
+        if not (1 <= v <= 65535):
+            raise ValueError(
+                f"Platform port must be between 1 and 65535, got {v}"
+            )
+        return v
+
+    @field_validator("platform_host")
+    @classmethod
+    def validate_host(cls, v: str) -> str:
+        """Validate that platform_host is a valid hostname or IP address.
+
+        Performs basic validation to ensure the host string is not empty
+        and contains valid characters for a hostname or IP address.
+
+        Args:
+            v (str): The host string to validate.
+
+        Returns:
+            str: The validated host string.
+
+        Raises:
+            ValueError: If the host is empty or contains invalid characters.
+        """
+        if not v or v.isspace():
+            raise ValueError("Platform host cannot be empty or whitespace")
+
+        # Try parsing as IP address first
+        try:
+            ipaddress.ip_address(v)
+            return v
+        except ValueError:
+            pass
+
+        # If not an IP, validate as hostname
+        # Hostname rules: alphanumeric, hyphens, dots, max 253 chars
+        # Each label (between dots) max 63 chars, can't start/end with hyphen
+        if len(v) > 253:
+            raise ValueError(
+                f"Platform host is too long (max 253 characters): {v}"
+            )
+
+        # Basic hostname validation pattern
+        # Allows alphanumeric, hyphens, dots, and underscores (for compatibility)
+        hostname_pattern = r"^[a-zA-Z0-9]([a-zA-Z0-9\-_\.]*[a-zA-Z0-9])?$"
+        if not re.match(hostname_pattern, v):
+            raise ValueError(
+                f"Invalid platform host format: {v}. "
+                "Must be a valid hostname or IP address."
+            )
+
+        return v
+
     platform_disable_tls: bool = Field(
         description="Disable using TLS to connect to the server",
         default_factory=default_factory(
@@ -658,6 +725,12 @@ def _get_tools_from_env() -> dict:
     For example: ITENTIAL_MCP_TOOL_RUN_CLI_COMMAND_TYPE splits into:
     - tool_name: RUN_CLI_COMMAND
     - key: TYPE
+
+    **Security Note:**
+    This function reads from environment variables to enable dynamic tool configuration.
+    It should ONLY be used in trusted environments where users cannot set arbitrary
+    environment variables. In shared or multi-tenant environments, ensure proper
+    isolation (containers, VMs) and access controls are in place.
 
     Returns:
         Nested dictionary where keys are tool names and values are

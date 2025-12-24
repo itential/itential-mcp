@@ -244,6 +244,26 @@ export ITENTIAL_MCP_PLATFORM_HOST=platform.example.com
 itential-mcp run  # Will use the environment variables
 ```
 
+#### Security Considerations
+
+**⚠️ Important Security Notice:**
+
+The MCP server reads configuration from environment variables, which means it must run in a **trusted environment**. In shared or multi-tenant environments, ensure that:
+
+1. **Environment Isolation**: The server runs in isolated containers or dedicated environments where users cannot set arbitrary environment variables
+2. **Access Control**: Only authorized administrators can set `ITENTIAL_MCP_*` environment variables
+3. **Dynamic Tool Configuration**: Environment variables with the pattern `ITENTIAL_MCP_TOOL_*` can define custom tool bindings. This is powerful but requires trust boundaries
+4. **Credential Management**: Never expose credentials in shared environments. Use secret management systems (Kubernetes Secrets, HashiCorp Vault, etc.)
+
+**Recommended Deployment Practices:**
+- Use containerization (Docker, Kubernetes) to isolate environment variables
+- Implement least-privilege access controls
+- Rotate credentials regularly
+- Enable TLS and certificate verification in production
+- Use authentication (JWT, OAuth) for HTTP/SSE transports
+
+For production deployments, see our [Security Best Practices](docs/security.md) guide.
+
 ### Configuration file
 
 The server configuration can also be specified using a configuration file.  The
