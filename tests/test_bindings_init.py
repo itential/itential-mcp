@@ -186,7 +186,10 @@ class TestIterBindings:
         tool2.name = "tool2"
         mock_config.tools = [tool1, tool2]
 
+        # Create mock that supports async context manager protocol
         mock_platform_client_instance = AsyncMock()
+        mock_platform_client_instance.__aenter__.return_value = mock_platform_client_instance
+        mock_platform_client_instance.__aexit__.return_value = None
         mock_platform_client_class.return_value = mock_platform_client_instance
 
         mock_bind_to_tool.side_effect = [
@@ -202,6 +205,10 @@ class TestIterBindings:
         # Verify
         assert len(results) == 2
         mock_platform_client_class.assert_called_once()
+
+        # Verify context manager was used
+        mock_platform_client_instance.__aenter__.assert_called_once()
+        mock_platform_client_instance.__aexit__.assert_called_once()
 
         # Verify bind_to_tool was called for each tool
         assert mock_bind_to_tool.call_count == 2
@@ -223,7 +230,10 @@ class TestIterBindings:
         mock_config = MagicMock()
         mock_config.tools = []
 
+        # Create mock that supports async context manager protocol
         mock_platform_client_instance = AsyncMock()
+        mock_platform_client_instance.__aenter__.return_value = mock_platform_client_instance
+        mock_platform_client_instance.__aexit__.return_value = None
         mock_platform_client_class.return_value = mock_platform_client_instance
 
         # Execute
@@ -281,8 +291,11 @@ class TestBindingsIntegration:
         mock_endpoint_module.new = AsyncMock(side_effect=mock_new)
         mock_import_binding.return_value = mock_endpoint_module
 
+        # Create mock that supports async context manager protocol
         mock_platform_client_instance = AsyncMock()
         mock_platform_client_instance.client = AsyncMock()
+        mock_platform_client_instance.__aenter__.return_value = mock_platform_client_instance
+        mock_platform_client_instance.__aexit__.return_value = None
 
         # Mock the response structure for different API calls
         def mock_get(url, params=None):
