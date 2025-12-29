@@ -1,11 +1,9 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import annotations
-
 import inspect
 
-from typing import Annotated, Literal, Mapping, Any
+from typing import Annotated, Literal
 
 from pydantic import Field
 
@@ -23,7 +21,7 @@ async def get_templates(
         Literal["textfsm", "jinja2"] | None,
         Field(description="Retrieve only templates of this type", default=None),
     ],
-) -> list[Mapping[str, Any]]:
+) -> models.GetTemplatesResponse:
     """Get all templates from Automation Studio.
 
     Retrieves all templates from the Automation Studio, with optional filtering
@@ -67,7 +65,7 @@ async def get_templates(
             )
         )
 
-    return results
+    return models.GetTemplatesResponse(root=results)
 
 
 async def describe_template(
@@ -79,7 +77,7 @@ async def describe_template(
             description="The name of the project the template resides in ", default=None
         ),
     ],
-) -> Mapping[str, Any]:
+) -> models.DescribeTemplateResponse:
     """Get detailed information about a specific template from Automation Studio.
 
     Retrieves comprehensive template information including name, description, type,
@@ -152,7 +150,7 @@ async def create_template(
     data: Annotated[
         str, Field(description="Sample data used to test the template", default=None)
     ],
-) -> Mapping[str, Any]:
+) -> models.CreateTemplateResponse:
     """Create a new template in Automation Studio.
 
     Creates a new template with the specified name, type, group, and optional
@@ -242,7 +240,7 @@ async def update_template(
     data: Annotated[
         str, Field(description="Sample data used to test the template", default=None)
     ],
-) -> Mapping[str, Any]:
+) -> models.UpdateTemplateResponse:
     """Update an existing template in Automation Studio.
 
     Updates an existing template with new content including command, template text,

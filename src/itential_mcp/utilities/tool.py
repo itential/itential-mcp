@@ -68,7 +68,6 @@ def get_json_schema(fn: Callable) -> str:
         ValueError: If the function's return type is not a BaseModel subclass
     """
     hints = get_type_hints(fn)
-
     ret = hints.get("return", Any)
 
     # Check if ret is actually a class before using issubclass
@@ -142,6 +141,7 @@ def itertools(path: str) -> Iterator[Tuple[Callable, Sequence]]:
                 # Only process public functions defined in this module
                 # Skip: private functions (_func), imported functions
                 if not name.startswith("_") and f.__module__ == module_name:
+                    
                     # Step 5: Build complete tag set for this function
                     # IMPORTANT: Copy module_tags to prevent cross-function pollution
                     tags = module_tags.copy()
