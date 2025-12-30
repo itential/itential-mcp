@@ -344,7 +344,7 @@ class TestConfigurationManagerService:
         http_error = httpx.HTTPStatusError(
             "Server Error", request=request, response=response
         )
-        server_error = ipsdk.exceptions.IpsdkError("Server Error", http_error)
+        server_error = ipsdk.exceptions.HTTPStatusError(http_error)
         mock_client.post.side_effect = server_error
 
         with pytest.raises(exceptions.ServerException) as exc_info:
@@ -551,7 +551,7 @@ class TestConfigurationManagerService:
         http_error = httpx.HTTPStatusError(
             "Server Error", request=request, response=response
         )
-        server_error = ipsdk.exceptions.IpsdkError("Server Error", http_error)
+        server_error = ipsdk.exceptions.HTTPStatusError(http_error)
         mock_client.post.side_effect = server_error
 
         with pytest.raises(exceptions.ServerException) as exc_info:

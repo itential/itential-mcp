@@ -13,9 +13,11 @@ from itential_mcp.platform import PlatformClient
 @pytest.fixture
 def mock_config():
     """Mock configuration for testing"""
-    return MagicMock(
+    config = MagicMock(
         platform={"url": "https://test.example.com", "token": "test-token"}
     )
+    config.platform_timeout = 30
+    return config
 
 
 @pytest.fixture
@@ -189,3 +191,323 @@ def test_init_plugins_handles_service_instantiation_error(
             # Should complete without raising exception
             client = PlatformClient()
             assert not hasattr(client, "error_service")
+
+
+@pytest.mark.asyncio
+async def test_context_manager_enter(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test async context manager __aenter__ returns self"""
+    client = PlatformClient()
+
+    result = await client.__aenter__()
+
+    assert result is client
+
+
+@pytest.mark.asyncio
+async def test_context_manager_exit_with_close(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test async context manager __aexit__ calls close when available"""
+    mock_ipsdk_client.close = AsyncMock()
+
+    client = PlatformClient()
+    await client.__aexit__(None, None, None)
+
+    mock_ipsdk_client.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_context_manager_exit_without_close(
+    patched_platform_factory, patched_config_get
+):
+    """Test async context manager __aexit__ handles missing close method"""
+    # Create a client without close method
+    mock_client_no_close = AsyncMock(spec=[])  # Empty spec means no methods
+    with patch("itential_mcp.platform.client.ipsdk.platform_factory") as factory_mock:
+        factory_mock.return_value = mock_client_no_close
+
+        client = PlatformClient()
+        # Should complete without error when close() doesn't exist
+        await client.__aexit__(None, None, None)
+
+
+@pytest.mark.asyncio
+async def test_context_manager_exit_with_exception(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test async context manager __aexit__ with exception info"""
+    mock_ipsdk_client.close = AsyncMock()
+
+    client = PlatformClient()
+
+    # Simulate exiting with exception
+    try:
+        raise ValueError("test exception")
+    except ValueError:
+        import sys
+
+        await client.__aexit__(*sys.exc_info())
+
+    # Should still call close even with exception
+    mock_ipsdk_client.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_context_manager_full_workflow(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test full context manager workflow"""
+    mock_ipsdk_client.close = AsyncMock()
+
+    async with PlatformClient() as client:
+        assert client is not None
+        assert client.client is mock_ipsdk_client
+
+    # Verify close was called
+    mock_ipsdk_client.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_make_response(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test _make_response wraps ipsdk Response correctly"""
+    from ipsdk.connection import Response as IpsdkResponse
+    from itential_mcp.platform.response import Response
+
+    mock_ipsdk_response = MagicMock(spec=IpsdkResponse)
+
+    client = PlatformClient()
+    result = await client._make_response(mock_ipsdk_response)
+
+    assert isinstance(result, Response)
+    assert result.response is mock_ipsdk_response
+
+
+@pytest.mark.asyncio
+async def test_send_request_success(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test send_request makes correct call and wraps response"""
+    from ipsdk.connection import Response as IpsdkResponse
+
+    mock_ipsdk_response = MagicMock(spec=IpsdkResponse)
+    mock_ipsdk_client._send_request = AsyncMock(return_value=mock_ipsdk_response)
+
+    client = PlatformClient()
+    result = await client.send_request(
+        method="GET", path="/test", params={"key": "value"}, json={"data": "test"}
+    )
+
+    # Verify the underlying client method was called correctly
+    mock_ipsdk_client._send_request.assert_called_once_with(
+        "GET", "/test", {"key": "value"}, {"data": "test"}
+    )
+
+    # Verify response was wrapped
+    assert result.response is mock_ipsdk_response
+
+
+@pytest.mark.asyncio
+async def test_send_request_error_handling(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test send_request raises ItentialMcpException on error"""
+    from itential_mcp.core.exceptions import ItentialMcpException
+
+    mock_ipsdk_client._send_request = AsyncMock(
+        side_effect=Exception("Connection failed")
+    )
+
+    client = PlatformClient()
+
+    with pytest.raises(ItentialMcpException) as exc_info:
+        await client.send_request(method="GET", path="/test")
+
+    assert "Connection failed" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_get_method(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test get method calls send_request with correct parameters"""
+    from ipsdk.connection import Response as IpsdkResponse
+
+    mock_ipsdk_response = MagicMock(spec=IpsdkResponse)
+    mock_ipsdk_client._send_request = AsyncMock(return_value=mock_ipsdk_response)
+
+    client = PlatformClient()
+    result = await client.get("/api/test", params={"filter": "active"})
+
+    mock_ipsdk_client._send_request.assert_called_once_with(
+        "GET", "/api/test", {"filter": "active"}, None
+    )
+    assert result.response is mock_ipsdk_response
+
+
+@pytest.mark.asyncio
+async def test_get_method_no_params(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test get method without query parameters"""
+    from ipsdk.connection import Response as IpsdkResponse
+
+    mock_ipsdk_response = MagicMock(spec=IpsdkResponse)
+    mock_ipsdk_client._send_request = AsyncMock(return_value=mock_ipsdk_response)
+
+    client = PlatformClient()
+    result = await client.get("/api/test")
+
+    mock_ipsdk_client._send_request.assert_called_once_with(
+        "GET", "/api/test", None, None
+    )
+    assert result.response is mock_ipsdk_response
+
+
+@pytest.mark.asyncio
+async def test_post_method(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test post method calls send_request with correct parameters"""
+    from ipsdk.connection import Response as IpsdkResponse
+
+    mock_ipsdk_response = MagicMock(spec=IpsdkResponse)
+    mock_ipsdk_client._send_request = AsyncMock(return_value=mock_ipsdk_response)
+
+    client = PlatformClient()
+    result = await client.post(
+        "/api/create", params={"validate": "true"}, json={"name": "test"}
+    )
+
+    mock_ipsdk_client._send_request.assert_called_once_with(
+        "POST", "/api/create", {"validate": "true"}, {"name": "test"}
+    )
+    assert result.response is mock_ipsdk_response
+
+
+@pytest.mark.asyncio
+async def test_post_method_minimal(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test post method with only path parameter"""
+    from ipsdk.connection import Response as IpsdkResponse
+
+    mock_ipsdk_response = MagicMock(spec=IpsdkResponse)
+    mock_ipsdk_client._send_request = AsyncMock(return_value=mock_ipsdk_response)
+
+    client = PlatformClient()
+    result = await client.post("/api/action")
+
+    mock_ipsdk_client._send_request.assert_called_once_with(
+        "POST", "/api/action", None, None
+    )
+    assert result.response is mock_ipsdk_response
+
+
+@pytest.mark.asyncio
+async def test_put_method(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test put method calls send_request with correct parameters"""
+    from ipsdk.connection import Response as IpsdkResponse
+
+    mock_ipsdk_response = MagicMock(spec=IpsdkResponse)
+    mock_ipsdk_client._send_request = AsyncMock(return_value=mock_ipsdk_response)
+
+    client = PlatformClient()
+    result = await client.put("/api/update/123", json={"status": "active"})
+
+    mock_ipsdk_client._send_request.assert_called_once_with(
+        "PUT", "/api/update/123", None, {"status": "active"}
+    )
+    assert result.response is mock_ipsdk_response
+
+
+@pytest.mark.asyncio
+async def test_put_method_with_params(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test put method with both params and json"""
+    from ipsdk.connection import Response as IpsdkResponse
+
+    mock_ipsdk_response = MagicMock(spec=IpsdkResponse)
+    mock_ipsdk_client._send_request = AsyncMock(return_value=mock_ipsdk_response)
+
+    client = PlatformClient()
+    result = await client.put(
+        "/api/update/123", params={"force": "true"}, json={"name": "updated"}
+    )
+
+    mock_ipsdk_client._send_request.assert_called_once_with(
+        "PUT", "/api/update/123", {"force": "true"}, {"name": "updated"}
+    )
+    assert result.response is mock_ipsdk_response
+
+
+@pytest.mark.asyncio
+async def test_delete_method(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test delete method calls send_request with correct parameters"""
+    from ipsdk.connection import Response as IpsdkResponse
+
+    mock_ipsdk_response = MagicMock(spec=IpsdkResponse)
+    mock_ipsdk_client._send_request = AsyncMock(return_value=mock_ipsdk_response)
+
+    client = PlatformClient()
+    result = await client.delete("/api/delete/123", params={"cascade": "true"})
+
+    mock_ipsdk_client._send_request.assert_called_once_with(
+        "DELETE", "/api/delete/123", {"cascade": "true"}, None
+    )
+    assert result.response is mock_ipsdk_response
+
+
+@pytest.mark.asyncio
+async def test_delete_method_no_params(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test delete method without query parameters"""
+    from ipsdk.connection import Response as IpsdkResponse
+
+    mock_ipsdk_response = MagicMock(spec=IpsdkResponse)
+    mock_ipsdk_client._send_request = AsyncMock(return_value=mock_ipsdk_response)
+
+    client = PlatformClient()
+    result = await client.delete("/api/delete/123")
+
+    mock_ipsdk_client._send_request.assert_called_once_with(
+        "DELETE", "/api/delete/123", None, None
+    )
+    assert result.response is mock_ipsdk_response
+
+
+@pytest.mark.asyncio
+async def test_http_methods_error_propagation(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test that all HTTP methods properly propagate exceptions"""
+    from itential_mcp.core.exceptions import ItentialMcpException
+
+    mock_ipsdk_client._send_request = AsyncMock(side_effect=Exception("Network error"))
+
+    client = PlatformClient()
+
+    # Test GET
+    with pytest.raises(ItentialMcpException):
+        await client.get("/test")
+
+    # Test POST
+    with pytest.raises(ItentialMcpException):
+        await client.post("/test")
+
+    # Test PUT
+    with pytest.raises(ItentialMcpException):
+        await client.put("/test")
+
+    # Test DELETE
+    with pytest.raises(ItentialMcpException):
+        await client.delete("/test")

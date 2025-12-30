@@ -74,3 +74,4 @@ ITENTIAL_MCP_PLATFORM_PASSWORD = "admin"  # Password for basic authentication
 ITENTIAL_MCP_PLATFORM_CLIENT_ID = None  # OAuth client ID (None = use basic auth)
 ITENTIAL_MCP_PLATFORM_CLIENT_SECRET = None  # OAuth client secret
 ITENTIAL_MCP_PLATFORM_TIMEOUT = 30  # Request timeout in seconds
+ITENTIAL_MCP_PLATFORM_TTL = 0  # Authentication TTL in seconds (0 = disabled)
