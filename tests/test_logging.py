@@ -15,6 +15,18 @@ from itential_mcp.core import metadata
 from itential_mcp.core.heuristics import Scanner
 
 
+@pytest.fixture(autouse=True)
+def cleanup_file_handlers():
+    """Fixture to clean up all file handlers after each test"""
+    yield
+    # Clean up any file handlers that might have been created during the test
+    logger = logging.getLogger(metadata.name)
+    for handler in list(logger.handlers):
+        if isinstance(handler, logging.FileHandler):
+            handler.close()
+            logger.removeHandler(handler)
+
+
 class TestBasicLogging:
     """Test cases for basic logging functionality"""
 
@@ -717,6 +729,7 @@ class TestSensitiveDataFiltering:
             # Mock the logger but allow file operations
             mock_logger = Mock()
             mock_logger.level = logging.INFO
+            mock_logger.handlers = []
             mock_get_logger.return_value = mock_logger
 
             itential_logging.enable_sensitive_data_filtering()
@@ -728,6 +741,9 @@ class TestSensitiveDataFiltering:
             logged_level, logged_message = args
             assert logged_level == logging.INFO
             assert "[REDACTED_API_KEY]" in logged_message
+
+            # Clean up file handlers to prevent resource warnings
+            itential_logging.remove_file_handlers()
 
     def test_invalid_regex_pattern_handling(self):
         """Test handling of invalid regex patterns"""

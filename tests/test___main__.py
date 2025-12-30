@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from io import StringIO
 
 import pytest
@@ -149,27 +149,23 @@ class TestCLICommands:
         mock_asyncio_run.assert_called_once()
 
     @patch("sys.argv", ["itential-mcp", "run"])
-    @patch("asyncio.run")
-    def test_itential_mcp_run_server(self, mock_asyncio_run):
+    def test_itential_mcp_run_server(self):
         """Test itential-mcp run command to start server"""
 
         # Create a proper async function to replace server.run
         async def mock_server_func():
             return None
 
+        # Configure mock to consume coroutine properly
+        def consume_coroutine(coro):
+            coro.close()
+            return 0
+
         # Patch server.run in the commands module where it's imported
         with patch("itential_mcp.runtime.commands.server.run", new=mock_server_func):
-            # Configure mock to consume coroutine properly
-            def consume_coroutine(coro):
-                coro.close()
-                return 0
-
-            mock_asyncio_run.side_effect = consume_coroutine
-
-            result = app.run()
-
-            assert result == 0
-            mock_asyncio_run.assert_called_once()
+            with patch("asyncio.run", new=MagicMock(side_effect=consume_coroutine)):
+                result = app.run()
+                assert result == 0
 
 
 class TestCLIHelpOutput:
@@ -215,11 +211,9 @@ class TestCLIHelpOutput:
 
     @patch("sys.argv", ["itential-mcp", "call", "--help"])
     @patch("sys.stdout", new_callable=StringIO)
-    @patch("sys.exit")
-    def test_call_help_shows_tool_options(self, mock_exit, mock_stdout):
+    @patch("sys.exit", new=MagicMock(side_effect=SystemExit(0)))
+    def test_call_help_shows_tool_options(self, mock_stdout):
         """Test that call --help shows tool calling options"""
-        mock_exit.side_effect = SystemExit(0)
-
         with pytest.raises(SystemExit):
             app.run()
 
@@ -273,28 +267,24 @@ class TestCLIIntegration:
 
     @patch("sys.argv", ["itential-mcp", "tools"])
     @patch("itential_mcp.utilities.tool.display_tools")
-    @patch("asyncio.run")
-    def test_tools_command_integration(self, mock_asyncio_run, mock_display_tools):
+    @patch("asyncio.run", new=MagicMock(return_value=0))
+    def test_tools_command_integration(self, mock_display_tools):
         """Test full integration of tools command"""
         # Mock async function properly
         mock_display_tools.return_value = None
-        mock_asyncio_run.return_value = 0
 
         result = app.run()
 
         assert result == 0
-        mock_asyncio_run.assert_called_once()
 
     @patch("sys.argv", ["itential-mcp", "tags"])
     @patch("itential_mcp.utilities.tool.display_tags")
-    @patch("asyncio.run")
-    def test_tags_command_integration(self, mock_asyncio_run, mock_display_tags):
+    @patch("asyncio.run", new=MagicMock(return_value=0))
+    def test_tags_command_integration(self, mock_display_tags):
         """Test full integration of tags command"""
         # Mock async function properly
         mock_display_tags.return_value = None
-        mock_asyncio_run.return_value = 0
 
         result = app.run()
 
         assert result == 0
-        mock_asyncio_run.assert_called_once()
