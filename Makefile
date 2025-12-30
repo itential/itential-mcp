@@ -8,7 +8,9 @@ CONTAINER_TAG ?= itential-mcp:devel
 
 .DEFAULT_GOAL := help
 
-.PHONY: build certs check clean container coverage fix format lint security premerge test
+.PHONY: build certs check clean container coverage fix format lint security premerge test \
+	tox tox-py310 tox-py311 tox-py312 tox-py313 tox-coverage tox-lint \
+	tox-format tox-security tox-premerge tox-list
 
 # The help target displays a help message that includes the available targets
 # in this `Makefile`. It is the default target if `make` is run without any
@@ -27,6 +29,19 @@ help:
 	@echo "  security   - Run security analysis with bandit"
 	@echo "  premerge   - Run the premerge tests locally"
 	@echo "  test       - Run test suite"
+	@echo ""
+	@echo "Tox targets:"
+	@echo "  tox            - Run tests across all Python versions (3.10-3.13)"
+	@echo "  tox-py310      - Run tests with Python 3.10"
+	@echo "  tox-py311      - Run tests with Python 3.11"
+	@echo "  tox-py312      - Run tests with Python 3.12"
+	@echo "  tox-py313      - Run tests with Python 3.13"
+	@echo "  tox-coverage   - Run tests with coverage report using tox"
+	@echo "  tox-lint       - Run linting checks using tox"
+	@echo "  tox-format     - Format code using tox"
+	@echo "  tox-security   - Run security analysis using tox"
+	@echo "  tox-premerge   - Run all premerge checks using tox"
+	@echo "  tox-list       - List all available tox environments"
 	@echo ""
 
 # The test target will invoke the unit tests using pytest. This target
@@ -89,3 +104,48 @@ premerge: clean format check security test
 # when the container is run and can be configured using environment variables.
 container:
 	${CONTAINER_RUNTIME} buildx build ${PWD} --file Containerfile --tag ${CONTAINER_TAG} --platform linux/amd64,linux/arm64
+
+# The tox target will run tests across all supported Python versions
+# (3.10, 3.11, 3.12, 3.13) using tox with uv integration.
+tox:
+	PYTHONDONTWRITEBYTECODE=1 uv run tox
+
+# The tox-py310 target will run tests specifically with Python 3.10
+tox-py310:
+	PYTHONDONTWRITEBYTECODE=1 uv run tox -e py310
+
+# The tox-py311 target will run tests specifically with Python 3.11
+tox-py311:
+	PYTHONDONTWRITEBYTECODE=1 uv run tox -e py311
+
+# The tox-py312 target will run tests specifically with Python 3.12
+tox-py312:
+	PYTHONDONTWRITEBYTECODE=1 uv run tox -e py312
+
+# The tox-py313 target will run tests specifically with Python 3.13
+tox-py313:
+	PYTHONDONTWRITEBYTECODE=1 uv run tox -e py313
+
+# The tox-coverage target will run tests with coverage report using tox
+tox-coverage:
+	PYTHONDONTWRITEBYTECODE=1 uv run tox -e coverage
+
+# The tox-lint target will run linting checks using tox
+tox-lint:
+	PYTHONDONTWRITEBYTECODE=1 uv run tox -e lint
+
+# The tox-format target will format code using tox
+tox-format:
+	PYTHONDONTWRITEBYTECODE=1 uv run tox -e format
+
+# The tox-security target will run security analysis using tox
+tox-security:
+	PYTHONDONTWRITEBYTECODE=1 uv run tox -e security
+
+# The tox-premerge target will run all premerge checks using tox
+tox-premerge:
+	PYTHONDONTWRITEBYTECODE=1 uv run tox -e premerge
+
+# The tox-list target will list all available tox environments
+tox-list:
+	PYTHONDONTWRITEBYTECODE=1 uv run tox list

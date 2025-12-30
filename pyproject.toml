@@ -32,6 +32,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Typing :: Typed",
 ]
 
@@ -71,7 +72,9 @@ dev = [
     "q",
     "ruff",
     "build",
-    "bandit[toml]>=1.7.0"
+    "bandit[toml]>=1.7.0",
+    "tox>=4.0",
+    "tox-uv>=1.0.0"
 ]
 
 [tool.pytest.ini_options]
