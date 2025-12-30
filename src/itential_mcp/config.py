@@ -551,6 +551,12 @@ class Config(object):
         json_schema_extra=options("--platform-timeout", metavar="<secs>"),
     )
 
+    platform_ttl: int = Field(
+        description="Authentication TTL in seconds before forcing reauthentication (0 = disabled)",
+        default_factory=default_factory(env.getint, "ITENTIAL_MCP_PLATFORM_TTL"),
+        json_schema_extra=options("--platform-ttl", metavar="<secs>", type=int),
+    )
+
     tools: list[Tool] = Field(
         description="List of Itential Platform assets to be exposed as tools",
         default_factory=list,
@@ -679,6 +685,7 @@ class Config(object):
             if self.platform_client_secret == ""
             else self.platform_client_secret,
             "timeout": self.platform_timeout,
+            "ttl": self.platform_ttl,
         }
 
     def _coerce_to_set(self, value) -> list:
