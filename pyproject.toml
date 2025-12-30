@@ -4,7 +4,7 @@ description = "Itential MCP Server"
 
 dependencies = [
     "fastmcp",
-    "ipsdk",
+    "ipsdk>=0.7.0",
     "toon-python",
     "wsproto",
 ]

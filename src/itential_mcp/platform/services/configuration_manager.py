@@ -150,7 +150,7 @@ class Service(ServiceBase):
                 json={"name": name, "deviceType": device_type},
             )
             tree_id = res.json()["id"]
-        except ipsdk.exceptions.IpsdkError as exc:
+        except ipsdk.exceptions.HTTPStatusError as exc:
             if hasattr(exc, "response") and exc.response is not None:
                 msg = exc.response.json()
             else:
@@ -285,7 +285,7 @@ class Service(ServiceBase):
                 f"/configuration_manager/configs/{tree_id}/{version}/{path}",
                 json={"name": name},
             )
-        except ipsdk.exceptions.IpsdkError as exc:
+        except ipsdk.exceptions.HTTPStatusError as exc:
             if hasattr(exc, "response") and exc.response is not None:
                 msg = exc.response.json()
             else:
