@@ -74,6 +74,18 @@ dev = [
     "bandit[toml]>=1.7.0"
 ]
 
+[tool.pytest.ini_options]
+# Pytest configuration
+filterwarnings = [
+    # Ignore RuntimeWarnings from unittest.mock creating AsyncMock objects
+    # These occur when Mock objects are accessed by argparse/stdlib in async contexts
+    # These are false positives from Mock objects being accessed in async contexts
+    "ignore:coroutine.*was never awaited:RuntimeWarning",
+    # Ignore ResourceWarnings from Mock objects in logging tests
+    # These are artifacts of mocking logging.getLogger and file handlers
+    "ignore::ResourceWarning",
+]
+
 [tool.bandit]
 # Bandit security linter configuration
 exclude_dirs = [
