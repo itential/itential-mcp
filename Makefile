@@ -2,6 +2,7 @@
 
 # Copyright 2025 Itential Inc. All Rights Reserved
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 CONTAINER_RUNTIME ?= docker
 CONTAINER_TAG ?= itential-mcp:devel
@@ -9,6 +10,7 @@ CONTAINER_TAG ?= itential-mcp:devel
 .DEFAULT_GOAL := help
 
 .PHONY: build certs check clean container coverage fix format lint security premerge test \
+	check-headers fix-headers \
 	tox tox-py310 tox-py311 tox-py312 tox-py313 tox-coverage tox-lint \
 	tox-format tox-security tox-premerge tox-list
 
@@ -17,18 +19,20 @@ CONTAINER_TAG ?= itential-mcp:devel
 # parameters.
 help:
 	@echo "Available targets:"
-	@echo "  build      - Build the local development environment"
-	@echo "  certs      - Generate certificates for the local development environment"
-	@echo "  check      - Check code quality without making changes"
-	@echo "  clean      - Clean the development environment"
-	@echo "  container  - Build the application as a container"
-	@echo "  coverage   - Run test coverage report"
-	@echo "  fix        - Auto-fix code quality issues where possible"
-	@echo "  format     - Format code using ruff formatter"
-	@echo "  lint       - Run analysis on source files (alias for check)"
-	@echo "  security   - Run security analysis with bandit"
-	@echo "  premerge   - Run the premerge tests locally"
-	@echo "  test       - Run test suite"
+	@echo "  build         - Build the local development environment"
+	@echo "  certs         - Generate certificates for the local development environment"
+	@echo "  check         - Check code quality without making changes"
+	@echo "  check-headers - Check copyright headers in Python files"
+	@echo "  clean         - Clean the development environment"
+	@echo "  container     - Build the application as a container"
+	@echo "  coverage      - Run test coverage report"
+	@echo "  fix           - Auto-fix code quality issues where possible"
+	@echo "  fix-headers   - Fix missing copyright headers in Python files"
+	@echo "  format        - Format code using ruff formatter"
+	@echo "  lint          - Run analysis on source files (alias for check)"
+	@echo "  security      - Run security analysis with bandit"
+	@echo "  premerge      - Run the premerge tests locally"
+	@echo "  test          - Run test suite"
 	@echo ""
 	@echo "Tox targets:"
 	@echo "  tox            - Run tests across all Python versions (3.10-3.13)"
@@ -96,9 +100,19 @@ fix:
 security:
 	PYTHONDONTWRITEBYTECODE=1 uv run bandit -c pyproject.toml -r src/
 
+# The check-headers target checks that all Python files have the required
+# copyright and license header.
+check-headers:
+	PYTHONDONTWRITEBYTECODE=1 python scripts/check_headers.py
+
+# The fix-headers target adds missing copyright and license headers to
+# Python files that don't have them.
+fix-headers:
+	PYTHONDONTWRITEBYTECODE=1 python scripts/check_headers.py --fix
+
 # The premerge target will run the premerge tests locally. This is
 # the same target that is invoked in the premerge pipeline.
-premerge: clean format check security test
+premerge: clean format check check-headers security test
 
 # Build a container image that includes the MCP server. The server will start
 # when the container is run and can be configured using environment variables.
