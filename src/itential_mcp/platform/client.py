@@ -181,7 +181,10 @@ class PlatformClient(object):
                     continue
 
                 # Validate service name is a valid Python identifier
-                if not isinstance(service_instance.name, str) or not service_instance.name:
+                if (
+                    not isinstance(service_instance.name, str)
+                    or not service_instance.name
+                ):
                     logging.warning(
                         f"Service in '{module_name}' has invalid name: {service_instance.name!r}"
                     )
@@ -205,7 +208,9 @@ class PlatformClient(object):
                         exc_info=True,
                     )
                 else:
-                    logging.warning(f"Failed to import service module '{module_name}': {e}")
+                    logging.warning(
+                        f"Failed to import service module '{module_name}': {e}"
+                    )
                 continue
 
             except AttributeError as e:

@@ -12,7 +12,9 @@ identifiable information (PII) from log messages before they are written.
 from __future__ import annotations
 
 import re
-from typing import Pattern, Callable
+
+from typing import Callable
+from typing import Pattern
 
 
 class Scanner:
@@ -33,12 +35,13 @@ class Scanner:
     _instance: Scanner | None = None
     _initialized: bool = False
 
-    def __new__(cls, custom_patterns: dict[str, str] | None = None) -> Scanner:
+    def __new__(cls, _custom_patterns: dict[str, str | None] | None = None) -> Scanner:
         """Create or return the singleton instance.
 
         Args:
-            custom_patterns (dict[str, str] | None): Additional patterns to scan for,
-                where keys are pattern names and values are regex patterns.
+            _custom_patterns (dict[str, str | None]): Additional patterns
+                to scan for, where keys are pattern names and values are
+                regex patterns. Passed to __init__ after instance creation.
 
         Returns:
             Scanner: The singleton instance.
@@ -50,14 +53,14 @@ class Scanner:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, custom_patterns: dict[str, str] | None = None):
+    def __init__(self, custom_patterns: dict[str, str | None] | None = None) -> None:
         """Initialize the sensitive data scanner.
 
         This method will only initialize the instance once due to the Singleton pattern.
         Subsequent calls will not re-initialize the patterns.
 
         Args:
-            custom_patterns (dict[str, str] | None): Additional patterns to scan for,
+            custom_patterns (dict[str, str | None]): Additional patterns to scan for,
                 where keys are pattern names and values are regex patterns.
                 Only applied on first initialization.
 
@@ -76,7 +79,7 @@ class Scanner:
             self._init_default_patterns()
 
             # Add custom patterns if provided
-            if custom_patterns:
+            if custom_patterns is not None:
                 for name, pattern in custom_patterns.items():
                     self.add_pattern(name, pattern)
 
@@ -138,22 +141,24 @@ class Scanner:
         # Private keys (basic detection)
         self.add_pattern(
             "private_key",
-            r"-----BEGIN (?:RSA )?PRIVATE KEY-----[\s\S]*?-----END (?:RSA )?PRIVATE KEY-----",
+            r"-----BEGIN (?:RSA )?PRIVATE KEY-----[\s\S]*?"
+            r"-----END (?:RSA )?PRIVATE KEY-----",
         )
 
     def add_pattern(
         self,
         name: str,
         pattern: str,
-        redaction_func: Callable[[str], str] | None = None,
+        redaction_func: Callable[[str | None, str]] | None = None,
     ) -> None:
         """Add a new sensitive data pattern to scan for.
 
         Args:
             name (str): Name of the pattern for identification.
             pattern (str): Regular expression pattern to match sensitive data.
-            redaction_func (Callable[[str], str] | None): Custom function to redact matches.
-                If None, uses default redaction with pattern name.
+            redaction_func (Callable[[str | None, str]]): Custom function
+                to redact matches. If None, uses default redaction with
+                pattern name.
 
         Returns:
             None
@@ -165,14 +170,13 @@ class Scanner:
             compiled_pattern = re.compile(pattern)
             self._patterns[name] = compiled_pattern
 
-            if redaction_func:
+            if redaction_func is not None:
                 self._redaction_functions[name] = redaction_func
             else:
-                self._redaction_functions[name] = (
-                    lambda match: f"[REDACTED_{name.upper()}]"
-                )
+                self._redaction_functions[name] = lambda _: f"[REDACTED_{name.upper()}]"
         except re.error as e:
-            raise re.error(f"Invalid regex pattern for '{name}': {e}")
+            msg = f"Invalid regex pattern for '{name}': {e}"
+            raise re.error(msg) from e
 
     def remove_pattern(self, name: str) -> bool:
         """Remove a pattern from the scanner.
@@ -222,12 +226,10 @@ class Scanner:
 
         for pattern_name, pattern in self._patterns.items():
             redaction_func = self._redaction_functions[pattern_name]
-
-            def replace_match(match):
-                # Use the full match for redaction
-                return redaction_func(match.group(0))
-
-            result = pattern.sub(replace_match, result)
+            # Use lambda with default arg to capture current redaction_func
+            result = pattern.sub(
+                lambda match, func=redaction_func: func(match.group(0)), result
+            )
 
         return result
 
@@ -246,11 +248,7 @@ class Scanner:
         if not text:
             return False
 
-        for pattern in self._patterns.values():
-            if pattern.search(text):
-                return True
-
-        return False
+        return any(pattern.search(text) for pattern in self._patterns.values())
 
     def get_sensitive_data_types(self, text: str) -> list[str]:
         """Get a list of sensitive data types detected in the text.
@@ -307,7 +305,7 @@ def get_scanner() -> Scanner:
 
 
 def configure_scanner(
-    custom_patterns: dict[str, str] | None = None,
+    custom_patterns: dict[str, str | None] | None = None,
 ) -> Scanner:
     """Configure the global scanner with custom patterns.
 
@@ -316,7 +314,8 @@ def configure_scanner(
     scanner, use reset_singleton() first.
 
     Args:
-        custom_patterns (dict[str, str] | None): Custom patterns to add to the scanner.
+        custom_patterns (dict[str, str | None]): Custom patterns to add
+            to the scanner.
 
     Returns:
         Scanner: The configured singleton scanner instance.
