@@ -13,6 +13,7 @@ from ipsdk.platform import AsyncPlatform
 from ipsdk.connection import Response
 
 from .. import config
+from ..config.converters import platform_to_dict
 from . import response
 from ..core import exceptions
 from ..core import logging
@@ -46,7 +47,7 @@ class PlatformClient(object):
 
         # Get timeout from configuration for use in API requests
         cfg = config.get()
-        self.timeout = cfg.platform_timeout
+        self.timeout = cfg.platform.timeout
 
     async def __aenter__(self):
         """Async context manager entry point.
@@ -101,7 +102,7 @@ class PlatformClient(object):
         cfg = config.get()
 
         # Warn if TLS verification is disabled (security risk)
-        if not cfg.platform.get("verify", True):
+        if cfg.platform.disable_verify:
             logging.warning(
                 "⚠️  TLS certificate verification is DISABLED for platform connection. "
                 "This is insecure and should only be used in development environments. "
@@ -109,14 +110,16 @@ class PlatformClient(object):
             )
 
         # Warn if TLS is completely disabled (even more dangerous)
-        if not cfg.platform.get("use_tls", True):
+        if cfg.platform.disable_tls:
             logging.warning(
                 "⚠️  TLS is DISABLED for platform connection. "
                 "All communication with the platform will be unencrypted. "
                 "This should NEVER be used in production environments."
             )
 
-        return ipsdk.platform_factory(want_async=True, **cfg.platform)
+        # Convert PlatformConfig to dict format for ipsdk
+        platform_dict = platform_to_dict(cfg.platform)
+        return ipsdk.platform_factory(want_async=True, **platform_dict)
 
     def _init_plugins(self):
         """Dynamically load service plugins from the services directory.

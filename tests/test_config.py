@@ -9,6 +9,11 @@ import pytest
 
 from itential_mcp import config as config_module
 from itential_mcp.config import validate_tool_name, Tool, EndpointTool
+from itential_mcp.config.converters import (
+    server_to_dict,
+    platform_to_dict,
+    auth_to_dict,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -34,11 +39,11 @@ def test_get_config_from_env(monkeypatch):
 
     cfg = config_module.get()
 
-    assert cfg.server_host == "127.0.0.1"
-    assert cfg.server_port == 1234
-    assert cfg.platform_user == "testuser"
-    assert cfg.platform_password == "secret"
-    assert cfg.platform_disable_tls is True
+    assert cfg.server.host == "127.0.0.1"
+    assert cfg.server.port == 1234
+    assert cfg.platform.user == "testuser"
+    assert cfg.platform.password == "secret"
+    assert cfg.platform.disable_tls is True
 
 
 def test_get_config_from_file(tmp_path, monkeypatch):
@@ -60,11 +65,11 @@ def test_get_config_from_file(tmp_path, monkeypatch):
 
     cfg = config_module.get()
 
-    assert cfg.server_host == "192.168.1.1"
-    assert cfg.server_port == 9000
-    assert cfg.platform_user == "fileuser"
-    assert cfg.platform_password == "filepass"
-    assert cfg.platform_disable_tls is True
+    assert cfg.server.host == "192.168.1.1"
+    assert cfg.server.port == 9000
+    assert cfg.platform.user == "fileuser"
+    assert cfg.platform.password == "filepass"
+    assert cfg.platform.disable_tls is True
 
 
 def test_missing_config_file_raises(monkeypatch):
@@ -85,10 +90,13 @@ def test_config_platform_and_server_properties(monkeypatch):
 
     cfg = config_module.get()
 
-    assert cfg.server["include_tags"] == {"public", "system"}
-    assert cfg.server["exclude_tags"] == {"experimental", "beta"}
-    assert isinstance(cfg.platform, dict)
-    assert "host" in cfg.platform
+    server_dict = server_to_dict(cfg.server)
+    assert server_dict["include_tags"] == {"public", "system"}
+    assert server_dict["exclude_tags"] == {"experimental", "beta"}
+
+    platform_dict = platform_to_dict(cfg.platform)
+    assert isinstance(platform_dict, dict)
+    assert "host" in platform_dict
 
 
 def test_config_server_tools_path_from_env(monkeypatch):
@@ -98,8 +106,9 @@ def test_config_server_tools_path_from_env(monkeypatch):
 
     cfg = config_module.get()
 
-    assert cfg.server_tools_path == test_path
-    assert cfg.server["tools_path"] == test_path
+    assert cfg.server.tools_path == test_path
+    server_dict = server_to_dict(cfg.server)
+    assert server_dict["tools_path"] == test_path
 
 
 def test_config_server_tools_path_default(monkeypatch):
@@ -109,8 +118,9 @@ def test_config_server_tools_path_default(monkeypatch):
 
     cfg = config_module.get()
 
-    assert cfg.server_tools_path is None
-    assert cfg.server["tools_path"] is None
+    assert cfg.server.tools_path is None
+    server_dict = server_to_dict(cfg.server)
+    assert server_dict["tools_path"] is None
 
 
 def test_config_server_tools_path_from_file(tmp_path, monkeypatch):
@@ -133,8 +143,9 @@ def test_config_server_tools_path_from_file(tmp_path, monkeypatch):
 
     cfg = config_module.get()
 
-    assert cfg.server_tools_path == test_tools_path
-    assert cfg.server["tools_path"] == test_tools_path
+    assert cfg.server.tools_path == test_tools_path
+    server_dict = server_to_dict(cfg.server)
+    assert server_dict["tools_path"] == test_tools_path
 
 
 def test_auth_config_defaults(monkeypatch):
@@ -145,7 +156,8 @@ def test_auth_config_defaults(monkeypatch):
 
     cfg = config_module.get()
 
-    assert cfg.auth == {"type": "none"}
+    auth_dict = auth_to_dict(cfg.auth)
+    assert auth_dict == {"type": "none"}
 
 
 def test_auth_config_from_env(monkeypatch):
@@ -165,13 +177,13 @@ def test_auth_config_from_env(monkeypatch):
     monkeypatch.setenv("ITENTIAL_MCP_SERVER_AUTH_REQUIRED_SCOPES", "read:all,write:all")
 
     cfg = config_module.get()
-    auth = cfg.auth
+    auth_dict = auth_to_dict(cfg.auth)
 
-    assert auth["type"] == "jwt"
-    assert auth["jwks_uri"] == "https://idp.example.com/jwks.json"
-    assert auth["issuer"] == "https://idp.example.com/"
-    assert auth["audience"] == ["itential-mcp", "another-client"]
-    assert auth["required_scopes"] == ["read:all", "write:all"]
+    assert auth_dict["type"] == "jwt"
+    assert auth_dict["jwks_uri"] == "https://idp.example.com/jwks.json"
+    assert auth_dict["issuer"] == "https://idp.example.com/"
+    assert auth_dict["audience"] == ["itential-mcp", "another-client"]
+    assert auth_dict["required_scopes"] == ["read:all", "write:all"]
 
 
 class TestValidateToolName:
@@ -347,15 +359,15 @@ class TestConfigDefaults:
         cfg = config_module.get()
 
         # Check server defaults
-        assert cfg.server_transport == "stdio"
-        assert cfg.server_host == "127.0.0.1"
-        assert cfg.server_port == 8000
-        assert cfg.server_certificate_file == ""
-        assert cfg.server_private_key_file == ""
-        assert cfg.server_path == "/mcp"
-        assert cfg.server_log_level == "NONE"
-        assert cfg.server_include_tags is None
-        assert cfg.server_exclude_tags == "experimental,beta"
+        assert cfg.server.transport == "stdio"
+        assert cfg.server.host == "127.0.0.1"
+        assert cfg.server.port == 8000
+        assert cfg.server.certificate_file == ""
+        assert cfg.server.private_key_file == ""
+        assert cfg.server.path == "/mcp"
+        assert cfg.server.log_level == "NONE"
+        assert cfg.server.include_tags is None
+        assert cfg.server.exclude_tags == "experimental,beta"
 
     def test_config_platform_defaults(self, monkeypatch):
         """Test that platform config uses defaults when no env vars or config file."""
@@ -370,15 +382,15 @@ class TestConfigDefaults:
         cfg = config_module.get()
 
         # Check platform defaults
-        assert cfg.platform_host == "localhost"
-        assert cfg.platform_port == 0
-        assert cfg.platform_disable_tls is False
-        assert cfg.platform_disable_verify is False
-        assert cfg.platform_user == "admin"
-        assert cfg.platform_password == "admin"
-        assert cfg.platform_client_id is None
-        assert cfg.platform_client_secret is None
-        assert cfg.platform_timeout == 30
+        assert cfg.platform.host == "localhost"
+        assert cfg.platform.port == 0
+        assert cfg.platform.disable_tls is False
+        assert cfg.platform.disable_verify is False
+        assert cfg.platform.user == "admin"
+        assert cfg.platform.password == "admin"
+        assert cfg.platform.client_id is None
+        assert cfg.platform.client_secret is None
+        assert cfg.platform.timeout == 30
 
     def test_config_server_tools_path_from_env(self, monkeypatch):
         """Test server tools path configuration from environment variable."""
@@ -393,10 +405,8 @@ class TestConfigDefaults:
 
         cfg = config_module.get()
 
-        # Verify the tools path is set correctly if the field exists
-        # Note: This test assumes server_tools_path field exists in Config
-        if hasattr(cfg, "server_tools_path"):
-            assert cfg.server_tools_path == custom_path
+        # Verify the tools path is set correctly
+        assert cfg.server.tools_path == custom_path
 
     def test_config_server_tools_path_default(self, monkeypatch):
         """Test server tools path uses default when no env var is set."""
@@ -407,13 +417,8 @@ class TestConfigDefaults:
 
         cfg = config_module.get()
 
-        # Verify default tools path if the field exists
-        # Note: This test assumes server_tools_path field exists in Config
-        if hasattr(cfg, "server_tools_path"):
-            # The default should be None or a default path
-            assert cfg.server_tools_path is None or isinstance(
-                cfg.server_tools_path, str
-            )
+        # Verify default tools path
+        assert cfg.server.tools_path is None
 
     def test_config_server_tools_path_from_file(self, tmp_path, monkeypatch):
         """Test server tools path configuration from config file."""
@@ -435,9 +440,8 @@ class TestConfigDefaults:
 
         cfg = config_module.get()
 
-        # Verify the tools path from config file if the field exists
-        if hasattr(cfg, "server_tools_path"):
-            assert cfg.server_tools_path == custom_tools_path
+        # Verify the tools path from config file
+        assert cfg.server.tools_path == custom_tools_path
 
 
 class TestConfigProperties:
@@ -451,7 +455,7 @@ class TestConfigProperties:
                 monkeypatch.delenv(key, raising=False)
 
         cfg = config_module.get()
-        server_dict = cfg.server
+        server_dict = server_to_dict(cfg.server)
 
         # Verify server dict structure
         assert isinstance(server_dict, dict)
@@ -471,7 +475,7 @@ class TestConfigProperties:
                 monkeypatch.delenv(key, raising=False)
 
         cfg = config_module.get()
-        platform_dict = cfg.platform
+        platform_dict = platform_to_dict(cfg.platform)
 
         # Verify platform dict structure
         assert isinstance(platform_dict, dict)
@@ -496,7 +500,7 @@ class TestConfigProperties:
         monkeypatch.setenv("ITENTIAL_MCP_PLATFORM_DISABLE_VERIFY", "true")
 
         cfg = config_module.get()
-        platform_dict = cfg.platform
+        platform_dict = platform_to_dict(cfg.platform)
 
         # Verify TLS settings are inverted
         assert platform_dict["use_tls"] is False  # disabled TLS = use_tls False
@@ -518,8 +522,9 @@ class TestTLSCertificateConfiguration:
 
         cfg = config_module.get()
 
-        assert cfg.server_certificate_file == test_cert_path
-        assert cfg.server["certificate_file"] == test_cert_path
+        assert cfg.server.certificate_file == test_cert_path
+        server_dict = server_to_dict(cfg.server)
+        assert server_dict["certificate_file"] == test_cert_path
 
     def test_server_private_key_file_from_env(self, monkeypatch):
         """Test server private key file configuration from environment variable."""
@@ -533,8 +538,9 @@ class TestTLSCertificateConfiguration:
 
         cfg = config_module.get()
 
-        assert cfg.server_private_key_file == test_key_path
-        assert cfg.server["private_key_file"] == test_key_path
+        assert cfg.server.private_key_file == test_key_path
+        server_dict = server_to_dict(cfg.server)
+        assert server_dict["private_key_file"] == test_key_path
 
     def test_tls_certificate_fields_default_empty(self, monkeypatch):
         """Test that TLS certificate fields default to empty strings."""
@@ -545,10 +551,11 @@ class TestTLSCertificateConfiguration:
 
         cfg = config_module.get()
 
-        assert cfg.server_certificate_file == ""
-        assert cfg.server_private_key_file == ""
-        assert cfg.server["certificate_file"] is None
-        assert cfg.server["private_key_file"] is None
+        assert cfg.server.certificate_file == ""
+        assert cfg.server.private_key_file == ""
+        server_dict = server_to_dict(cfg.server)
+        assert server_dict["certificate_file"] is None
+        assert server_dict["private_key_file"] is None
 
     def test_tls_certificate_fields_from_config_file(self, tmp_path, monkeypatch):
         """Test TLS certificate fields configuration from config file."""
@@ -574,10 +581,11 @@ class TestTLSCertificateConfiguration:
 
         cfg = config_module.get()
 
-        assert cfg.server_certificate_file == test_cert_path
-        assert cfg.server_private_key_file == test_key_path
-        assert cfg.server["certificate_file"] == test_cert_path
-        assert cfg.server["private_key_file"] == test_key_path
+        assert cfg.server.certificate_file == test_cert_path
+        assert cfg.server.private_key_file == test_key_path
+        server_dict = server_to_dict(cfg.server)
+        assert server_dict["certificate_file"] == test_cert_path
+        assert server_dict["private_key_file"] == test_key_path
 
     def test_tls_certificate_fields_env_overrides_file(self, tmp_path, monkeypatch):
         """Test that environment variables override config file for TLS certificate fields."""
@@ -612,14 +620,14 @@ class TestTLSCertificateConfiguration:
         # Environment should override file
         # Note: Current behavior may be that file overrides env, so test actual behavior
         # If environment doesn't override, we can change test to document current behavior
-        if cfg.server_certificate_file == file_cert_path:
+        if cfg.server.certificate_file == file_cert_path:
             # File overrides environment (current behavior)
-            assert cfg.server_certificate_file == file_cert_path
-            assert cfg.server_private_key_file == file_key_path
+            assert cfg.server.certificate_file == file_cert_path
+            assert cfg.server.private_key_file == file_key_path
         else:
             # Environment overrides file (expected behavior)
-            assert cfg.server_certificate_file == env_cert_path
-            assert cfg.server_private_key_file == env_key_path
+            assert cfg.server.certificate_file == env_cert_path
+            assert cfg.server.private_key_file == env_key_path
 
     def test_server_dict_includes_tls_fields(self, monkeypatch):
         """Test that server property dict includes TLS certificate fields."""
@@ -629,7 +637,7 @@ class TestTLSCertificateConfiguration:
                 monkeypatch.delenv(key, raising=False)
 
         cfg = config_module.get()
-        server_dict = cfg.server
+        server_dict = server_to_dict(cfg.server)
 
         assert "certificate_file" in server_dict
         assert "private_key_file" in server_dict

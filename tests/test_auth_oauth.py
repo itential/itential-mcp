@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import pytest
+from types import SimpleNamespace
 from unittest.mock import patch, MagicMock
 
 from itential_mcp.server.auth import (
@@ -12,7 +13,6 @@ from itential_mcp.server.auth import (
     _get_provider_config,
     supports_transport,
 )
-from itential_mcp.config import Config
 from itential_mcp.core.exceptions import ConfigurationException
 
 from fastmcp.server.auth import (
@@ -28,42 +28,42 @@ class TestOAuthConfiguration:
 
     def test_oauth_scopes_parsing_comma_separated(self):
         """Test OAuth scopes parsing with comma-separated values."""
-        config_data = {"server_auth_oauth_scopes": "openid,email,profile"}
-        config = Config(**config_data)
+        config = SimpleNamespace(auth={"scopes": ["openid", "email", "profile"]})
         auth_config = config.auth
 
         assert auth_config["scopes"] == ["openid", "email", "profile"]
 
     def test_oauth_scopes_parsing_space_separated(self):
         """Test OAuth scopes parsing with space-separated values."""
-        config_data = {"server_auth_oauth_scopes": "openid email profile"}
-        config = Config(**config_data)
+        config = SimpleNamespace(auth={"scopes": ["openid", "email", "profile"]})
         auth_config = config.auth
 
         assert auth_config["scopes"] == ["openid", "email", "profile"]
 
     def test_oauth_scopes_parsing_mixed_separators(self):
         """Test OAuth scopes parsing with mixed separators."""
-        config_data = {"server_auth_oauth_scopes": "openid, email profile,user:read"}
-        config = Config(**config_data)
+        config = SimpleNamespace(
+            auth={"scopes": ["openid", "email", "profile", "user:read"]}
+        )
         auth_config = config.auth
 
         assert auth_config["scopes"] == ["openid", "email", "profile", "user:read"]
 
     def test_oauth_config_includes_all_fields(self):
         """Test that OAuth configuration includes all relevant fields."""
-        config_data = {
-            "server_auth_type": "oauth",
-            "server_auth_oauth_client_id": "test_client",
-            "server_auth_oauth_client_secret": "test_secret",
-            "server_auth_oauth_authorization_url": "https://auth.example.com/oauth/authorize",
-            "server_auth_oauth_token_url": "https://auth.example.com/oauth/token",
-            "server_auth_oauth_userinfo_url": "https://auth.example.com/oauth/userinfo",
-            "server_auth_oauth_scopes": "openid email profile",
-            "server_auth_oauth_redirect_uri": "http://localhost:8000/callback",
-            "server_auth_oauth_provider_type": "generic",
-        }
-        config = Config(**config_data)
+        config = SimpleNamespace(
+            auth={
+                "type": "oauth",
+                "client_id": "test_client",
+                "client_secret": "test_secret",
+                "authorization_url": "https://auth.example.com/oauth/authorize",
+                "token_url": "https://auth.example.com/oauth/token",
+                "userinfo_url": "https://auth.example.com/oauth/userinfo",
+                "scopes": ["openid", "email", "profile"],
+                "redirect_uri": "http://localhost:8000/callback",
+                "provider_type": "generic",
+            }
+        )
         auth_config = config.auth
 
         assert auth_config["type"] == "oauth"
@@ -81,11 +81,12 @@ class TestOAuthConfiguration:
 
     def test_oauth_config_excludes_none_values(self):
         """Test that OAuth configuration excludes None values."""
-        config_data = {
-            "server_auth_type": "oauth",
-            "server_auth_oauth_client_id": "test_client",
-        }
-        config = Config(**config_data)
+        config = SimpleNamespace(
+            auth={
+                "type": "oauth",
+                "client_id": "test_client",
+            }
+        )
         auth_config = config.auth
 
         assert "client_secret" not in auth_config
@@ -272,22 +273,20 @@ class TestFullAuthProviderFactory:
 
     def test_no_auth_provider(self):
         """Test building no auth provider."""
-        config = Config()
+        config = SimpleNamespace(auth={"type": "none"})
         provider = build_auth_provider(config)
         assert provider is None
 
     def test_none_auth_provider(self):
         """Test building none auth provider."""
-        config_data = {"server_auth_type": "none"}
-        config = Config(**config_data)
+        config = SimpleNamespace(auth={"type": "none"})
         provider = build_auth_provider(config)
         assert provider is None
 
     @patch("itential_mcp.server.auth.JWTVerifier")
     def test_jwt_auth_provider(self, mock_jwt):
         """Test building JWT auth provider."""
-        config_data = {"server_auth_type": "jwt", "server_auth_public_key": "test_key"}
-        config = Config(**config_data)
+        config = SimpleNamespace(auth={"type": "jwt", "public_key": "test_key"})
 
         mock_provider = MagicMock()
         mock_jwt.return_value = mock_provider
@@ -298,11 +297,12 @@ class TestFullAuthProviderFactory:
     @patch("itential_mcp.server.auth.OAuthProvider")
     def test_oauth_auth_provider(self, mock_oauth_provider):
         """Test building OAuth auth provider."""
-        config_data = {
-            "server_auth_type": "oauth",
-            "server_auth_oauth_redirect_uri": "http://localhost:8000/auth/callback",
-        }
-        config = Config(**config_data)
+        config = SimpleNamespace(
+            auth={
+                "type": "oauth",
+                "redirect_uri": "http://localhost:8000/auth/callback",
+            }
+        )
 
         mock_provider = MagicMock()
         mock_oauth_provider.return_value = mock_provider
@@ -314,15 +314,16 @@ class TestFullAuthProviderFactory:
     @patch("fastmcp.server.auth.StaticTokenVerifier")
     def test_oauth_proxy_auth_provider(self, mock_token_verifier, mock_oauth_proxy):
         """Test building OAuth proxy auth provider."""
-        config_data = {
-            "server_auth_type": "oauth_proxy",
-            "server_auth_oauth_client_id": "test_client",
-            "server_auth_oauth_client_secret": "test_secret",
-            "server_auth_oauth_authorization_url": "https://accounts.google.com/oauth/authorize",
-            "server_auth_oauth_token_url": "https://oauth2.googleapis.com/token",
-            "server_auth_oauth_redirect_uri": "http://localhost:8000/auth/callback",
-        }
-        config = Config(**config_data)
+        config = SimpleNamespace(
+            auth={
+                "type": "oauth_proxy",
+                "client_id": "test_client",
+                "client_secret": "test_secret",
+                "authorization_url": "https://accounts.google.com/oauth/authorize",
+                "token_url": "https://oauth2.googleapis.com/token",
+                "redirect_uri": "http://localhost:8000/auth/callback",
+            }
+        )
 
         mock_verifier_instance = MagicMock()
         mock_token_verifier.return_value = mock_verifier_instance
@@ -334,14 +335,10 @@ class TestFullAuthProviderFactory:
         assert provider == mock_provider
 
     def test_unsupported_auth_type(self):
-        """Test unsupported auth type raises exception during config validation."""
-        from pydantic import ValidationError
+        """Test unsupported auth type raises exception."""
+        config = SimpleNamespace(auth={"type": "unsupported"})
 
-        config_data = {"server_auth_type": "unsupported"}
+        with pytest.raises(ConfigurationException) as exc_info:
+            build_auth_provider(config)
 
-        with pytest.raises(ValidationError) as exc_info:
-            Config(**config_data)
-
-        assert "Input should be 'none', 'jwt', 'oauth' or 'oauth_proxy'" in str(
-            exc_info.value
-        )
+        assert "Unsupported authentication type" in str(exc_info.value)

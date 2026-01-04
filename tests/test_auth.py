@@ -10,7 +10,6 @@ from unittest.mock import patch, MagicMock
 import pytest
 
 from itential_mcp.server import auth
-from itential_mcp.config import Config
 from itential_mcp.core.exceptions import ConfigurationException
 
 
@@ -19,7 +18,7 @@ class TestBuildAuthProvider:
 
     def test_returns_none_when_auth_disabled(self):
         """Authentication provider is not created when type is none."""
-        cfg = Config(server_auth_type="none")
+        cfg = SimpleNamespace(auth={"type": "none"})
 
         provider = auth.build_auth_provider(cfg)
 
@@ -28,12 +27,14 @@ class TestBuildAuthProvider:
     @patch("itential_mcp.server.auth.JWTVerifier")
     def test_creates_jwt_provider_with_expected_arguments(self, mock_jwt_verifier):
         """JWT provider receives configuration from the Config object."""
-        cfg = Config(
-            server_auth_type="jwt",
-            server_auth_public_key="shared-secret",
-            server_auth_algorithm="HS256",
-            server_auth_required_scopes="read:all, write:all",
-            server_auth_audience="aud1, aud2",
+        cfg = SimpleNamespace(
+            auth={
+                "type": "jwt",
+                "public_key": "shared-secret",
+                "algorithm": "HS256",
+                "required_scopes": ["read:all", "write:all"],
+                "audience": ["aud1", "aud2"],
+            }
         )
 
         provider = auth.build_auth_provider(cfg)
@@ -58,7 +59,7 @@ class TestBuildAuthProvider:
     )
     def test_jwt_verifier_errors_are_wrapped(self, mock_jwt_verifier):
         """JWT verifier errors are wrapped in ConfigurationException."""
-        cfg = Config(server_auth_type="jwt")
+        cfg = SimpleNamespace(auth={"type": "jwt"})
 
         with pytest.raises(ConfigurationException) as exc:
             auth.build_auth_provider(cfg)
@@ -100,7 +101,7 @@ class TestBuildAuthProvider:
     )
     def test_jwt_general_errors_are_wrapped(self, mock_jwt_verifier):
         """General JWT verifier errors are wrapped in ConfigurationException."""
-        cfg = Config(server_auth_type="jwt")
+        cfg = SimpleNamespace(auth={"type": "jwt"})
 
         with pytest.raises(ConfigurationException) as exc:
             auth.build_auth_provider(cfg)
@@ -112,10 +113,12 @@ class TestBuildAuthProvider:
     @patch("itential_mcp.server.auth.JWTVerifier")
     def test_jwt_provider_excludes_type_field(self, mock_jwt_verifier):
         """JWT provider configuration excludes the 'type' field."""
-        cfg = Config(
-            server_auth_type="jwt",
-            server_auth_public_key="test-key",
-            server_auth_algorithm="HS256",
+        cfg = SimpleNamespace(
+            auth={
+                "type": "jwt",
+                "public_key": "test-key",
+                "algorithm": "HS256",
+            }
         )
 
         auth.build_auth_provider(cfg)
