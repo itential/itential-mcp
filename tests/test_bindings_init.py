@@ -189,7 +189,9 @@ class TestIterBindings:
 
         # Create mock that supports async context manager protocol
         mock_platform_client_instance = AsyncMock()
-        mock_platform_client_instance.__aenter__.return_value = mock_platform_client_instance
+        mock_platform_client_instance.__aenter__.return_value = (
+            mock_platform_client_instance
+        )
         mock_platform_client_instance.__aexit__.return_value = None
         mock_platform_client_class.return_value = mock_platform_client_instance
 
@@ -233,7 +235,9 @@ class TestIterBindings:
 
         # Create mock that supports async context manager protocol
         mock_platform_client_instance = AsyncMock()
-        mock_platform_client_instance.__aenter__.return_value = mock_platform_client_instance
+        mock_platform_client_instance.__aenter__.return_value = (
+            mock_platform_client_instance
+        )
         mock_platform_client_instance.__aexit__.return_value = None
         mock_platform_client_class.return_value = mock_platform_client_instance
 
@@ -295,7 +299,9 @@ class TestBindingsIntegration:
         # Create mock that supports async context manager protocol
         mock_platform_client_instance = AsyncMock()
         mock_platform_client_instance.client = AsyncMock()
-        mock_platform_client_instance.__aenter__.return_value = mock_platform_client_instance
+        mock_platform_client_instance.__aenter__.return_value = (
+            mock_platform_client_instance
+        )
         mock_platform_client_instance.__aexit__.return_value = None
 
         # Mock the response structure for different API calls
