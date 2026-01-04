@@ -451,9 +451,7 @@ class Config(object):
             ValueError: If the port is not in the range 1-65535.
         """
         if not (1 <= v <= 65535):
-            raise ValueError(
-                f"Platform port must be between 1 and 65535, got {v}"
-            )
+            raise ValueError(f"Platform port must be between 1 and 65535, got {v}")
         return v
 
     @field_validator("platform_host")
@@ -487,9 +485,7 @@ class Config(object):
         # Hostname rules: alphanumeric, hyphens, dots, max 253 chars
         # Each label (between dots) max 63 chars, can't start/end with hyphen
         if len(v) > 253:
-            raise ValueError(
-                f"Platform host is too long (max 253 characters): {v}"
-            )
+            raise ValueError(f"Platform host is too long (max 253 characters): {v}")
 
         # Basic hostname validation pattern
         # Allows alphanumeric, hyphens, dots, and underscores (for compatibility)

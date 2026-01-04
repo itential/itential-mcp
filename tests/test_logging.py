@@ -129,7 +129,11 @@ class TestBasicLogging:
         itential_logging.exception(exc)
 
         mock_get_logger.assert_called_once_with(metadata.name)
-        mock_logger.log.assert_called_once_with(logging.ERROR, "test error")
+        # The exception function formats the exception with traceback, which includes
+        # the exception type and a trailing newline
+        mock_logger.log.assert_called_once_with(
+            logging.ERROR, "ValueError: test error\n"
+        )
 
     @patch("sys.exit")
     @patch("builtins.print")
