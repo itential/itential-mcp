@@ -188,8 +188,8 @@ class TestRun:
         """Test successful server run with stdio transport"""
         # Setup mocks
         mock_config = MagicMock()
-        mock_config.server = {"transport": "stdio"}
-        mock_config.server_log_level = "INFO"
+        mock_config.server.transport = "stdio"
+        mock_config.server.log_level = "INFO"
         mock_config_get.return_value = mock_config
 
         # Setup server instance mock
@@ -219,13 +219,10 @@ class TestRun:
     ):
         """Test successful server run with SSE transport"""
         mock_config = MagicMock()
-        mock_config.server = {
-            "transport": "sse",
-            "host": "0.0.0.0",
-            "port": 8000,
-            "log_level": "INFO",
-        }
-        mock_config.server_log_level = "INFO"
+        mock_config.server.transport = "sse"
+        mock_config.server.host = "0.0.0.0"
+        mock_config.server.port = 8000
+        mock_config.server.log_level = "INFO"
         mock_config_get.return_value = mock_config
 
         # Setup server instance mock
@@ -250,14 +247,11 @@ class TestRun:
     ):
         """Test successful server run with HTTP transport"""
         mock_config = MagicMock()
-        mock_config.server = {
-            "transport": "http",
-            "host": "localhost",
-            "port": 3000,
-            "log_level": "DEBUG",
-            "path": "/mcp",
-        }
-        mock_config.server_log_level = "DEBUG"
+        mock_config.server.transport = "http"
+        mock_config.server.host = "localhost"
+        mock_config.server.port = 3000
+        mock_config.server.log_level = "DEBUG"
+        mock_config.server.path = "/mcp"
         mock_config_get.return_value = mock_config
 
         # Setup server instance mock
@@ -282,8 +276,8 @@ class TestRun:
     ):
         """Test server exits when tool registration fails in Server context manager"""
         mock_config = MagicMock()
-        mock_config.server = {"transport": "stdio"}
-        mock_config.server_log_level = "INFO"
+        mock_config.server.transport = "stdio"
+        mock_config.server.log_level = "INFO"
         mock_config_get.return_value = mock_config
 
         # Make Server.__aenter__ raise an exception (simulates tool registration failure)
@@ -312,8 +306,8 @@ class TestRun:
     ):
         """Test server handles KeyboardInterrupt gracefully"""
         mock_config = MagicMock()
-        mock_config.server = {"transport": "stdio"}
-        mock_config.server_log_level = "INFO"
+        mock_config.server.transport = "stdio"
+        mock_config.server.log_level = "INFO"
         mock_config_get.return_value = mock_config
 
         # Setup server instance mock to raise KeyboardInterrupt
@@ -338,8 +332,8 @@ class TestRun:
     ):
         """Test server handles unexpected exceptions"""
         mock_config = MagicMock()
-        mock_config.server = {"transport": "stdio"}
-        mock_config.server_log_level = "INFO"
+        mock_config.server.transport = "stdio"
+        mock_config.server.log_level = "INFO"
         mock_config_get.return_value = mock_config
 
         # Setup server instance mock to raise RuntimeError
@@ -368,8 +362,8 @@ class TestRun:
     ):
         """Test server runs successfully even with no tools"""
         mock_config = MagicMock()
-        mock_config.server = {"transport": "stdio"}
-        mock_config.server_log_level = "INFO"
+        mock_config.server.transport = "stdio"
+        mock_config.server.log_level = "INFO"
         mock_config_get.return_value = mock_config
 
         # Setup server instance mock
@@ -393,8 +387,8 @@ class TestRun:
     ):
         """Test server properly uses the configured Server instance"""
         mock_config = MagicMock()
-        mock_config.server = {"transport": "stdio"}
-        mock_config.server_log_level = "INFO"
+        mock_config.server.transport = "stdio"
+        mock_config.server.log_level = "INFO"
         mock_config_get.return_value = mock_config
 
         # Setup server instance mock
@@ -419,8 +413,8 @@ class TestRun:
     ):
         """Test that server fails if Server context manager fails due to tool registration issues"""
         mock_config = MagicMock()
-        mock_config.server = {"transport": "stdio"}
-        mock_config.server_log_level = "INFO"
+        mock_config.server.transport = "stdio"
+        mock_config.server.log_level = "INFO"
         mock_config_get.return_value = mock_config
 
         # Make Server.__aenter__ fail with an ImportError (simulating tool import failure)
@@ -450,8 +444,8 @@ class TestRun:
         """Test various configuration scenarios"""
         # Test with minimal config
         mock_config = MagicMock()
-        mock_config.server = {"transport": "stdio"}
-        mock_config.server_log_level = "INFO"
+        mock_config.server.transport = "stdio"
+        mock_config.server.log_level = "INFO"
         mock_config_get.return_value = mock_config
 
         # Setup server instance mock
@@ -475,8 +469,8 @@ class TestRun:
     ):
         """Test server handles missing configuration keys gracefully"""
         mock_config = MagicMock()
-        mock_config.server = {"transport": "sse"}  # Missing host, port, log_level
-        mock_config.server_log_level = "INFO"
+        mock_config.server.transport = "sse"  # Missing host, port, log_level
+        mock_config.server.log_level = "INFO"
         mock_config_get.return_value = mock_config
 
         # Setup server instance mock
@@ -647,14 +641,16 @@ class TestIntegration:
         """Test complete server lifecycle from config to shutdown"""
         # Setup configuration
         mock_config = MagicMock()
-        mock_config.server = {
-            "transport": "stdio",
-            "include_tags": ["system"],
-            "exclude_tags": ["deprecated"],
-        }
-        mock_config.server_log_level = "INFO"
+        mock_config.server.transport = "stdio"
+        mock_config.server.include_tags = ["system"]
+        mock_config.server.exclude_tags = ["deprecated"]
+        mock_config.server.log_level = "INFO"
+        mock_config.server.tools_path = None
         mock_config.tools = []
-        mock_config.auth = {"type": "none"}
+        # Mock auth as a dict-like object
+        mock_auth = MagicMock()
+        mock_auth.get.return_value = "none"
+        mock_config.auth = mock_auth
         mock_config_get.return_value = mock_config
         mock_auth_builder.return_value = None
 
@@ -711,8 +707,10 @@ class TestServerClass:
     def test_server_init(self):
         """Test Server class initialization"""
         mock_config = MagicMock()
-        mock_config.server = {"transport": "sse", "host": "127.0.0.1", "port": 8000}
-        mock_config.server_log_level = "INFO"
+        mock_config.server.transport = "sse"
+        mock_config.server.host = "127.0.0.1"
+        mock_config.server.port = 8000
+        mock_config.server.log_level = "INFO"
 
         server_instance = server_module.Server(mock_config)
 
@@ -729,14 +727,12 @@ class TestServerClass:
         """Test Server.run() method with SSE transport uses uvicorn"""
         # Setup config for SSE transport
         mock_config = MagicMock()
-        mock_config.server = {
-            "transport": "sse",
-            "host": "0.0.0.0",
-            "port": 8080,
-            "certificate_file": None,
-            "private_key_file": None,
-            "path": "/mcp",
-        }
+        mock_config.server.transport = "sse"
+        mock_config.server.host = "0.0.0.0"
+        mock_config.server.port = 8080
+        mock_config.server.certificate_file = None
+        mock_config.server.private_key_file = None
+        mock_config.server.path = "/mcp"
 
         # Create server instance
         server_instance = server_module.Server(mock_config)
@@ -774,14 +770,12 @@ class TestServerClass:
         """Test Server.run() method with HTTP transport uses uvicorn"""
         # Setup config for HTTP transport
         mock_config = MagicMock()
-        mock_config.server = {
-            "transport": "http",
-            "host": "localhost",
-            "port": 3000,
-            "certificate_file": "/path/to/cert.pem",
-            "private_key_file": "/path/to/key.pem",
-            "path": "/api",
-        }
+        mock_config.server.transport = "http"
+        mock_config.server.host = "localhost"
+        mock_config.server.port = 3000
+        mock_config.server.certificate_file = "/path/to/cert.pem"
+        mock_config.server.private_key_file = "/path/to/key.pem"
+        mock_config.server.path = "/api"
 
         # Create server instance
         server_instance = server_module.Server(mock_config)
@@ -818,9 +812,7 @@ class TestServerClass:
         """Test Server.run() method with stdio transport uses FastMCP directly"""
         # Setup config for stdio transport
         mock_config = MagicMock()
-        mock_config.server = {
-            "transport": "stdio",
-        }
+        mock_config.server.transport = "stdio"
 
         # Create server instance
         server_instance = server_module.Server(mock_config)
@@ -839,7 +831,9 @@ class TestServerClass:
     async def test_server_run_missing_mcp_instance(self):
         """Test Server.run() method when mcp instance is None"""
         mock_config = MagicMock()
-        mock_config.server = {"transport": "sse", "host": "127.0.0.1", "port": 8000}
+        mock_config.server.transport = "sse"
+        mock_config.server.host = "127.0.0.1"
+        mock_config.server.port = 8000
 
         server_instance = server_module.Server(mock_config)
         # mcp remains None
@@ -886,14 +880,12 @@ class TestServerClass:
 
         for case in test_cases:
             mock_config = MagicMock()
-            mock_config.server = {
-                "transport": "sse",
-                "host": "127.0.0.1",
-                "port": 8000,
-                "certificate_file": case["certificate_file"],
-                "private_key_file": case["private_key_file"],
-                "path": "/mcp",
-            }
+            mock_config.server.transport = "sse"
+            mock_config.server.host = "127.0.0.1"
+            mock_config.server.port = 8000
+            mock_config.server.certificate_file = case["certificate_file"]
+            mock_config.server.private_key_file = case["private_key_file"]
+            mock_config.server.path = "/mcp"
 
             server_instance = server_module.Server(mock_config)
 
@@ -930,14 +922,12 @@ class TestServerClass:
     async def test_server_run_http_app_path_configuration(self, mock_uvicorn_server):
         """Test that Server.run() correctly configures http_app with path"""
         mock_config = MagicMock()
-        mock_config.server = {
-            "transport": "http",
-            "host": "127.0.0.1",
-            "port": 8000,
-            "certificate_file": None,
-            "private_key_file": None,
-            "path": "/custom-path",
-        }
+        mock_config.server.transport = "http"
+        mock_config.server.host = "127.0.0.1"
+        mock_config.server.port = 8000
+        mock_config.server.certificate_file = None
+        mock_config.server.private_key_file = None
+        mock_config.server.path = "/custom-path"
 
         server_instance = server_module.Server(mock_config)
 
@@ -966,8 +956,12 @@ class TestServerClass:
     ):
         """Test Server can be used as async context manager"""
         mock_config = MagicMock()
-        mock_config.server = {"transport": "stdio"}
-        mock_config.auth = {"type": "none"}
+        mock_config.server.transport = "stdio"
+        mock_config.server.tools_path = None
+        # Mock auth as a dict-like object
+        mock_auth = MagicMock()
+        mock_auth.get.return_value = "none"
+        mock_config.auth = mock_auth
         mock_config.tools = []
         mock_auth_builder.return_value = None
 

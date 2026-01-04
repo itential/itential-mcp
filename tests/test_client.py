@@ -14,10 +14,22 @@ from itential_mcp.platform import PlatformClient
 @pytest.fixture
 def mock_config():
     """Mock configuration for testing"""
-    config = MagicMock(
-        platform={"url": "https://test.example.com", "token": "test-token"}
+    from itential_mcp.config.models import PlatformConfig
+
+    config = MagicMock()
+    # Create a real PlatformConfig so platform_to_dict works
+    config.platform = PlatformConfig(
+        host="test.example.com",
+        port=443,
+        disable_tls=False,
+        disable_verify=False,
+        user="admin",
+        password="admin",
+        client_id=None,
+        client_secret=None,
+        timeout=30,
+        ttl=0,
     )
-    config.platform_timeout = 30
     return config
 
 
@@ -47,21 +59,24 @@ def test_init_client(
     patched_platform_factory, patched_config_get, mock_config, mock_ipsdk_client
 ):
     """Test that PlatformClient properly initializes the ipsdk client"""
+    from itential_mcp.config.converters import platform_to_dict
+
     client = PlatformClient()
 
     # Verify config was retrieved (called twice: once in __init__ for timeout, once in _init_client)
     assert patched_config_get.call_count == 2
 
-    # Verify platform_factory was called with correct parameters
+    # Verify platform_factory was called with platform config dict
+    expected_platform_dict = platform_to_dict(mock_config.platform)
     patched_platform_factory.assert_called_once_with(
-        want_async=True, **mock_config.platform
+        want_async=True, **expected_platform_dict
     )
 
     # Verify client attribute is set correctly
     assert client.client is mock_ipsdk_client
 
     # Verify timeout was set
-    assert client.timeout == mock_config.platform_timeout
+    assert client.timeout == mock_config.platform.timeout
 
 
 def test_init_plugins_no_services_directory(
