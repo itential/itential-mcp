@@ -68,7 +68,7 @@ async def lifespan(mcp: FastMCP) -> AsyncGenerator[dict[str | Any], None]:
         try:
             # Start keepalive task if interval is configured (> 0)
             cfg = config.get()
-            keepalive_interval = cfg.server.get("keepalive_interval", 0)
+            keepalive_interval = cfg.server.keepalive_interval
             if keepalive_interval > 0:
                 keepalive_task = start_keepalive(client_instance, keepalive_interval)
 
@@ -130,7 +130,7 @@ class Server:
         auth_provider = build_auth_provider(self.config)
 
         # Validate auth provider compatibility with transport
-        transport = self.config.server.get("transport")
+        transport = self.config.server.transport
         if auth_provider and not supports_transport(auth_provider, transport):
             from ..core.exceptions import ConfigurationException
 
@@ -146,8 +146,8 @@ class Server:
             instructions=inspect.cleandoc(INSTRUCTIONS),
             lifespan=lifespan,
             auth=auth_provider,
-            include_tags=self.config.server.get("include_tags"),
-            exclude_tags=self.config.server.get("exclude_tags"),
+            include_tags=self.config.server.include_tags,
+            exclude_tags=self.config.server.exclude_tags,
         )
 
         logger = logging.get_logger()
@@ -183,10 +183,8 @@ class Server:
 
         tool_paths = [pathlib.Path(__file__).parent.parent / "tools"]
 
-        if self.config.server.get("tools_path") is not None:
-            tool_paths.append(
-                pathlib.Path(self.config.server.get("tools_path")).resolve()
-            )
+        if self.config.server.tools_path is not None:
+            tool_paths.append(pathlib.Path(self.config.server.tools_path).resolve())
 
         logger = logging.get_logger()
 
@@ -221,15 +219,15 @@ class Server:
 
     async def run(self):
         """Run the server."""
-        if self.config.server.get("transport") in ("sse", "http"):
-            app = self.mcp.http_app(path=self.config.server.get("path"))
+        if self.config.server.transport in ("sse", "http"):
+            app = self.mcp.http_app(path=self.config.server.path)
 
             uvicorn_config = uvicorn.Config(
                 app=app,
-                host=self.config.server.get("host"),
-                port=self.config.server.get("port"),
-                ssl_certfile=self.config.server.get("certificate_file"),
-                ssl_keyfile=self.config.server.get("private_key_file"),
+                host=self.config.server.host,
+                port=self.config.server.port,
+                ssl_certfile=self.config.server.certificate_file,
+                ssl_keyfile=self.config.server.private_key_file,
                 ws="wsproto",
             )
 
@@ -277,7 +275,7 @@ async def run() -> int:
     try:
         cfg = config.get()
 
-        logging.set_level(cfg.server_log_level)
+        logging.set_level(cfg.server.log_level)
 
         async with Server(cfg) as srv:
             await srv.run()

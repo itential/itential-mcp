@@ -31,35 +31,51 @@ def _get_arguments_from_config() -> Sequence[Tuple[str, Sequence, Mapping]]:
     Raises:
         None
     """
-    data = [f for f in fields(config.Config)]
     response = list()
 
-    for ele in data:
-        attrs = ele.default.json_schema_extra
-        if attrs and attrs.get("x-itential-mcp-cli-enabled"):
-            helpstr = ele.default.description
+    # Iterate through nested config dataclasses
+    config_classes = [
+        (config.ServerConfig, "server_"),
+        (config.AuthConfig, "server_auth_"),
+        (config.PlatformConfig, "platform_"),
+    ]
 
-            if hasattr(config.Config, ele.name):
-                attr = getattr(config.Config, ele.name)
-                if hasattr(attr, "default_factory"):
-                    default_value = getattr(config.Config, ele.name).default_factory()
-                elif hasattr(attr, "default"):
-                    default_value = getattr(config.Config, ele.name).default
+    for config_class, prefix in config_classes:
+        for field in fields(config_class):
+            # Skip if field doesn't have default (shouldn't happen with our models)
+            if not hasattr(field, "default"):
+                continue
+
+            attrs = getattr(field.default, "json_schema_extra", None)
+            if not attrs or not attrs.get("x-itential-mcp-cli-enabled"):
+                continue
+
+            helpstr = getattr(field.default, "description", None)
+
+            # Get default value
+            if hasattr(field.default, "default_factory"):
+                try:
+                    default_value = field.default.default_factory()
+                except Exception:
+                    default_value = "UNKNOWN"
+            elif hasattr(field.default, "default"):
+                default_value = field.default.default
             else:
                 default_value = "UNKNOWN"
 
             if helpstr is not None:
                 helpstr += f" (default={default_value})"
-
             else:
                 helpstr = "NO HELP AVAILABLE!!"
 
-            kwargs = {"dest": ele.name, "help": helpstr}
+            # Use the prefixed name for dest to match legacy behavior
+            dest_name = f"{prefix}{field.name}"
+            kwargs = {"dest": dest_name, "help": helpstr}
 
             kwargs.update(attrs.get("x-itential-mcp-options") or {})
             posargs = attrs.get("x-itential-mcp-arguments")
 
-            response.append((ele.name, posargs, kwargs))
+            response.append((dest_name, posargs, kwargs))
 
     return response
 

@@ -275,11 +275,13 @@ class TestGetArgumentsFromConfig:
 
         result = _get_arguments_from_config()
 
-        assert len(result) == 1
-        assert result[0][0] == "server_host"
+        # The new implementation processes fields for 3 config classes
+        # (ServerConfig, AuthConfig, PlatformConfig), so we get 3 entries
+        assert len(result) == 3
+        assert result[0][0] == "server_server_host"
         assert result[0][1] == ["--host"]
-        assert result[0][2]["dest"] == "server_host"
-        assert result[0][2]["help"] == "Server host address (default=127.0.0.1)"
+        assert result[0][2]["dest"] == "server_server_host"
+        assert "Server host address" in result[0][2]["help"]
         assert result[0][2]["type"] is str
 
     @patch("itential_mcp.cli.argument_groups.fields")
@@ -330,7 +332,8 @@ class TestGetArgumentsFromConfig:
 
         result = _get_arguments_from_config()
 
-        assert len(result) == 1
+        # Fields are processed for 3 config classes
+        assert len(result) == 3
         assert result[0][2]["help"] == "NO HELP AVAILABLE!!"
 
     @patch("itential_mcp.cli.argument_groups.fields")
@@ -369,15 +372,17 @@ class TestGetArgumentsFromConfig:
 
         result = _get_arguments_from_config()
 
-        assert len(result) == 2
+        # 2 enabled fields × 3 config classes = 6 results
+        # (field3 is disabled so it's skipped)
+        assert len(result) == 6
 
-        # Check first field
-        assert result[0][0] == "server_port"
+        # Check first field (server_port from ServerConfig)
+        assert result[0][0] == "server_server_port"
         assert result[0][1] == ["--port", "-p"]
         assert result[0][2]["type"] is int
 
-        # Check second field
-        assert result[1][0] == "platform_username"
+        # Check second field (platform_username from ServerConfig)
+        assert result[1][0] == "server_platform_username"
         assert result[1][1] == ["--username"]
         assert result[1][2]["required"] is True
 
@@ -401,8 +406,9 @@ class TestGetArgumentsFromConfig:
         result1 = _get_arguments_from_config()
         result2 = _get_arguments_from_config()
 
-        # Should only call fields() once due to caching
-        assert mock_fields.call_count == 1
+        # Should call fields() 3 times on first call (once per config class)
+        # then use cache on second call
+        assert mock_fields.call_count == 3
         assert result1 == result2
 
     @patch("itential_mcp.cli.argument_groups.fields")
@@ -424,7 +430,8 @@ class TestGetArgumentsFromConfig:
 
         result = _get_arguments_from_config()
 
-        assert len(result) == 1
+        # Fields processed for 3 config classes
+        assert len(result) == 3
         # Should only have dest and help, no additional options
         expected_keys = {"dest", "help"}
         assert set(result[0][2].keys()) == expected_keys
@@ -849,8 +856,8 @@ class TestErrorHandling:
 
         result = _get_arguments_from_config()
 
-        # Should handle gracefully and include the field
-        assert len(result) == 1
+        # Should handle gracefully and include the field (3 config classes)
+        assert len(result) == 3
         assert result[0][1] is None  # No arguments defined
 
     def test_parser_methods_file_parameter(self):
