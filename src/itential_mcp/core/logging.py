@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import sys
 import logging
+import traceback
 
 from pathlib import Path
 from functools import partial
@@ -97,16 +98,25 @@ critical = partial(log, logging.CRITICAL)
 
 
 def exception(exc: Exception) -> None:
-    """
-    Log an exception error
+    """Log an exception error with full traceback.
+
+    This function logs an exception at ERROR level, including the full
+    traceback information to help with debugging. The traceback shows
+    the complete call stack from where the exception was raised.
 
     Args:
-        exc (Exception): Exception to log as an error
+        exc (Exception): Exception to log as an error.
 
     Returns:
         None
+
+    Raises:
+        None
     """
-    log(logging.ERROR, str(exc))
+    # Format the exception with full traceback
+    tb_lines = traceback.format_exception(type(exc), exc, exc.__traceback__)
+    tb_text = "".join(tb_lines)
+    log(logging.ERROR, tb_text)
 
 
 def fatal(msg: str) -> None:
