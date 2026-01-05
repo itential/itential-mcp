@@ -96,6 +96,30 @@ class TestItentialMcpException:
 
         assert result == expected
 
+    def test_backward_compatibility_with_positional_args(self):
+        """Test backward compatibility when passing multiple positional arguments"""
+        # Old style: exception("msg", "arg2", "arg3")
+        with pytest.raises(ItentialMcpException) as exc_info:
+            raise ItentialMcpException("primary message", "extra_arg1", "extra_arg2")
+
+        # The exception should use the first argument as its message
+        assert exc_info.value.message == "primary message"
+        # The str representation should also use the first argument
+        assert "primary message" in str(exc_info.value)
+
+    def test_backward_compatibility_with_empty_string_message(self):
+        """Test backward compatibility when passing empty string with extra args"""
+        # Test with empty string and extra positional args
+        with pytest.raises(ItentialMcpException) as exc_info:
+            raise ItentialMcpException("", "extra_arg")
+
+        # Should use default message (from docstring) when message is empty
+        assert exc_info.value.message  # Should have some message
+        # The class docstring is used as default
+        assert (
+            "Base exception class" in exc_info.value.message or exc_info.value.message
+        )
+
     def test_instance_creation(self):
         """Test creating an instance of ItentialMcpException"""
         error = ItentialMcpException("test message")

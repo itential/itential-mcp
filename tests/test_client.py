@@ -34,6 +34,48 @@ def mock_config():
 
 
 @pytest.fixture
+def mock_config_with_disable_verify():
+    """Mock configuration with TLS verification disabled"""
+    from itential_mcp.config.models import PlatformConfig
+
+    config = MagicMock()
+    config.platform = PlatformConfig(
+        host="test.example.com",
+        port=443,
+        disable_tls=False,
+        disable_verify=True,
+        user="admin",
+        password="admin",
+        client_id=None,
+        client_secret=None,
+        timeout=30,
+        ttl=0,
+    )
+    return config
+
+
+@pytest.fixture
+def mock_config_with_disable_tls():
+    """Mock configuration with TLS completely disabled"""
+    from itential_mcp.config.models import PlatformConfig
+
+    config = MagicMock()
+    config.platform = PlatformConfig(
+        host="test.example.com",
+        port=443,
+        disable_tls=True,
+        disable_verify=False,
+        user="admin",
+        password="admin",
+        client_id=None,
+        client_secret=None,
+        timeout=30,
+        ttl=0,
+    )
+    return config
+
+
+@pytest.fixture
 def mock_ipsdk_client():
     """Mock ipsdk AsyncPlatform client"""
     return AsyncMock()
@@ -207,6 +249,306 @@ def test_init_plugins_handles_service_instantiation_error(
             # Should complete without raising exception
             client = PlatformClient()
             assert not hasattr(client, "error_service")
+
+
+def test_init_plugins_handles_none_spec(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test that _init_plugins handles None module spec gracefully"""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        services_dir = pathlib.Path(temp_dir) / "services"
+        services_dir.mkdir()
+
+        # Create a valid service file
+        service_file = services_dir / "test_service.py"
+        service_file.write_text(
+            textwrap.dedent("""
+            class Service:
+                def __init__(self, client):
+                    self.name = "test_service"
+        """)
+        )
+
+        with patch("itential_mcp.platform.client.pathlib.Path.resolve") as resolve_mock:
+            resolve_mock.return_value.parent = pathlib.Path(temp_dir)
+
+            # Mock spec_from_file_location to return None
+            with patch(
+                "itential_mcp.platform.client.importlib.util.spec_from_file_location"
+            ) as mock_spec:
+                mock_spec.return_value = None
+
+                with patch(
+                    "itential_mcp.platform.client.logging.warning"
+                ) as mock_warning:
+                    client = PlatformClient()
+
+                    # Should log warning and skip the service
+                    assert not hasattr(client, "test_service")
+                    assert mock_warning.call_count >= 1
+
+
+def test_init_plugins_handles_none_loader(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test that _init_plugins handles None loader in spec gracefully"""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        services_dir = pathlib.Path(temp_dir) / "services"
+        services_dir.mkdir()
+
+        # Create a valid service file
+        service_file = services_dir / "test_service.py"
+        service_file.write_text(
+            textwrap.dedent("""
+            class Service:
+                def __init__(self, client):
+                    self.name = "test_service"
+        """)
+        )
+
+        with patch("itential_mcp.platform.client.pathlib.Path.resolve") as resolve_mock:
+            resolve_mock.return_value.parent = pathlib.Path(temp_dir)
+
+            # Mock spec with None loader
+            with patch(
+                "itential_mcp.platform.client.importlib.util.spec_from_file_location"
+            ) as mock_spec:
+                mock_spec_obj = MagicMock()
+                mock_spec_obj.loader = None
+                mock_spec.return_value = mock_spec_obj
+
+                with patch(
+                    "itential_mcp.platform.client.logging.warning"
+                ) as mock_warning:
+                    client = PlatformClient()
+
+                    # Should log warning and skip the service
+                    assert not hasattr(client, "test_service")
+                    assert mock_warning.call_count >= 1
+
+
+def test_init_plugins_handles_missing_name_attribute(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test that _init_plugins handles services without name attribute"""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        services_dir = pathlib.Path(temp_dir) / "services"
+        services_dir.mkdir()
+
+        # Create a service without name attribute
+        service_file = services_dir / "no_name_service.py"
+        service_file.write_text(
+            textwrap.dedent("""
+            class Service:
+                def __init__(self, client):
+                    self.client = client
+                    # No name attribute
+        """)
+        )
+
+        with patch("itential_mcp.platform.client.pathlib.Path.resolve") as resolve_mock:
+            resolve_mock.return_value.parent = pathlib.Path(temp_dir)
+
+            with patch("itential_mcp.platform.client.logging.warning") as mock_warning:
+                client = PlatformClient()
+
+                # Should log warning and skip the service
+                assert not hasattr(client, "no_name_service")
+                warning_calls = [call[0][0] for call in mock_warning.call_args_list]
+                assert any(
+                    "has no name attribute" in str(call) for call in warning_calls
+                )
+
+
+def test_init_plugins_handles_empty_name(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test that _init_plugins handles services with empty name"""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        services_dir = pathlib.Path(temp_dir) / "services"
+        services_dir.mkdir()
+
+        # Create a service with empty name
+        service_file = services_dir / "empty_name_service.py"
+        service_file.write_text(
+            textwrap.dedent("""
+            class Service:
+                def __init__(self, client):
+                    self.client = client
+                    self.name = ""
+        """)
+        )
+
+        with patch("itential_mcp.platform.client.pathlib.Path.resolve") as resolve_mock:
+            resolve_mock.return_value.parent = pathlib.Path(temp_dir)
+
+            with patch("itential_mcp.platform.client.logging.warning") as mock_warning:
+                _ = PlatformClient()  # Constructor triggers plugin loading
+
+                # Should log warning and skip the service
+                warning_calls = [call[0][0] for call in mock_warning.call_args_list]
+                assert any("has invalid name" in str(call) for call in warning_calls)
+
+
+def test_init_plugins_handles_non_string_name(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test that _init_plugins handles services with non-string name"""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        services_dir = pathlib.Path(temp_dir) / "services"
+        services_dir.mkdir()
+
+        # Create a service with non-string name
+        service_file = services_dir / "bad_name_service.py"
+        service_file.write_text(
+            textwrap.dedent("""
+            class Service:
+                def __init__(self, client):
+                    self.client = client
+                    self.name = 123  # Non-string name
+        """)
+        )
+
+        with patch("itential_mcp.platform.client.pathlib.Path.resolve") as resolve_mock:
+            resolve_mock.return_value.parent = pathlib.Path(temp_dir)
+
+            with patch("itential_mcp.platform.client.logging.warning") as mock_warning:
+                _ = PlatformClient()  # Constructor triggers plugin loading
+
+                # Should log warning and skip the service
+                warning_calls = [call[0][0] for call in mock_warning.call_args_list]
+                assert any("has invalid name" in str(call) for call in warning_calls)
+
+
+def test_init_plugins_handles_invalid_identifier_name(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test that _init_plugins handles services with invalid Python identifier as name"""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        services_dir = pathlib.Path(temp_dir) / "services"
+        services_dir.mkdir()
+
+        # Create a service with invalid identifier name
+        service_file = services_dir / "invalid_id_service.py"
+        service_file.write_text(
+            textwrap.dedent("""
+            class Service:
+                def __init__(self, client):
+                    self.client = client
+                    self.name = "123-invalid-name"  # Not a valid identifier
+        """)
+        )
+
+        with patch("itential_mcp.platform.client.pathlib.Path.resolve") as resolve_mock:
+            resolve_mock.return_value.parent = pathlib.Path(temp_dir)
+
+            with patch("itential_mcp.platform.client.logging.warning") as mock_warning:
+                _ = PlatformClient()  # Constructor triggers plugin loading
+
+                # Should log warning and skip the service
+                warning_calls = [call[0][0] for call in mock_warning.call_args_list]
+                assert any(
+                    "is not a valid Python identifier" in str(call)
+                    for call in warning_calls
+                )
+
+
+def test_init_plugins_handles_attribute_error(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test that _init_plugins handles AttributeError during service loading"""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        services_dir = pathlib.Path(temp_dir) / "services"
+        services_dir.mkdir()
+
+        # Create a service that will raise AttributeError when accessed
+        service_file = services_dir / "attr_error_service.py"
+        service_file.write_text(
+            textwrap.dedent("""
+            class Service:
+                def __init__(self, client):
+                    self.client = client
+                    # Access nonexistent attribute to trigger AttributeError
+                    _ = self.nonexistent_attribute
+        """)
+        )
+
+        with patch("itential_mcp.platform.client.pathlib.Path.resolve") as resolve_mock:
+            resolve_mock.return_value.parent = pathlib.Path(temp_dir)
+
+            with patch("itential_mcp.platform.client.logging.warning") as mock_warning:
+                client = PlatformClient()
+
+                # Should log warning and continue
+                assert not hasattr(client, "attr_error_service")
+                warning_calls = [call[0][0] for call in mock_warning.call_args_list]
+                assert any("has attribute error" in str(call) for call in warning_calls)
+
+
+def test_init_plugins_import_error_with_debug_logging(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test that _init_plugins logs import errors with traceback when DEBUG logging enabled"""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        services_dir = pathlib.Path(temp_dir) / "services"
+        services_dir.mkdir()
+
+        # Create a service with import error
+        service_file = services_dir / "import_error_service.py"
+        service_file.write_text("import nonexistent_module\nclass Service: pass")
+
+        with patch("itential_mcp.platform.client.pathlib.Path.resolve") as resolve_mock:
+            resolve_mock.return_value.parent = pathlib.Path(temp_dir)
+
+            # Mock logger to enable DEBUG level
+            mock_logger = MagicMock()
+            mock_logger.isEnabledFor.return_value = True
+
+            with patch(
+                "itential_mcp.platform.client.logging.get_logger"
+            ) as mock_get_logger:
+                mock_get_logger.return_value = mock_logger
+
+                _ = PlatformClient()  # Constructor triggers plugin loading
+
+                # Verify that warning was called with exc_info=True for debug logging
+                assert mock_logger.warning.called
+
+
+def test_init_plugins_attribute_error_with_debug_logging(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test that _init_plugins logs attribute errors with traceback when DEBUG logging enabled"""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        services_dir = pathlib.Path(temp_dir) / "services"
+        services_dir.mkdir()
+
+        # Create a service that raises AttributeError
+        service_file = services_dir / "attr_error_service.py"
+        service_file.write_text(
+            textwrap.dedent("""
+            class Service:
+                def __init__(self, client):
+                    _ = self.nonexistent
+        """)
+        )
+
+        with patch("itential_mcp.platform.client.pathlib.Path.resolve") as resolve_mock:
+            resolve_mock.return_value.parent = pathlib.Path(temp_dir)
+
+            # Mock logger to enable DEBUG level
+            mock_logger = MagicMock()
+            mock_logger.isEnabledFor.return_value = True
+
+            with patch(
+                "itential_mcp.platform.client.logging.get_logger"
+            ) as mock_get_logger:
+                mock_get_logger.return_value = mock_logger
+
+                _ = PlatformClient()  # Constructor triggers plugin loading
+
+                # Verify that warning was called with exc_info=True for debug logging
+                assert mock_logger.warning.called
 
 
 @pytest.mark.asyncio
@@ -527,3 +869,59 @@ async def test_http_methods_error_propagation(
     # Test DELETE
     with pytest.raises(ItentialMcpException):
         await client.delete("/test")
+
+
+def test_init_client_with_disable_verify_warning(mock_config_with_disable_verify):
+    """Test that initializing client with disable_verify logs a security warning"""
+    with patch("itential_mcp.platform.client.config.get") as config_mock:
+        config_mock.return_value = mock_config_with_disable_verify
+
+        with patch("itential_mcp.platform.client.ipsdk.platform_factory"):
+            with patch("itential_mcp.platform.client.logging.warning") as mock_warning:
+                _ = PlatformClient()  # Constructor triggers TLS checks
+
+                # Verify warning was logged
+                assert mock_warning.call_count >= 1
+                warning_calls = [call[0][0] for call in mock_warning.call_args_list]
+                assert any(
+                    "TLS certificate verification is DISABLED" in str(call)
+                    for call in warning_calls
+                )
+
+
+def test_init_client_with_disable_tls_warning(mock_config_with_disable_tls):
+    """Test that initializing client with disable_tls logs a security warning"""
+    with patch("itential_mcp.platform.client.config.get") as config_mock:
+        config_mock.return_value = mock_config_with_disable_tls
+
+        with patch("itential_mcp.platform.client.ipsdk.platform_factory"):
+            with patch("itential_mcp.platform.client.logging.warning") as mock_warning:
+                _ = PlatformClient()  # Constructor triggers TLS checks
+
+                # Verify warning was logged
+                assert mock_warning.call_count >= 1
+                warning_calls = [call[0][0] for call in mock_warning.call_args_list]
+                assert any("TLS is DISABLED" in str(call) for call in warning_calls)
+
+
+@pytest.mark.asyncio
+async def test_send_request_timeout_error(
+    patched_platform_factory, patched_config_get, mock_ipsdk_client
+):
+    """Test that send_request raises TimeoutExceededError on asyncio.TimeoutError"""
+    from itential_mcp.core.exceptions import TimeoutExceededError
+    import asyncio
+
+    # Make _send_request hang indefinitely
+    async def slow_request(*args, **kwargs):
+        await asyncio.sleep(100)
+
+    mock_ipsdk_client._send_request = slow_request
+
+    client = PlatformClient()
+
+    # Use a very short timeout to trigger the error
+    with pytest.raises(TimeoutExceededError) as exc_info:
+        await client.send_request(method="GET", path="/test", timeout=0.001)
+
+    assert "timed out" in str(exc_info.value)
