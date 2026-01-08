@@ -28,6 +28,22 @@ class TestMainModule:
         # The test verifies the module can be imported without errors
         # The actual execution is tested through other CLI command tests
 
+    def test_main_module_execution_block(self):
+        """Test that __main__ module execution block is present and correct"""
+        import itential_mcp.__main__ as main_module
+
+        # Read the source file to verify the execution block exists
+        import inspect
+
+        source = inspect.getsource(main_module)
+
+        # Verify the if __name__ == "__main__" block exists
+        assert 'if __name__ == "__main__":' in source
+        assert "asyncio.run(run())" in source
+
+        # The actual execution of this block is tested by subprocess/integration tests
+        # We cannot directly test it without actually running it as __main__
+
 
 class TestCLICommands:
     """Test cases for CLI command execution"""
