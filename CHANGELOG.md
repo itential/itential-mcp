@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-01-08
+
+### Added
+- Comprehensive platform package tests (#287)
+- TTL support for platform connections (#287)
+- Python 3.13 support and tox testing infrastructure (#289)
+- Copyright header checking script with SPDX enforcement (#290)
+- Better exception logging to logging module (#291)
+
+### Changed
+- Restructure config module into modular package with clean API (#292)
+- Implement architecture improvements for reliability and security (#285)
+- Optimize bindings middleware from O(n) to O(1) lookup (#280)
+- Modernize type annotations across all modules (#279)
+
+### Fixed
+- Annotated issues preventing mcp from starting (#286)
+- Configure pytest to suppress false positive warnings (#288)
+- Update IpsdkError exception handling for updated ipsdk library (#283)
+- RuntimeWarning coroutines not awaited in tests (#281)
+- Add missing await in apply_device_configuration (#278)
+
+### Documentation
+- Add comprehensive third-party license attribution file (#284)
+
+### CI/CD
+- Migrate PyPI publishing to trusted publisher (OIDC) (#282)
+
 ## [0.10.0] - 2025-12-02
 
 ### Added
