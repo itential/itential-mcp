@@ -268,6 +268,26 @@ class TestRun:
         assert result == 1
         mock_print_exc.assert_called_once()
 
+    @patch("itential_mcp.core.logging.info")
+    @patch("asyncio.run")
+    @patch("itential_mcp.app.parse_args")
+    @patch("sys.argv", ["itential-mcp", "run"])
+    def test_run_keyboard_interrupt(
+        self, mock_parse_args, mock_asyncio_run, mock_logging_info
+    ):
+        """Test that KeyboardInterrupt is handled gracefully and returns exit code 130"""
+
+        async def mock_func():
+            return 0
+
+        mock_parse_args.return_value = (mock_func, (), {})
+        mock_asyncio_run.side_effect = KeyboardInterrupt()
+
+        result = app.run()
+
+        assert result == 130
+        mock_logging_info.assert_called_once_with("Application interrupted by user")
+
     @patch("asyncio.run")
     @patch("itential_mcp.app.parse_args")
     @patch("sys.argv", ["itential-mcp", "version"])

@@ -6,6 +6,7 @@ from itential_mcp.core.errors import (
     resource_not_found,
     resource_already_exists,
     bad_request,
+    internal_server_error,
 )
 
 
@@ -603,6 +604,42 @@ class TestBadRequestIntegration:
         assert result1 is not result3  # Different objects
 
 
+class TestInternalServerError:
+    """Test the internal_server_error utility function"""
+
+    def test_internal_server_error_with_default_message(self):
+        """Test internal_server_error returns default message when no custom message is provided"""
+        result = internal_server_error()
+
+        expected = {"message": "Internal server error"}
+        assert result == expected
+        assert isinstance(result, dict)
+        assert "message" in result
+
+    def test_internal_server_error_with_custom_message(self):
+        """Test internal_server_error returns custom message when provided"""
+        custom_message = "Database connection failed"
+        result = internal_server_error(custom_message)
+
+        expected = {"message": custom_message}
+        assert result == expected
+        assert result["message"] == custom_message
+
+    def test_internal_server_error_with_none_message(self):
+        """Test internal_server_error with None message uses default"""
+        result = internal_server_error(None)
+
+        expected = {"message": "Internal server error"}
+        assert result == expected
+
+    def test_internal_server_error_with_empty_string_message(self):
+        """Test internal_server_error with empty string message uses default"""
+        result = internal_server_error("")
+
+        expected = {"message": "Internal server error"}
+        assert result == expected
+
+
 class TestErrorFunctionsComparison:
     """Test comparing behavior across all error functions"""
 
@@ -611,8 +648,9 @@ class TestErrorFunctionsComparison:
         result1 = resource_not_found("test")
         result2 = resource_already_exists("test")
         result3 = bad_request("test")
+        result4 = internal_server_error("test")
 
-        for result in [result1, result2, result3]:
+        for result in [result1, result2, result3, result4]:
             assert isinstance(result, dict)
             assert len(result) == 1
             assert "message" in result
@@ -623,6 +661,7 @@ class TestErrorFunctionsComparison:
         result1 = resource_not_found(None)
         result2 = resource_already_exists(None)
         result3 = bad_request(None)
+        result4 = internal_server_error(None)
 
         # All should return their default messages
         assert result1["message"] == "A resource could not be found on the server"
@@ -630,12 +669,14 @@ class TestErrorFunctionsComparison:
             result2["message"] == "The specified resource already exists on the server"
         )
         assert result3["message"] == "Bad Request"
+        assert result4["message"] == "Internal server error"
 
     def test_all_functions_handle_empty_string_input(self):
         """Test that all error functions handle empty string input consistently"""
         result1 = resource_not_found("")
         result2 = resource_already_exists("")
         result3 = bad_request("")
+        result4 = internal_server_error("")
 
         # All should return their default messages for empty string (falsy)
         assert result1["message"] == "A resource could not be found on the server"
@@ -643,6 +684,7 @@ class TestErrorFunctionsComparison:
             result2["message"] == "The specified resource already exists on the server"
         )
         assert result3["message"] == "Bad Request"
+        assert result4["message"] == "Internal server error"
 
     def test_all_functions_preserve_custom_messages(self):
         """Test that all error functions preserve custom messages"""
@@ -651,10 +693,12 @@ class TestErrorFunctionsComparison:
         result1 = resource_not_found(custom_msg)
         result2 = resource_already_exists(custom_msg)
         result3 = bad_request(custom_msg)
+        result4 = internal_server_error(custom_msg)
 
         assert result1["message"] == custom_msg
         assert result2["message"] == custom_msg
         assert result3["message"] == custom_msg
+        assert result4["message"] == custom_msg
 
     def test_all_functions_json_serializable(self):
         """Test that all error functions return JSON serializable results"""
@@ -664,6 +708,7 @@ class TestErrorFunctionsComparison:
             resource_not_found("test"),
             resource_already_exists("test"),
             bad_request("test"),
+            internal_server_error("test"),
         ]
 
         for result in results:
@@ -676,11 +721,20 @@ class TestErrorFunctionsComparison:
         result1 = resource_not_found()
         result2 = resource_already_exists()
         result3 = bad_request()
+        result4 = internal_server_error()
 
-        messages = [result1["message"], result2["message"], result3["message"]]
+        messages = [
+            result1["message"],
+            result2["message"],
+            result3["message"],
+            result4["message"],
+        ]
 
         # All messages should be different
-        assert len(set(messages)) == 3
+        assert len(set(messages)) == 4
         assert result1["message"] != result2["message"]
         assert result1["message"] != result3["message"]
+        assert result1["message"] != result4["message"]
         assert result2["message"] != result3["message"]
+        assert result2["message"] != result4["message"]
+        assert result3["message"] != result4["message"]
