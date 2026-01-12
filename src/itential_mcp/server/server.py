@@ -291,5 +291,6 @@ async def run() -> int:
         sys.exit(0)
 
     except Exception as exc:
+        logging.exception(exc)
         print(f"ERROR: server stopped unexpectedly: {str(exc)}", file=sys.stderr)
         sys.exit(1)
