@@ -647,10 +647,8 @@ class TestIntegration:
         mock_config.server.log_level = "INFO"
         mock_config.server.tools_path = None
         mock_config.tools = []
-        # Mock auth as an AuthConfig-like object with attribute access
-        mock_auth = MagicMock()
-        mock_auth.type = "none"
-        mock_config.auth = mock_auth
+        # Mock auth as a dict
+        mock_config.auth = {"type": "none"}
         mock_config_get.return_value = mock_config
         mock_auth_builder.return_value = None
 
@@ -958,10 +956,8 @@ class TestServerClass:
         mock_config = MagicMock()
         mock_config.server.transport = "stdio"
         mock_config.server.tools_path = None
-        # Mock auth as an AuthConfig-like object with attribute access
-        mock_auth = MagicMock()
-        mock_auth.type = "none"
-        mock_config.auth = mock_auth
+        # Mock auth as a dict
+        mock_config.auth = {"type": "none"}
         mock_config.tools = []
         mock_auth_builder.return_value = None
 
