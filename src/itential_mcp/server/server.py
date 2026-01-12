@@ -140,14 +140,20 @@ class Server:
                 f"OAuth providers require HTTP-based transports (sse or http)."
             )
 
+        # Helper to parse comma separated tags
+        def parse_tags(tags: str | None) -> list[str] | None:
+            if not tags:
+                return None
+            return [t.strip() for t in tags.split(",") if t.strip()]
+
         # Initialize FastMCP server
         self.mcp = FastMCP(
             name="Itential Platform MCP",
             instructions=inspect.cleandoc(INSTRUCTIONS),
             lifespan=lifespan,
             auth=auth_provider,
-            include_tags=self.config.server.include_tags,
-            exclude_tags=self.config.server.exclude_tags,
+            include_tags=parse_tags(self.config.server.include_tags),
+            exclude_tags=parse_tags(self.config.server.exclude_tags),
         )
 
         logger = logging.get_logger()
