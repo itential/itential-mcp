@@ -13,6 +13,7 @@ from itential_mcp.server.auth import (
     _get_provider_config,
     supports_transport,
 )
+from itential_mcp.config import AuthConfig
 from itential_mcp.core.exceptions import ConfigurationException
 
 from fastmcp.server.auth import (
@@ -21,6 +22,36 @@ from fastmcp.server.auth import (
     OAuthProxy,
     OAuthProvider,
 )
+
+
+def make_auth_config(**kwargs) -> AuthConfig:
+    """Create an AuthConfig instance with sensible defaults for testing.
+
+    Args:
+        **kwargs: Override any AuthConfig field.
+
+    Returns:
+        AuthConfig: Configured auth config instance.
+    """
+    defaults = {
+        "type": "none",
+        "jwks_uri": None,
+        "public_key": None,
+        "issuer": None,
+        "audience": None,
+        "algorithm": None,
+        "required_scopes": None,
+        "oauth_client_id": None,
+        "oauth_client_secret": None,
+        "oauth_authorization_url": None,
+        "oauth_token_url": None,
+        "oauth_userinfo_url": None,
+        "oauth_scopes": None,
+        "oauth_redirect_uri": None,
+        "oauth_provider_type": None,
+    }
+    defaults.update(kwargs)
+    return AuthConfig(**defaults)
 
 
 class TestOAuthConfiguration:
@@ -100,10 +131,10 @@ class TestOAuthProviderBuilding:
     @patch("itential_mcp.server.auth.OAuthProvider")
     def test_build_oauth_provider_success(self, mock_oauth_provider):
         """Test successful OAuth provider building."""
-        auth_config = {
-            "type": "oauth",
-            "redirect_uri": "http://localhost:8000/auth/callback",
-        }
+        auth_config = make_auth_config(
+            type="oauth",
+            oauth_redirect_uri="http://localhost:8000/auth/callback",
+        )
 
         mock_provider = MagicMock()
         mock_oauth_provider.return_value = mock_provider
@@ -115,25 +146,22 @@ class TestOAuthProviderBuilding:
 
     def test_build_oauth_provider_missing_required_fields(self):
         """Test OAuth provider building with missing required fields."""
-        auth_config = {
-            "type": "oauth"
-            # Missing redirect_uri
-        }
+        auth_config = make_auth_config(type="oauth")
 
         with pytest.raises(ConfigurationException) as exc_info:
             _build_oauth_provider(auth_config)
 
         assert "requires the following fields" in str(exc_info.value)
-        assert "redirect_uri" in str(exc_info.value)
+        assert "oauth_redirect_uri" in str(exc_info.value)
 
     @patch("itential_mcp.server.auth.OAuthProvider")
     def test_build_oauth_provider_with_optional_fields(self, mock_oauth_provider):
         """Test OAuth provider building with optional fields."""
-        auth_config = {
-            "type": "oauth",
-            "redirect_uri": "http://localhost:8000/auth/callback",
-            "scopes": ["openid", "email"],
-        }
+        auth_config = make_auth_config(
+            type="oauth",
+            oauth_redirect_uri="http://localhost:8000/auth/callback",
+            oauth_scopes="openid,email",
+        )
 
         mock_provider = MagicMock()
         mock_oauth_provider.return_value = mock_provider
@@ -141,7 +169,7 @@ class TestOAuthProviderBuilding:
         _build_oauth_provider(auth_config)
 
         mock_oauth_provider.assert_called_once_with(
-            base_url="http://localhost:8000", required_scopes=["openid", "email"]
+            base_url="http://localhost:8000", required_scopes="openid,email"
         )
 
     @patch("itential_mcp.server.auth.OAuthProxy")
@@ -150,14 +178,14 @@ class TestOAuthProviderBuilding:
         self, mock_token_verifier, mock_oauth_proxy
     ):
         """Test successful OAuth proxy provider building."""
-        auth_config = {
-            "type": "oauth_proxy",
-            "client_id": "test_client",
-            "client_secret": "test_secret",
-            "authorization_url": "https://accounts.google.com/oauth/authorize",
-            "token_url": "https://oauth2.googleapis.com/token",
-            "redirect_uri": "http://localhost:8000/auth/callback",
-        }
+        auth_config = make_auth_config(
+            type="oauth_proxy",
+            oauth_client_id="test_client",
+            oauth_client_secret="test_secret",
+            oauth_authorization_url="https://accounts.google.com/oauth/authorize",
+            oauth_token_url="https://oauth2.googleapis.com/token",
+            oauth_redirect_uri="http://localhost:8000/auth/callback",
+        )
 
         mock_verifier_instance = MagicMock()
         mock_token_verifier.return_value = mock_verifier_instance
@@ -179,20 +207,19 @@ class TestOAuthProviderBuilding:
 
     def test_build_oauth_proxy_provider_missing_fields(self):
         """Test OAuth proxy provider building with missing required fields."""
-        auth_config = {
-            "type": "oauth_proxy",
-            "client_id": "test_client",
-            # Missing client_secret, authorization_url, token_url, redirect_uri
-        }
+        auth_config = make_auth_config(
+            type="oauth_proxy",
+            oauth_client_id="test_client",
+        )
 
         with pytest.raises(ConfigurationException) as exc_info:
             _build_oauth_proxy_provider(auth_config)
 
         assert "requires the following fields" in str(exc_info.value)
-        assert "client_secret" in str(exc_info.value)
-        assert "authorization_url" in str(exc_info.value)
-        assert "token_url" in str(exc_info.value)
-        assert "redirect_uri" in str(exc_info.value)
+        assert "oauth_client_secret" in str(exc_info.value)
+        assert "oauth_authorization_url" in str(exc_info.value)
+        assert "oauth_token_url" in str(exc_info.value)
+        assert "oauth_redirect_uri" in str(exc_info.value)
 
 
 class TestProviderConfiguration:
@@ -200,35 +227,37 @@ class TestProviderConfiguration:
 
     def test_google_provider_config(self):
         """Test Google provider configuration defaults."""
-        auth_config = {}
+        auth_config = make_auth_config()
         config = _get_provider_config("google", auth_config)
 
         assert config["scopes"] == ["openid", "email", "profile"]
 
     def test_azure_provider_config(self):
         """Test Azure provider configuration defaults."""
-        auth_config = {}
+        auth_config = make_auth_config()
         config = _get_provider_config("azure", auth_config)
 
         assert config["scopes"] == ["openid", "email", "profile"]
 
     def test_github_provider_config(self):
         """Test GitHub provider configuration defaults."""
-        auth_config = {}
+        auth_config = make_auth_config()
         config = _get_provider_config("github", auth_config)
 
         assert config["scopes"] == ["user:email"]
 
     def test_provider_config_custom_scopes(self):
         """Test provider configuration with custom scopes."""
-        auth_config = {"scopes": ["custom", "scope"]}
+        auth_config = make_auth_config(oauth_scopes="custom,scope")
         config = _get_provider_config("google", auth_config)
 
-        assert config["scopes"] == ["custom", "scope"]
+        assert config["scopes"] == "custom,scope"
 
     def test_provider_config_custom_redirect_uri(self):
         """Test provider configuration with custom redirect URI."""
-        auth_config = {"redirect_uri": "http://custom.example.com/callback"}
+        auth_config = make_auth_config(
+            oauth_redirect_uri="http://custom.example.com/callback"
+        )
         config = _get_provider_config("google", auth_config)
 
         assert config["redirect_uri"] == "http://custom.example.com/callback"
@@ -236,7 +265,7 @@ class TestProviderConfiguration:
 
     def test_unsupported_provider_type(self):
         """Test unsupported provider type raises exception."""
-        auth_config = {}
+        auth_config = make_auth_config()
 
         with pytest.raises(ConfigurationException) as exc_info:
             _get_provider_config("unsupported", auth_config)
@@ -273,20 +302,22 @@ class TestFullAuthProviderFactory:
 
     def test_no_auth_provider(self):
         """Test building no auth provider."""
-        config = SimpleNamespace(auth={"type": "none"})
+        config = SimpleNamespace(auth=make_auth_config(type="none"))
         provider = build_auth_provider(config)
         assert provider is None
 
     def test_none_auth_provider(self):
         """Test building none auth provider."""
-        config = SimpleNamespace(auth={"type": "none"})
+        config = SimpleNamespace(auth=make_auth_config(type="none"))
         provider = build_auth_provider(config)
         assert provider is None
 
     @patch("itential_mcp.server.auth.JWTVerifier")
     def test_jwt_auth_provider(self, mock_jwt):
         """Test building JWT auth provider."""
-        config = SimpleNamespace(auth={"type": "jwt", "public_key": "test_key"})
+        config = SimpleNamespace(
+            auth=make_auth_config(type="jwt", public_key="test_key")
+        )
 
         mock_provider = MagicMock()
         mock_jwt.return_value = mock_provider
@@ -298,10 +329,10 @@ class TestFullAuthProviderFactory:
     def test_oauth_auth_provider(self, mock_oauth_provider):
         """Test building OAuth auth provider."""
         config = SimpleNamespace(
-            auth={
-                "type": "oauth",
-                "redirect_uri": "http://localhost:8000/auth/callback",
-            }
+            auth=make_auth_config(
+                type="oauth",
+                oauth_redirect_uri="http://localhost:8000/auth/callback",
+            )
         )
 
         mock_provider = MagicMock()
@@ -315,14 +346,14 @@ class TestFullAuthProviderFactory:
     def test_oauth_proxy_auth_provider(self, mock_token_verifier, mock_oauth_proxy):
         """Test building OAuth proxy auth provider."""
         config = SimpleNamespace(
-            auth={
-                "type": "oauth_proxy",
-                "client_id": "test_client",
-                "client_secret": "test_secret",
-                "authorization_url": "https://accounts.google.com/oauth/authorize",
-                "token_url": "https://oauth2.googleapis.com/token",
-                "redirect_uri": "http://localhost:8000/auth/callback",
-            }
+            auth=make_auth_config(
+                type="oauth_proxy",
+                oauth_client_id="test_client",
+                oauth_client_secret="test_secret",
+                oauth_authorization_url="https://accounts.google.com/oauth/authorize",
+                oauth_token_url="https://oauth2.googleapis.com/token",
+                oauth_redirect_uri="http://localhost:8000/auth/callback",
+            )
         )
 
         mock_verifier_instance = MagicMock()
@@ -336,7 +367,9 @@ class TestFullAuthProviderFactory:
 
     def test_unsupported_auth_type(self):
         """Test unsupported auth type raises exception."""
-        config = SimpleNamespace(auth={"type": "unsupported"})
+        # Use SimpleNamespace to bypass Pydantic validation for testing invalid type
+        mock_auth = SimpleNamespace(type="unsupported")
+        config = SimpleNamespace(auth=mock_auth)
 
         with pytest.raises(ConfigurationException) as exc_info:
             build_auth_provider(config)
