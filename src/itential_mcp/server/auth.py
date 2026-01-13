@@ -23,7 +23,7 @@ from fastmcp.server.auth import (
 )
 
 from ..core import logging
-from ..config import Config
+from ..config import Config, AuthConfig
 from ..core.exceptions import ConfigurationException
 
 
@@ -43,7 +43,7 @@ def build_auth_provider(cfg: Config) -> AuthProvider | None:
             is invalid or references an unsupported provider type.
     """
     auth_config = cfg.auth
-    auth_type = (auth_config.get("type") or "none").strip().lower()
+    auth_type = (auth_config.type or "none").strip().lower()
 
     if auth_type in {"", "none"}:
         logging.debug("Server authentication disabled; no provider constructed")
@@ -61,11 +61,11 @@ def build_auth_provider(cfg: Config) -> AuthProvider | None:
         )
 
 
-def _build_jwt_provider(auth_config: dict[str, Any]) -> AuthProvider:
+def _build_jwt_provider(auth_config: AuthConfig) -> AuthProvider:
     """Build a JWT authentication provider.
 
     Args:
-        auth_config (dict[str, Any]): Authentication configuration dictionary.
+        auth_config (AuthConfig): Authentication configuration dataclass.
 
     Returns:
         AuthProvider: Configured JWT authentication provider.
@@ -73,7 +73,19 @@ def _build_jwt_provider(auth_config: dict[str, Any]) -> AuthProvider:
     Raises:
         ConfigurationException: If JWT provider initialization fails.
     """
-    jwt_kwargs = {key: value for key, value in auth_config.items() if key != "type"}
+    jwt_kwargs = {}
+    if auth_config.jwks_uri:
+        jwt_kwargs["jwks_uri"] = auth_config.jwks_uri
+    if auth_config.public_key:
+        jwt_kwargs["public_key"] = auth_config.public_key
+    if auth_config.issuer:
+        jwt_kwargs["issuer"] = auth_config.issuer
+    if auth_config.audience:
+        jwt_kwargs["audience"] = auth_config.audience
+    if auth_config.algorithm:
+        jwt_kwargs["algorithm"] = auth_config.algorithm
+    if auth_config.required_scopes:
+        jwt_kwargs["required_scopes"] = auth_config.required_scopes
 
     try:
         provider = JWTVerifier(**jwt_kwargs)
@@ -88,11 +100,11 @@ def _build_jwt_provider(auth_config: dict[str, Any]) -> AuthProvider:
     return provider
 
 
-def _build_oauth_provider(auth_config: dict[str, Any]) -> AuthProvider:
+def _build_oauth_provider(auth_config: AuthConfig) -> AuthProvider:
     """Build a full OAuth 2.0 authorization server.
 
     Args:
-        auth_config (dict[str, Any]): Authentication configuration dictionary.
+        auth_config (AuthConfig): Authentication configuration dataclass.
 
     Returns:
         AuthProvider: Configured OAuth authorization server provider.
@@ -100,21 +112,18 @@ def _build_oauth_provider(auth_config: dict[str, Any]) -> AuthProvider:
     Raises:
         ConfigurationException: If OAuth provider initialization fails.
     """
-    required_fields = ["redirect_uri"]
-    missing_fields = [field for field in required_fields if not auth_config.get(field)]
-
-    if missing_fields:
+    if not auth_config.oauth_redirect_uri:
         raise ConfigurationException(
-            f"OAuth server requires the following fields: {', '.join(missing_fields)}"
+            "OAuth server requires the following fields: oauth_redirect_uri"
         )
 
     oauth_kwargs = {
-        "base_url": auth_config["redirect_uri"].rstrip("/auth/callback"),
+        "base_url": auth_config.oauth_redirect_uri.rstrip("/auth/callback"),
     }
 
     # Add optional parameters
-    if auth_config.get("scopes"):
-        oauth_kwargs["required_scopes"] = auth_config["scopes"]
+    if auth_config.oauth_scopes:
+        oauth_kwargs["required_scopes"] = auth_config.oauth_scopes
 
     try:
         provider = OAuthProvider(**oauth_kwargs)
@@ -129,11 +138,11 @@ def _build_oauth_provider(auth_config: dict[str, Any]) -> AuthProvider:
     return provider
 
 
-def _build_oauth_proxy_provider(auth_config: dict[str, Any]) -> AuthProvider:
+def _build_oauth_proxy_provider(auth_config: AuthConfig) -> AuthProvider:
     """Build an OAuthProxy for upstream OAuth providers.
 
     Args:
-        auth_config (dict[str, Any]): Authentication configuration dictionary.
+        auth_config (AuthConfig): Authentication configuration dataclass.
 
     Returns:
         AuthProvider: Configured OAuth proxy authentication provider.
@@ -141,14 +150,17 @@ def _build_oauth_proxy_provider(auth_config: dict[str, Any]) -> AuthProvider:
     Raises:
         ConfigurationException: If OAuth proxy provider initialization fails.
     """
-    required_fields = [
-        "client_id",
-        "client_secret",
-        "authorization_url",
-        "token_url",
-        "redirect_uri",
-    ]
-    missing_fields = [field for field in required_fields if not auth_config.get(field)]
+    missing_fields = []
+    if not auth_config.oauth_client_id:
+        missing_fields.append("oauth_client_id")
+    if not auth_config.oauth_client_secret:
+        missing_fields.append("oauth_client_secret")
+    if not auth_config.oauth_authorization_url:
+        missing_fields.append("oauth_authorization_url")
+    if not auth_config.oauth_token_url:
+        missing_fields.append("oauth_token_url")
+    if not auth_config.oauth_redirect_uri:
+        missing_fields.append("oauth_redirect_uri")
 
     if missing_fields:
         raise ConfigurationException(
@@ -164,22 +176,22 @@ def _build_oauth_proxy_provider(auth_config: dict[str, Any]) -> AuthProvider:
         # Fallback to JWT verifier if StaticTokenVerifier not available
         token_verifier = JWTVerifier()
 
-    base_url = auth_config["redirect_uri"].rstrip("/auth/callback")
+    base_url = auth_config.oauth_redirect_uri.rstrip("/auth/callback")
 
     oauth_kwargs = {
-        "upstream_authorization_endpoint": auth_config["authorization_url"],
-        "upstream_token_endpoint": auth_config["token_url"],
-        "upstream_client_id": auth_config["client_id"],
-        "upstream_client_secret": auth_config["client_secret"],
+        "upstream_authorization_endpoint": auth_config.oauth_authorization_url,
+        "upstream_token_endpoint": auth_config.oauth_token_url,
+        "upstream_client_id": auth_config.oauth_client_id,
+        "upstream_client_secret": auth_config.oauth_client_secret,
         "token_verifier": token_verifier,
         "base_url": base_url,
     }
 
     # Add optional parameters
-    if auth_config.get("userinfo_url"):
-        oauth_kwargs["upstream_revocation_endpoint"] = auth_config["userinfo_url"]
-    if auth_config.get("scopes"):
-        oauth_kwargs["valid_scopes"] = auth_config["scopes"]
+    if auth_config.oauth_userinfo_url:
+        oauth_kwargs["upstream_revocation_endpoint"] = auth_config.oauth_userinfo_url
+    if auth_config.oauth_scopes:
+        oauth_kwargs["valid_scopes"] = auth_config.oauth_scopes
 
     try:
         provider = OAuthProxy(**oauth_kwargs)
@@ -195,13 +207,13 @@ def _build_oauth_proxy_provider(auth_config: dict[str, Any]) -> AuthProvider:
 
 
 def _get_provider_config(
-    provider_type: str, auth_config: dict[str, Any]
+    provider_type: str, auth_config: AuthConfig
 ) -> dict[str, Any]:
     """Get provider-specific OAuth configuration.
 
     Args:
         provider_type (str): The OAuth provider type (google, azure, etc.)
-        auth_config (dict[str, Any]): Full authentication configuration.
+        auth_config (AuthConfig): Authentication configuration dataclass.
 
     Returns:
         dict[str, Any]: Provider-specific configuration parameters.
@@ -209,31 +221,31 @@ def _get_provider_config(
     Raises:
         ConfigurationException: If provider type is not supported.
     """
-    config = {}
+    config: dict[str, Any] = {}
 
     # Add custom scopes if specified
-    if auth_config.get("scopes"):
-        config["scopes"] = auth_config["scopes"]
+    if auth_config.oauth_scopes:
+        config["scopes"] = auth_config.oauth_scopes
 
     # Add custom redirect URI if specified
-    if auth_config.get("redirect_uri"):
-        config["redirect_uri"] = auth_config["redirect_uri"]
+    if auth_config.oauth_redirect_uri:
+        config["redirect_uri"] = auth_config.oauth_redirect_uri
 
     # Provider-specific defaults and overrides
     if provider_type == "google":
-        if not auth_config.get("scopes"):
+        if not auth_config.oauth_scopes:
             config["scopes"] = ["openid", "email", "profile"]
     elif provider_type == "azure":
-        if not auth_config.get("scopes"):
+        if not auth_config.oauth_scopes:
             config["scopes"] = ["openid", "email", "profile"]
     elif provider_type == "auth0":
-        if not auth_config.get("scopes"):
+        if not auth_config.oauth_scopes:
             config["scopes"] = ["openid", "email", "profile"]
     elif provider_type == "github":
-        if not auth_config.get("scopes"):
+        if not auth_config.oauth_scopes:
             config["scopes"] = ["user:email"]
     elif provider_type == "okta":
-        if not auth_config.get("scopes"):
+        if not auth_config.oauth_scopes:
             config["scopes"] = ["openid", "email", "profile"]
     elif provider_type == "generic":
         # Generic provider requires explicit configuration
