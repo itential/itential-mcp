@@ -5,7 +5,6 @@
 """Unit tests for authentication provider construction."""
 
 from unittest.mock import patch, MagicMock
-from types import SimpleNamespace
 
 import pytest
 
@@ -185,6 +184,7 @@ class TestJWTProviderBuilder:
         """JWT provider can be built with minimal configuration."""
         # Note: _build_jwt_provider now expects a dict after build_auth_provider conversion
         from itential_mcp.config.converters import auth_to_dict
+
         auth_config = auth_to_dict(make_auth_config(type="jwt"))
         mock_provider = MagicMock()
         mock_jwt_verifier.return_value = mock_provider
@@ -198,13 +198,16 @@ class TestJWTProviderBuilder:
     def test_builds_jwt_provider_with_full_config(self, mock_jwt_verifier):
         """JWT provider receives all configuration parameters."""
         from itential_mcp.config.converters import auth_to_dict
-        auth_config = auth_to_dict(make_auth_config(
-            type="jwt",
-            public_key="test-key",
-            algorithm="HS256",
-            audience="aud1,aud2",
-            required_scopes="read,write",
-        ))
+
+        auth_config = auth_to_dict(
+            make_auth_config(
+                type="jwt",
+                public_key="test-key",
+                algorithm="HS256",
+                audience="aud1,aud2",
+                required_scopes="read,write",
+            )
+        )
         mock_provider = MagicMock()
         mock_jwt_verifier.return_value = mock_provider
 
@@ -224,6 +227,7 @@ class TestJWTProviderBuilder:
     def test_handles_jwt_value_error(self, mock_jwt_verifier):
         """JWT provider builder handles ValueError exceptions."""
         from itential_mcp.config.converters import auth_to_dict
+
         auth_config = auth_to_dict(make_auth_config(type="jwt"))
 
         with pytest.raises(ConfigurationException) as exc:
@@ -238,6 +242,7 @@ class TestJWTProviderBuilder:
     def test_handles_jwt_general_error(self, mock_jwt_verifier):
         """JWT provider builder handles general exceptions."""
         from itential_mcp.config.converters import auth_to_dict
+
         auth_config = auth_to_dict(make_auth_config(type="jwt"))
 
         with pytest.raises(ConfigurationException) as exc:

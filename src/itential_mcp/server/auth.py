@@ -23,7 +23,7 @@ from fastmcp.server.auth import (
 )
 
 from ..core import logging
-from ..config import Config, AuthConfig
+from ..config import Config
 from ..config.converters import auth_to_dict
 from ..core.exceptions import ConfigurationException
 
