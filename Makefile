@@ -103,12 +103,12 @@ security:
 # The check-headers target checks that all Python files have the required
 # copyright and license header.
 check-headers:
-	PYTHONDONTWRITEBYTECODE=1 python scripts/check_headers.py
+	PYTHONDONTWRITEBYTECODE=1 uv run python scripts/check_headers.py
 
 # The fix-headers target adds missing copyright and license headers to
 # Python files that don't have them.
 fix-headers:
-	PYTHONDONTWRITEBYTECODE=1 python scripts/check_headers.py --fix
+	PYTHONDONTWRITEBYTECODE=1 uv run python scripts/check_headers.py --fix
 
 # The premerge target will run the premerge tests locally. This is
 # the same target that is invoked in the premerge pipeline.

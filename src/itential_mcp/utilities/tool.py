@@ -141,7 +141,10 @@ def itertools(path: str) -> Iterator[Tuple[Callable, Sequence]]:
             for name, f in inspect.getmembers(module, inspect.isfunction):
                 # Only process public functions defined in this module
                 # Skip: private functions (_func), imported functions
-                if not name.startswith("_") and f.__module__ == module_name:
+                if not name.startswith("_") and (
+                    f.__module__ == module_name
+                    or f.__module__.endswith(f".{module_name}")
+                ):
                     # Step 5: Build complete tag set for this function
                     # IMPORTANT: Copy module_tags to prevent cross-function pollution
                     tags = module_tags.copy()

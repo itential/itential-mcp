@@ -54,7 +54,7 @@ class SerializationMiddleware(Middleware):
             None
         """
         self.config = cfg
-        self.format = cfg.server_response_format
+        self.format = cfg.server.response_format
 
     async def on_call_tool(self, context: MiddlewareContext, call_next) -> Any:
         """Transform tool results based on configured serialization format.

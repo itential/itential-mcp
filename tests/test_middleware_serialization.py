@@ -15,7 +15,8 @@ from itential_mcp import config
 def mock_config_json():
     """Create a mock config with JSON format."""
     cfg = MagicMock(spec=config.Config)
-    cfg.server_response_format = "json"
+    cfg.server = MagicMock(spec=config.ServerConfig)
+    cfg.server.response_format = "json"
     return cfg
 
 
@@ -23,7 +24,8 @@ def mock_config_json():
 def mock_config_toon():
     """Create a mock config with TOON format."""
     cfg = MagicMock(spec=config.Config)
-    cfg.server_response_format = "toon"
+    cfg.server = MagicMock(spec=config.ServerConfig)
+    cfg.server.response_format = "toon"
     return cfg
 
 
@@ -31,7 +33,8 @@ def mock_config_toon():
 def mock_config_auto():
     """Create a mock config with auto format."""
     cfg = MagicMock(spec=config.Config)
-    cfg.server_response_format = "auto"
+    cfg.server = MagicMock(spec=config.ServerConfig)
+    cfg.server.response_format = "auto"
     return cfg
 
 
