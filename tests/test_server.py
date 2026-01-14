@@ -640,17 +640,17 @@ class TestIntegration:
     ):
         """Test complete server lifecycle from config to shutdown"""
         # Setup configuration
-        mock_config = MagicMock()
-        mock_config.server.transport = "stdio"
-        mock_config.server.include_tags = ["system"]
-        mock_config.server.exclude_tags = ["deprecated"]
-        mock_config.server.log_level = "INFO"
-        mock_config.server.tools_path = None
-        mock_config.tools = []
-        # Mock auth as an AuthConfig-like object with attribute access
-        mock_auth = MagicMock()
-        mock_auth.type = "none"
-        mock_config.auth = mock_auth
+        from itential_mcp.config.models import Config, ServerConfig, AuthConfig
+
+        mock_config = Config(
+            server=ServerConfig(
+                transport="stdio",
+                include_tags="system",
+                exclude_tags="deprecated",
+                log_level="INFO",
+            ),
+            auth=AuthConfig(type="none"),
+        )
         mock_config_get.return_value = mock_config
         mock_auth_builder.return_value = None
 
@@ -958,10 +958,10 @@ class TestServerClass:
         mock_config = MagicMock()
         mock_config.server.transport = "stdio"
         mock_config.server.tools_path = None
-        # Mock auth as an AuthConfig-like object with attribute access
-        mock_auth = MagicMock()
-        mock_auth.type = "none"
-        mock_config.auth = mock_auth
+        # Mock auth as a correct dataclass instance
+        from itential_mcp.config.models import AuthConfig
+
+        mock_config.auth = AuthConfig(type="none")
         mock_config.tools = []
         mock_auth_builder.return_value = None
 

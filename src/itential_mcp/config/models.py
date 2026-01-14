@@ -25,6 +25,7 @@ def _create_field_with_env(
     env_key: str,
     description: str,
     env_getter: callable = env.getstr,
+    default: Any = None,
     **extra_kwargs: dict[str, Any],
 ) -> Field:
     """Create a Field with environment variable default factory.
@@ -33,6 +34,7 @@ def _create_field_with_env(
         env_key: Environment variable name to use for default value.
         description: Field description for documentation.
         env_getter: Function to get and transform environment value.
+        default: Static default value if environment variable is not set.
         **extra_kwargs: Additional keyword arguments passed to Field.
 
     Returns:
@@ -43,9 +45,14 @@ def _create_field_with_env(
     """
     from functools import partial
 
+    # If an explicit default is provided, we use it as the fallback for the env_getter
+    # but we still want the env_getter to run to check the environment variable first.
+    # However, if we want the dataclass to be truly optional in constructor,
+    # we should probably use 'default' instead of 'default_factory' if we want static defaults.
+    # Actually, default_factory is fine as long as we don't also pass 'default' to Field().
     return Field(
         description=description,
-        default_factory=partial(env_getter, env_key, getattr(defaults, env_key)),
+        default_factory=partial(env_getter, env_key, default),
         **extra_kwargs,
     )
 
@@ -118,6 +125,7 @@ class ServerConfig:
     transport: Literal["stdio", "sse", "http"] = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_TRANSPORT",
         "The MCP server transport to use",
+        default=defaults.ITENTIAL_MCP_SERVER_TRANSPORT,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--transport",),
@@ -131,6 +139,7 @@ class ServerConfig:
     host: str = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_HOST",
         "Address to listen for connections on",
+        default=defaults.ITENTIAL_MCP_SERVER_HOST,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--host",),
@@ -141,6 +150,7 @@ class ServerConfig:
     port: int = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_PORT",
         "Port to listen for connections on",
+        default=defaults.ITENTIAL_MCP_SERVER_PORT,
         env_getter=env.getint,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
@@ -152,6 +162,7 @@ class ServerConfig:
     certificate_file: str = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_CERTIFICATE_FILE",
         "Path to the certificate file to use for TLS connections",
+        default=defaults.ITENTIAL_MCP_SERVER_CERTIFICATE_FILE,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--certificate-file",),
@@ -162,6 +173,7 @@ class ServerConfig:
     private_key_file: str = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_PRIVATE_KEY_FILE",
         "path to the private key file to use for TLS connections",
+        default=defaults.ITENTIAL_MCP_SERVER_PRIVATE_KEY_FILE,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--private-key-file",),
@@ -172,6 +184,7 @@ class ServerConfig:
     path: str = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_PATH",
         "URI path used to accept requests from",
+        default=defaults.ITENTIAL_MCP_SERVER_PATH,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--path",),
@@ -183,6 +196,7 @@ class ServerConfig:
         _create_field_with_env(
             "ITENTIAL_MCP_SERVER_LOG_LEVEL",
             "Logging level for verbose output",
+            default=defaults.ITENTIAL_MCP_SERVER_LOG_LEVEL,
             json_schema_extra={
                 "x-itential-mcp-cli-enabled": True,
                 "x-itential-mcp-arguments": ("--log-level",),
@@ -194,6 +208,7 @@ class ServerConfig:
     include_tags: str | None = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_INCLUDE_TAGS",
         "Include tools that match at least on tag",
+        default=defaults.ITENTIAL_MCP_SERVER_INCLUDE_TAGS,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--include-tags",),
@@ -204,6 +219,7 @@ class ServerConfig:
     exclude_tags: str | None = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_EXCLUDE_TAGS",
         "Exclude any tool that matches one of these tags",
+        default=defaults.ITENTIAL_MCP_SERVER_EXCLUDE_TAGS,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--exclude-tags",),
@@ -214,6 +230,7 @@ class ServerConfig:
     tools_path: str | None = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_TOOLS_PATH",
         "Custom path to load tools from",
+        default=defaults.ITENTIAL_MCP_SERVER_TOOLS_PATH,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--tools-path",),
@@ -224,6 +241,7 @@ class ServerConfig:
     keepalive_interval: int = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_KEEPALIVE_INTERVAL",
         "Keepalive interval in seconds to prevent session timeout (0 = disabled)",
+        default=defaults.ITENTIAL_MCP_SERVER_KEEPALIVE_INTERVAL,
         env_getter=env.getint,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
@@ -235,6 +253,7 @@ class ServerConfig:
     response_format: Literal["json", "toon"] = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_RESPONSE_FORMAT",
         "Response serialization format (json, toon)",
+        default=defaults.ITENTIAL_MCP_SERVER_RESPONSE_FORMAT,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--response-format",),
@@ -256,6 +275,7 @@ class AuthConfig:
     type: Literal["none", "jwt", "oauth", "oauth_proxy"] = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_AUTH_TYPE",
         "Authentication provider type used to secure the MCP server",
+        default=defaults.ITENTIAL_MCP_SERVER_AUTH_TYPE,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--auth-type",),
@@ -269,6 +289,7 @@ class AuthConfig:
     jwks_uri: str | None = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_AUTH_JWKS_URI",
         "JWKS URI used to dynamically fetch signing keys for JWT validation",
+        default=defaults.ITENTIAL_MCP_SERVER_AUTH_JWKS_URI,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--auth-jwks-uri",),
@@ -279,6 +300,7 @@ class AuthConfig:
     public_key: str | None = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_AUTH_PUBLIC_KEY",
         "Static PEM encoded public key or shared secret for JWT validation",
+        default=defaults.ITENTIAL_MCP_SERVER_AUTH_PUBLIC_KEY,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--auth-public-key",),
@@ -289,6 +311,7 @@ class AuthConfig:
     issuer: str | None = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_AUTH_ISSUER",
         "Expected JWT issuer claim (iss)",
+        default=defaults.ITENTIAL_MCP_SERVER_AUTH_ISSUER,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--auth-issuer",),
@@ -299,6 +322,7 @@ class AuthConfig:
     audience: str | None = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_AUTH_AUDIENCE",
         "Expected JWT audience claims (comma separated for multiple values)",
+        default=defaults.ITENTIAL_MCP_SERVER_AUTH_AUDIENCE,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--auth-audience",),
@@ -309,6 +333,7 @@ class AuthConfig:
     algorithm: str | None = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_AUTH_ALGORITHM",
         "Expected JWT signing algorithm (e.g., RS256, HS256)",
+        default=defaults.ITENTIAL_MCP_SERVER_AUTH_ALGORITHM,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--auth-algorithm",),
@@ -319,6 +344,7 @@ class AuthConfig:
     required_scopes: str | None = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_AUTH_REQUIRED_SCOPES",
         "Comma separated list of scopes required on every JWT",
+        default=defaults.ITENTIAL_MCP_SERVER_AUTH_REQUIRED_SCOPES,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--auth-required-scopes",),
@@ -329,6 +355,7 @@ class AuthConfig:
     oauth_client_id: str | None = _create_field_with_env(
         "ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_ID",
         "OAuth client ID for authentication",
+        default=defaults.ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_ID,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--auth-oauth-client-id",),
@@ -423,6 +450,7 @@ class PlatformConfig:
     host: str = _create_field_with_env(
         "ITENTIAL_MCP_PLATFORM_HOST",
         "The host addres of the Itential Platform server",
+        default=defaults.ITENTIAL_MCP_PLATFORM_HOST,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--platform-host",),
@@ -433,6 +461,7 @@ class PlatformConfig:
     port: int = _create_field_with_env(
         "ITENTIAL_MCP_PLATFORM_PORT",
         "The port to use when connecting to Itential Platform",
+        default=defaults.ITENTIAL_MCP_PLATFORM_PORT,
         env_getter=env.getint,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
@@ -444,6 +473,7 @@ class PlatformConfig:
     disable_tls: bool = _create_field_with_env(
         "ITENTIAL_MCP_PLATFORM_DISABLE_TLS",
         "Disable using TLS to connect to the server",
+        default=defaults.ITENTIAL_MCP_PLATFORM_DISABLE_TLS,
         env_getter=env.getbool,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
@@ -455,6 +485,7 @@ class PlatformConfig:
     disable_verify: bool = _create_field_with_env(
         "ITENTIAL_MCP_PLATFORM_DISABLE_VERIFY",
         "Disable certificate verification",
+        default=defaults.ITENTIAL_MCP_PLATFORM_DISABLE_VERIFY,
         env_getter=env.getbool,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
@@ -466,6 +497,7 @@ class PlatformConfig:
     user: str = _create_field_with_env(
         "ITENTIAL_MCP_PLATFORM_USER",
         "Username to use when authenticating to the server",
+        default=defaults.ITENTIAL_MCP_PLATFORM_USER,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--platform-user",),
@@ -476,6 +508,7 @@ class PlatformConfig:
     password: str = _create_field_with_env(
         "ITENTIAL_MCP_PLATFORM_PASSWORD",
         "Password to use when authenticating to the server",
+        default=defaults.ITENTIAL_MCP_PLATFORM_PASSWORD,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
             "x-itential-mcp-arguments": ("--platform-password",),
@@ -506,6 +539,7 @@ class PlatformConfig:
     timeout: int = _create_field_with_env(
         "ITENTIAL_MCP_PLATFORM_TIMEOUT",
         "Sets the timeout in seconds when communciating with the server",
+        default=defaults.ITENTIAL_MCP_PLATFORM_TIMEOUT,
         env_getter=env.getint,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
@@ -517,6 +551,7 @@ class PlatformConfig:
     ttl: int = _create_field_with_env(
         "ITENTIAL_MCP_PLATFORM_TTL",
         "Authentication TTL in seconds before forcing reauthentication (0 = disabled)",
+        default=defaults.ITENTIAL_MCP_PLATFORM_TTL,
         env_getter=env.getint,
         json_schema_extra={
             "x-itential-mcp-cli-enabled": True,
@@ -567,9 +602,9 @@ class Config:
     consumers.
     """
 
-    server: ServerConfig
-    auth: AuthConfig
-    platform: PlatformConfig
+    server: ServerConfig = Field(default_factory=ServerConfig)
+    auth: AuthConfig = Field(default_factory=AuthConfig)
+    platform: PlatformConfig = Field(default_factory=PlatformConfig)
     tools: list[Tool] = Field(
         description="List of Itential Platform assets to be exposed as tools",
         default_factory=list,

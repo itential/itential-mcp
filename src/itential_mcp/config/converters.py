@@ -88,11 +88,11 @@ def server_to_dict(server_config: ServerConfig) -> dict[str, Any]:
     }
 
 
-def auth_to_dict(auth_config: AuthConfig) -> dict[str, Any]:
+def auth_to_dict(auth_config: AuthConfig | dict[str, Any]) -> dict[str, Any]:
     """Convert AuthConfig to legacy dictionary format.
 
     Args:
-        auth_config: AuthConfig instance to convert.
+        auth_config: AuthConfig instance or dictionary to convert.
 
     Returns:
         Dictionary with auth configuration in legacy format.
@@ -101,6 +101,9 @@ def auth_to_dict(auth_config: AuthConfig) -> dict[str, Any]:
     Raises:
         None.
     """
+    if isinstance(auth_config, dict):
+        return auth_config
+
     auth_type = (auth_config.type or "none").strip().lower()
 
     audience: str | list[str] | None = None
