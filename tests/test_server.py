@@ -733,6 +733,7 @@ class TestServerClass:
         mock_config.server.certificate_file = None
         mock_config.server.private_key_file = None
         mock_config.server.path = "/mcp"
+        mock_config.server.test_connection_on_startup = False
 
         # Create server instance
         server_instance = server_module.Server(mock_config)
@@ -776,6 +777,7 @@ class TestServerClass:
         mock_config.server.certificate_file = "/path/to/cert.pem"
         mock_config.server.private_key_file = "/path/to/key.pem"
         mock_config.server.path = "/api"
+        mock_config.server.test_connection_on_startup = False
 
         # Create server instance
         server_instance = server_module.Server(mock_config)
@@ -813,6 +815,7 @@ class TestServerClass:
         # Setup config for stdio transport
         mock_config = MagicMock()
         mock_config.server.transport = "stdio"
+        mock_config.server.test_connection_on_startup = False
 
         # Create server instance
         server_instance = server_module.Server(mock_config)
@@ -834,6 +837,7 @@ class TestServerClass:
         mock_config.server.transport = "sse"
         mock_config.server.host = "127.0.0.1"
         mock_config.server.port = 8000
+        mock_config.server.test_connection_on_startup = False
 
         server_instance = server_module.Server(mock_config)
         # mcp remains None
@@ -886,6 +890,7 @@ class TestServerClass:
             mock_config.server.certificate_file = case["certificate_file"]
             mock_config.server.private_key_file = case["private_key_file"]
             mock_config.server.path = "/mcp"
+            mock_config.server.test_connection_on_startup = False
 
             server_instance = server_module.Server(mock_config)
 
@@ -928,6 +933,7 @@ class TestServerClass:
         mock_config.server.certificate_file = None
         mock_config.server.private_key_file = None
         mock_config.server.path = "/custom-path"
+        mock_config.server.test_connection_on_startup = False
 
         server_instance = server_module.Server(mock_config)
 

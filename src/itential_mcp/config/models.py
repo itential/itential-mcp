@@ -264,6 +264,20 @@ class ServerConfig:
         },
     )
 
+    test_connection_on_startup: bool = _create_field_with_env(
+        "ITENTIAL_MCP_SERVER_TEST_CONNECTION_ON_STARTUP",
+        "Test platform connection during server startup",
+        default=defaults.ITENTIAL_MCP_SERVER_TEST_CONNECTION_ON_STARTUP,
+        env_getter=env.getbool,
+    )
+
+    startup_test_timeout: int = _create_field_with_env(
+        "ITENTIAL_MCP_SERVER_STARTUP_TEST_TIMEOUT",
+        "Timeout for startup connection test in seconds",
+        default=defaults.ITENTIAL_MCP_SERVER_STARTUP_TEST_TIMEOUT,
+        env_getter=env.getint,
+    )
+
 
 @dataclass(frozen=True)
 class AuthConfig:
