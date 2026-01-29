@@ -223,8 +223,67 @@ class Server:
             logging.debug(f"Successfully added tool: {kwargs['name']}")
         logging.info("Dynamic tool bindings is now complete")
 
+    async def _test_connection_on_startup(self) -> None:
+        """Test platform connection during startup.
+
+        Raises:
+            ConnectionException: If connection test fails.
+        """
+        from ..platform.connection_test import ConnectionTestService, CheckStatus
+        from ..core.exceptions import ConnectionException
+
+        logger = logging.get_logger()
+        logger.info("Testing platform connection...")
+
+        try:
+            service = ConnectionTestService(self.config)
+            result = await service.run_all_checks(
+                timeout=self.config.server.startup_test_timeout
+            )
+
+            if result.success:
+                logger.info("Connection test successful")
+                if result.platform_version:
+                    logger.info(f"Platform version: {result.platform_version}")
+                if result.authenticated_user:
+                    logger.info(f"Authenticated as: {result.authenticated_user}")
+            else:
+                logger.error("Connection test failed")
+                for check in result.checks:
+                    if check.status == CheckStatus.FAILED:
+                        logger.error(f"  {check.name}: {check.message}")
+                        if check.suggestion:
+                            logger.info(f"  Suggestion: {check.suggestion}")
+
+                raise ConnectionException(
+                    f"Connection test failed: {result.error}",
+                    details={
+                        "checks": [
+                            {
+                                "name": c.name,
+                                "status": c.status,
+                                "message": c.message,
+                            }
+                            for c in result.checks
+                        ]
+                    },
+                )
+
+        except Exception as e:
+            logger.exception("Connection test failed with unexpected error")
+            raise ConnectionException(f"Connection test failed: {e}") from e
+
     async def run(self):
-        """Run the server."""
+        """Run the server.
+
+        Raises:
+            ConnectionException: If startup connection test fails.
+        """
+        # Test connection if enabled
+        if self.config.server.test_connection_on_startup:
+            await self._test_connection_on_startup()
+
+        # Continue with normal startup
         if self.config.server.transport in ("sse", "http"):
             app = self.mcp.http_app(path=self.config.server.path)
 
