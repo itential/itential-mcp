@@ -76,4 +76,31 @@ COMMANDS = [
         description="Print the version information",
         arguments={},
     ),
+    CommandConfig(
+        name="test",
+        description="Test connection to Itential Platform",
+        arguments={
+            "--config": {"help": CONFIG_HELP_MESSAGE},
+            "--timeout": {
+                "type": int,
+                "default": 30,
+                "help": "Maximum time for test in seconds (default: 30)",
+            },
+            "--verbose": {
+                "action": "store_true",
+                "help": "Show detailed diagnostic information",
+            },
+            "--format": {
+                "type": str,
+                "choices": ["human", "json"],
+                "default": "human",
+                "help": "Output format (default: human)",
+            },
+            "--quiet": {
+                "action": "store_true",
+                "help": "Suppress progress messages (JSON output only)",
+            },
+        },
+        add_platform_group=True,
+    ),
 ]
