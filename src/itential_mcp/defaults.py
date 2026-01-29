@@ -37,6 +37,12 @@ ITENTIAL_MCP_SERVER_KEEPALIVE_INTERVAL = (
 ITENTIAL_MCP_SERVER_RESPONSE_FORMAT = (
     "json"  # Response serialization format: json, toon, or auto
 )
+ITENTIAL_MCP_SERVER_TEST_CONNECTION_ON_STARTUP = (
+    False  # Test platform connection during server startup
+)
+ITENTIAL_MCP_SERVER_STARTUP_TEST_TIMEOUT = (
+    30  # Timeout for startup connection test in seconds
+)
 ITENTIAL_MCP_SERVER_AUTH_TYPE = "none"  # Authentication provider type
 ITENTIAL_MCP_SERVER_AUTH_JWKS_URI = None  # JWKS URI for JWT validation
 ITENTIAL_MCP_SERVER_AUTH_PUBLIC_KEY = (

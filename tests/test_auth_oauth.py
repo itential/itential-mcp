@@ -113,10 +113,13 @@ class TestOAuthProviderBuilding:
     def test_build_oauth_provider_success(self, mock_oauth_provider):
         """Test successful OAuth provider building."""
         from itential_mcp.config.converters import auth_to_dict
-        auth_config = auth_to_dict(make_auth_config(
-            type="oauth",
-            oauth_redirect_uri="http://localhost:8000/auth/callback",
-        ))
+
+        auth_config = auth_to_dict(
+            make_auth_config(
+                type="oauth",
+                oauth_redirect_uri="http://localhost:8000/auth/callback",
+            )
+        )
 
         mock_provider = MagicMock()
         mock_oauth_provider.return_value = mock_provider
@@ -129,6 +132,7 @@ class TestOAuthProviderBuilding:
     def test_build_oauth_provider_missing_required_fields(self):
         """Test OAuth provider building with missing required fields."""
         from itential_mcp.config.converters import auth_to_dict
+
         auth_config = auth_to_dict(make_auth_config(type="oauth"))
 
         with pytest.raises(ConfigurationException) as exc_info:
@@ -141,11 +145,14 @@ class TestOAuthProviderBuilding:
     def test_build_oauth_provider_with_optional_fields(self, mock_oauth_provider):
         """Test OAuth provider building with optional fields."""
         from itential_mcp.config.converters import auth_to_dict
-        auth_config = auth_to_dict(make_auth_config(
-            type="oauth",
-            oauth_redirect_uri="http://localhost:8000/auth/callback",
-            oauth_scopes="openid,email",
-        ))
+
+        auth_config = auth_to_dict(
+            make_auth_config(
+                type="oauth",
+                oauth_redirect_uri="http://localhost:8000/auth/callback",
+                oauth_scopes="openid,email",
+            )
+        )
 
         mock_provider = MagicMock()
         mock_oauth_provider.return_value = mock_provider
@@ -163,14 +170,17 @@ class TestOAuthProviderBuilding:
     ):
         """Test successful OAuth proxy provider building."""
         from itential_mcp.config.converters import auth_to_dict
-        auth_config = auth_to_dict(make_auth_config(
-            type="oauth_proxy",
-            oauth_client_id="test_client",
-            oauth_client_secret="test_secret",
-            oauth_authorization_url="https://accounts.google.com/oauth/authorize",
-            oauth_token_url="https://oauth2.googleapis.com/token",
-            oauth_redirect_uri="http://localhost:8000/auth/callback",
-        ))
+
+        auth_config = auth_to_dict(
+            make_auth_config(
+                type="oauth_proxy",
+                oauth_client_id="test_client",
+                oauth_client_secret="test_secret",
+                oauth_authorization_url="https://accounts.google.com/oauth/authorize",
+                oauth_token_url="https://oauth2.googleapis.com/token",
+                oauth_redirect_uri="http://localhost:8000/auth/callback",
+            )
+        )
 
         mock_verifier_instance = MagicMock()
         mock_token_verifier.return_value = mock_verifier_instance
@@ -193,15 +203,20 @@ class TestOAuthProviderBuilding:
     def test_build_oauth_proxy_provider_missing_fields(self):
         """Test OAuth proxy provider building with missing required fields."""
         from itential_mcp.config.converters import auth_to_dict
-        auth_config = auth_to_dict(make_auth_config(
-            type="oauth_proxy",
-            oauth_client_id="test_client",
-        ))
+
+        auth_config = auth_to_dict(
+            make_auth_config(
+                type="oauth_proxy",
+                oauth_client_id="test_client",
+            )
+        )
 
         with pytest.raises(ConfigurationException) as exc_info:
             _build_oauth_proxy_provider(auth_config)
 
-        assert "OAuth proxy authentication requires the following fields" in str(exc_info.value)
+        assert "OAuth proxy authentication requires the following fields" in str(
+            exc_info.value
+        )
         assert "client_secret" in str(exc_info.value)
         assert "authorization_url" in str(exc_info.value)
         assert "token_url" in str(exc_info.value)
@@ -214,6 +229,7 @@ class TestProviderConfiguration:
     def test_google_provider_config(self):
         """Test Google provider configuration defaults."""
         from itential_mcp.config.converters import auth_to_dict
+
         auth_config = auth_to_dict(make_auth_config())
         config = _get_provider_config("google", auth_config)
 
@@ -222,6 +238,7 @@ class TestProviderConfiguration:
     def test_azure_provider_config(self):
         """Test Azure provider configuration defaults."""
         from itential_mcp.config.converters import auth_to_dict
+
         auth_config = auth_to_dict(make_auth_config())
         config = _get_provider_config("azure", auth_config)
 
@@ -230,6 +247,7 @@ class TestProviderConfiguration:
     def test_github_provider_config(self):
         """Test GitHub provider configuration defaults."""
         from itential_mcp.config.converters import auth_to_dict
+
         auth_config = auth_to_dict(make_auth_config())
         config = _get_provider_config("github", auth_config)
 
@@ -238,6 +256,7 @@ class TestProviderConfiguration:
     def test_provider_config_custom_scopes(self):
         """Test provider configuration with custom scopes."""
         from itential_mcp.config.converters import auth_to_dict
+
         auth_config = auth_to_dict(make_auth_config(oauth_scopes="custom,scope"))
         config = _get_provider_config("google", auth_config)
 
@@ -246,9 +265,10 @@ class TestProviderConfiguration:
     def test_provider_config_custom_redirect_uri(self):
         """Test provider configuration with custom redirect URI."""
         from itential_mcp.config.converters import auth_to_dict
-        auth_config = auth_to_dict(make_auth_config(
-            oauth_redirect_uri="http://custom.example.com/callback"
-        ))
+
+        auth_config = auth_to_dict(
+            make_auth_config(oauth_redirect_uri="http://custom.example.com/callback")
+        )
         config = _get_provider_config("google", auth_config)
 
         assert config["redirect_uri"] == "http://custom.example.com/callback"
@@ -257,6 +277,7 @@ class TestProviderConfiguration:
     def test_unsupported_provider_type(self):
         """Test unsupported provider type raises exception."""
         from itential_mcp.config.converters import auth_to_dict
+
         auth_config = auth_to_dict(make_auth_config())
 
         with pytest.raises(ConfigurationException) as exc_info:
