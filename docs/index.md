@@ -17,6 +17,8 @@ New to the MCP server? Start here:
 - **[User Guide](user-guide.md)** - Complete installation and usage guide
 - **[Integration Guide](integration.md)** - Connect AI clients (Claude Desktop, Continue.dev)
 - **[TLS Configuration](tls.md)** - Enable secure connections
+- **[Connection Testing](connection-testing.md)** - Validate platform connectivity
+- **[Troubleshooting Guide](troubleshooting.md)** - Diagnose and resolve common issues
 
 ### Configuration & Security
 
@@ -142,20 +144,24 @@ ITENTIAL_MCP_PLATFORM_PASSWORD="password"
 
 ## Getting Help
 
-- **[Troubleshooting](user-guide.md#troubleshooting)** - Common issues and solutions
-- **[Debug Mode](integration.md#debug-mode)** - Diagnostic tools and logging
-- **GitHub Issues** - Report bugs and request features
+- **[Troubleshooting Guide](troubleshooting.md)** - Comprehensive guide for diagnosing and resolving issues
+- **[Connection Testing](connection-testing.md)** - Test platform connectivity with detailed diagnostics
+- **[Debug Mode](integration.md#debug-mode)** - Enable detailed logging
+- **GitHub Issues** - Report bugs and request features at https://github.com/itential/itential-mcp/issues
 
 ### Quick Diagnostics
 ```bash
-# Test connection
-curl -k https://your-platform.example.com/health
+# Test platform connection
+itential-mcp test --verbose
 
-# Debug mode  
-itential-mcp --log-level DEBUG
+# Check server health (HTTP/SSE transport)
+curl http://localhost:8000/status/healthz
 
-# Test specific tools
-itential-mcp --include-tags "system" --transport sse --port 8001
+# Enable debug logging
+ITENTIAL_MCP_SERVER_LOG_LEVEL=DEBUG itential-mcp run
+
+# List available tools
+itential-mcp tools
 ```
 
 ## External Resources
