@@ -2,6 +2,8 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import asyncio
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -38,13 +40,9 @@ class TestApplicationsService:
             "total": 1,
             "results": [
                 {
-                    "results": [
-                        {
-                            "id": "test-application",
-                            "state": "RUNNING",
-                            "version": "1.0.0",
-                        }
-                    ]
+                    "id": "test-application",
+                    "state": "RUNNING",
+                    "version": "1.0.0",
                 }
             ],
         }
@@ -59,8 +57,8 @@ class TestApplicationsService:
         )
 
         # Verify result - should return data["results"][0]
-        assert result["results"][0]["id"] == "test-application"
-        assert result["results"][0]["state"] == "RUNNING"
+        assert result["id"] == "test-application"
+        assert result["state"] == "RUNNING"
 
     @pytest.mark.asyncio
     async def test_get_application_health_not_found(self, service, mock_client):
@@ -114,26 +112,26 @@ class TestStartApplication:
     async def test_start_application_already_running(self, service):
         """Test starting an application that's already running"""
         with patch.object(service, "_get_application_health") as mock_health:
-            mock_health.return_value = {"results": [{"state": "RUNNING"}]}
+            mock_health.return_value = {"state": "RUNNING", "id": "test-application"}
 
             result = await service.start_application("test-application", 10)
 
             # Should return immediately without calling PUT
             service.client.put.assert_not_called()
             # Should return the health data
-            assert result["results"][0]["state"] == "RUNNING"
+            assert result["state"] == "RUNNING"
 
     @pytest.mark.asyncio
     async def test_start_application_from_stopped_success(self, service):
         """Test successfully starting a stopped application"""
         with patch.object(service, "_get_application_health") as mock_health:
-            # First call returns STOPPED, second returns RUNNING
-            mock_health.side_effect = [
-                {"results": [{"state": "STOPPED"}]},
-                {"results": [{"state": "RUNNING"}]},
-            ]
+            # First call returns STOPPED
+            mock_health.return_value = {"state": "STOPPED", "id": "test-application"}
 
-            with patch("asyncio.sleep", new_callable=AsyncMock):
+            # Mock _poll_for_state to return RUNNING state
+            with patch.object(service, "_poll_for_state") as mock_poll:
+                mock_poll.return_value = {"state": "RUNNING", "id": "test-application"}
+
                 result = await service.start_application("test-application", 10)
 
             # Should call PUT to start application
@@ -141,52 +139,52 @@ class TestStartApplication:
                 "/applications/test-application/start"
             )
 
-            # Should check health twice (initial + after start)
-            assert mock_health.call_count == 2
-
             # Should return the final health data
-            assert result["results"][0]["state"] == "RUNNING"
+            assert result["state"] == "RUNNING"
 
     @pytest.mark.asyncio
     async def test_start_application_timeout(self, service):
         """Test application start timeout scenario"""
         with patch.object(service, "_get_application_health") as mock_health:
-            # Always return STOPPED (never transitions to RUNNING)
-            mock_health.side_effect = [
-                {"results": [{"state": "STOPPED"}]},  # Initial state
-                {"results": [{"state": "STOPPED"}]},  # After start attempt
-                {"results": [{"state": "STOPPED"}]},  # Still stopped...
-            ]
+            # Initial state is STOPPED
+            mock_health.return_value = {"state": "STOPPED", "id": "test-application"}
 
-            with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-                with pytest.raises(exceptions.TimeoutExceededError):
-                    await service.start_application("test-application", 2)
+            # Mock _poll_for_state to be an async function that never completes (simulates timeout)
+            async def never_completes(*args):
+                await asyncio.sleep(999999)  # Sleep forever
 
-                # Should have slept timeout number of times
-                assert mock_sleep.call_count == 2
+            with patch.object(service, "_poll_for_state", side_effect=never_completes):
+                with pytest.raises(exceptions.TimeoutExceededError) as exc_info:
+                    await service.start_application("test-application", 0.1)
+
+                # Verify error message includes application name and timeout
+                assert "application 'test-application'" in str(exc_info.value)
+                assert "0.1s" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_start_application_dead_state(self, service):
         """Test starting an application in DEAD state"""
         with patch.object(service, "_get_application_health") as mock_health:
-            mock_health.return_value = {"results": [{"state": "DEAD"}]}
+            mock_health.return_value = {"state": "DEAD", "id": "test-application"}
 
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.start_application("test-application", 10)
 
-            assert "application `test-application` is `DEAD`" in str(exc_info.value)
+            assert "application 'test-application'" in str(exc_info.value)
+            assert "DEAD" in str(exc_info.value)
             service.client.put.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_start_application_deleted_state(self, service):
         """Test starting an application in DELETED state"""
         with patch.object(service, "_get_application_health") as mock_health:
-            mock_health.return_value = {"results": [{"state": "DELETED"}]}
+            mock_health.return_value = {"state": "DELETED", "id": "test-application"}
 
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.start_application("test-application", 10)
 
-            assert "application `test-application` is `DELETED`" in str(exc_info.value)
+            assert "application 'test-application'" in str(exc_info.value)
+            assert "DELETED" in str(exc_info.value)
 
 
 class TestStopApplication:
@@ -208,26 +206,26 @@ class TestStopApplication:
     async def test_stop_application_already_stopped(self, service):
         """Test stopping an application that's already stopped"""
         with patch.object(service, "_get_application_health") as mock_health:
-            mock_health.return_value = {"results": [{"state": "STOPPED"}]}
+            mock_health.return_value = {"state": "STOPPED", "id": "test-application"}
 
             result = await service.stop_application("test-application", 10)
 
             # Should return immediately without calling PUT
             service.client.put.assert_not_called()
             # Should return the health data
-            assert result["results"][0]["state"] == "STOPPED"
+            assert result["state"] == "STOPPED"
 
     @pytest.mark.asyncio
     async def test_stop_application_from_running_success(self, service):
         """Test successfully stopping a running application"""
         with patch.object(service, "_get_application_health") as mock_health:
-            # First call returns RUNNING, second returns STOPPED
-            mock_health.side_effect = [
-                {"results": [{"state": "RUNNING"}]},
-                {"results": [{"state": "STOPPED"}]},
-            ]
+            # First call returns RUNNING
+            mock_health.return_value = {"state": "RUNNING", "id": "test-application"}
 
-            with patch("asyncio.sleep", new_callable=AsyncMock):
+            # Mock _poll_for_state to return STOPPED state
+            with patch.object(service, "_poll_for_state") as mock_poll:
+                mock_poll.return_value = {"state": "STOPPED", "id": "test-application"}
+
                 result = await service.stop_application("test-application", 10)
 
             # Should call PUT to stop application
@@ -236,63 +234,64 @@ class TestStopApplication:
             )
 
             # Should return the final health data
-            assert result["results"][0]["state"] == "STOPPED"
+            assert result["state"] == "STOPPED"
 
     @pytest.mark.asyncio
     async def test_stop_application_timeout(self, service):
         """Test application stop timeout scenario"""
         with patch.object(service, "_get_application_health") as mock_health:
-            # Always return RUNNING (never transitions to STOPPED)
-            mock_health.side_effect = [
-                {"results": [{"state": "RUNNING"}]},  # Initial state
-                {"results": [{"state": "RUNNING"}]},  # After stop attempt
-                {"results": [{"state": "RUNNING"}]},  # Still running...
-            ]
+            # Initial state is RUNNING
+            mock_health.return_value = {"state": "RUNNING", "id": "test-application"}
 
-            with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-                with pytest.raises(exceptions.TimeoutExceededError):
-                    await service.stop_application("test-application", 2)
+            # Mock _poll_for_state to be an async function that never completes (simulates timeout)
+            async def never_completes(*args):
+                await asyncio.sleep(999999)  # Sleep forever
 
-                # Should have slept timeout number of times
-                assert mock_sleep.call_count == 2
+            with patch.object(service, "_poll_for_state", side_effect=never_completes):
+                with pytest.raises(exceptions.TimeoutExceededError) as exc_info:
+                    await service.stop_application("test-application", 0.1)
+
+                # Verify error message includes application name and timeout
+                assert "application 'test-application'" in str(exc_info.value)
+                assert "0.1s" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_stop_application_dead_state(self, service):
         """Test stopping an application in DEAD state"""
         with patch.object(service, "_get_application_health") as mock_health:
-            mock_health.return_value = {"results": [{"state": "DEAD"}]}
+            mock_health.return_value = {"state": "DEAD", "id": "test-application"}
 
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.stop_application("test-application", 10)
 
-            assert "application `test-application` is `DEAD`" in str(exc_info.value)
+            assert "application 'test-application'" in str(exc_info.value)
+            assert "DEAD" in str(exc_info.value)
             service.client.put.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_stop_application_deleted_state(self, service):
         """Test stopping an application in DELETED state"""
         with patch.object(service, "_get_application_health") as mock_health:
-            mock_health.return_value = {"results": [{"state": "DELETED"}]}
+            mock_health.return_value = {"state": "DELETED", "id": "test-application"}
 
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.stop_application("test-application", 10)
 
-            assert "application `test-application` is `DELETED`" in str(exc_info.value)
+            assert "application 'test-application'" in str(exc_info.value)
+            assert "DELETED" in str(exc_info.value)
             service.client.put.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_stop_application_multiple_pages(self, service):
-        """Test stopping application with pagination during wait loop"""
+        """Test stopping application with multiple poll iterations"""
         with patch.object(service, "_get_application_health") as mock_health:
-            # First call returns RUNNING, then STOPPED after several checks
-            mock_health.side_effect = [
-                {"results": [{"state": "RUNNING"}]},  # Initial check
-                {"results": [{"state": "RUNNING"}]},  # First wait check
-                {"results": [{"state": "RUNNING"}]},  # Second wait check
-                {"results": [{"state": "STOPPED"}]},  # Finally stopped
-            ]
+            # First call returns RUNNING
+            mock_health.return_value = {"state": "RUNNING", "id": "test-application"}
 
-            with patch("asyncio.sleep", new_callable=AsyncMock):
+            # Mock _poll_for_state to simulate multiple iterations before success
+            with patch.object(service, "_poll_for_state") as mock_poll:
+                mock_poll.return_value = {"state": "STOPPED", "id": "test-application"}
+
                 result = await service.stop_application("test-application", 10)
 
             # Should call PUT to stop application
@@ -300,9 +299,8 @@ class TestStopApplication:
                 "/applications/test-application/stop"
             )
 
-            # Should check health multiple times
-            assert mock_health.call_count == 4
-            assert result["results"][0]["state"] == "STOPPED"
+            # Should return the final state
+            assert result["state"] == "STOPPED"
 
 
 class TestRestartApplication:
@@ -324,13 +322,13 @@ class TestRestartApplication:
     async def test_restart_application_from_running_success(self, service):
         """Test successfully restarting a running application"""
         with patch.object(service, "_get_application_health") as mock_health:
-            # First call returns RUNNING, second returns RUNNING after restart
-            mock_health.side_effect = [
-                {"results": [{"state": "RUNNING"}]},
-                {"results": [{"state": "RUNNING"}]},
-            ]
+            # First call returns RUNNING
+            mock_health.return_value = {"state": "RUNNING", "id": "test-application"}
 
-            with patch("asyncio.sleep", new_callable=AsyncMock):
+            # Mock _poll_for_state to return RUNNING state after restart
+            with patch.object(service, "_poll_for_state") as mock_poll:
+                mock_poll.return_value = {"state": "RUNNING", "id": "test-application"}
+
                 result = await service.restart_application("test-application", 10)
 
             # Should call PUT to restart application
@@ -339,75 +337,77 @@ class TestRestartApplication:
             )
 
             # Should return the final health data
-            assert result["results"][0]["state"] == "RUNNING"
+            assert result["state"] == "RUNNING"
 
     @pytest.mark.asyncio
     async def test_restart_application_stopped_state(self, service):
         """Test restarting an application in STOPPED state"""
         with patch.object(service, "_get_application_health") as mock_health:
-            mock_health.return_value = {"results": [{"state": "STOPPED"}]}
+            mock_health.return_value = {"state": "STOPPED", "id": "test-application"}
 
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.restart_application("test-application", 10)
 
-            assert "application `test-application` is `STOPPED`" in str(exc_info.value)
+            assert "application 'test-application'" in str(exc_info.value)
+            assert "STOPPED" in str(exc_info.value)
             service.client.put.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_restart_application_dead_state(self, service):
         """Test restarting an application in DEAD state"""
         with patch.object(service, "_get_application_health") as mock_health:
-            mock_health.return_value = {"results": [{"state": "DEAD"}]}
+            mock_health.return_value = {"state": "DEAD", "id": "test-application"}
 
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.restart_application("test-application", 10)
 
-            assert "application `test-application` is `DEAD`" in str(exc_info.value)
+            assert "application 'test-application'" in str(exc_info.value)
+            assert "DEAD" in str(exc_info.value)
             service.client.put.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_restart_application_deleted_state(self, service):
         """Test restarting an application in DELETED state"""
         with patch.object(service, "_get_application_health") as mock_health:
-            mock_health.return_value = {"results": [{"state": "DELETED"}]}
+            mock_health.return_value = {"state": "DELETED", "id": "test-application"}
 
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.restart_application("test-application", 10)
 
-            assert "application `test-application` is `DELETED`" in str(exc_info.value)
+            assert "application 'test-application'" in str(exc_info.value)
+            assert "DELETED" in str(exc_info.value)
             service.client.put.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_restart_application_timeout(self, service):
         """Test application restart timeout scenario"""
         with patch.object(service, "_get_application_health") as mock_health:
-            # Always return RUNNING at first, then stays in intermediate state
-            mock_health.side_effect = [
-                {"results": [{"state": "RUNNING"}]},  # Initial state
-                {"results": [{"state": "RESTARTING"}]},  # After restart attempt
-                {"results": [{"state": "RESTARTING"}]},  # Still restarting...
-            ]
+            # Initial state is RUNNING
+            mock_health.return_value = {"state": "RUNNING", "id": "test-application"}
 
-            with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-                with pytest.raises(exceptions.TimeoutExceededError):
-                    await service.restart_application("test-application", 2)
+            # Mock _poll_for_state to be an async function that never completes (simulates timeout)
+            async def never_completes(*args):
+                await asyncio.sleep(999999)  # Sleep forever
 
-                # Should have slept timeout number of times
-                assert mock_sleep.call_count == 2
+            with patch.object(service, "_poll_for_state", side_effect=never_completes):
+                with pytest.raises(exceptions.TimeoutExceededError) as exc_info:
+                    await service.restart_application("test-application", 0.1)
+
+                # Verify error message includes application name and timeout
+                assert "application 'test-application'" in str(exc_info.value)
+                assert "0.1s" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_restart_application_multiple_state_changes(self, service):
         """Test restarting application through multiple state changes"""
         with patch.object(service, "_get_application_health") as mock_health:
-            # Simulate application going through restart states
-            mock_health.side_effect = [
-                {"results": [{"state": "RUNNING"}]},  # Initial check
-                {"results": [{"state": "RESTARTING"}]},  # First wait check
-                {"results": [{"state": "STARTING"}]},  # Second wait check
-                {"results": [{"state": "RUNNING"}]},  # Finally running
-            ]
+            # Initial state is RUNNING
+            mock_health.return_value = {"state": "RUNNING", "id": "test-application"}
 
-            with patch("asyncio.sleep", new_callable=AsyncMock):
+            # Mock _poll_for_state to return RUNNING state after going through restart states
+            with patch.object(service, "_poll_for_state") as mock_poll:
+                mock_poll.return_value = {"state": "RUNNING", "id": "test-application"}
+
                 result = await service.restart_application("test-application", 10)
 
             # Should call PUT to restart application
@@ -415,23 +415,20 @@ class TestRestartApplication:
                 "/applications/test-application/restart"
             )
 
-            # Should check health multiple times
-            assert mock_health.call_count == 4
-            assert result["results"][0]["state"] == "RUNNING"
+            # Should return the final state
+            assert result["state"] == "RUNNING"
 
     @pytest.mark.asyncio
     async def test_restart_application_already_running_no_change_needed(self, service):
         """Test restarting application that immediately returns to RUNNING"""
         with patch.object(service, "_get_application_health") as mock_health:
-            # Application is RUNNING before and after restart
-            mock_health.side_effect = [
-                {"results": [{"state": "RUNNING"}]},  # Initial check
-                {
-                    "results": [{"state": "RUNNING"}]
-                },  # Immediately running after restart
-            ]
+            # Application is RUNNING before restart
+            mock_health.return_value = {"state": "RUNNING", "id": "test-application"}
 
-            with patch("asyncio.sleep", new_callable=AsyncMock):
+            # Mock _poll_for_state to immediately return RUNNING state
+            with patch.object(service, "_poll_for_state") as mock_poll:
+                mock_poll.return_value = {"state": "RUNNING", "id": "test-application"}
+
                 result = await service.restart_application("test-application", 10)
 
             # Should still call PUT to restart
@@ -440,7 +437,7 @@ class TestRestartApplication:
             )
 
             # Should return running state
-            assert result["results"][0]["state"] == "RUNNING"
+            assert result["state"] == "RUNNING"
 
 
 class TestServiceIntegration:
@@ -578,10 +575,14 @@ class TestEdgeCases:
     async def test_zero_timeout_behavior(self, service, mock_client):
         """Test behavior with zero timeout"""
         with patch.object(service, "_get_application_health") as mock_health:
-            mock_health.return_value = {"results": [{"state": "STOPPED"}]}
+            mock_health.return_value = {"state": "STOPPED", "id": "test-application"}
 
-            with pytest.raises(exceptions.TimeoutExceededError):
-                await service.start_application("test-application", 0)
+            # Mock _poll_for_state to raise TimeoutError
+            with patch.object(service, "_poll_for_state") as mock_poll:
+                mock_poll.side_effect = asyncio.TimeoutError()
+
+                with pytest.raises(exceptions.TimeoutExceededError):
+                    await service.start_application("test-application", 0)
 
         # Should call PUT but timeout immediately since timeout=0
         service.client.put.assert_called_once_with(
@@ -590,40 +591,39 @@ class TestEdgeCases:
 
     @pytest.mark.asyncio
     async def test_negative_timeout_behavior(self, service, mock_client):
-        """Test behavior with negative timeout (demonstrates infinite loop issue)"""
+        """Test behavior with negative timeout (immediately times out)"""
         with patch.object(service, "_get_application_health") as mock_health:
-            # Return STOPPED first, then RUNNING after first attempt
-            mock_health.side_effect = [
-                {"results": [{"state": "STOPPED"}]},
-                {
-                    "results": [{"state": "RUNNING"}]
-                },  # Immediately running to break loop
-            ]
+            # Return STOPPED first
+            mock_health.return_value = {"state": "STOPPED", "id": "test-application"}
 
-            # Should complete successfully with negative timeout if app starts immediately
-            result = await service.start_application("test-application", -1)
+            # asyncio.wait_for with negative timeout will immediately timeout
+            with pytest.raises(exceptions.TimeoutExceededError) as exc_info:
+                await service.start_application("test-application", -1)
 
-        # Should call PUT and succeed if application transitions to RUNNING immediately
+            # Verify error message
+            assert "application 'test-application'" in str(exc_info.value)
+            assert "-1s" in str(exc_info.value)
+
+        # Should have called PUT before the timeout
         service.client.put.assert_called_once_with(
             "/applications/test-application/start"
         )
-        assert result["results"][0]["state"] == "RUNNING"
 
     @pytest.mark.asyncio
     async def test_large_timeout_value(self, service, mock_client):
         """Test behavior with very large timeout value"""
         with patch.object(service, "_get_application_health") as mock_health:
-            # Return STOPPED first, then RUNNING
-            mock_health.side_effect = [
-                {"results": [{"state": "STOPPED"}]},
-                {"results": [{"state": "RUNNING"}]},
-            ]
+            # Return STOPPED first
+            mock_health.return_value = {"state": "STOPPED", "id": "test-application"}
 
-            with patch("asyncio.sleep", new_callable=AsyncMock):
+            # Mock _poll_for_state to return RUNNING state
+            with patch.object(service, "_poll_for_state") as mock_poll:
+                mock_poll.return_value = {"state": "RUNNING", "id": "test-application"}
+
                 result = await service.start_application("test-application", 999999)
 
             # Should work normally with large timeout
-            assert result["results"][0]["state"] == "RUNNING"
+            assert result["state"] == "RUNNING"
 
     @pytest.mark.asyncio
     async def test_start_application_not_found_error_propagation(self, service):
@@ -660,8 +660,8 @@ class TestEdgeCases:
         with patch.object(service, "_get_application_health") as mock_health:
             # Mock different responses for different calls
             mock_health.side_effect = [
-                {"results": [{"state": "RUNNING"}]},  # For first operation
-                {"results": [{"state": "STOPPED"}]},  # For second operation
+                {"state": "RUNNING", "id": "app1"},  # For first operation
+                {"state": "STOPPED", "id": "app2"},  # For second operation
             ]
 
             # Run two operations concurrently (though they should be independent)
@@ -672,8 +672,8 @@ class TestEdgeCases:
             result1, result2 = await asyncio.gather(task1, task2)
 
             # Verify results
-            assert result1["results"][0]["state"] == "RUNNING"
-            assert result2["results"][0]["state"] == "STOPPED"
+            assert result1["state"] == "RUNNING"
+            assert result2["state"] == "STOPPED"
 
 
 class TestApplicationStateTransitions:
@@ -695,47 +695,100 @@ class TestApplicationStateTransitions:
     async def test_complex_restart_state_transition(self, service):
         """Test restart with complex state transitions"""
         with patch.object(service, "_get_application_health") as mock_health:
-            # Simulate realistic restart state progression
-            mock_health.side_effect = [
-                {"results": [{"state": "RUNNING"}]},  # Initial state
-                {"results": [{"state": "STOPPING"}]},  # Stopping phase
-                {"results": [{"state": "STOPPED"}]},  # Stopped phase
-                {"results": [{"state": "STARTING"}]},  # Starting phase
-                {"results": [{"state": "RUNNING"}]},  # Finally running
-            ]
+            # Initial state is RUNNING
+            mock_health.return_value = {"state": "RUNNING", "id": "test-app"}
 
-            with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+            # Mock _poll_for_state to simulate going through multiple states before RUNNING
+            with patch.object(service, "_poll_for_state") as mock_poll:
+                mock_poll.return_value = {"state": "RUNNING", "id": "test-app"}
+
                 result = await service.restart_application("test-app", 10)
 
-            # Should go through multiple state checks
-            assert mock_health.call_count == 5
-            assert (
-                mock_sleep.call_count == 3
-            )  # Sleep after non-RUNNING states (4 checks - 1 final = 3 sleeps)
-            assert result["results"][0]["state"] == "RUNNING"
+            # Should return final state
+            assert result["state"] == "RUNNING"
 
     @pytest.mark.asyncio
     async def test_start_from_error_state(self, service):
-        """Test starting application from an ERROR state"""
+        """Test starting application from an invalid ERROR state"""
         with patch.object(service, "_get_application_health") as mock_health:
-            # Application in ERROR state initially - will not trigger PUT call
-            mock_health.return_value = {"results": [{"state": "ERROR"}]}
+            # Application in ERROR state - not a valid enum value, should raise ValueError
+            mock_health.return_value = {"state": "ERROR", "id": "test-app"}
 
-            result = await service.start_application("test-app", 10)
+            # Should raise ValueError when trying to convert invalid state to enum
+            with pytest.raises(ValueError) as exc_info:
+                await service.start_application("test-app", 10)
 
-            # Should not attempt to start from ERROR state (only STOPPED triggers PUT)
+            # Verify the error is about invalid enum value
+            assert "ERROR" in str(exc_info.value)
             service.client.put.assert_not_called()
-            assert result["results"][0]["state"] == "ERROR"
 
     @pytest.mark.asyncio
     async def test_unknown_state_handling(self, service):
         """Test handling of unknown application states"""
         with patch.object(service, "_get_application_health") as mock_health:
-            # Unknown state initially - will not trigger PUT call
-            mock_health.return_value = {"results": [{"state": "UNKNOWN"}]}
+            # Unknown state - not a valid enum value, should raise ValueError
+            mock_health.return_value = {"state": "UNKNOWN", "id": "test-app"}
 
+            # Should raise ValueError when trying to convert invalid state to enum
+            with pytest.raises(ValueError) as exc_info:
+                await service.start_application("test-app", 10)
+
+            # Verify the error is about invalid enum value
+            assert "UNKNOWN" in str(exc_info.value)
+            service.client.put.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_start_application_in_starting_state(self, service):
+        """Test starting application that's already in STARTING state (edge case)"""
+        with patch.object(service, "_get_application_health") as mock_health:
+            mock_health.return_value = {"state": "STARTING", "id": "test-app"}
+
+            # Should return immediately for intermediate states
             result = await service.start_application("test-app", 10)
 
-            # Should not attempt to start from UNKNOWN state (only STOPPED triggers PUT)
             service.client.put.assert_not_called()
-            assert result["results"][0]["state"] == "UNKNOWN"
+            assert result["state"] == "STARTING"
+
+    @pytest.mark.asyncio
+    async def test_stop_application_in_stopping_state(self, service):
+        """Test stopping application that's already in STOPPING state (edge case)"""
+        with patch.object(service, "_get_application_health") as mock_health:
+            mock_health.return_value = {"state": "STOPPING", "id": "test-app"}
+
+            # Should return immediately for intermediate states
+            result = await service.stop_application("test-app", 10)
+
+            service.client.put.assert_not_called()
+            assert result["state"] == "STOPPING"
+
+    @pytest.mark.asyncio
+    async def test_restart_application_in_starting_state(self, service):
+        """Test restarting application that's in STARTING state (edge case)"""
+        with patch.object(service, "_get_application_health") as mock_health:
+            mock_health.return_value = {"state": "STARTING", "id": "test-app"}
+
+            # Should return immediately for intermediate states
+            result = await service.restart_application("test-app", 10)
+
+            service.client.put.assert_not_called()
+            assert result["state"] == "STARTING"
+
+    @pytest.mark.asyncio
+    async def test_poll_for_state_method_directly(self, service):
+        """Test _poll_for_state internal method directly"""
+        with patch.object(service, "_get_application_health") as mock_health:
+            # First two calls return STARTING, third returns RUNNING
+            mock_health.side_effect = [
+                {"state": "STARTING", "id": "test-app"},
+                {"state": "STARTING", "id": "test-app"},
+                {"state": "RUNNING", "id": "test-app"},
+            ]
+
+            with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+                # Poll until RUNNING state is reached
+                result = await service._poll_for_state("test-app", "RUNNING")
+
+                # Should have polled 3 times and slept 2 times
+                assert mock_health.call_count == 3
+                assert mock_sleep.call_count == 2
+                assert result["state"] == "RUNNING"

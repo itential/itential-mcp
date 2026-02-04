@@ -268,7 +268,9 @@ class TestRunService:
         mock_response.json.return_value = expected_result
         mock_client.post.return_value = mock_response
 
-        result = await service.run_service(service_name, cluster_name, input_params=input_params)
+        result = await service.run_service(
+            service_name, cluster_name, input_params=input_params
+        )
 
         # Verify client was called with correct parameters including input params
         expected_body = {
@@ -963,7 +965,10 @@ class TestUpdateCertificate:
         mock_client.put.return_value = mock_response
 
         result = await service.update_certificate(
-            cert_id, alias=new_alias, contract_id=new_contract_id, raw_certificate=new_cert
+            cert_id,
+            alias=new_alias,
+            contract_id=new_contract_id,
+            raw_certificate=new_cert,
         )
 
         expected_body = {

@@ -5,8 +5,8 @@
 import asyncio
 
 from itential_mcp.core import exceptions
-
 from itential_mcp.platform.services import ServiceBase
+from itential_mcp.platform.services._enums import AdapterState
 
 
 class Service(ServiceBase):
@@ -27,7 +27,7 @@ class Service(ServiceBase):
 
     name: str = "adapters"
 
-    async def _get_adapter_health(self, name):
+    async def _get_adapter_health(self, name: str) -> dict:
         """
         Retrieve health information for a specific adapter from Itential Platform.
 
@@ -63,9 +63,30 @@ class Service(ServiceBase):
 
         return data
 
-    async def start_adapter(self, name, timeout):
+    async def _poll_for_state(
+        self, name: str, target_state: str, interval: float = 1.0
+    ) -> dict:
+        """Poll adapter health until target state is reached.
+
+        Args:
+            name: Adapter name to poll
+            target_state: The desired adapter state to wait for
+            interval: Polling interval in seconds (default: 1.0)
+
+        Returns:
+            Final adapter health data when target state is reached
         """
-        Start an adapter on Itential Platform with state validation and timeout.
+        while True:
+            data = await self._get_adapter_health(name)
+            state = data["results"][0]["state"]
+
+            if state == target_state:
+                return data["results"][0]
+
+            await asyncio.sleep(interval)
+
+    async def start_adapter(self, name: str, timeout: int) -> dict:
+        """Start an adapter on Itential Platform with state validation and timeout.
 
         This method manages the complete lifecycle of starting an adapter,
         including initial state validation, issuing start commands, and polling
@@ -73,13 +94,13 @@ class Service(ServiceBase):
         and provides appropriate error handling.
 
         Args:
-            name (str): Case-sensitive adapter name to start. Must match an
+            name: Case-sensitive adapter name to start. Must match an
                 existing adapter configuration on the platform
-            timeout (int): Maximum seconds to wait for the adapter to reach
-                RUNNING state. Countdown decreases by 1 each second during polling
+            timeout: Maximum seconds to wait for the adapter to reach
+                RUNNING state
 
         Returns:
-            StartAdapterResponse: Response model containing:
+            dict: Response containing adapter health data with:
                 - name: The adapter name that was started
                 - state: Final operational state after the operation
 
@@ -97,32 +118,34 @@ class Service(ServiceBase):
             - Polling occurs every 1 second until timeout or success
         """
         data = await self._get_adapter_health(name)
-        state = data["results"][0]["state"]
+        state = AdapterState(data["results"][0]["state"])
 
-        if state == "STOPPED":
+        if state == AdapterState.RUNNING:
+            return data["results"][0]
+
+        if state in (AdapterState.DEAD, AdapterState.DELETED):
+            raise exceptions.InvalidStateError(
+                f"adapter '{name}' is in {state.value} state and cannot be started"
+            )
+
+        if state == AdapterState.STOPPED:
             await self.client.put(f"/adapters/{name}/start")
 
-            while timeout:
-                data = await self._get_adapter_health(name)
-                state = data["results"][0]["state"]
-
-                if state == "RUNNING":
-                    break
-
-                await asyncio.sleep(1)
-                timeout -= 1
-
-        elif state in ("DEAD", "DELETED"):
-            raise exceptions.InvalidStateError(f"adapter `{name}` is `{state}`")
-
-        if timeout == 0:
-            raise exceptions.TimeoutExceededError()
+            try:
+                result = await asyncio.wait_for(
+                    self._poll_for_state(name, AdapterState.RUNNING.value),
+                    timeout=timeout,
+                )
+                return result
+            except asyncio.TimeoutError:
+                raise exceptions.TimeoutExceededError(
+                    f"adapter '{name}' did not reach RUNNING state within {timeout}s"
+                )
 
         return data["results"][0]
 
-    async def stop_adapter(self, name, timeout):
-        """
-        Stop an adapter on Itential Platform with state validation and timeout.
+    async def stop_adapter(self, name: str, timeout: int) -> dict:
+        """Stop an adapter on Itential Platform with state validation and timeout.
 
         This method manages the complete lifecycle of stopping an adapter,
         including initial state validation, issuing stop commands, and polling
@@ -130,13 +153,13 @@ class Service(ServiceBase):
         and provides appropriate error handling.
 
         Args:
-            name (str): Case-sensitive adapter name to stop. Must match an
+            name: Case-sensitive adapter name to stop. Must match an
                 existing adapter configuration on the platform
-            timeout (int): Maximum seconds to wait for the adapter to reach
-                STOPPED state. Countdown decreases by 1 each second during polling
+            timeout: Maximum seconds to wait for the adapter to reach
+                STOPPED state
 
         Returns:
-            StopAdapterResponse: Response model containing:
+            dict: Response containing adapter health data with:
                 - name: The adapter name that was stopped
                 - state: Final operational state after the operation
 
@@ -154,45 +177,47 @@ class Service(ServiceBase):
             - Polling occurs every 1 second until timeout or success
         """
         data = await self._get_adapter_health(name)
-        state = data["results"][0]["state"]
+        state = AdapterState(data["results"][0]["state"])
 
-        if state == "RUNNING":
+        if state == AdapterState.STOPPED:
+            return data["results"][0]
+
+        if state in (AdapterState.DEAD, AdapterState.DELETED):
+            raise exceptions.InvalidStateError(
+                f"adapter '{name}' is in {state.value} state and cannot be stopped"
+            )
+
+        if state == AdapterState.RUNNING:
             await self.client.put(f"/adapters/{name}/stop")
 
-            while timeout:
-                data = await self._get_adapter_health(name)
-                state = data["results"][0]["state"]
-
-                if state == "STOPPED":
-                    break
-
-                await asyncio.sleep(1)
-                timeout -= 1
-
-        elif state in ("DEAD", "DELETED"):
-            raise exceptions.InvalidStateError(f"adapter `{name}` is `{state}`")
-
-        if timeout == 0:
-            raise exceptions.TimeoutExceededError()
+            try:
+                result = await asyncio.wait_for(
+                    self._poll_for_state(name, AdapterState.STOPPED.value),
+                    timeout=timeout,
+                )
+                return result
+            except asyncio.TimeoutError:
+                raise exceptions.TimeoutExceededError(
+                    f"adapter '{name}' did not reach STOPPED state within {timeout}s"
+                )
 
         return data["results"][0]
 
-    async def restart_adapter(self, name, timeout):
-        """
-        Restart an adapter on Itential Platform with state validation and timeout.
+    async def restart_adapter(self, name: str, timeout: int) -> dict:
+        """Restart an adapter on Itential Platform with state validation and timeout.
 
         This method manages the complete lifecycle of restarting an adapter,
         including initial state validation, issuing restart commands, and polling
         for successful state transitions. Only RUNNING adapters can be restarted.
 
         Args:
-            name (str): Case-sensitive adapter name to restart. Must match an
+            name: Case-sensitive adapter name to restart. Must match an
                 existing adapter configuration on the platform
-            timeout (int): Maximum seconds to wait for the adapter to return to
-                RUNNING state. Countdown decreases by 1 each second during polling
+            timeout: Maximum seconds to wait for the adapter to return to
+                RUNNING state
 
         Returns:
-            RestartAdapterResponse: Response model containing:
+            dict: Response containing adapter health data with:
                 - name: The adapter name that was restarted
                 - state: Final operational state after the operation (should be RUNNING)
 
@@ -210,25 +235,25 @@ class Service(ServiceBase):
             - Polling occurs every 1 second until timeout or success
         """
         data = await self._get_adapter_health(name)
-        state = data["results"][0]["state"]
+        state = AdapterState(data["results"][0]["state"])
 
-        if state == "RUNNING":
+        if state in (AdapterState.DEAD, AdapterState.DELETED, AdapterState.STOPPED):
+            raise exceptions.InvalidStateError(
+                f"adapter '{name}' is in {state.value} state and cannot be restarted"
+            )
+
+        if state == AdapterState.RUNNING:
             await self.client.put(f"/adapters/{name}/restart")
 
-            while timeout:
-                data = await self._get_adapter_health(name)
-                state = data["results"][0]["state"]
-
-                if state == "RUNNING":
-                    break
-
-                await asyncio.sleep(1)
-                timeout -= 1
-
-        elif state in ("DEAD", "DELETED", "STOPPED"):
-            raise exceptions.InvalidStateError(f"adapter `{name}` is `{state}`")
-
-        if timeout == 0:
-            raise exceptions.TimeoutExceededError()
+            try:
+                result = await asyncio.wait_for(
+                    self._poll_for_state(name, AdapterState.RUNNING.value),
+                    timeout=timeout,
+                )
+                return result
+            except asyncio.TimeoutError:
+                raise exceptions.TimeoutExceededError(
+                    f"adapter '{name}' did not return to RUNNING state within {timeout}s"
+                )
 
         return data["results"][0]

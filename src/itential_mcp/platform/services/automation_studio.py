@@ -232,8 +232,8 @@ class Service(ServiceBase):
                 from the Automation Studio API.
         """
         if project is not None:
-            p = await self.describe_project(project)
-            name = f"@{p['_id']}: {name}"
+            project_data = await self.describe_project(project)
+            name = f"@{project_data['_id']}: {name}"
         res = await self._get_templates(params={"equals[name]": name})
         if len(res) != 1:
             raise exceptions.NotFoundError(f"template {name} could not found")
@@ -388,31 +388,12 @@ class Service(ServiceBase):
             Exception: If there is an error retrieving projects from the
                 Automation Studio API.
         """
-        limit = 100
-        skip = 0
-
-        params = {"limit": limit}
-
-        results = list()
-
-        while True:
-            params["skip"] = skip
-
-            res = await self.client.get(
-                "/automation-studio/projects",
-                params=params,
-            )
-
-            data = res.json()
-
-            results.extend(data["data"])
-
-            if len(results) == data["metadata"]["total"]:
-                break
-
-            skip += limit
-
-        return results
+        return await self._paginate(
+            "/automation-studio/projects",
+            data_key="data",
+            total_key="total",
+            metadata_key="metadata",
+        )
 
     async def describe_project(self, name: str) -> dict:
         """Get detailed information about a specific Automation Studio project.
