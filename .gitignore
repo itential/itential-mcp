@@ -1,22 +1,232 @@
-# Python-generated files
+# Python bytecode and artifacts
 __pycache__/
-*.py[oc]
+*.py[cod]
+*$py.class
+*.so
+*.pyc
+*.pyo
+*.pyd
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
 build/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
 wheels/
-*.egg-info
-coverage.*
-htmlcov/
-.pytest_cache/
-.coverage
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+
+# PyInstaller
+*.manifest
+*.spec
 
 # Virtual environments
-.venv
+.venv/
+venv/
+ENV/
+env/
+.env/
+.virtualenv/
+.python-version
 
-# dotenv 
+# uv (package manager)
+.uv/
+uv.lock.bak
+
+# Testing
+.pytest_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+coverage.*
+htmlcov/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.cache
+test-results/
+junit.xml
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+.pyre/
+
+# Linting / Formatting
+.ruff_cache/
+.pylint.d/
+
+# Documentation builds
+docs/_build/
+docs/_static/
+docs/_templates/
+.doctrees/
+site/
+target/
+
+# IDEs and Editors
+# VS Code
+.vscode/
+*.code-workspace
+
+# PyCharm / IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+.idea_modules/
+
+# Vim
+*.swp
+*.swo
+*.swn
+*~
+.vim/
+Session.vim
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# JetBrains
+.idea/
+*.iml
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# OS-specific
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Environment variables and secrets
 .env
+.env.local
+.env.*.local
+*.env
+.envrc
+.direnv/
 
-# local development 
+# Local development
 .devel
-certificates
+.local
+certificates/
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+
+# Configuration files with secrets
+*.conf.local
+*-local.conf
+config.local.*
+mcp.conf
+
+# Container and Docker
+*.tar
+*.tar.gz
+*.zip
+.dockerignore.bak
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*.~
+.DS_Store?
+
+# Security scanning
+.bandit
+bandit-report.*
+security-report.*
+
+# Profiling
+*.prof
+*.lprof
+.prof/
+
+# Backup files
+*.backup
+*.bak
+*.old
+
+# Project-specific
+# (Keep existing project-specific ignores)
 
