@@ -573,6 +573,108 @@ return bindings_dict.get(tool_name)
    - Config objects are immutable
    - Prevents accidental state mutations
 
+7. **Function Parameters** - Explicit keyword arguments over mappings
+   - Always prefer explicit keyword arguments over `Mapping` parameters
+   - Provides better type safety, IDE autocomplete, and API clarity
+   - Build request bodies programmatically from explicit parameters
+   - Especially important when converting OpenAPI specifications to Python
+
+   ```python
+   # Good - explicit keyword arguments
+   async def create_resource(
+       self,
+       name: str,
+       description: str,
+       enabled: bool,
+       tags: list[str] | None = None,
+       metadata: dict[str, Any] | None = None,
+   ) -> dict[str, Any]:
+       body = {
+           "name": name,
+           "description": description,
+           "enabled": enabled,
+       }
+       if tags is not None:
+           body["tags"] = tags
+       if metadata is not None:
+           body["metadata"] = metadata
+
+       return await self.client.post("/resources", json=body)
+
+   # Avoid - mapping parameter
+   async def create_resource(
+       self, resource_data: Mapping[str, Any]
+   ) -> dict[str, Any]:
+       return await self.client.post("/resources", json=resource_data)
+
+   # Also avoid - **kwargs without explicit parameters
+   async def create_resource(self, **kwargs: Any) -> dict[str, Any]:
+       return await self.client.post("/resources", json=kwargs)
+   ```
+
+   **Benefits:**
+   - Type checkers can validate parameter types at call sites
+   - IDEs provide accurate autocomplete with parameter names and types
+   - Function signature documents expected parameters without reading docs
+   - Required vs optional parameters are explicit
+   - Easier to refactor - renaming parameters updates all call sites
+   - Better runtime validation with type hints
+
+   **OpenAPI Conversion:**
+   When converting OpenAPI specs to Python service methods:
+   - Map each schema property to an explicit function parameter
+   - Use `| None` for optional properties (not `Optional`)
+   - Set default to `None` for optional parameters
+   - Build request body dict conditionally (only include non-None values)
+   - Preserve property names from OpenAPI schema in request body
+
+   **Keyword-Only Arguments:**
+   Always use the `*` marker to require keyword-only arguments for optional parameters.
+   This prevents accidental positional argument bugs and makes code more explicit.
+
+   ```python
+   # Good - keyword-only optional arguments
+   async def create_resource(
+       self,
+       name: str,
+       description: str,
+       enabled: bool,
+       *,  # Everything after this must be passed as keyword argument
+       tags: list[str] | None = None,
+       metadata: dict[str, Any] | None = None,
+   ) -> dict[str, Any]:
+       ...
+
+   # Good - all optional parameters are keyword-only
+   async def update_resource(
+       self,
+       resource_id: str,
+       *,  # All update fields are keyword-only
+       name: str | None = None,
+       description: str | None = None,
+       enabled: bool | None = None,
+   ) -> dict[str, Any]:
+       ...
+
+   # Avoid - optional parameters without keyword-only marker
+   async def create_resource(
+       self,
+       name: str,
+       description: str,
+       enabled: bool,
+       tags: list[str] | None = None,  # Can be passed positionally (error-prone)
+       metadata: dict[str, Any] | None = None,
+   ) -> dict[str, Any]:
+       ...
+   ```
+
+   **Benefits of keyword-only arguments:**
+   - Prevents accidental argument ordering mistakes
+   - Makes function calls more readable and self-documenting
+   - Easier to add new optional parameters without breaking existing code
+   - Forces callers to be explicit about what they're setting
+   - Consistent with Python standard library best practices
+
 ### Code Organization Patterns
 
 1. **Package Structure** - Clear boundaries
