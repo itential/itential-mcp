@@ -142,19 +142,19 @@ class TestStartAdapter:
     async def test_start_adapter_timeout(self, service):
         """Test adapter start timeout scenario"""
         with patch.object(service, "_get_adapter_health") as mock_health:
-            # Always return STOPPED (never transitions to RUNNING)
-            mock_health.side_effect = [
-                {"results": [{"state": "STOPPED"}]},  # Initial state
-                {"results": [{"state": "STOPPED"}]},  # After start attempt
-                {"results": [{"state": "STOPPED"}]},  # Still stopped...
-            ]
+            # Initial state is STOPPED
+            mock_health.return_value = {"results": [{"state": "STOPPED"}]}
 
-            with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-                with pytest.raises(exceptions.TimeoutExceededError):
+            # Mock _poll_for_state to raise TimeoutError
+            with patch.object(service, "_poll_for_state") as mock_poll:
+                mock_poll.side_effect = asyncio.TimeoutError()
+
+                with pytest.raises(exceptions.TimeoutExceededError) as exc_info:
                     await service.start_adapter("test-adapter", 2)
 
-                # Should have slept timeout number of times
-                assert mock_sleep.call_count == 2
+                # Verify error message includes adapter name and timeout
+                assert "adapter 'test-adapter'" in str(exc_info.value)
+                assert "2s" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_start_adapter_dead_state(self, service):
@@ -165,7 +165,8 @@ class TestStartAdapter:
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.start_adapter("test-adapter", 10)
 
-            assert "adapter `test-adapter` is `DEAD`" in str(exc_info.value)
+            assert "adapter 'test-adapter'" in str(exc_info.value)
+            assert "DEAD" in str(exc_info.value)
             service.client.put.assert_not_called()
 
     @pytest.mark.asyncio
@@ -177,7 +178,8 @@ class TestStartAdapter:
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.start_adapter("test-adapter", 10)
 
-            assert "adapter `test-adapter` is `DELETED`" in str(exc_info.value)
+            assert "adapter 'test-adapter'" in str(exc_info.value)
+            assert "DELETED" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_start_adapter_state_transition_during_wait(self, service):
@@ -257,18 +259,19 @@ class TestStopAdapter:
     async def test_stop_adapter_timeout(self, service):
         """Test adapter stop timeout scenario"""
         with patch.object(service, "_get_adapter_health") as mock_health:
-            # Always return RUNNING (never transitions to STOPPED)
-            mock_health.side_effect = [
-                {"results": [{"state": "RUNNING"}]},  # Initial state
-                {"results": [{"state": "RUNNING"}]},  # After stop attempt
-                {"results": [{"state": "RUNNING"}]},  # Still running...
-            ]
+            # Initial state is RUNNING
+            mock_health.return_value = {"results": [{"state": "RUNNING"}]}
 
-            with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-                with pytest.raises(exceptions.TimeoutExceededError):
+            # Mock _poll_for_state to raise TimeoutError
+            with patch.object(service, "_poll_for_state") as mock_poll:
+                mock_poll.side_effect = asyncio.TimeoutError()
+
+                with pytest.raises(exceptions.TimeoutExceededError) as exc_info:
                     await service.stop_adapter("test-adapter", 2)
 
-                assert mock_sleep.call_count == 2
+                # Verify error message includes adapter name and timeout
+                assert "adapter 'test-adapter'" in str(exc_info.value)
+                assert "2s" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_stop_adapter_dead_state(self, service):
@@ -279,7 +282,8 @@ class TestStopAdapter:
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.stop_adapter("test-adapter", 10)
 
-            assert "adapter `test-adapter` is `DEAD`" in str(exc_info.value)
+            assert "adapter 'test-adapter'" in str(exc_info.value)
+            assert "DEAD" in str(exc_info.value)
             service.client.put.assert_not_called()
 
     @pytest.mark.asyncio
@@ -291,7 +295,8 @@ class TestStopAdapter:
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.stop_adapter("test-adapter", 10)
 
-            assert "adapter `test-adapter` is `DELETED`" in str(exc_info.value)
+            assert "adapter 'test-adapter'" in str(exc_info.value)
+            assert "DELETED" in str(exc_info.value)
 
 
 class TestRestartAdapter:
@@ -333,18 +338,19 @@ class TestRestartAdapter:
     async def test_restart_adapter_timeout(self, service):
         """Test adapter restart timeout scenario"""
         with patch.object(service, "_get_adapter_health") as mock_health:
-            # First call RUNNING, then adapter gets stuck in some other state
-            mock_health.side_effect = [
-                {"results": [{"state": "RUNNING"}]},  # Initial state
-                {"results": [{"state": "STOPPED"}]},  # After restart - stuck
-                {"results": [{"state": "STOPPED"}]},  # Still stopped...
-            ]
+            # Initial state is RUNNING
+            mock_health.return_value = {"results": [{"state": "RUNNING"}]}
 
-            with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-                with pytest.raises(exceptions.TimeoutExceededError):
+            # Mock _poll_for_state to raise TimeoutError
+            with patch.object(service, "_poll_for_state") as mock_poll:
+                mock_poll.side_effect = asyncio.TimeoutError()
+
+                with pytest.raises(exceptions.TimeoutExceededError) as exc_info:
                     await service.restart_adapter("test-adapter", 2)
 
-                assert mock_sleep.call_count == 2
+                # Verify error message includes adapter name and timeout
+                assert "adapter 'test-adapter'" in str(exc_info.value)
+                assert "2s" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_restart_adapter_dead_state(self, service):
@@ -355,7 +361,8 @@ class TestRestartAdapter:
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.restart_adapter("test-adapter", 10)
 
-            assert "adapter `test-adapter` is `DEAD`" in str(exc_info.value)
+            assert "adapter 'test-adapter'" in str(exc_info.value)
+            assert "DEAD" in str(exc_info.value)
             service.client.put.assert_not_called()
 
     @pytest.mark.asyncio
@@ -367,7 +374,8 @@ class TestRestartAdapter:
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.restart_adapter("test-adapter", 10)
 
-            assert "adapter `test-adapter` is `DELETED`" in str(exc_info.value)
+            assert "adapter 'test-adapter'" in str(exc_info.value)
+            assert "DELETED" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_restart_adapter_stopped_state(self, service):
@@ -378,7 +386,8 @@ class TestRestartAdapter:
             with pytest.raises(exceptions.InvalidStateError) as exc_info:
                 await service.restart_adapter("test-adapter", 10)
 
-            assert "adapter `test-adapter` is `STOPPED`" in str(exc_info.value)
+            assert "adapter 'test-adapter'" in str(exc_info.value)
+            assert "STOPPED" in str(exc_info.value)
             service.client.put.assert_not_called()
 
     @pytest.mark.asyncio
@@ -666,16 +675,61 @@ class TestEdgeCases:
 
     @pytest.mark.asyncio
     async def test_state_case_sensitivity(self, service):
-        """Test that adapter states are case sensitive"""
+        """Test that adapter states are case sensitive and invalid states raise ValueError"""
         with patch.object(service, "_get_adapter_health") as mock_health:
-            # Use lowercase state (should not be recognized as valid by the service logic)
+            # Use lowercase state (should not be recognized as valid enum value)
             mock_health.return_value = {
                 "results": [{"id": "test-adapter", "state": "running"}]
             }
 
-            # The service should still return the result as-is since it just returns raw dict
+            # The service should raise ValueError when trying to convert invalid state to enum
+            with pytest.raises(ValueError) as exc_info:
+                await service.start_adapter("test-adapter", 10)
+
+            # Verify the error is about invalid enum value
+            assert "running" in str(exc_info.value).lower()
+
+    @pytest.mark.asyncio
+    async def test_start_adapter_in_starting_state(self, service):
+        """Test starting adapter that's already in STARTING state"""
+        with patch.object(service, "_get_adapter_health") as mock_health:
+            mock_health.return_value = {
+                "results": [{"id": "test-adapter", "state": "STARTING"}]
+            }
+
+            # Should return immediately without calling PUT
             result = await service.start_adapter("test-adapter", 10)
-            assert result["state"] == "running"
+
+            service.client.put.assert_not_called()
+            assert result["state"] == "STARTING"
+
+    @pytest.mark.asyncio
+    async def test_stop_adapter_in_stopping_state(self, service):
+        """Test stopping adapter that's already in STOPPING state"""
+        with patch.object(service, "_get_adapter_health") as mock_health:
+            mock_health.return_value = {
+                "results": [{"id": "test-adapter", "state": "STOPPING"}]
+            }
+
+            # Should return immediately without calling PUT
+            result = await service.stop_adapter("test-adapter", 10)
+
+            service.client.put.assert_not_called()
+            assert result["state"] == "STOPPING"
+
+    @pytest.mark.asyncio
+    async def test_restart_adapter_in_starting_state(self, service):
+        """Test restarting adapter that's in STARTING state (edge case)"""
+        with patch.object(service, "_get_adapter_health") as mock_health:
+            mock_health.return_value = {
+                "results": [{"id": "test-adapter", "state": "STARTING"}]
+            }
+
+            # Should return immediately for intermediate states (not explicitly handled)
+            result = await service.restart_adapter("test-adapter", 10)
+
+            service.client.put.assert_not_called()
+            assert result["state"] == "STARTING"
 
 
 class TestModelResponses:

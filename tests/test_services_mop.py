@@ -496,6 +496,62 @@ class TestMOPService:
         assert call_args[1]["json"]["mop"]["description"] == "Updated template"
 
     @pytest.mark.asyncio
+    async def test_update_command_template_with_project(self, mop_service, mock_client):
+        """Test updating a command template within a project scope."""
+        commands = [
+            {
+                "command": "show version",
+                "passRule": True,
+                "rules": [{"rule": "IOS", "eval": "contains", "severity": "info"}],
+            }
+        ]
+
+        # Mock project ID lookup (for _get_project_id_from_name)
+        projects_response = {
+            "data": [{"_id": "project-123", "name": "Test Project"}],
+            "metadata": {"total": 1},
+        }
+        mock_projects_response = MagicMock()
+        mock_projects_response.json.return_value = projects_response
+
+        # Mock existing template lookup with project-scoped name (for describe_command_template)
+        existing_template = {
+            "_id": "test_template",
+            "name": "@project-123: test_template",
+            "created": 1757610875214,
+            "createdBy": "test@example.com",
+        }
+        mock_get_template_response = MagicMock()
+        mock_get_template_response.json.return_value = [existing_template]
+
+        expected_response = {
+            "acknowledged": True,
+            "modifiedCount": 1,
+        }
+        mock_put_response = MagicMock()
+        mock_put_response.json.return_value = expected_response
+
+        # Set up side effects for multiple GET calls:
+        # 1. Get project ID by name (in update_command_template)
+        # 2. Get project ID by name again (in describe_command_template)
+        # 3. Get existing template by project-scoped name
+        mock_client.get.side_effect = [
+            mock_projects_response,
+            mock_projects_response,
+            mock_get_template_response,
+        ]
+        mock_client.put.return_value = mock_put_response
+
+        result = await mop_service.update_command_template(
+            name="test_template", commands=commands, project="Test Project"
+        )
+
+        assert result == expected_response
+        # Verify PUT was called with project-scoped name
+        call_args = mock_client.put.call_args
+        assert "@project-123: test_template" in call_args[0][0]
+
+    @pytest.mark.asyncio
     async def test_update_command_template_not_found(self, mop_service, mock_client):
         """Test updating a non-existent command template."""
         commands = [{"command": "show version", "passRule": True, "rules": []}]

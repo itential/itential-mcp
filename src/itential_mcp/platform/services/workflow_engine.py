@@ -20,8 +20,7 @@ class Service(ServiceBase):
     name: str = "workflow_engine"
 
     async def _get_route(self, path: str, params: dict | None = None) -> list[dict]:
-        """
-        Generic method to retrieve paginated data from workflow engine API endpoints.
+        """Generic method to retrieve paginated data from workflow engine API endpoints.
 
         This internal method handles pagination automatically by making multiple
         API calls with skip/limit parameters until all results are retrieved.
@@ -30,43 +29,21 @@ class Service(ServiceBase):
         Args:
             path: The API endpoint path to retrieve data from
             params: Optional query parameters to filter results. The method will
-                add pagination parameters (limit, skip) automatically.
+                add pagination parameters (limit, skip) automatically
 
         Returns:
-            A list of dictionaries containing all results from the paginated API endpoint.
-            Each dictionary represents a single metric element (job or task).
+            list[dict]: List of all results from the paginated API endpoint.
+                Each dictionary represents a single metric element (job or task)
 
         Raises:
             Exception: If there is an error retrieving data from the API endpoint
         """
-        limit = 100
-        skip = 0
-
-        if params is not None:
-            params["limit"] = limit
-        else:
-            params = {"limit": limit}
-
-        results = list()
-
-        while True:
-            params["skip"] = skip
-
-            res = await self.client.get(
-                path,
-                params=params,
-            )
-
-            data = res.json()
-
-            results.extend(data["results"])
-
-            if len(results) == data["total"]:
-                break
-
-            skip += limit
-
-        return results
+        return await self._paginate(
+            path,
+            params=params,
+            data_key="results",
+            total_key="total",
+        )
 
     async def get_job_metrics(self, params: dict | None = None) -> list[dict]:
         """
