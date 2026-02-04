@@ -274,12 +274,12 @@ class Service(ServiceBase):
         """
         # Lookup tree id
         trees = await self.get_golden_config_trees()
-        for ele in trees:
-            if ele["name"] == tree_name:
-                tree_id = ele["id"]
+        for tree in trees:
+            if tree["name"] == tree_name:
+                tree_id = tree["id"]
                 break
         else:
-            raise exceptions.NotFoundError(f"tree {tree_name} could not be found")
+            raise exceptions.NotFoundError(f"tree '{tree_name}' not found")
 
         try:
             res = await self.client.post(
@@ -381,9 +381,9 @@ class Service(ServiceBase):
         """
         groups_response = await self.get_device_groups()
 
-        for ele in groups_response:
-            if ele["name"] == name:
-                raise ValueError(f"device group {name} already exists")
+        for group in groups_response:
+            if group["name"] == name:
+                raise ValueError(f"device group '{name}' already exists")
 
         body = {
             "groupName": name,
@@ -450,12 +450,12 @@ class Service(ServiceBase):
 
         device_group_id = data["id"]
 
-        device_groups = list()
-        for ele in data["devices"]:
-            if ele not in devices:
-                device_groups.append(ele)
+        remaining_devices = []
+        for device in data["devices"]:
+            if device not in devices:
+                remaining_devices.append(device)
 
-        body = {"details": {"devices": device_groups}}
+        body = {"details": {"devices": remaining_devices}}
 
         res = await self.client.put(
             f"/configuration_manager/deviceGroups/{device_group_id}", json=body

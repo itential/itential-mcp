@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-import time
+from datetime import datetime, timezone
 from typing import Any
 
 from itential_mcp.platform.services import ServiceBase
@@ -26,15 +26,22 @@ class Service(ServiceBase):
 
     name: str = "mop"
 
-    async def _get_project_id_from_name(self, name: str) -> str:
-        """
-        Get the project ID for a specified project name.
-
-        Args:
-            name (str): Case-sensitive project name to locate
+    def _current_timestamp_ms(self) -> int:
+        """Get current UTC timestamp in milliseconds.
 
         Returns:
-            str: The project ID associated with the project name
+            int: Current time in milliseconds since epoch
+        """
+        return int(datetime.now(timezone.utc).timestamp() * 1000)
+
+    async def _get_project_id_from_name(self, name: str) -> str:
+        """Get the project ID for a specified project name.
+
+        Args:
+            name: Case-sensitive project name to locate
+
+        Returns:
+            The project ID associated with the project name
 
         Raises:
             ValueError: If the project name cannot be definitively located
@@ -218,6 +225,7 @@ class Service(ServiceBase):
             project_id = await self._get_project_id_from_name(project)
             template_name = f"@{project_id}: {name}"
 
+        current_time = self._current_timestamp_ms()
         body = {
             "mop": {
                 "name": template_name,
@@ -225,9 +233,9 @@ class Service(ServiceBase):
                 "passRule": pass_rule,
                 "ignoreWarnings": ignore_warnings,
                 "commands": commands,
-                "created": int(time.time() * 1000),  # Current timestamp in milliseconds
+                "created": current_time,
                 "createdBy": "system",  # This should be replaced with actual user
-                "lastUpdated": int(time.time() * 1000),
+                "lastUpdated": current_time,
                 "lastUpdatedBy": "system",
             }
         }
@@ -294,7 +302,7 @@ class Service(ServiceBase):
                 "commands": commands,
                 "created": existing_template.get("created"),
                 "createdBy": existing_template.get("createdBy"),
-                "lastUpdated": int(time.time() * 1000),
+                "lastUpdated": self._current_timestamp_ms(),
                 "lastUpdatedBy": "system",
             }
         }

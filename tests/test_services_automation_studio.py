@@ -93,6 +93,35 @@ class TestAutomationStudioService:
         assert "workflow not found" in str(exc_info.value)
 
     @pytest.mark.asyncio
+    async def test_describe_workflow_with_name(self, service, mock_client):
+        """Test describing workflow by name"""
+        # Mock response data
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "total": 1,
+            "items": [
+                {
+                    "_id": "workflow-456",
+                    "name": "My Workflow",
+                    "description": "Test workflow by name",
+                    "type": "automation",
+                }
+            ],
+        }
+        mock_client.get.return_value = mock_response
+
+        result = await service.describe_workflow_with_name("My Workflow")
+
+        # Verify the client was called with the correct name parameter
+        mock_client.get.assert_called_once_with(
+            "/automation-studio/workflows", params={"equals[name]": "My Workflow"}
+        )
+
+        # Verify result structure
+        assert result["_id"] == "workflow-456"
+        assert result["name"] == "My Workflow"
+
+    @pytest.mark.asyncio
     async def test_get_templates_no_filter(self, service, mock_client):
         """Test getting all templates without filtering"""
         # Mock response data for single page
