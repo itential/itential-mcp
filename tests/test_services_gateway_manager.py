@@ -268,7 +268,7 @@ class TestRunService:
         mock_response.json.return_value = expected_result
         mock_client.post.return_value = mock_response
 
-        result = await service.run_service(service_name, cluster_name, input_params)
+        result = await service.run_service(service_name, cluster_name, input_params=input_params)
 
         # Verify client was called with correct parameters including input params
         expected_body = {
@@ -295,7 +295,7 @@ class TestRunService:
         mock_response.json.return_value = expected_result
         mock_client.post.return_value = mock_response
 
-        await service.run_service(service_name, cluster_name, None)
+        await service.run_service(service_name, cluster_name, input_params=None)
 
         # Verify client was called without params in body
         expected_body = {"serviceName": service_name, "clusterId": cluster_name}
@@ -316,7 +316,7 @@ class TestRunService:
         mock_response.json.return_value = expected_result
         mock_client.post.return_value = mock_response
 
-        await service.run_service(service_name, cluster_name, input_params)
+        await service.run_service(service_name, cluster_name, input_params=input_params)
 
         # Verify client was called without params because empty dict is falsy
         expected_body = {"serviceName": service_name, "clusterId": cluster_name}
@@ -388,7 +388,7 @@ class TestRunService:
         mock_response.json.return_value = expected_result
         mock_client.post.return_value = mock_response
 
-        await service.run_service(service_name, cluster_name, input_params)
+        await service.run_service(service_name, cluster_name, input_params=input_params)
 
         # Verify client was called with complex params
         expected_body = {
@@ -649,6 +649,8 @@ class TestDocumentation:
 
     def test_docstrings_contain_required_sections(self, service):
         """Test that method docstrings contain required sections"""
+        import inspect
+
         methods = [
             "get_gateways",
             "run_service",
@@ -656,6 +658,1107 @@ class TestDocumentation:
         for method_name in methods:
             method = getattr(service, method_name)
             docstring = method.__doc__
-            assert "Args:" in docstring
+            # Check for Args section only if method has parameters
+            sig = inspect.signature(method)
+            if len(sig.parameters) > 0:
+                assert "Args:" in docstring
             assert "Returns:" in docstring
             assert "Raises:" in docstring
+
+
+class TestGetService:
+    """Test cases for the get_service method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_get_service_success(self, service, mock_client):
+        """Test successful service retrieval by ID"""
+        service_id = "svc_123abc"
+        expected_service = {
+            "id": service_id,
+            "name": "test-service",
+            "type": "ansible-playbook",
+            "cluster_id": "cluster-1",
+            "gateway_id": "gw-1",
+            "description": "Test service",
+            "enabled": True,
+            "parameters": {"param1": {"type": "string"}},
+        }
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_service
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_service(service_id)
+
+        mock_client.get.assert_called_once_with(
+            f"/gateway_manager/v1/services/{service_id}"
+        )
+        assert result == expected_service
+        assert result["id"] == service_id
+
+    @pytest.mark.asyncio
+    async def test_get_service_not_found(self, service, mock_client):
+        """Test get_service with non-existent service ID"""
+        mock_client.get.side_effect = Exception("Service not found")
+
+        with pytest.raises(Exception, match="Service not found"):
+            await service.get_service("nonexistent_id")
+
+
+class TestGetCertificates:
+    """Test cases for the get_certificates method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_get_certificates_success(self, service, mock_client):
+        """Test successful certificates retrieval"""
+        expected_certs = [
+            {
+                "id": "cert_1",
+                "alias": "prod-cert",
+                "contract_id": "contract_1",
+                "is_expired": False,
+            },
+            {
+                "id": "cert_2",
+                "alias": "dev-cert",
+                "contract_id": "contract_2",
+                "is_expired": True,
+            },
+        ]
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_certs
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_certificates()
+
+        mock_client.get.assert_called_once_with("/gateway_manager/v1/certificates")
+        assert result == expected_certs
+        assert len(result) == 2
+
+    @pytest.mark.asyncio
+    async def test_get_certificates_empty_list(self, service, mock_client):
+        """Test get_certificates with no certificates"""
+        mock_response = MagicMock()
+        mock_response.json.return_value = []
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_certificates()
+
+        assert result == []
+
+
+class TestCreateCertificate:
+    """Test cases for the create_certificate method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_create_certificate_with_alias(self, service, mock_client):
+        """Test certificate creation with alias"""
+        raw_cert = "-----BEGIN CERTIFICATE-----\nMIID..."
+        contract_id = "contract_123"
+        alias = "Production Certificate"
+        expected_result = {
+            "id": "cert_new",
+            "contract_id": contract_id,
+            "alias": alias,
+        }
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.post.return_value = mock_response
+
+        result = await service.create_certificate(raw_cert, contract_id, alias=alias)
+
+        expected_body = {
+            "raw_certificate": raw_cert,
+            "contract_id": contract_id,
+            "alias": alias,
+        }
+        mock_client.post.assert_called_once_with(
+            "/gateway_manager/v1/certificates", json=expected_body
+        )
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_create_certificate_without_alias(self, service, mock_client):
+        """Test certificate creation without alias"""
+        raw_cert = "-----BEGIN CERTIFICATE-----\nMIID..."
+        contract_id = "contract_123"
+        expected_result = {"id": "cert_new", "contract_id": contract_id}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.post.return_value = mock_response
+
+        result = await service.create_certificate(raw_cert, contract_id)
+
+        expected_body = {"raw_certificate": raw_cert, "contract_id": contract_id}
+        mock_client.post.assert_called_once_with(
+            "/gateway_manager/v1/certificates", json=expected_body
+        )
+        assert result == expected_result
+
+
+class TestGetCertificate:
+    """Test cases for the get_certificate method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_get_certificate_success(self, service, mock_client):
+        """Test successful certificate retrieval by ID"""
+        cert_id = "cert_123"
+        expected_cert = {
+            "id": cert_id,
+            "alias": "Test Certificate",
+            "contract_id": "contract_123",
+            "is_expired": False,
+        }
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_cert
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_certificate(cert_id)
+
+        mock_client.get.assert_called_once_with(
+            f"/gateway_manager/v1/certificates/{cert_id}"
+        )
+        assert result == expected_cert
+
+
+class TestUpdateCertificate:
+    """Test cases for the update_certificate method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_update_certificate_alias_only(self, service, mock_client):
+        """Test updating certificate alias only"""
+        cert_id = "cert_123"
+        new_alias = "Updated Certificate"
+        expected_result = {"id": cert_id, "alias": new_alias}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.put.return_value = mock_response
+
+        result = await service.update_certificate(cert_id, alias=new_alias)
+
+        expected_body = {"alias": new_alias}
+        mock_client.put.assert_called_once_with(
+            f"/gateway_manager/v1/certificates/{cert_id}", json=expected_body
+        )
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_update_certificate_contract_id_only(self, service, mock_client):
+        """Test updating certificate contract_id only"""
+        cert_id = "cert_123"
+        new_contract_id = "contract_456"
+        expected_result = {"id": cert_id, "contract_id": new_contract_id}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.put.return_value = mock_response
+
+        result = await service.update_certificate(cert_id, contract_id=new_contract_id)
+
+        expected_body = {"contract_id": new_contract_id}
+        mock_client.put.assert_called_once_with(
+            f"/gateway_manager/v1/certificates/{cert_id}", json=expected_body
+        )
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_update_certificate_raw_certificate_only(self, service, mock_client):
+        """Test updating certificate data only"""
+        cert_id = "cert_123"
+        new_cert = "-----BEGIN CERTIFICATE-----\nNEW..."
+        expected_result = {"id": cert_id, "raw_certificate": new_cert}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.put.return_value = mock_response
+
+        result = await service.update_certificate(cert_id, raw_certificate=new_cert)
+
+        expected_body = {"raw_certificate": new_cert}
+        mock_client.put.assert_called_once_with(
+            f"/gateway_manager/v1/certificates/{cert_id}", json=expected_body
+        )
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_update_certificate_all_fields(self, service, mock_client):
+        """Test updating all certificate fields"""
+        cert_id = "cert_123"
+        new_alias = "Updated Cert"
+        new_contract_id = "contract_new"
+        new_cert = "-----BEGIN CERTIFICATE-----\nNEW..."
+        expected_result = {
+            "id": cert_id,
+            "alias": new_alias,
+            "contract_id": new_contract_id,
+        }
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.put.return_value = mock_response
+
+        result = await service.update_certificate(
+            cert_id, alias=new_alias, contract_id=new_contract_id, raw_certificate=new_cert
+        )
+
+        expected_body = {
+            "alias": new_alias,
+            "contract_id": new_contract_id,
+            "raw_certificate": new_cert,
+        }
+        mock_client.put.assert_called_once_with(
+            f"/gateway_manager/v1/certificates/{cert_id}", json=expected_body
+        )
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_update_certificate_no_fields(self, service, mock_client):
+        """Test update_certificate with no fields (should send empty body)"""
+        cert_id = "cert_123"
+        expected_result = {"id": cert_id}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.put.return_value = mock_response
+
+        result = await service.update_certificate(cert_id)
+
+        expected_body = {}
+        mock_client.put.assert_called_once_with(
+            f"/gateway_manager/v1/certificates/{cert_id}", json=expected_body
+        )
+        assert result == expected_result
+
+
+class TestDeleteCertificate:
+    """Test cases for the delete_certificate method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_delete_certificate_success(self, service, mock_client):
+        """Test successful certificate deletion"""
+        cert_id = "cert_123"
+        expected_result = {"success": True, "message": "Certificate deleted"}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.delete.return_value = mock_response
+
+        result = await service.delete_certificate(cert_id)
+
+        mock_client.delete.assert_called_once_with(
+            f"/gateway_manager/v1/certificates/{cert_id}"
+        )
+        assert result == expected_result
+
+
+class TestGetConnections:
+    """Test cases for the get_connections method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_get_connections_success(self, service, mock_client):
+        """Test successful connections retrieval"""
+        expected_connections = [
+            {"cluster_id": "cluster-1", "gateway_id": "gw-1", "status": "connected"},
+            {"cluster_id": "cluster-2", "gateway_id": "gw-2", "status": "connected"},
+        ]
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_connections
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_connections()
+
+        mock_client.get.assert_called_once_with("/gateway_manager/v1/connections")
+        assert result == expected_connections
+
+
+class TestGetConnection:
+    """Test cases for the get_connection method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_get_connection_success(self, service, mock_client):
+        """Test successful connection health check"""
+        cluster_id = "cluster-1"
+        expected_health = {
+            "cluster_id": cluster_id,
+            "is_healthy": True,
+            "status": "connected",
+        }
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_health
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_connection(cluster_id)
+
+        mock_client.get.assert_called_once_with(
+            f"/gateway_manager/v1/connections/{cluster_id}"
+        )
+        assert result == expected_health
+
+
+class TestCreateGateway:
+    """Test cases for the create_gateway method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_create_gateway_required_fields_only(self, service, mock_client):
+        """Test gateway creation with required fields only"""
+        cluster_id = "prod_cluster_01"
+        name = "Production Gateway"
+        description = "Gateway for production"
+        enabled = True
+        expected_result = {
+            "id": "gw_new",
+            "cluster_id": cluster_id,
+            "name": name,
+            "description": description,
+            "enabled": enabled,
+        }
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.post.return_value = mock_response
+
+        result = await service.create_gateway(cluster_id, name, description, enabled)
+
+        expected_body = {
+            "cluster_id": cluster_id,
+            "name": name,
+            "description": description,
+            "enabled": enabled,
+        }
+        mock_client.post.assert_called_once_with(
+            "/gateway_manager/v1/gateways", json=expected_body
+        )
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_create_gateway_all_fields(self, service, mock_client):
+        """Test gateway creation with all optional fields"""
+        cluster_id = "prod_cluster_01"
+        name = "Production Gateway"
+        description = "Gateway for production"
+        enabled = True
+        certificate_id = "cert_123"
+        connection_config = {"timeout": 30}
+        tags = ["production", "network"]
+        metadata = {"location": "datacenter-1"}
+        expected_result = {"id": "gw_new", "cluster_id": cluster_id}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.post.return_value = mock_response
+
+        result = await service.create_gateway(
+            cluster_id,
+            name,
+            description,
+            enabled,
+            certificate_id=certificate_id,
+            connection_config=connection_config,
+            tags=tags,
+            metadata=metadata,
+        )
+
+        expected_body = {
+            "cluster_id": cluster_id,
+            "name": name,
+            "description": description,
+            "enabled": enabled,
+            "certificate_id": certificate_id,
+            "connection_config": connection_config,
+            "tags": tags,
+            "metadata": metadata,
+        }
+        mock_client.post.assert_called_once_with(
+            "/gateway_manager/v1/gateways", json=expected_body
+        )
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_create_gateway_with_some_optional_fields(self, service, mock_client):
+        """Test gateway creation with some optional fields"""
+        cluster_id = "prod_cluster_01"
+        name = "Production Gateway"
+        description = "Gateway for production"
+        enabled = True
+        tags = ["production"]
+        expected_result = {"id": "gw_new"}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.post.return_value = mock_response
+
+        result = await service.create_gateway(
+            cluster_id, name, description, enabled, tags=tags
+        )
+
+        expected_body = {
+            "cluster_id": cluster_id,
+            "name": name,
+            "description": description,
+            "enabled": enabled,
+            "tags": tags,
+        }
+        mock_client.post.assert_called_once_with(
+            "/gateway_manager/v1/gateways", json=expected_body
+        )
+        assert result == expected_result
+
+
+class TestGetGateway:
+    """Test cases for the get_gateway method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_get_gateway_success(self, service, mock_client):
+        """Test successful gateway retrieval by ID"""
+        gateway_id = "gw_123"
+        expected_gateway = {
+            "id": gateway_id,
+            "name": "Test Gateway",
+            "cluster_id": "cluster-1",
+            "status": "connected",
+        }
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_gateway
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_gateway(gateway_id)
+
+        mock_client.get.assert_called_once_with(
+            f"/gateway_manager/v1/gateways/{gateway_id}"
+        )
+        assert result == expected_gateway
+
+
+class TestUpdateGateway:
+    """Test cases for the update_gateway method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_update_gateway_name_only(self, service, mock_client):
+        """Test updating gateway name only"""
+        gateway_id = "gw_123"
+        new_name = "Updated Gateway"
+        expected_result = {"id": gateway_id, "name": new_name}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.put.return_value = mock_response
+
+        result = await service.update_gateway(gateway_id, name=new_name)
+
+        expected_body = {"name": new_name}
+        mock_client.put.assert_called_once_with(
+            f"/gateway_manager/v1/gateways/{gateway_id}", json=expected_body
+        )
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_update_gateway_multiple_fields(self, service, mock_client):
+        """Test updating multiple gateway fields"""
+        gateway_id = "gw_123"
+        new_name = "Updated Gateway"
+        new_description = "Updated description"
+        new_enabled = False
+        expected_result = {"id": gateway_id}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.put.return_value = mock_response
+
+        result = await service.update_gateway(
+            gateway_id, name=new_name, description=new_description, enabled=new_enabled
+        )
+
+        expected_body = {
+            "name": new_name,
+            "description": new_description,
+            "enabled": new_enabled,
+        }
+        mock_client.put.assert_called_once_with(
+            f"/gateway_manager/v1/gateways/{gateway_id}", json=expected_body
+        )
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_update_gateway_all_fields(self, service, mock_client):
+        """Test updating all gateway fields"""
+        gateway_id = "gw_123"
+        updates = {
+            "name": "New Name",
+            "description": "New Description",
+            "enabled": False,
+            "certificate_id": "cert_new",
+            "connection_config": {"timeout": 60},
+            "tags": ["updated"],
+            "metadata": {"key": "value"},
+        }
+        expected_result = {"id": gateway_id}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.put.return_value = mock_response
+
+        result = await service.update_gateway(gateway_id, **updates)
+
+        mock_client.put.assert_called_once_with(
+            f"/gateway_manager/v1/gateways/{gateway_id}", json=updates
+        )
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_update_gateway_no_fields(self, service, mock_client):
+        """Test update_gateway with no fields (should send empty body)"""
+        gateway_id = "gw_123"
+        expected_result = {"id": gateway_id}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.put.return_value = mock_response
+
+        result = await service.update_gateway(gateway_id)
+
+        expected_body = {}
+        mock_client.put.assert_called_once_with(
+            f"/gateway_manager/v1/gateways/{gateway_id}", json=expected_body
+        )
+        assert result == expected_result
+
+
+class TestDeleteGateway:
+    """Test cases for the delete_gateway method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_delete_gateway_success(self, service, mock_client):
+        """Test successful gateway deletion"""
+        gateway_id = "gw_123"
+        expected_result = {"success": True, "message": "Gateway deleted"}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.delete.return_value = mock_response
+
+        result = await service.delete_gateway(gateway_id)
+
+        mock_client.delete.assert_called_once_with(
+            f"/gateway_manager/v1/gateways/{gateway_id}"
+        )
+        assert result == expected_result
+
+
+class TestGetServiceGroups:
+    """Test cases for the get_service_groups method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_get_service_groups_success(self, service, mock_client):
+        """Test successful service groups retrieval"""
+        expected_groups = [
+            {"id": "sg_1", "name": "group-1", "service_count": 3},
+            {"id": "sg_2", "name": "group-2", "service_count": 5},
+        ]
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_groups
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_service_groups()
+
+        mock_client.get.assert_called_once_with("/gateway_manager/v1/service-groups")
+        assert result == expected_groups
+
+
+class TestCreateServiceGroup:
+    """Test cases for the create_service_group method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_create_service_group_required_fields_only(
+        self, service, mock_client
+    ):
+        """Test service group creation with required fields only"""
+        name = "network_deployment"
+        description = "Network deployment services"
+        expected_result = {"id": "sg_new", "name": name, "description": description}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.post.return_value = mock_response
+
+        result = await service.create_service_group(name, description)
+
+        expected_body = {"name": name, "description": description}
+        mock_client.post.assert_called_once_with(
+            "/gateway_manager/v1/service-groups", json=expected_body
+        )
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_create_service_group_all_fields(self, service, mock_client):
+        """Test service group creation with all fields"""
+        name = "network_deployment"
+        description = "Network deployment services"
+        services = ["svc_1", "svc_2"]
+        enabled = True
+        tags = ["network", "deployment"]
+        metadata = {"owner": "team-network"}
+        expected_result = {"id": "sg_new"}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.post.return_value = mock_response
+
+        result = await service.create_service_group(
+            name,
+            description,
+            services=services,
+            enabled=enabled,
+            tags=tags,
+            metadata=metadata,
+        )
+
+        expected_body = {
+            "name": name,
+            "description": description,
+            "services": services,
+            "enabled": enabled,
+            "tags": tags,
+            "metadata": metadata,
+        }
+        mock_client.post.assert_called_once_with(
+            "/gateway_manager/v1/service-groups", json=expected_body
+        )
+        assert result == expected_result
+
+
+class TestGetServiceGroup:
+    """Test cases for the get_service_group method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_get_service_group_success(self, service, mock_client):
+        """Test successful service group retrieval by ID"""
+        group_id = "sg_123"
+        expected_group = {
+            "id": group_id,
+            "name": "Test Group",
+            "description": "Test service group",
+            "service_count": 3,
+        }
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_group
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_service_group(group_id)
+
+        mock_client.get.assert_called_once_with(
+            f"/gateway_manager/v1/service-groups/{group_id}"
+        )
+        assert result == expected_group
+
+
+class TestUpdateServiceGroup:
+    """Test cases for the update_service_group method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_update_service_group_name_only(self, service, mock_client):
+        """Test updating service group name only"""
+        group_id = "sg_123"
+        new_name = "Updated Group"
+        expected_result = {"id": group_id, "name": new_name}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.patch.return_value = mock_response
+
+        result = await service.update_service_group(group_id, name=new_name)
+
+        expected_body = {"name": new_name}
+        mock_client.patch.assert_called_once_with(
+            f"/gateway_manager/v1/service-groups/{group_id}", json=expected_body
+        )
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_update_service_group_add_services(self, service, mock_client):
+        """Test adding services to service group"""
+        group_id = "sg_123"
+        add_services = ["svc_789"]
+        expected_result = {"id": group_id, "service_count": 4}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.patch.return_value = mock_response
+
+        result = await service.update_service_group(group_id, add_services=add_services)
+
+        expected_body = {"add_services": add_services}
+        mock_client.patch.assert_called_once_with(
+            f"/gateway_manager/v1/service-groups/{group_id}", json=expected_body
+        )
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_update_service_group_remove_services(self, service, mock_client):
+        """Test removing services from service group"""
+        group_id = "sg_123"
+        remove_services = ["svc_456"]
+        expected_result = {"id": group_id, "service_count": 2}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.patch.return_value = mock_response
+
+        result = await service.update_service_group(
+            group_id, remove_services=remove_services
+        )
+
+        expected_body = {"remove_services": remove_services}
+        mock_client.patch.assert_called_once_with(
+            f"/gateway_manager/v1/service-groups/{group_id}", json=expected_body
+        )
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_update_service_group_all_fields(self, service, mock_client):
+        """Test updating all service group fields"""
+        group_id = "sg_123"
+        updates = {
+            "name": "New Name",
+            "description": "New Description",
+            "services": ["svc_1", "svc_2"],
+            "add_services": ["svc_3"],
+            "remove_services": ["svc_4"],
+            "enabled": False,
+            "tags": ["updated"],
+            "metadata": {"key": "value"},
+        }
+        expected_result = {"id": group_id}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.patch.return_value = mock_response
+
+        result = await service.update_service_group(group_id, **updates)
+
+        mock_client.patch.assert_called_once_with(
+            f"/gateway_manager/v1/service-groups/{group_id}", json=updates
+        )
+        assert result == expected_result
+
+    @pytest.mark.asyncio
+    async def test_update_service_group_no_fields(self, service, mock_client):
+        """Test update_service_group with no fields (should send empty body)"""
+        group_id = "sg_123"
+        expected_result = {"id": group_id}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.patch.return_value = mock_response
+
+        result = await service.update_service_group(group_id)
+
+        expected_body = {}
+        mock_client.patch.assert_called_once_with(
+            f"/gateway_manager/v1/service-groups/{group_id}", json=expected_body
+        )
+        assert result == expected_result
+
+
+class TestDeleteServiceGroup:
+    """Test cases for the delete_service_group method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_delete_service_group_success(self, service, mock_client):
+        """Test successful service group deletion"""
+        group_id = "sg_123"
+        expected_result = {"success": True, "message": "Service group deleted"}
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_result
+        mock_client.delete.return_value = mock_response
+
+        result = await service.delete_service_group(group_id)
+
+        mock_client.delete.assert_called_once_with(
+            f"/gateway_manager/v1/service-groups/{group_id}"
+        )
+        assert result == expected_result
+
+
+class TestGetHealthStatus:
+    """Test cases for the get_health_status method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_get_health_status_success(self, service, mock_client):
+        """Test successful health status retrieval"""
+        expected_health = {
+            "status": "healthy",
+            "uptime": 3600,
+            "version": "2.1.0",
+        }
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_health
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_health_status()
+
+        mock_client.get.assert_called_once_with("/gateway_manager/v1/health/status")
+        assert result == expected_health
+        assert result["status"] == "healthy"
+
+
+class TestGetVersion:
+    """Test cases for the get_version method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock client for testing"""
+        client = AsyncMock()
+        return client
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mocked client"""
+        service = Service(mock_client)
+        return service
+
+    @pytest.mark.asyncio
+    async def test_get_version_success(self, service, mock_client):
+        """Test successful version retrieval"""
+        expected_version = {
+            "version": "2.1.0",
+            "build": "abc123",
+            "api_version": "v1",
+        }
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = expected_version
+        mock_client.get.return_value = mock_response
+
+        result = await service.get_version()
+
+        mock_client.get.assert_called_once_with("/gateway_manager/v1/version")
+        assert result == expected_version
+        assert result["version"] == "2.1.0"
