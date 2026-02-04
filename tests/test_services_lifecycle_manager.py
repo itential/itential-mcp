@@ -431,6 +431,75 @@ class TestGetInstances:
             # Verify we got all the data
             assert len([x for x in result if x["name"].startswith("instance")]) == 120
 
+    @pytest.mark.asyncio
+    async def test_get_instances_pagination_exception(self, service):
+        """Test get_instances handles pagination exceptions"""
+        # Mock describe_resource
+        resource_response = {"_id": "model-123", "name": "test-resource"}
+        service.describe_resource = AsyncMock(return_value=resource_response)
+
+        # First page succeeds
+        first_response = MagicMock()
+        first_response.json.return_value = {
+            "data": [{"_id": "1", "name": "instance1"}],
+            "metadata": {"total": 250},  # More than one page
+        }
+
+        # Mock _fetch_page to fail on one of the parallel requests
+        # For skip values, with total=250 and limit=100, we'll have:
+        # - skip=0 (first page, already retrieved)
+        # - skip=100 (second parallel fetch)
+        # - skip=200 (third parallel fetch)
+        call_count = [0]
+
+        async def mock_fetch_page(endpoint, skip, limit):
+            call_count[0] += 1
+            # Fail on first parallel call
+            if call_count[0] == 1:  # First call to _fetch_page
+                raise Exception("Network error during fetch")
+            return [{"_id": f"{skip}", "name": f"instance{skip}"}]
+
+        service._fetch_page = mock_fetch_page
+        service.client.get.return_value = first_response
+
+        # Should propagate the exception from the failed page
+        with pytest.raises(Exception, match="Network error during fetch"):
+            await service.get_instances("test-resource")
+
+    @pytest.mark.asyncio
+    async def test_get_instances_successful_parallel_pagination(self, service):
+        """Test get_instances with successful parallel pagination"""
+        # Mock describe_resource
+        resource_response = {"_id": "model-123", "name": "test-resource"}
+        service.describe_resource = AsyncMock(return_value=resource_response)
+
+        # First page succeeds with 250 total items
+        first_response = MagicMock()
+        first_response.json.return_value = {
+            "data": [
+                {"_id": f"instance-{i}", "name": f"instance-{i}"} for i in range(100)
+            ],
+            "metadata": {"total": 250},
+        }
+
+        # Mock _fetch_page to successfully return remaining pages
+        async def mock_fetch_page(endpoint, skip, limit):
+            return [
+                {"_id": f"instance-{i}", "name": f"instance-{i}"}
+                for i in range(skip, min(skip + limit, 250))
+            ]
+
+        service._fetch_page = mock_fetch_page
+        service.client.get.return_value = first_response
+
+        result = await service.get_instances("test-resource")
+
+        # Should have all 250 instances
+        assert len(result) == 250
+        # Verify first and last items
+        assert result[0]["_id"] == "instance-0"
+        assert result[249]["_id"] == "instance-249"
+
 
 class TestDescribeInstance:
     """Test the describe_instance method"""

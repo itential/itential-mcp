@@ -880,9 +880,7 @@ class Service(ServiceBase):
         if metadata is not None:
             body["metadata"] = metadata
 
-        res = await self.client.post(
-            "/gateway_manager/v1/service-groups", json=body
-        )
+        res = await self.client.post("/gateway_manager/v1/service-groups", json=body)
         return res.json()
 
     async def get_service_group(self, service_group_id: str) -> Mapping[str, Any]:

@@ -357,6 +357,34 @@ class TestConfigurationManagerService:
         assert isinstance(exc_info.value, exceptions.ServerException)
 
     @pytest.mark.asyncio
+    async def test_create_golden_config_tree_http_error_without_response(
+        self, service, mock_client
+    ):
+        """Test create_golden_config_tree with HTTPStatusError that has no response attribute."""
+        # Mock the parser endpoint for device type validation
+        parser_mock_response = Mock()
+        parser_mock_response.json.return_value = {
+            "list": [{"name": "cisco_ios"}, {"name": "juniper"}]
+        }
+        mock_client.get.return_value = parser_mock_response
+
+        # Create an HTTPStatusError without a response attribute (edge case)
+        http_error = Exception("Network error")
+        server_error = ipsdk.exceptions.HTTPStatusError(http_error)
+        # Ensure response attribute doesn't exist or is None
+        if hasattr(server_error, "response"):
+            object.__setattr__(server_error, "response", None)
+        mock_client.post.side_effect = server_error
+
+        with pytest.raises(exceptions.ServerException) as exc_info:
+            await service.create_golden_config_tree(
+                name="test-tree", device_type="cisco_ios"
+            )
+
+        # Verify that the ServerException was raised correctly
+        assert isinstance(exc_info.value, exceptions.ServerException)
+
+    @pytest.mark.asyncio
     async def test_create_golden_config_tree_invalid_device_type(
         self, service, mock_client
     ):
@@ -536,7 +564,7 @@ class TestConfigurationManagerService:
                 template="template",
             )
 
-        assert "tree non-existent-tree could not be found" in str(exc_info.value)
+        assert "tree 'non-existent-tree' not found" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_add_golden_config_node_server_error(self, service, mock_client):
@@ -565,6 +593,35 @@ class TestConfigurationManagerService:
             )
 
         # Just verify that the ServerException was raised correctly
+        assert isinstance(exc_info.value, exceptions.ServerException)
+
+    @pytest.mark.asyncio
+    async def test_add_golden_config_node_http_error_without_response(
+        self, service, mock_client
+    ):
+        """Test add_golden_config_node with HTTPStatusError that has no response attribute."""
+        trees_data = [{"id": "tree-1", "name": "test-tree", "deviceType": "cisco_ios"}]
+
+        service.get_golden_config_trees = AsyncMock(return_value=trees_data)
+
+        # Create an HTTPStatusError without a response attribute (edge case)
+        http_error = Exception("Network error")
+        server_error = ipsdk.exceptions.HTTPStatusError(http_error)
+        # Ensure response attribute doesn't exist or is None
+        if hasattr(server_error, "response"):
+            object.__setattr__(server_error, "response", None)
+        mock_client.post.side_effect = server_error
+
+        with pytest.raises(exceptions.ServerException) as exc_info:
+            await service.add_golden_config_node(
+                tree_name="test-tree",
+                version="v1.0",
+                path="base",
+                name="interface-config",
+                template="template",
+            )
+
+        # Verify that the ServerException was raised correctly
         assert isinstance(exc_info.value, exceptions.ServerException)
 
     @pytest.mark.asyncio
@@ -928,7 +985,7 @@ class TestConfigurationManagerDeviceGroups:
         service.get_device_groups = AsyncMock(return_value=existing_groups)
 
         with pytest.raises(
-            ValueError, match="device group Existing Group already exists"
+            ValueError, match="device group 'Existing Group' already exists"
         ):
             await service.create_device_group(
                 name="Existing Group",
