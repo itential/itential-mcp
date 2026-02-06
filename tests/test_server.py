@@ -988,3 +988,415 @@ class TestServerClass:
         with patch("itential_mcp.server.server.FastMCP"):
             async with server_instance as srv:
                 assert srv == server_instance
+
+
+class TestServerInitialization:
+    """Test Server initialization methods"""
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.server.server.build_auth_provider")
+    @patch("itential_mcp.server.server.supports_transport")
+    async def test_init_server_auth_transport_incompatibility(
+        self, mock_supports_transport, mock_auth_builder
+    ):
+        """Test that __init_server__ raises ConfigurationException for incompatible auth/transport"""
+        from itential_mcp.config.models import Config, ServerConfig, AuthConfig
+        from itential_mcp.core.exceptions import ConfigurationException
+
+        mock_config = Config(
+            server=ServerConfig(transport="stdio", log_level="INFO"),
+            auth=AuthConfig(type="oauth"),
+        )
+
+        # Mock auth provider that is NOT compatible with stdio transport
+        mock_auth_provider = MagicMock()
+        mock_auth_provider.__class__.__name__ = "OAuthProvider"
+        mock_auth_builder.return_value = mock_auth_provider
+        mock_supports_transport.return_value = False
+
+        server_instance = server_module.Server(mock_config)
+
+        # Should raise ConfigurationException
+        with pytest.raises(ConfigurationException) as exc_info:
+            await server_instance.__init_server__()
+
+        assert "not supported for transport" in str(exc_info.value)
+        assert "stdio" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.server.auth.build_auth_provider")
+    async def test_init_server_parse_tags_with_none(self, mock_auth_builder):
+        """Test __init_server__ with None tags returns None"""
+        from itential_mcp.config.models import Config, ServerConfig, AuthConfig
+
+        mock_config = Config(
+            server=ServerConfig(
+                transport="stdio",
+                include_tags=None,
+                exclude_tags=None,
+                log_level="INFO",
+            ),
+            auth=AuthConfig(type="none"),
+        )
+
+        mock_auth_builder.return_value = None
+
+        server_instance = server_module.Server(mock_config)
+
+        with patch("itential_mcp.server.server.FastMCP") as mock_fastmcp:
+            await server_instance.__init_server__()
+
+            # Verify FastMCP was called with None for tags
+            call_kwargs = mock_fastmcp.call_args.kwargs
+            assert call_kwargs["include_tags"] is None
+            assert call_kwargs["exclude_tags"] is None
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.server.auth.build_auth_provider")
+    @patch("itential_mcp.server.server.toolutils.itertools")
+    async def test_init_tools_with_custom_tools_path(
+        self, mock_itertools, mock_auth_builder
+    ):
+        """Test __init_tools__ includes custom tools_path"""
+        from itential_mcp.config.models import Config, ServerConfig, AuthConfig
+
+        mock_config = Config(
+            server=ServerConfig(
+                transport="stdio",
+                tools_path="/custom/path/to/tools",
+                log_level="INFO",
+            ),
+            auth=AuthConfig(type="none"),
+        )
+
+        mock_auth_builder.return_value = None
+
+        def mock_func():
+            """Test tool"""
+            pass
+
+        mock_func.__name__ = "test_tool"
+        mock_itertools.return_value = [(mock_func, {"test"})]
+
+        server_instance = server_module.Server(mock_config)
+
+        with patch("itential_mcp.server.server.FastMCP"):
+            await server_instance.__init_server__()
+            await server_instance.__init_tools__()
+
+        # Verify itertools was called twice (once for builtin, once for custom path)
+        assert mock_itertools.call_count == 2
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.server.auth.build_auth_provider")
+    @patch("itential_mcp.server.server.toolutils.itertools")
+    @patch("itential_mcp.server.server.toolutils.get_json_schema")
+    async def test_init_tools_with_output_schema(
+        self, mock_get_schema, mock_itertools, mock_auth_builder
+    ):
+        """Test __init_tools__ adds output_schema when available"""
+        from itential_mcp.config.models import Config, ServerConfig, AuthConfig
+
+        mock_config = Config(
+            server=ServerConfig(transport="stdio", tools_path=None, log_level="INFO"),
+            auth=AuthConfig(type="none"),
+        )
+
+        mock_auth_builder.return_value = None
+
+        def mock_func():
+            """Test tool"""
+            pass
+
+        mock_func.__name__ = "test_tool"
+        mock_itertools.return_value = [(mock_func, {"test"})]
+
+        # Mock schema with object type
+        mock_get_schema.return_value = {"type": "object", "properties": {}}
+
+        server_instance = server_module.Server(mock_config)
+
+        with patch("itential_mcp.server.server.FastMCP"):
+            await server_instance.__init_server__()
+            await server_instance.__init_tools__()
+
+        # Verify get_json_schema was called
+        mock_get_schema.assert_called_with(mock_func)
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.server.auth.build_auth_provider")
+    @patch("itential_mcp.server.server.toolutils.itertools")
+    @patch("itential_mcp.server.server.toolutils.get_json_schema")
+    async def test_init_tools_without_output_schema(
+        self, mock_get_schema, mock_itertools, mock_auth_builder
+    ):
+        """Test __init_tools__ handles tools without output_schema"""
+        from itential_mcp.config.models import Config, ServerConfig, AuthConfig
+
+        mock_config = Config(
+            server=ServerConfig(transport="stdio", tools_path=None, log_level="INFO"),
+            auth=AuthConfig(type="none"),
+        )
+
+        mock_auth_builder.return_value = None
+
+        def mock_func():
+            """Test tool"""
+            pass
+
+        mock_func.__name__ = "test_tool"
+        mock_itertools.return_value = [(mock_func, {"test"})]
+
+        # Mock get_json_schema to raise ValueError
+        mock_get_schema.side_effect = ValueError("No schema")
+
+        server_instance = server_module.Server(mock_config)
+
+        with patch("itential_mcp.server.server.FastMCP"):
+            await server_instance.__init_server__()
+            await server_instance.__init_tools__()
+
+        # Should not raise, just skip adding output_schema
+        mock_get_schema.assert_called_with(mock_func)
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.server.auth.build_auth_provider")
+    @patch("itential_mcp.server.server.bindings.iterbindings")
+    async def test_init_bindings_with_tools(self, mock_iterbindings, mock_auth_builder):
+        """Test __init_bindings__ registers dynamic bindings"""
+        from itential_mcp.config.models import Config, ServerConfig, AuthConfig
+
+        mock_config = Config(
+            server=ServerConfig(transport="stdio", log_level="INFO"),
+            auth=AuthConfig(type="none"),
+        )
+
+        mock_auth_builder.return_value = None
+
+        async def mock_bound_func():
+            """Bound tool"""
+            pass
+
+        # Setup async generator with bindings
+        async def mock_async_gen():
+            yield (mock_bound_func, {"name": "bound_tool", "tags": {"binding"}})
+
+        mock_iterbindings.return_value = mock_async_gen()
+
+        server_instance = server_module.Server(mock_config)
+
+        with patch("itential_mcp.server.server.FastMCP"):
+            await server_instance.__init_server__()
+            await server_instance.__init_bindings__()
+
+        # Verify iterbindings was called
+        mock_iterbindings.assert_called_once_with(mock_config)
+
+
+class TestConnectionTest:
+    """Test connection testing on startup"""
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.platform.connection_test.ConnectionTestService")
+    async def test_test_connection_on_startup_success(self, mock_service_class):
+        """Test _test_connection_on_startup with successful connection"""
+        from itential_mcp.config.models import Config, ServerConfig, AuthConfig
+
+        mock_config = Config(
+            server=ServerConfig(
+                transport="stdio",
+                test_connection_on_startup=True,
+                startup_test_timeout=30,
+                log_level="INFO",
+            ),
+            auth=AuthConfig(type="none"),
+        )
+
+        # Mock successful connection test result
+        mock_result = MagicMock()
+        mock_result.success = True
+        mock_result.platform_version = "2024.1"
+        mock_result.authenticated_user = "admin"
+
+        mock_service = MagicMock()
+        mock_service.run_all_checks = AsyncMock(return_value=mock_result)
+        mock_service_class.return_value = mock_service
+
+        server_instance = server_module.Server(mock_config)
+
+        # Should not raise
+        await server_instance._test_connection_on_startup()
+
+        mock_service.run_all_checks.assert_called_once_with(timeout=30)
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.platform.connection_test.ConnectionTestService")
+    async def test_test_connection_on_startup_failure(self, mock_service_class):
+        """Test _test_connection_on_startup with failed connection"""
+        from itential_mcp.config.models import Config, ServerConfig, AuthConfig
+        from itential_mcp.core.exceptions import ConnectionException
+        from itential_mcp.platform.connection_test import CheckStatus
+
+        mock_config = Config(
+            server=ServerConfig(
+                transport="stdio",
+                test_connection_on_startup=True,
+                startup_test_timeout=30,
+                log_level="INFO",
+            ),
+            auth=AuthConfig(type="none"),
+        )
+
+        # Mock failed connection test result
+        mock_check = MagicMock()
+        mock_check.status = CheckStatus.FAILED
+        mock_check.name = "dns_resolution"
+        mock_check.message = "DNS lookup failed"
+        mock_check.suggestion = "Check DNS configuration"
+
+        mock_result = MagicMock()
+        mock_result.success = False
+        mock_result.error = "Connection failed"
+        mock_result.checks = [mock_check]
+
+        mock_service = MagicMock()
+        mock_service.run_all_checks = AsyncMock(return_value=mock_result)
+        mock_service_class.return_value = mock_service
+
+        server_instance = server_module.Server(mock_config)
+
+        # Should raise ConnectionException
+        with pytest.raises(ConnectionException) as exc_info:
+            await server_instance._test_connection_on_startup()
+
+        assert "Connection failed" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.platform.connection_test.ConnectionTestService")
+    async def test_test_connection_on_startup_exception(self, mock_service_class):
+        """Test _test_connection_on_startup with unexpected exception"""
+        from itential_mcp.config.models import Config, ServerConfig, AuthConfig
+        from itential_mcp.core.exceptions import ConnectionException
+
+        mock_config = Config(
+            server=ServerConfig(
+                transport="stdio",
+                test_connection_on_startup=True,
+                startup_test_timeout=30,
+                log_level="INFO",
+            ),
+            auth=AuthConfig(type="none"),
+        )
+
+        # Mock service to raise exception
+        mock_service = MagicMock()
+        mock_service.run_all_checks = AsyncMock(
+            side_effect=RuntimeError("Unexpected error")
+        )
+        mock_service_class.return_value = mock_service
+
+        server_instance = server_module.Server(mock_config)
+
+        # Should raise ConnectionException
+        with pytest.raises(ConnectionException) as exc_info:
+            await server_instance._test_connection_on_startup()
+
+        assert "Unexpected error" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.server.auth.build_auth_provider")
+    @patch("itential_mcp.platform.connection_test.ConnectionTestService")
+    async def test_server_run_with_connection_test_enabled(
+        self, mock_service_class, mock_auth_builder
+    ):
+        """Test Server.run() calls _test_connection_on_startup when enabled"""
+        from itential_mcp.config.models import Config, ServerConfig, AuthConfig
+
+        mock_config = Config(
+            server=ServerConfig(
+                transport="stdio",
+                test_connection_on_startup=True,
+                startup_test_timeout=30,
+                log_level="INFO",
+            ),
+            auth=AuthConfig(type="none"),
+        )
+
+        mock_auth_builder.return_value = None
+
+        # Mock successful connection test
+        mock_result = MagicMock()
+        mock_result.success = True
+        mock_result.platform_version = "2024.1"
+        mock_result.authenticated_user = "admin"
+
+        mock_service = MagicMock()
+        mock_service.run_all_checks = AsyncMock(return_value=mock_result)
+        mock_service_class.return_value = mock_service
+
+        server_instance = server_module.Server(mock_config)
+
+        # Mock MCP instance
+        mock_mcp = MagicMock()
+        mock_mcp.run_async = AsyncMock()
+        server_instance.mcp = mock_mcp
+
+        await server_instance.run()
+
+        # Verify connection test was called
+        mock_service.run_all_checks.assert_called_once_with(timeout=30)
+        # Verify server continued to run after successful test
+        mock_mcp.run_async.assert_called_once()
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.server.auth.build_auth_provider")
+    @patch("itential_mcp.platform.connection_test.ConnectionTestService")
+    async def test_server_run_with_connection_test_failure_stops_startup(
+        self, mock_service_class, mock_auth_builder
+    ):
+        """Test Server.run() stops startup when connection test fails"""
+        from itential_mcp.config.models import Config, ServerConfig, AuthConfig
+        from itential_mcp.core.exceptions import ConnectionException
+        from itential_mcp.platform.connection_test import CheckStatus
+
+        mock_config = Config(
+            server=ServerConfig(
+                transport="stdio",
+                test_connection_on_startup=True,
+                startup_test_timeout=30,
+                log_level="INFO",
+            ),
+            auth=AuthConfig(type="none"),
+        )
+
+        mock_auth_builder.return_value = None
+
+        # Mock failed connection test
+        mock_check = MagicMock()
+        mock_check.status = CheckStatus.FAILED
+        mock_check.name = "connectivity"
+        mock_check.message = "Connection refused"
+        mock_check.suggestion = None
+
+        mock_result = MagicMock()
+        mock_result.success = False
+        mock_result.error = "Cannot connect to platform"
+        mock_result.checks = [mock_check]
+
+        mock_service = MagicMock()
+        mock_service.run_all_checks = AsyncMock(return_value=mock_result)
+        mock_service_class.return_value = mock_service
+
+        server_instance = server_module.Server(mock_config)
+
+        # Mock MCP instance
+        mock_mcp = MagicMock()
+        mock_mcp.run_async = AsyncMock()
+        server_instance.mcp = mock_mcp
+
+        # Should raise ConnectionException and not call run_async
+        with pytest.raises(ConnectionException):
+            await server_instance.run()
+
+        # Verify server did NOT continue to run after failed test
+        mock_mcp.run_async.assert_not_called()

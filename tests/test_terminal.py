@@ -244,3 +244,113 @@ class TestTerminalIntegration:
 
         # Should complete 100 calls in less than 1 second
         assert (end_time - start_time) < 1.0
+
+
+class TestColors:
+    """Test cases for Colors class."""
+
+    def test_colors_class_exists(self):
+        """Test that Colors class exists."""
+        assert hasattr(terminal, "Colors")
+
+    def test_colors_constants_exist(self):
+        """Test that all color constants exist."""
+        assert hasattr(terminal.Colors, "RED")
+        assert hasattr(terminal.Colors, "GREEN")
+        assert hasattr(terminal.Colors, "YELLOW")
+        assert hasattr(terminal.Colors, "BLUE")
+        assert hasattr(terminal.Colors, "RESET")
+        assert hasattr(terminal.Colors, "BOLD")
+
+    def test_colors_are_strings(self):
+        """Test that all colors are strings."""
+        assert isinstance(terminal.Colors.RED, str)
+        assert isinstance(terminal.Colors.GREEN, str)
+        assert isinstance(terminal.Colors.YELLOW, str)
+        assert isinstance(terminal.Colors.BLUE, str)
+        assert isinstance(terminal.Colors.RESET, str)
+        assert isinstance(terminal.Colors.BOLD, str)
+
+
+class TestPrintFunctions:
+    """Test cases for terminal print functions."""
+
+    def test_print_success_function_exists(self):
+        """Test that print_success function exists."""
+        assert hasattr(terminal, "print_success")
+        assert callable(terminal.print_success)
+
+    def test_print_error_function_exists(self):
+        """Test that print_error function exists."""
+        assert hasattr(terminal, "print_error")
+        assert callable(terminal.print_error)
+
+    def test_print_warning_function_exists(self):
+        """Test that print_warning function exists."""
+        assert hasattr(terminal, "print_warning")
+        assert callable(terminal.print_warning)
+
+    def test_print_info_function_exists(self):
+        """Test that print_info function exists."""
+        assert hasattr(terminal, "print_info")
+        assert callable(terminal.print_info)
+
+    def test_print_success_outputs_message(self, capsys):
+        """Test that print_success outputs the message with color."""
+        terminal.print_success("Test success message")
+
+        captured = capsys.readouterr()
+        assert "Test success message" in captured.out
+        assert terminal.Colors.GREEN in captured.out
+        assert terminal.Colors.RESET in captured.out
+
+    def test_print_error_outputs_message(self, capsys):
+        """Test that print_error outputs the message with color."""
+        terminal.print_error("Test error message")
+
+        captured = capsys.readouterr()
+        assert "Test error message" in captured.out
+        assert terminal.Colors.RED in captured.out
+        assert terminal.Colors.RESET in captured.out
+
+    def test_print_warning_outputs_message(self, capsys):
+        """Test that print_warning outputs the message with color."""
+        terminal.print_warning("Test warning message")
+
+        captured = capsys.readouterr()
+        assert "Test warning message" in captured.out
+        assert terminal.Colors.YELLOW in captured.out
+        assert terminal.Colors.RESET in captured.out
+
+    def test_print_info_outputs_message(self, capsys):
+        """Test that print_info outputs the message with color."""
+        terminal.print_info("Test info message")
+
+        captured = capsys.readouterr()
+        assert "Test info message" in captured.out
+        assert terminal.Colors.BLUE in captured.out
+        assert terminal.Colors.RESET in captured.out
+
+    def test_print_functions_with_empty_string(self, capsys):
+        """Test print functions with empty string."""
+        terminal.print_success("")
+        terminal.print_error("")
+        terminal.print_warning("")
+        terminal.print_info("")
+
+        captured = capsys.readouterr()
+        # Should output color codes even with empty message
+        assert captured.out
+
+    def test_print_functions_with_special_characters(self, capsys):
+        """Test print functions with special characters."""
+        special_message = "Test: \n\t~!@#$%^&*()_+{}[]|\\:;\"'<>?,./`"
+
+        terminal.print_success(special_message)
+        terminal.print_error(special_message)
+        terminal.print_warning(special_message)
+        terminal.print_info(special_message)
+
+        captured = capsys.readouterr()
+        # Should output all instances of the message
+        assert captured.out.count(special_message) == 4
