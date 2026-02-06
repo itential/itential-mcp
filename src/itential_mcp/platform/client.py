@@ -11,6 +11,7 @@ import ipsdk
 
 from ipsdk.platform import AsyncPlatform
 from ipsdk.connection import Response
+from ipsdk.http import HTTPMethod
 
 from .. import config
 from ..config.converters import platform_to_dict
@@ -293,10 +294,13 @@ class PlatformClient(object):
         # Use provided timeout or fall back to configured default
         request_timeout = timeout if timeout is not None else self.timeout
 
+        # Convert string method to HTTPMethod enum
+        http_method = HTTPMethod[method.upper()]
+
         try:
             # Wrap the request in asyncio.wait_for to enforce timeout
             res = await asyncio.wait_for(
-                self.client._send_request(method, path, params, json),
+                self.client._send_request(http_method, path, params, json),
                 timeout=request_timeout,
             )
         except asyncio.TimeoutError:
