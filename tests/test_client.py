@@ -9,6 +9,7 @@ import textwrap
 from unittest.mock import AsyncMock, patch, MagicMock
 
 from itential_mcp.platform import PlatformClient
+from ipsdk.http import HTTPMethod
 
 
 @pytest.fixture
@@ -661,7 +662,7 @@ async def test_send_request_success(
 
     # Verify the underlying client method was called correctly
     mock_ipsdk_client._send_request.assert_called_once_with(
-        "GET", "/test", {"key": "value"}, {"data": "test"}
+        HTTPMethod.GET, "/test", {"key": "value"}, {"data": "test"}
     )
 
     # Verify response was wrapped
@@ -701,7 +702,7 @@ async def test_get_method(
     result = await client.get("/api/test", params={"filter": "active"})
 
     mock_ipsdk_client._send_request.assert_called_once_with(
-        "GET", "/api/test", {"filter": "active"}, None
+        HTTPMethod.GET, "/api/test", {"filter": "active"}, None
     )
     assert result.response is mock_ipsdk_response
 
@@ -720,7 +721,7 @@ async def test_get_method_no_params(
     result = await client.get("/api/test")
 
     mock_ipsdk_client._send_request.assert_called_once_with(
-        "GET", "/api/test", None, None
+        HTTPMethod.GET, "/api/test", None, None
     )
     assert result.response is mock_ipsdk_response
 
@@ -741,7 +742,7 @@ async def test_post_method(
     )
 
     mock_ipsdk_client._send_request.assert_called_once_with(
-        "POST", "/api/create", {"validate": "true"}, {"name": "test"}
+        HTTPMethod.POST, "/api/create", {"validate": "true"}, {"name": "test"}
     )
     assert result.response is mock_ipsdk_response
 
@@ -760,7 +761,7 @@ async def test_post_method_minimal(
     result = await client.post("/api/action")
 
     mock_ipsdk_client._send_request.assert_called_once_with(
-        "POST", "/api/action", None, None
+        HTTPMethod.POST, "/api/action", None, None
     )
     assert result.response is mock_ipsdk_response
 
@@ -779,7 +780,7 @@ async def test_put_method(
     result = await client.put("/api/update/123", json={"status": "active"})
 
     mock_ipsdk_client._send_request.assert_called_once_with(
-        "PUT", "/api/update/123", None, {"status": "active"}
+        HTTPMethod.PUT, "/api/update/123", None, {"status": "active"}
     )
     assert result.response is mock_ipsdk_response
 
@@ -800,7 +801,7 @@ async def test_put_method_with_params(
     )
 
     mock_ipsdk_client._send_request.assert_called_once_with(
-        "PUT", "/api/update/123", {"force": "true"}, {"name": "updated"}
+        HTTPMethod.PUT, "/api/update/123", {"force": "true"}, {"name": "updated"}
     )
     assert result.response is mock_ipsdk_response
 
@@ -819,7 +820,7 @@ async def test_delete_method(
     result = await client.delete("/api/delete/123", params={"cascade": "true"})
 
     mock_ipsdk_client._send_request.assert_called_once_with(
-        "DELETE", "/api/delete/123", {"cascade": "true"}, None
+        HTTPMethod.DELETE, "/api/delete/123", {"cascade": "true"}, None
     )
     assert result.response is mock_ipsdk_response
 
@@ -838,7 +839,7 @@ async def test_delete_method_no_params(
     result = await client.delete("/api/delete/123")
 
     mock_ipsdk_client._send_request.assert_called_once_with(
-        "DELETE", "/api/delete/123", None, None
+        HTTPMethod.DELETE, "/api/delete/123", None, None
     )
     assert result.response is mock_ipsdk_response
 
