@@ -146,7 +146,22 @@ def parse_args(args: Sequence) -> Tuple[Callable, Tuple[Any, ...], dict]:
     parser = _create_main_parser()
     _create_subparsers(parser)
 
+    # Pre-capture --config from raw args before argparse parsing.
+    # When --config appears before the subcommand (e.g., itential-mcp --config
+    # file.conf call ...), the main parser captures it but the subparser
+    # overwrites it with its default (None). This preserves the value.
+    pre_config = None
+    args_list = list(args)
+    if "--config" in args_list:
+        idx = args_list.index("--config")
+        if idx + 1 < len(args_list):
+            pre_config = args_list[idx + 1]
+
     parsed_args = parser.parse_args(args=args)
+
+    # Restore --config if the subparser overwrote it with None
+    if parsed_args.config is None and pre_config is not None:
+        parsed_args.config = pre_config
 
     _process_logging_config(parsed_args)
 

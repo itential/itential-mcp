@@ -58,6 +58,7 @@ COMMANDS = [
                 "metavar": "<object>",
                 "help": "Parameters to pass to the tool",
             },
+            "--config": {"help": CONFIG_HELP_MESSAGE},
         },
         add_platform_group=True,
     ),
