@@ -186,6 +186,8 @@ certificates/
 *-local.conf
 config.local.*
 mcp.conf
+itential-mcp.conf
+settings.json
 
 # Container and Docker
 *.tar
