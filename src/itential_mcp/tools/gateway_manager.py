@@ -156,7 +156,7 @@ async def run_service(
     if isinstance(input_params, str):
         input_params = jsonutils.loads(input_params)
 
-    res = await client.gateway_manager.run_service(name, cluster, input_params)
+    res = await client.gateway_manager.run_service(name, cluster, input_params=input_params)
 
     if "error" in res:
         raise ValueError(res["error"]["data"])

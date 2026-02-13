@@ -459,7 +459,7 @@ class TestRunService(TestGatewayManagerTools):
 
         # Verify client method was called with correct parameters
         self.mock_client.gateway_manager.run_service.assert_called_once_with(
-            "test-service", "test-cluster", {"param1": "value1"}
+            "test-service", "test-cluster", input_params={"param1": "value1"}
         )
 
         # Verify result type and content
@@ -489,7 +489,7 @@ class TestRunService(TestGatewayManagerTools):
 
         # Verify client method was called with None for input_params
         self.mock_client.gateway_manager.run_service.assert_called_once_with(
-            "no-param-service", "test-cluster", None
+            "no-param-service", "test-cluster", input_params=None
         )
 
         assert isinstance(result, RunServiceResponse)
@@ -513,7 +513,7 @@ class TestRunService(TestGatewayManagerTools):
 
         # Verify client method was called
         self.mock_client.gateway_manager.run_service.assert_called_once_with(
-            "json-service", "json-cluster", {"format": "json"}
+            "json-service", "json-cluster", input_params={"format": "json"}
         )
 
         # Verify result
@@ -574,7 +574,7 @@ class TestRunService(TestGatewayManagerTools):
 
         # Verify client method was still called
         self.mock_client.gateway_manager.run_service.assert_called_once_with(
-            "failing-service", "test-cluster", {"timeout": 30}
+            "failing-service", "test-cluster", input_params={"timeout": 30}
         )
 
     @pytest.mark.asyncio
@@ -632,7 +632,7 @@ class TestRunService(TestGatewayManagerTools):
 
         # Verify client was called with complex parameters
         self.mock_client.gateway_manager.run_service.assert_called_once_with(
-            "complex-service", "production-cluster", complex_params
+            "complex-service", "production-cluster", input_params=complex_params
         )
 
         assert isinstance(result, RunServiceResponse)
