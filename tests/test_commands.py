@@ -371,6 +371,81 @@ class TestCallCommand:
 
         assert result[1] == ("my_tool", '{"test": true}')
 
+    def test_call_with_config_attribute(self):
+        """Test that call function works when args has config attribute"""
+
+        class MockArgs:
+            def __init__(self, tool, params, config):
+                self.tool = tool
+                self.params = params
+                self.config = config
+
+        args = MockArgs("my_tool", '{"test": true}', "/path/to/config.conf")
+        result = commands.call(args)
+
+        # call command should still return the same tuple structure
+        assert result[0] == runner.run
+        assert result[1] == ("my_tool", '{"test": true}')
+        assert result[2] is None
+
+
+class TestCallCommandConfigIntegration:
+    """Test cases for call command --config integration"""
+
+    def test_call_subparser_accepts_config_flag(self):
+        """Test that the call subparser accepts --config flag"""
+        from unittest.mock import patch
+        from itential_mcp.runtime.parser import _create_main_parser, _create_subparsers
+
+        parser = _create_main_parser()
+        with patch("itential_mcp.runtime.parser.add_platform_group"), \
+             patch("itential_mcp.runtime.parser.add_server_group"):
+            _create_subparsers(parser)
+
+        # Should parse successfully with --config on call subcommand
+        args = parser.parse_args(["call", "get_health", "--config", "/path/to/config.conf"])
+
+        assert args.command == "call"
+        assert args.tool == "get_health"
+        assert args.config == "/path/to/config.conf"
+
+    def test_call_subparser_config_default_is_none(self):
+        """Test that --config defaults to None when not provided"""
+        from unittest.mock import patch
+        from itential_mcp.runtime.parser import _create_main_parser, _create_subparsers
+
+        parser = _create_main_parser()
+        with patch("itential_mcp.runtime.parser.add_platform_group"), \
+             patch("itential_mcp.runtime.parser.add_server_group"):
+            _create_subparsers(parser)
+
+        args = parser.parse_args(["call", "get_health"])
+
+        assert args.command == "call"
+        assert args.tool == "get_health"
+        assert args.config is None
+
+    def test_call_subparser_config_with_params(self):
+        """Test that --config works alongside --params on call subcommand"""
+        from unittest.mock import patch
+        from itential_mcp.runtime.parser import _create_main_parser, _create_subparsers
+
+        parser = _create_main_parser()
+        with patch("itential_mcp.runtime.parser.add_platform_group"), \
+             patch("itential_mcp.runtime.parser.add_server_group"):
+            _create_subparsers(parser)
+
+        args = parser.parse_args([
+            "call", "get_devices",
+            "--config", "/path/to/config.conf",
+            "--params", '{"filter": "active"}',
+        ])
+
+        assert args.command == "call"
+        assert args.tool == "get_devices"
+        assert args.config == "/path/to/config.conf"
+        assert args.params == '{"filter": "active"}'
+
 
 class TestModuleStructure:
     """Test cases for overall module structure and imports"""
