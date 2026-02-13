@@ -77,5 +77,10 @@ async def run(tool: str, params: Mapping[str, Any] | None = None) -> None:
             # Execute operations
             result = await client.call_tool(tool, **kwargs)
 
-            data = json.loads(result.content[0].text)
-            print(f"\n{json.dumps(data, indent=4)}")
+            text = result.content[0].text
+
+            try:
+                data = json.loads(text)
+                print(f"\n{json.dumps(data, indent=4)}")
+            except json.JSONDecodeError:
+                print(f"\n{text}")

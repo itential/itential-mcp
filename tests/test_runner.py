@@ -699,3 +699,54 @@ class TestRunIntegration:
         assert '"name": "John Doe"' in output
         assert '"status": "success"' in output
         assert '"role": "admin"' in output
+
+    @pytest.mark.asyncio
+    @patch("sys.stdout", new_callable=StringIO)
+    @patch("itential_mcp.runtime.runner.Client")
+    @patch("itential_mcp.runtime.runner.Server")
+    @patch("itential_mcp.runtime.runner.config.get")
+    async def test_run_non_json_result_output(
+        self, mock_config_get, mock_server_class, mock_client_class, mock_stdout
+    ):
+        """Test that non-JSON results (e.g. TOON format) are printed directly"""
+        # Setup mocks
+        mock_config = MagicMock()
+        mock_config_get.return_value = mock_config
+
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
+
+        mock_client = AsyncMock()
+        mock_client.ping.return_value = True
+
+        # Mock tool list response
+        mock_tool = MagicMock()
+        mock_tool.name = "test_tool"
+        mock_tool.inputSchema = {"properties": {}, "required": []}
+
+        mock_list_response = MagicMock()
+        mock_list_response.tools = [mock_tool]
+        mock_client.list_tools_mcp.return_value = mock_list_response
+
+        # Mock TOON-formatted result (not valid JSON)
+        toon_result = "status: running\nhost: selab-ip6-dev\nservices[2]:\n  redis: running\n  mongo: running"
+        mock_result_content = MagicMock()
+        mock_result_content.text = toon_result
+        mock_result = MockCallToolResult(content=[mock_result_content])
+        mock_client.call_tool.return_value = mock_result
+
+        mock_client_class.return_value.__aenter__.return_value = mock_client
+        mock_client_class.return_value.__aexit__.return_value = None
+
+        # Execute
+        await runner.run("test_tool")
+
+        # Verify TOON output is printed directly
+        output = mock_stdout.getvalue()
+        assert "status: running" in output
+        assert "host: selab-ip6-dev" in output
+        assert "redis: running" in output
