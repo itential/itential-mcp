@@ -204,9 +204,18 @@ itential-mcp run --transport sse --host 0.0.0.0 --port 8000
 
 ### General Options
 
+Global options can be specified before or after the command name.
+
 | Option     | Description             | Default |
 |------------|-------------------------|---------|
 | `--config` | Path to the config file | none    |
+
+**Examples:**
+```bash
+# Both of these work identically:
+itential-mcp --config config.conf run
+itential-mcp run --config config.conf
+```
 
 ### Server Options
 
