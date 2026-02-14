@@ -18,9 +18,30 @@ from ..core import logging
 from .handlers import get_command_handler
 
 
-def _create_main_parser() -> cli.Parser:
+def _create_global_options_parser() -> cli.Parser:
+    """
+    Create parser for global options that apply to all commands.
+
+    This parser is used as a parent parser for all subcommands to ensure
+    global options like --config are available to all commands.
+
+    Returns:
+        cli.Parser: Parser with global options (add_help=False for parent)
+
+    Raises:
+        None
+    """
+    parser = cli.Parser(add_help=False)
+    parser.add_argument("--config", metavar="FILE", help=constants.CONFIG_HELP_MESSAGE)
+    return parser
+
+
+def _create_main_parser(global_options_parser: cli.Parser) -> cli.Parser:
     """
     Create and configure the main argument parser.
+
+    Args:
+        global_options_parser: Parser with global options to inherit
 
     Returns:
         cli.Parser: The configured main parser
@@ -32,9 +53,9 @@ def _create_main_parser() -> cli.Parser:
         prog=constants.APP_NAME,
         add_help=False,
         description=constants.APP_DESCRIPTION,
+        parents=[global_options_parser],
     )
 
-    parser.add_argument("--config", help=constants.CONFIG_HELP_MESSAGE)
     parser.add_argument(
         "-h", "--help", action="store_true", help=constants.GLOBAL_HELP_MESSAGE
     )
@@ -42,12 +63,13 @@ def _create_main_parser() -> cli.Parser:
     return parser
 
 
-def _create_subparsers(parser: cli.Parser) -> None:
+def _create_subparsers(parser: cli.Parser, global_options_parser: cli.Parser) -> None:
     """
     Create and configure subparsers for different commands using configuration.
 
     Args:
-        parser (cli.Parser): The main parser to add subparsers to
+        parser: The main parser to add subparsers to
+        global_options_parser: Parser with global options to inherit
 
     Returns:
         None
@@ -59,11 +81,16 @@ def _create_subparsers(parser: cli.Parser) -> None:
 
     for command_config in constants.COMMANDS:
         cmd = subparsers.add_parser(
-            command_config.name, description=command_config.description
+            command_config.name,
+            description=command_config.description,
+            parents=[global_options_parser],
         )
 
         # Add command-specific arguments
         for arg_name, arg_config in command_config.arguments.items():
+            # Skip --config as it comes from parent parser
+            if arg_name == "--config":
+                continue
             if arg_name.startswith("--"):
                 cmd.add_argument(arg_name, **arg_config)
             else:
@@ -143,8 +170,9 @@ def parse_args(args: Sequence) -> Tuple[Callable, Tuple[Any, ...], dict]:
         TypeError: If the command handler is invalid
         AttributeError: If the command doesn't exist
     """
-    parser = _create_main_parser()
-    _create_subparsers(parser)
+    global_options_parser = _create_global_options_parser()
+    parser = _create_main_parser(global_options_parser)
+    _create_subparsers(parser, global_options_parser)
 
     parsed_args = parser.parse_args(args=args)
 

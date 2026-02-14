@@ -45,7 +45,7 @@ COMMANDS = [
     CommandConfig(
         name="run",
         description="Run the MCP server",
-        arguments={"--config": {"help": CONFIG_HELP_MESSAGE}},
+        arguments={},
         add_platform_group=True,
         add_server_group=True,
     ),
@@ -80,7 +80,6 @@ COMMANDS = [
         name="test",
         description="Test connection to Itential Platform",
         arguments={
-            "--config": {"help": CONFIG_HELP_MESSAGE},
             "--timeout": {
                 "type": int,
                 "default": 30,
