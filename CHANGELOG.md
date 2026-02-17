@@ -52,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Bump actions/checkout from 5 to 6 (#273)
-- Migrate from toonify to toon-python (#270)
+- Migrate from toonify to python-toon (#270)
 - Convert __init_routes__ method to async (#271)
 
 ### Fixed

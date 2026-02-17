@@ -23,7 +23,7 @@ Example:
 
 from typing import Any
 
-from toon_python import encode
+from toon import encode
 
 
 def serialize_toon(
