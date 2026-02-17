@@ -19,10 +19,10 @@ to you under the project's license terms (GPL-3.0-or-later).
 - **Project URL**: https://github.com/itential/itential-ipsdk
 - **Description**: Itential Platform SDK for Python
 
-### toon-python
+### python-toon
 - **License**: MIT License
 - **Copyright**: Copyright (c) 2024
-- **Project URL**: https://github.com/toon-python/toon-python
+- **Project URL**: https://github.com/python-toon/python-toon
 - **Description**: Python utilities for Toon framework
 
 ### wsproto
@@ -30,6 +30,12 @@ to you under the project's license terms (GPL-3.0-or-later).
 - **Copyright**: Copyright (c) 2016 Benno Rice
 - **Project URL**: https://github.com/python-hyper/wsproto
 - **Description**: WebSockets state-machine based protocol implementation
+
+### mcp
+- **License**: MIT License
+- **Copyright**: Copyright (c) Anthropic
+- **Project URL**: https://github.com/modelcontextprotocol/python-sdk
+- **Description**: Official Model Context Protocol SDK for Python
 
 ## Testing Dependencies
 
@@ -50,6 +56,32 @@ to you under the project's license terms (GPL-3.0-or-later).
 - **Copyright**: Copyright (c) 2010 pytest-cov contributors
 - **Project URL**: https://github.com/pytest-dev/pytest-cov
 - **Description**: Coverage plugin for pytest
+
+### q
+- **License**: Apache-2.0
+- **Copyright**: Copyright (c) 2013 Ping Yee
+- **Project URL**: https://github.com/zestyping/q
+- **Description**: Quick and dirty debugging output for tired programmers
+
+## Build Tools
+
+### build
+- **License**: MIT License
+- **Copyright**: Copyright (c) 2020 PyPA contributors
+- **Project URL**: https://github.com/pypa/build
+- **Description**: A simple, correct Python build frontend
+
+### tox
+- **License**: MIT License
+- **Copyright**: Copyright (c) 2010 Holger Krekel and others
+- **Project URL**: https://github.com/tox-dev/tox
+- **Description**: Command line driven CI frontend and development task automation tool
+
+### tox-uv
+- **License**: MIT License
+- **Copyright**: Copyright (c) 2024 tox-uv contributors
+- **Project URL**: https://github.com/tox-dev/tox-uv
+- **Description**: Tox plugin replacing virtualenv and pip with uv
 
 ## Code Quality Tools
 
@@ -235,6 +267,48 @@ to you under the project's license terms (GPL-3.0-or-later).
 - **Project URL**: https://github.com/pygments/pygments
 - **Description**: Syntax highlighting package
 
+### cyclopts
+- **License**: Apache-2.0
+- **Copyright**: Copyright (c) Brian Pugh
+- **Project URL**: https://github.com/BrianPugh/cyclopts
+- **Description**: Modern, user-friendly command-line interface creation toolkit
+
+### email-validator
+- **License**: Unlicense (Public Domain)
+- **Copyright**: Public domain dedication by JoshData
+- **Project URL**: https://github.com/JoshData/python-email-validator
+- **Description**: Robust email address syntax and deliverability validation library
+
+### h11
+- **License**: MIT License
+- **Copyright**: Copyright (c) 2016 Nathaniel J. Smith
+- **Project URL**: https://github.com/python-hyper/h11
+- **Description**: Pure-Python, bring-your-own-I/O implementation of HTTP/1.1
+
+### httpcore
+- **License**: BSD-3-Clause
+- **Copyright**: Copyright (c) 2019 Encode OSS Ltd.
+- **Project URL**: https://github.com/encode/httpcore
+- **Description**: Minimal low-level HTTP client
+
+### httpx-sse
+- **License**: MIT License
+- **Copyright**: Copyright (c) Florimond Manca
+- **Project URL**: https://github.com/florimondmanca/httpx-sse
+- **Description**: Consume Server-Sent Events (SSE) with httpx
+
+### python-multipart
+- **License**: Apache-2.0
+- **Copyright**: Copyright (c) Andrew Svetlov, Marcelo Trylesinski
+- **Project URL**: https://github.com/Kludex/python-multipart
+- **Description**: Streaming multipart parser for Python
+
+### sse-starlette
+- **License**: BSD-3-Clause
+- **Copyright**: Copyright (c) sysid
+- **Project URL**: https://github.com/sysid/sse-starlette
+- **Description**: Server-Sent Events for Starlette
+
 ---
 
 ## License Texts
@@ -300,6 +374,29 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+### BSD-2-Clause License
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 ### ISC License
 
 Permission to use, copy, modify, and/or distribute this software for any
@@ -319,6 +416,33 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+### Unlicense (Public Domain)
+
+This is free and unencumbered software released into the public domain.
+
+Anyone is free to copy, modify, publish, use, compile, sell, or
+distribute this software, either in source code form or as a compiled
+binary, for any purpose, commercial or non-commercial, and by any
+means.
+
+In jurisdictions that recognize copyright laws, the author or authors
+of this software dedicate any and all copyright interest in the
+software to the public domain. We make this dedication for the benefit
+of the public at large and to the detriment of our heirs and
+successors. We intend this dedication to be an overt act of
+relinquishment in perpetuity of all present and future rights to this
+software under copyright law.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+For more information, please refer to <https://unlicense.org/>
 
 ---
 

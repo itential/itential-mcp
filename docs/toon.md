@@ -342,7 +342,7 @@ To verify TOON is enabled:
 ## Additional Resources
 
 - [FastMCP Documentation](https://github.com/jlowin/fastmcp)
-- [TOON Python Library](https://github.com/toon-format/toon-python)
+- [TOON Python Library](https://github.com/toon-format/python-toon)
 - [TOON Format Specification](https://github.com/toon-format)
 - [Itential Platform API Reference](https://docs.itential.com)
 - [MCP Protocol Specification](https://modelcontextprotocol.io)
