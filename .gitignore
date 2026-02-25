@@ -230,3 +230,5 @@ security-report.*
 # Project-specific
 # (Keep existing project-specific ignores)
 
+# .conf files
+*.conf
