@@ -699,3 +699,304 @@ class TestRunIntegration:
         assert '"name": "John Doe"' in output
         assert '"status": "success"' in output
         assert '"role": "admin"' in output
+
+
+class TestRunJSONParsing:
+    """Test JSON parsing behavior in run function"""
+
+    @pytest.mark.asyncio
+    @patch("sys.stdout", new_callable=StringIO)
+    @patch("itential_mcp.runtime.runner.Client")
+    @patch("itential_mcp.runtime.runner.Server")
+    @patch("itential_mcp.runtime.runner.config.get")
+    async def test_run_valid_json_response(
+        self, mock_config_get, mock_server_class, mock_client_class, mock_stdout
+    ):
+        """Test that valid JSON response is properly formatted"""
+        # Setup mocks
+        mock_config = MagicMock()
+        mock_config_get.return_value = mock_config
+
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
+
+        mock_client = AsyncMock()
+        mock_client.ping.return_value = True
+
+        # Mock tool list response
+        mock_tool = MagicMock()
+        mock_tool.name = "test_tool"
+        mock_tool.inputSchema = {"properties": {}, "required": []}
+
+        mock_list_response = MagicMock()
+        mock_list_response.tools = [mock_tool]
+        mock_client.list_tools_mcp.return_value = mock_list_response
+
+        # Mock tool execution response with valid JSON
+        mock_result_content = MagicMock()
+        mock_result_content.text = json.dumps({"status": "ok", "message": "Success"})
+        mock_result = MockCallToolResult(content=[mock_result_content])
+        mock_client.call_tool.return_value = mock_result
+
+        mock_client_class.return_value.__aenter__.return_value = mock_client
+        mock_client_class.return_value.__aexit__.return_value = None
+
+        # Execute
+        await runner.run("test_tool")
+
+        # Verify JSON output is formatted with indentation
+        output = mock_stdout.getvalue()
+        assert '"status": "ok"' in output
+        assert '"message": "Success"' in output
+        # Should have proper indentation (4 spaces)
+        assert '    "status": "ok"' in output
+
+    @pytest.mark.asyncio
+    @patch("sys.stdout", new_callable=StringIO)
+    @patch("itential_mcp.runtime.runner.Client")
+    @patch("itential_mcp.runtime.runner.Server")
+    @patch("itential_mcp.runtime.runner.config.get")
+    async def test_run_invalid_json_returns_plain_text(
+        self, mock_config_get, mock_server_class, mock_client_class, mock_stdout
+    ):
+        """Test that invalid JSON response returns plain text without error"""
+        # Setup mocks
+        mock_config = MagicMock()
+        mock_config_get.return_value = mock_config
+
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
+
+        mock_client = AsyncMock()
+        mock_client.ping.return_value = True
+
+        # Mock tool list response
+        mock_tool = MagicMock()
+        mock_tool.name = "test_tool"
+        mock_tool.inputSchema = {"properties": {}, "required": []}
+
+        mock_list_response = MagicMock()
+        mock_list_response.tools = [mock_tool]
+        mock_client.list_tools_mcp.return_value = mock_list_response
+
+        # Mock tool execution response with plain text (not valid JSON)
+        mock_result_content = MagicMock()
+        plain_text_response = "This is a plain text response from the tool"
+        mock_result_content.text = plain_text_response
+        mock_result = MockCallToolResult(content=[mock_result_content])
+        mock_client.call_tool.return_value = mock_result
+
+        mock_client_class.return_value.__aenter__.return_value = mock_client
+        mock_client_class.return_value.__aexit__.return_value = None
+
+        # Execute - should not raise an exception
+        await runner.run("test_tool")
+
+        # Verify plain text is output without JSON formatting
+        output = mock_stdout.getvalue()
+        assert plain_text_response in output
+        # Should not have JSON indentation markers
+        assert "    " not in output or output.strip() == plain_text_response
+
+    @pytest.mark.asyncio
+    @patch("sys.stdout", new_callable=StringIO)
+    @patch("itential_mcp.runtime.runner.Client")
+    @patch("itential_mcp.runtime.runner.Server")
+    @patch("itential_mcp.runtime.runner.config.get")
+    async def test_run_malformed_json_returns_plain_text(
+        self, mock_config_get, mock_server_class, mock_client_class, mock_stdout
+    ):
+        """Test that malformed JSON response returns plain text gracefully"""
+        # Setup mocks
+        mock_config = MagicMock()
+        mock_config_get.return_value = mock_config
+
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
+
+        mock_client = AsyncMock()
+        mock_client.ping.return_value = True
+
+        # Mock tool list response
+        mock_tool = MagicMock()
+        mock_tool.name = "test_tool"
+        mock_tool.inputSchema = {"properties": {}, "required": []}
+
+        mock_list_response = MagicMock()
+        mock_list_response.tools = [mock_tool]
+        mock_client.list_tools_mcp.return_value = mock_list_response
+
+        # Mock tool execution response with malformed JSON
+        mock_result_content = MagicMock()
+        malformed_json = '{"status": "ok", "data": incomplete'
+        mock_result_content.text = malformed_json
+        mock_result = MockCallToolResult(content=[mock_result_content])
+        mock_client.call_tool.return_value = mock_result
+
+        mock_client_class.return_value.__aenter__.return_value = mock_client
+        mock_client_class.return_value.__aexit__.return_value = None
+
+        # Execute - should not raise an exception
+        await runner.run("test_tool")
+
+        # Verify malformed JSON is output as plain text
+        output = mock_stdout.getvalue()
+        assert malformed_json in output
+
+    @pytest.mark.asyncio
+    @patch("sys.stdout", new_callable=StringIO)
+    @patch("itential_mcp.runtime.runner.Client")
+    @patch("itential_mcp.runtime.runner.Server")
+    @patch("itential_mcp.runtime.runner.config.get")
+    async def test_run_empty_string_response(
+        self, mock_config_get, mock_server_class, mock_client_class, mock_stdout
+    ):
+        """Test that empty string response is handled gracefully"""
+        # Setup mocks
+        mock_config = MagicMock()
+        mock_config_get.return_value = mock_config
+
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
+
+        mock_client = AsyncMock()
+        mock_client.ping.return_value = True
+
+        # Mock tool list response
+        mock_tool = MagicMock()
+        mock_tool.name = "test_tool"
+        mock_tool.inputSchema = {"properties": {}, "required": []}
+
+        mock_list_response = MagicMock()
+        mock_list_response.tools = [mock_tool]
+        mock_client.list_tools_mcp.return_value = mock_list_response
+
+        # Mock tool execution response with empty string
+        mock_result_content = MagicMock()
+        mock_result_content.text = ""
+        mock_result = MockCallToolResult(content=[mock_result_content])
+        mock_client.call_tool.return_value = mock_result
+
+        mock_client_class.return_value.__aenter__.return_value = mock_client
+        mock_client_class.return_value.__aexit__.return_value = None
+
+        # Execute - should not raise an exception
+        await runner.run("test_tool")
+
+        # Verify empty output
+        output = mock_stdout.getvalue()
+        # Should just have newlines (from print statement)
+        assert output.strip() == ""
+
+    @pytest.mark.asyncio
+    @patch("sys.stdout", new_callable=StringIO)
+    @patch("itential_mcp.runtime.runner.Client")
+    @patch("itential_mcp.runtime.runner.Server")
+    @patch("itential_mcp.runtime.runner.config.get")
+    async def test_run_numeric_string_response(
+        self, mock_config_get, mock_server_class, mock_client_class, mock_stdout
+    ):
+        """Test that numeric string response returns plain text"""
+        # Setup mocks
+        mock_config = MagicMock()
+        mock_config_get.return_value = mock_config
+
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
+
+        mock_client = AsyncMock()
+        mock_client.ping.return_value = True
+
+        # Mock tool list response
+        mock_tool = MagicMock()
+        mock_tool.name = "test_tool"
+        mock_tool.inputSchema = {"properties": {}, "required": []}
+
+        mock_list_response = MagicMock()
+        mock_list_response.tools = [mock_tool]
+        mock_client.list_tools_mcp.return_value = mock_list_response
+
+        # Mock tool execution response with just a number as string
+        mock_result_content = MagicMock()
+        mock_result_content.text = "42"
+        mock_result = MockCallToolResult(content=[mock_result_content])
+        mock_client.call_tool.return_value = mock_result
+
+        mock_client_class.return_value.__aenter__.return_value = mock_client
+        mock_client_class.return_value.__aexit__.return_value = None
+
+        # Execute
+        await runner.run("test_tool")
+
+        # Verify numeric output is formatted as JSON (valid JSON primitive)
+        output = mock_stdout.getvalue()
+        assert "42" in output
+
+    @pytest.mark.asyncio
+    @patch("sys.stdout", new_callable=StringIO)
+    @patch("itential_mcp.runtime.runner.Client")
+    @patch("itential_mcp.runtime.runner.Server")
+    @patch("itential_mcp.runtime.runner.config.get")
+    async def test_run_html_response_returns_plain_text(
+        self, mock_config_get, mock_server_class, mock_client_class, mock_stdout
+    ):
+        """Test that HTML response returns plain text without parsing error"""
+        # Setup mocks
+        mock_config = MagicMock()
+        mock_config_get.return_value = mock_config
+
+        # Setup server instance mock
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+        mock_server_class.return_value = mock_server_instance
+
+        mock_client = AsyncMock()
+        mock_client.ping.return_value = True
+
+        # Mock tool list response
+        mock_tool = MagicMock()
+        mock_tool.name = "test_tool"
+        mock_tool.inputSchema = {"properties": {}, "required": []}
+
+        mock_list_response = MagicMock()
+        mock_list_response.tools = [mock_tool]
+        mock_client.list_tools_mcp.return_value = mock_list_response
+
+        # Mock tool execution response with HTML
+        mock_result_content = MagicMock()
+        html_response = "<html><body><h1>Error</h1></body></html>"
+        mock_result_content.text = html_response
+        mock_result = MockCallToolResult(content=[mock_result_content])
+        mock_client.call_tool.return_value = mock_result
+
+        mock_client_class.return_value.__aenter__.return_value = mock_client
+        mock_client_class.return_value.__aexit__.return_value = None
+
+        # Execute - should not raise an exception
+        await runner.run("test_tool")
+
+        # Verify HTML is output as plain text
+        output = mock_stdout.getvalue()
+        assert html_response in output

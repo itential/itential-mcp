@@ -9,7 +9,9 @@ from typing import Mapping, Any
 from fastmcp import Client
 
 from itential_mcp import config
+from itential_mcp.core import exceptions
 from itential_mcp.server.server import Server
+from itential_mcp.utilities import json as json_utils
 
 
 async def run(tool: str, params: Mapping[str, Any] | None = None) -> None:
@@ -77,5 +79,10 @@ async def run(tool: str, params: Mapping[str, Any] | None = None) -> None:
             # Execute operations
             result = await client.call_tool(tool, **kwargs)
 
-            data = json.loads(result.content[0].text)
-            print(f"\n{json.dumps(data, indent=4)}")
+            # Safely parse JSON response, fall back to plain text if parsing fails
+            try:
+                data = json_utils.loads(result.content[0].text)
+                print(f"\n{json.dumps(data, indent=4)}")
+            except exceptions.ValidationException:
+                # If JSON parsing fails, return the plain text
+                print(f"\n{result.content[0].text}")
