@@ -152,9 +152,16 @@ class Server:
             instructions=inspect.cleandoc(INSTRUCTIONS),
             lifespan=lifespan,
             auth=auth_provider,
-            include_tags=parse_tags(self.config.server.include_tags),
-            exclude_tags=parse_tags(self.config.server.exclude_tags),
         )
+
+        # Apply tag filtering after server creation (FastMCP 3.x API)
+        include_tags = parse_tags(self.config.server.include_tags)
+        exclude_tags = parse_tags(self.config.server.exclude_tags)
+
+        if include_tags:
+            self.mcp.enable(tags=set(include_tags), only=True)
+        if exclude_tags:
+            self.mcp.disable(tags=set(exclude_tags))
 
         logger = logging.get_logger()
 
