@@ -685,10 +685,12 @@ class TestIntegration:
                 name="Itential Platform MCP",
                 instructions=server_module.inspect.cleandoc(server_module.INSTRUCTIONS),
                 lifespan=server_module.lifespan,
-                include_tags=["system"],
-                exclude_tags=["deprecated"],
                 auth=None,
             )
+
+            # Verify tag filtering was applied after creation
+            mock_mcp.enable.assert_called_once_with(tags={"system"}, only=True)
+            mock_mcp.disable.assert_called_once_with(tags={"deprecated"})
 
             # Verify tool registration
             mock_mcp.tool.assert_called_once_with(
@@ -1026,7 +1028,7 @@ class TestServerInitialization:
     @pytest.mark.asyncio
     @patch("itential_mcp.server.auth.build_auth_provider")
     async def test_init_server_parse_tags_with_none(self, mock_auth_builder):
-        """Test __init_server__ with None tags returns None"""
+        """Test __init_server__ with None tags does not call enable/disable"""
         from itential_mcp.config.models import Config, ServerConfig, AuthConfig
 
         mock_config = Config(
@@ -1044,12 +1046,19 @@ class TestServerInitialization:
         server_instance = server_module.Server(mock_config)
 
         with patch("itential_mcp.server.server.FastMCP") as mock_fastmcp:
+            mock_mcp = MagicMock()
+            mock_fastmcp.return_value = mock_mcp
+
             await server_instance.__init_server__()
 
-            # Verify FastMCP was called with None for tags
+            # Verify tags are not passed to FastMCP constructor
             call_kwargs = mock_fastmcp.call_args.kwargs
-            assert call_kwargs["include_tags"] is None
-            assert call_kwargs["exclude_tags"] is None
+            assert "include_tags" not in call_kwargs
+            assert "exclude_tags" not in call_kwargs
+
+            # Verify enable/disable were not called when tags are None
+            mock_mcp.enable.assert_not_called()
+            mock_mcp.disable.assert_not_called()
 
     @pytest.mark.asyncio
     @patch("itential_mcp.server.auth.build_auth_provider")
