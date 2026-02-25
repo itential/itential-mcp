@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-02-25
+
+### Fixed
+- Replace removed FastMCP include_tags/exclude_tags kwargs with enable/disable API (#320)
+  - FastMCP 3.x removed include_tags and exclude_tags from constructor
+  - Migrated to new post-creation API: server.enable() and server.disable()
+
 ## [0.12.0] - 2026-02-25
 
 ### Added
