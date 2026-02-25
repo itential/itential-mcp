@@ -7,8 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-02-25
+
+### Added
+- Connection test command for platform connectivity validation (#302)
+- Comprehensive troubleshooting guide (#303)
+- Additional gateway_manager services (#305)
+
 ### Changed
-- **CLI**: Restructured argument parser to make `--config` a true global option
+- **CLI**: Restructured argument parser to make `--config` a true global CLI option (#313)
+- Improved platform services code quality and test coverage (#306)
+- Expanded .gitignore and updated documentation (#304)
+- Improved test coverage to 99% (#308)
+
+### Fixed
+- Pass input_params as keyword argument in run_service tool (#317)
+- Add safe JSON deserialization with plain text fallback in runner (#316)
+- Correct toon package import after package rename (#315)
+- Convert HTTP method strings to HTTPMethod enum for ipsdk compatibility (#307)
 
 ## [0.11.1] - 2026-01-16
 
