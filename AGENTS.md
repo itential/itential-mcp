@@ -1,10 +1,10 @@
 # Itential MCP - Codebase Documentation
 
-**Last Updated:** 2026-01-28
-**Version:** 0.11.1
+**Last Updated:** 2026-02-25
+**Version:** 0.12.0
 **Python Requirements:** 3.10 - 3.13
-**Code Base:** 18,532 lines of Python (92 source files)
-**Test Coverage:** 95%+ (70 test files)
+**Code Base:** 20,727 lines of Python (94 source files)
+**Test Coverage:** 99% (73 test files)
 
 ## What This Project Does
 
@@ -218,13 +218,13 @@ This is excellent design - proper exception hierarchy with HTTP semantics.
 
 ## Code Quality Metrics
 
-**Quantitative Analysis (2026-01-28):**
+**Quantitative Analysis (2026-02-25):**
 
 | Metric | Value | Assessment |
 |--------|-------|------------|
-| Total Lines of Code | 18,532 | Well-sized for scope |
-| Source Files | 92 | Good modularization |
-| Test Files | 70 (76% coverage) | Excellent |
+| Total Lines of Code | 20,727 | Well-sized for scope |
+| Source Files | 94 | Good modularization |
+| Test Files | 73 (78% coverage) | Excellent |
 | Async Functions | 176 | Properly async throughout |
 | Parallel Async Calls | 4 instances | Room for more optimization |
 | Exception Classes | 19 | Comprehensive hierarchy |
@@ -247,8 +247,8 @@ This is excellent design - proper exception hierarchy with HTTP semantics.
 
 ### Code Quality & Architecture
 
-1. **Test Coverage** - 95%+ with comprehensive unit tests
-   - 70 test files mirroring source structure (76% of source files)
+1. **Test Coverage** - 99% with comprehensive unit tests
+   - 73 test files mirroring source structure (78% of source files)
    - Extensive mocking and async testing
    - Edge case coverage (error paths, timeouts, validation)
    - Integration tests for CLI commands
@@ -1099,19 +1099,19 @@ CHANGELOG.md                         # Version history
 - **Documentation:** `docs/` directory (15 comprehensive guides)
 - **Troubleshooting:** `docs/troubleshooting.md` - Diagnostic procedures and health checks (NEW in v0.11.1+)
 - **Issues:** GitHub Issues for bug reports and feature requests
-- **Tests:** `tests/` directory mirrors source structure (70 test files)
+- **Tests:** `tests/` directory mirrors source structure (73 test files)
 - **Examples:** `docs/mcp.conf.example`, example prompts for Claude and GPT integration
 
 ## Summary
 
 This is a **high-quality, production-ready codebase** with:
-- Excellent test coverage (95%+, 70 test files covering 92 source files)
+- Excellent test coverage (99%, 73 test files covering 94 source files)
 - Comprehensive documentation (15 guides + API docs)
 - Modern Python practices (type hints, async/await, Pydantic)
 - Clean architecture (clear separation of concerns)
 - Security awareness (multiple auth methods, TLS, input validation)
 - Performance optimizations (O(1) lookups, connection pooling, async parallelism)
-- Minimal technical debt (only 1 XXX comment in 18,532 lines)
+- Minimal technical debt (only 1 XXX comment in 20,727 lines)
 - No anti-patterns: zero bare except clauses, no blocking I/O in async code
 
 **Main strengths:**
@@ -1121,10 +1121,16 @@ This is a **high-quality, production-ready codebase** with:
 - Good separation of concerns (core, platform, runtime, server, tools)
 - Extensive user documentation with troubleshooting guide
 
-**Recent improvements (v0.11.1):**
-- Fixed AuthConfig attribute access issues
-- Fixed tool discovery tag parsing
-- Added comprehensive troubleshooting documentation
+**Recent improvements (v0.12.0):**
+- Added connection test command for platform connectivity validation
+- Added comprehensive troubleshooting guide
+- Added additional gateway_manager services
+- Improved test coverage to 99%
+- Improved platform services code quality and test coverage
+- Fixed input_params handling in run_service tool
+- Fixed JSON deserialization with plain text fallback
+- Fixed toon package import compatibility
+- Fixed HTTP method enum compatibility with ipsdk
 
 **Areas to watch:**
 - No retry logic for transient failures (consider exponential backoff)
@@ -1143,6 +1149,33 @@ This is a **high-quality, production-ready codebase** with:
 ---
 
 ## Audit History
+
+### 2026-02-25 Release 0.12.0 Update
+
+**Auditor:** Release preparation for version 0.12.0
+**Changes:**
+- Updated version from 0.11.1 to 0.12.0
+- Updated last updated date from 2026-01-28 to 2026-02-25
+- Updated line count: 18,532 → 20,727 lines (11.8% increase)
+- Updated source file count: 92 → 94 files
+- Updated test file count: 70 → 73 files
+- Updated test coverage: 95%+ → 99%
+- Updated file coverage ratio: 76% → 78%
+- Added v0.12.0 feature documentation:
+  - Connection test command for platform connectivity validation
+  - Comprehensive troubleshooting guide
+  - Additional gateway_manager services
+  - CLI restructuring for --config as true global option
+  - Platform services code quality improvements
+  - Multiple bug fixes for compatibility and reliability
+
+**Key Metrics:**
+- 11 commits since v0.11.1 (2026-01-16)
+- ~2,195 lines of new code added
+- 3 new test files
+- Test coverage improved from 95%+ to 99%
+
+**Key Insight:** Significant stability and quality improvements with focus on connectivity validation, troubleshooting capabilities, and test coverage enhancement.
 
 ### 2026-01-28 Verification Audit (Second Pass)
 

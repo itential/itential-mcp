@@ -6,8 +6,9 @@ We actively maintain and provide security updates for the following versions of 
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.x.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+| 0.12.x  | :white_check_mark: |
+| 0.11.x  | :white_check_mark: |
+| < 0.11  | :x:                |
 
 ## Reporting a Vulnerability
 
