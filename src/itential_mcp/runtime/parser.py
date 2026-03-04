@@ -83,14 +83,10 @@ def _create_subparsers(parser: cli.Parser, global_options_parser: cli.Parser) ->
         cmd = subparsers.add_parser(
             command_config.name,
             description=command_config.description,
-            parents=[global_options_parser],
         )
 
         # Add command-specific arguments
         for arg_name, arg_config in command_config.arguments.items():
-            # Skip --config as it comes from parent parser
-            if arg_name == "--config":
-                continue
             if arg_name.startswith("--"):
                 cmd.add_argument(arg_name, **arg_config)
             else:
