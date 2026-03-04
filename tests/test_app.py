@@ -138,7 +138,7 @@ class TestParseArgs:
 
         mock_run_cmd.return_value = (mock_async_func, None, None)
 
-        app.parse_args(["run", "--config", "/path/to/config.ini"])
+        app.parse_args(["--config", "/path/to/config.ini", "run"])
 
         assert os.environ.get("ITENTIAL_MCP_CONFIG") == "/path/to/config.ini"
 
