@@ -207,9 +207,7 @@ async def add_nodes_to_inventory(
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    data = await client.inventory_manager.add_nodes_to_inventory(
-        inventory_name, nodes
-    )
+    data = await client.inventory_manager.add_nodes_to_inventory(inventory_name, nodes)
 
     return models.AddNodesToInventoryResponse(
         status=data.get("status", "Success"),

@@ -145,9 +145,7 @@ class Service(ServiceBase):
         if devices is not None:
             body["devices"] = [{"name": device} for device in devices]
 
-        res = await self.client.post(
-            "/inventory_manager/v1/inventories", json=body
-        )
+        res = await self.client.post("/inventory_manager/v1/inventories", json=body)
 
         data = res.json()
         result = data.get("result", data)

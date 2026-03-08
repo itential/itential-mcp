@@ -255,9 +255,7 @@ class TestDescribeInventory:
         with pytest.raises(
             exceptions.NotFoundError, match="inventory 'NonExistent' not found"
         ):
-            await inventory_manager.describe_inventory(
-                mock_context, name="NonExistent"
-            )
+            await inventory_manager.describe_inventory(mock_context, name="NonExistent")
 
     @pytest.mark.asyncio
     async def test_describe_inventory_logs_info(self, mock_context):
@@ -523,9 +521,7 @@ class TestAddNodesToInventory:
         mock_client = mock_context.request_context.lifespan_context.get.return_value
         mock_client.inventory_manager = MagicMock()
         mock_client.inventory_manager.add_nodes_to_inventory = AsyncMock(
-            side_effect=exceptions.NotFoundError(
-                "inventory 'NonExistent' not found"
-            )
+            side_effect=exceptions.NotFoundError("inventory 'NonExistent' not found")
         )
 
         with pytest.raises(
@@ -573,9 +569,7 @@ class TestAddNodesToInventory:
             nodes=[{"name": "node1", "attributes": {"itential_host": "1.1.1.1"}}],
         )
 
-        mock_context.info.assert_called_once_with(
-            "inside add_nodes_to_inventory(...)"
-        )
+        mock_context.info.assert_called_once_with("inside add_nodes_to_inventory(...)")
 
 
 class TestDeleteInventory:
@@ -640,9 +634,7 @@ class TestDeleteInventory:
         with pytest.raises(
             exceptions.NotFoundError, match="inventory 'NonExistent' not found"
         ):
-            await inventory_manager.delete_inventory(
-                mock_context, name="NonExistent"
-            )
+            await inventory_manager.delete_inventory(mock_context, name="NonExistent")
 
     @pytest.mark.asyncio
     async def test_delete_inventory_logs_info(self, mock_context):

@@ -10,7 +10,7 @@
 # Usage:
 #   make              Show help
 #   make build        Set up local development environment
-#   make premerge     Run full CI pipeline locally
+#   make ci           Run full CI pipeline locally
 #
 # Dependencies:
 #   - uv  (https://github.com/astral-sh/uv)
@@ -41,9 +41,9 @@ export PYTHONDONTWRITEBYTECODE := 1
 # ------------------------------------------------------------------------------
 
 .PHONY: build certs check check-headers clean clean-venv container coverage \
-        fix fix-headers format lint premerge run security test \
+        fix fix-headers format lint ci run security test \
         tox tox-py310 tox-py311 tox-py312 tox-py313 \
-        tox-coverage tox-format tox-lint tox-list tox-premerge tox-security \
+        tox-coverage tox-format tox-lint tox-list tox-ci tox-security \
         help
 
 # ------------------------------------------------------------------------------
@@ -86,7 +86,7 @@ check-headers: ## Verify copyright headers in all Python files
 fix-headers: ## Add missing copyright headers to Python files
 	uv run python scripts/check_headers.py --fix
 
-premerge: clean format check check-headers security test ## Run full CI pipeline locally (mirrors premerge CI)
+ci: clean format check check-headers security test ## Run full CI pipeline locally (mirrors CI)
 
 # ------------------------------------------------------------------------------
 # Container
@@ -129,7 +129,7 @@ tox-format: ## Format code via tox
 tox-security: ## Run security analysis via tox
 	uv run tox -e security
 
-tox-premerge: ## Run full premerge pipeline via tox
+tox-ci: ## Run full CI pipeline via tox
 	uv run tox -e premerge
 
 tox-list: ## List all available tox environments
