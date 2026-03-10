@@ -372,13 +372,17 @@ class TestTaskMetricElement:
             assert element.task_type == task_type
 
     def test_task_metric_element_missing_required_fields(self):
-        """Test TaskMetricElement validation fails with missing required fields"""
+        """Test TaskMetricElement validation fails with missing required fields.
+
+        app is now optional (str | None) — taskId, workflow, object_id, and app
+        all have defaults so only taskType, name, and metrics are required.
+        """
         with pytest.raises(ValidationError) as exc_info:
             TaskMetricElement()
 
         errors = exc_info.value.errors()
-        # taskId, workflow, and object_id are optional (have default=None), so only these fields are required
-        required_fields = {"taskType", "name", "metrics", "app"}
+        # taskId, workflow, object_id, and app are optional (have default=None)
+        required_fields = {"taskType", "name", "metrics"}
         error_fields = {error["loc"][0] for error in errors}
         assert error_fields == required_fields
 
@@ -615,3 +619,93 @@ class TestGetTaskMetricsResponse:
         manual_count = sum(1 for task in response.root if task.task_type == "manual")
         assert automatic_count == 25
         assert manual_count == 25
+
+
+class TestTaskMetricElementNullApp:
+    """Regression tests for Bug 3 — TaskMetricElement must accept null app field.
+
+    The Workflow Engine returns null for app on tasks not attributed to a specific
+    application.  app is now Optional[str] with default=None.
+    """
+
+    def test_null_app_accepted(self):
+        """TaskMetricElement must accept app=None."""
+        element = TaskMetricElement(
+            taskType="automatic",
+            name="validate-config",
+            metrics=[],
+            app=None,
+        )
+
+        assert element.app is None
+
+    def test_app_absent_defaults_to_none(self):
+        """TaskMetricElement must default app to None when omitted."""
+        element = TaskMetricElement(
+            taskType="automatic",
+            name="validate-config",
+            metrics=[],
+        )
+
+        assert element.app is None
+
+    def test_null_app_at_scale(self):
+        """Regression for the 599-error production scenario — 600 records with app=None."""
+        elements = [
+            TaskMetricElement(
+                taskType="automatic",
+                name=f"task-{i}",
+                metrics=[],
+                app=None,
+            )
+            for i in range(600)
+        ]
+
+        response = GetTaskMetricsResponse(root=elements)
+
+        assert len(response.root) == 600
+        assert all(e.app is None for e in response.root)
+
+    def test_app_string_still_works(self):
+        """Regression — app='WorkFlowEngine' must still populate correctly."""
+        element = TaskMetricElement(
+            taskType="automatic",
+            name="deploy-config",
+            metrics=[{"avg_time": 15.2}],
+            app="WorkFlowEngine",
+        )
+
+        assert element.app == "WorkFlowEngine"
+
+    def test_mixed_null_and_string_app_in_response(self):
+        """GetTaskMetricsResponse must handle a mix of null and populated app fields."""
+        elements = [
+            TaskMetricElement(
+                taskType="automatic",
+                name="task-with-app",
+                metrics=[],
+                app="WorkFlowEngine",
+            ),
+            TaskMetricElement(
+                taskType="automatic", name="task-no-app", metrics=[], app=None
+            ),
+            TaskMetricElement(taskType="manual", name="task-absent-app", metrics=[]),
+        ]
+
+        response = GetTaskMetricsResponse(root=elements)
+
+        assert response.root[0].app == "WorkFlowEngine"
+        assert response.root[1].app is None
+        assert response.root[2].app is None
+
+    def test_null_app_serializes_correctly(self):
+        """model_dump() on a null-app element must produce app: None."""
+        element = TaskMetricElement(
+            taskType="automatic",
+            name="test-task",
+            metrics=[],
+            app=None,
+        )
+
+        data = element.model_dump()
+        assert data["app"] is None
