@@ -244,7 +244,9 @@ async def describe_instance(
     resource_name: Annotated[
         str, Field(description="The Lifecycle Manager resource name")
     ],
-    instance_name: Annotated[str, Field(description="The instance name", default=None)],
+    instance_name: Annotated[
+        str | None, Field(description="The instance name", default=None)
+    ],
 ) -> models.DescribeInstanceResponse:
     """
     Get details about an instance of a Lifecycle Manager resource
@@ -294,9 +296,11 @@ async def run_action(
         str, Field(description="The Lifecycle Manager resource name")
     ],
     action_name: Annotated[str, Field(description="The action to run")],
-    instance_name: Annotated[str, Field(description="The instance name", default=None)],
+    instance_name: Annotated[
+        str | None, Field(description="The instance name", default=None)
+    ],
     instance_description: Annotated[
-        str, Field(description="The instance description", default=None)
+        str | None, Field(description="The instance description", default=None)
     ],
     input_params: Annotated[
         dict | str | None,
