@@ -88,7 +88,7 @@ async def start_application(
     """
     await ctx.info("inside start_application(...)")
     client = ctx.request_context.lifespan_context.get("client")
-    data = client.applications.start_application(name, timeout)
+    data = await client.applications.start_application(name, timeout)
     return models.StartApplicationResponse(name=data["id"], state=data["state"])
 
 
