@@ -1,0 +1,105 @@
+# ---
+# Workflow: CI
+#
+# Runs on all pull requests targeting the devel branch.
+# Also supports manual triggering via workflow_dispatch for debugging.
+#
+# Jobs:
+#   quality  — format check, lint, copyright headers, security scan (runs once)
+#   test     — full test suite with coverage enforcement (matrix: 3.10–3.13)
+#
+# The quality job runs on a single Python version since these checks are
+# version-agnostic. The test matrix runs independently so all versions
+# report results even if one fails.
+#
+# Secrets required: none
+# Produces: no artifacts
+# ---
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - devel
+  workflow_dispatch:
+
+# Cancel in-progress runs when a new commit is pushed to the same PR.
+# Prevents queuing of redundant runs without waiting for the previous to finish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # -- quality
+  # Runs all version-agnostic checks once on Python 3.13.
+  # Checks: ruff format, ruff lint, copyright headers, bandit security scan.
+  # Runs on a single version to avoid paying for the matrix on checks that
+  # produce identical results across Python versions.
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # setup-uv handles Python installation directly; setup-python is not needed.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          python-version: '3.13'
+
+      # --frozen ensures CI fails if uv.lock is out of sync with pyproject.toml
+      # rather than silently updating the lockfile during the run.
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Check formatting
+        run: uv run ruff format --check src tests
+
+      - name: Lint
+        run: make check
+
+      - name: Check copyright headers
+        run: make check-headers
+
+      - name: Security scan
+        run: make security
+
+  # -- test
+  # Runs the full test suite with coverage enforcement on all supported
+  # Python versions. fail-fast is disabled so all versions report results
+  # independently — a 3.10 failure doesn't hide a 3.13 failure.
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Run tests with coverage
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 uv run pytest \
+            --cov=itential_mcp \
+            --cov-report=term \
+            --cov-fail-under=95 \
+            --tb=short \
+            tests/ -v

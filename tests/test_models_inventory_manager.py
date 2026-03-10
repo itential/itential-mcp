@@ -741,11 +741,11 @@ class TestModelValidationEdgeCases:
 
     def test_response_models_with_json_data(self):
         """Test response models that might contain JSON-like data in strings"""
-        json_like_message = '{"result": "success", "inventories_created": 1, "warnings": []}'
-
-        response = DeleteInventoryResponse(
-            status="Success", message=json_like_message
+        json_like_message = (
+            '{"result": "success", "inventories_created": 1, "warnings": []}'
         )
+
+        response = DeleteInventoryResponse(status="Success", message=json_like_message)
 
         assert response.message == json_like_message
         assert '"result": "success"' in response.message
