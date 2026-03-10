@@ -39,5 +39,5 @@ async def describe_compliance_report(
     """
     await ctx.info("inside describe_compliance_report(...)")
     client = ctx.request_context.lifespan_context.get("client")
-    res = client.configuration_manager.describe_compliance_report(report_id)
+    res = await client.configuration_manager.describe_compliance_report(report_id)
     return models.DescribeComplianceReportResponse(result=res)
