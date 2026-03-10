@@ -61,12 +61,16 @@ class TestGetAdaptersElement:
         )
 
     def test_get_adapters_element_missing_required_fields(self):
-        """Test GetAdaptersElement with missing required fields"""
+        """Test GetAdaptersElement with missing required fields.
+
+        package and description are optional (str | None) — only name, version,
+        and state are required.
+        """
         with pytest.raises(ValidationError) as exc_info:
             GetAdaptersElement()
 
         errors = exc_info.value.errors()
-        required_fields = {"name", "package", "version", "description", "state"}
+        required_fields = {"name", "version", "state"}
         missing_fields = {
             error["loc"][0] for error in errors if error["type"] == "missing"
         }
@@ -586,3 +590,111 @@ class TestModelValidationEdgeCases:
         # Pydantic models are immutable by default, so this should work
         assert element.name == original_name
         assert element.state == original_state
+
+
+class TestGetAdaptersElementNullFields:
+    """Regression tests for Bug 2 — GetAdaptersElement must accept null package and description.
+
+    The platform returns null for package and description on at least one adapter.
+    Both fields are now Optional[str] with default=None.
+    """
+
+    def test_null_package_accepted(self):
+        """GetAdaptersElement must accept package=None."""
+        element = GetAdaptersElement(
+            name="Email",
+            package=None,
+            version="0.0.0",
+            description="Email adapter",
+            state="STOPPED",
+        )
+
+        assert element.package is None
+
+    def test_null_description_accepted(self):
+        """GetAdaptersElement must accept description=None."""
+        element = GetAdaptersElement(
+            name="Email",
+            package="@itential/adapter-email",
+            version="0.0.0",
+            description=None,
+            state="STOPPED",
+        )
+
+        assert element.description is None
+
+    def test_both_nullable_fields_null(self):
+        """GetAdaptersElement must accept both package=None and description=None simultaneously."""
+        element = GetAdaptersElement(
+            name="Email",
+            package=None,
+            version="0.0.0",
+            description=None,
+            state="STOPPED",
+        )
+
+        assert element.package is None
+        assert element.description is None
+
+    def test_null_fields_omitted_defaults_to_none(self):
+        """GetAdaptersElement must default package and description to None when omitted."""
+        element = GetAdaptersElement(name="Email", version="0.0.0", state="STOPPED")
+
+        assert element.package is None
+        assert element.description is None
+
+    def test_null_fields_serialize_correctly(self):
+        """model_dump() on a null-field element must produce null values, not raise."""
+        element = GetAdaptersElement(
+            name="Email",
+            package=None,
+            version="0.0.0",
+            description=None,
+            state="STOPPED",
+        )
+
+        data = element.model_dump()
+
+        assert data["package"] is None
+        assert data["description"] is None
+        assert data["name"] == "Email"
+        assert data["version"] == "0.0.0"
+
+    def test_populated_fields_regression(self):
+        """Regression — adapters with real package/description still work correctly."""
+        element = GetAdaptersElement(
+            name="NSO",
+            package="@itential/adapter-nso",
+            version="1.2.3",
+            description="NSO network automation adapter",
+            state="RUNNING",
+        )
+
+        assert element.package == "@itential/adapter-nso"
+        assert element.description == "NSO network automation adapter"
+
+    def test_response_with_mixed_null_and_populated_adapters(self):
+        """GetAdaptersResponse must handle a mix of null-field and populated adapters."""
+        adapters = [
+            GetAdaptersElement(
+                name="NSO",
+                package="@itential/adapter-nso",
+                version="1.0.0",
+                description="NSO adapter",
+                state="RUNNING",
+            ),
+            GetAdaptersElement(
+                name="Email",
+                package=None,
+                version="0.0.0",
+                description=None,
+                state="STOPPED",
+            ),
+        ]
+
+        response = GetAdaptersResponse(root=adapters)
+
+        assert len(response.root) == 2
+        assert response.root[0].package == "@itential/adapter-nso"
+        assert response.root[1].package is None
+        assert response.root[1].description is None
