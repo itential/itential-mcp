@@ -38,13 +38,14 @@ class GetAdaptersElement(BaseModel):
     ]
 
     package: Annotated[
-        str,
+        str | None,
         Field(
             description=inspect.cleandoc(
                 """
                 The NodeJS package name for the adapter
                 """
-            )
+            ),
+            default=None,
         ),
     ]
 
@@ -60,13 +61,14 @@ class GetAdaptersElement(BaseModel):
     ]
 
     description: Annotated[
-        str,
+        str | None,
         Field(
             description=inspect.cleandoc(
                 """
                 Short description of the adapter
                 """
-            )
+            ),
+            default=None,
         ),
     ]
 
