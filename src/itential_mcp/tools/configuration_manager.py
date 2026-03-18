@@ -51,7 +51,7 @@ async def render_template(
     if isinstance(variables, str):
         variables = jsonutils.loads(variables)
 
-    data = client.configuration_manager.render_template(
+    data = await client.configuration_manager.render_template(
         template=template, variables=variables
     )
     return models.RenderTemplateResponse(result=data)
