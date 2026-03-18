@@ -6,7 +6,7 @@
 #
 # Jobs:
 #   quality  — format check, lint, copyright headers, security scan (runs once)
-#   test     — full test suite with coverage enforcement (matrix: 3.10–3.13)
+#   test     — full test suite with coverage enforcement (matrix: 3.10–3.14, beta 3.15)
 #
 # The quality job runs on a single Python version since these checks are
 # version-agnostic. The test matrix runs independently so all versions

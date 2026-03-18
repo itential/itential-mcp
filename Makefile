@@ -102,7 +102,7 @@ container: ## Build multi-arch container image (amd64 + arm64)
 # Tox (multi-version testing)
 # ------------------------------------------------------------------------------
 
-tox: ## Run tests across all supported Python versions (3.10-3.14, beta 3.15)
+tox: ## Run tests across all supported Python versions (3.10-3.14)
 	uv run tox
 
 tox-py310: ## Run tests with Python 3.10
