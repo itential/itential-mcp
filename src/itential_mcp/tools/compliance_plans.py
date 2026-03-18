@@ -34,7 +34,7 @@ async def get_compliance_plans(
     """
     await ctx.info("inside get_compliance_plans(...)")
     client = ctx.request_context.lifespan_context.get("client")
-    results = client.configuration_manager.get_compliance_plans()
+    results = await client.configuration_manager.get_compliance_plans()
     return models.GetCompliancePlansResponse(plans=results)
 
 
@@ -61,7 +61,7 @@ async def run_compliance_plan(
     """
     await ctx.info("inside run_compliance_plan(...)")
     client = ctx.request_context.lifespan_context.get("client")
-    data = client.configuration_manager.run_compliance_plan(name=name)
+    data = await client.configuration_manager.run_compliance_plan(name=name)
     compliance_instance = models.CompliancePlanInstance(
         id=data["id"],
         name=data["name"],
