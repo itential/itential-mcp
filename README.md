@@ -68,6 +68,8 @@ This project is automatically tested against the following Python versions:
 - Python 3.11
 - Python 3.12
 - Python 3.13
+- Python 3.14
+- Python 3.15 _(beta — tested but failures do not block releases)_
 
 ## 🔧 Installation
 The `itential-mcp` application can be installed using either PyPI or it can be

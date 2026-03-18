@@ -371,9 +371,6 @@ class TestConfigurationManagerService:
         # Create an HTTPStatusError without a response attribute (edge case)
         http_error = Exception("Network error")
         server_error = ipsdk.exceptions.HTTPStatusError(http_error)
-        # Ensure response attribute doesn't exist or is None
-        if hasattr(server_error, "response"):
-            object.__setattr__(server_error, "response", None)
         mock_client.post.side_effect = server_error
 
         with pytest.raises(exceptions.ServerException) as exc_info:
@@ -607,9 +604,6 @@ class TestConfigurationManagerService:
         # Create an HTTPStatusError without a response attribute (edge case)
         http_error = Exception("Network error")
         server_error = ipsdk.exceptions.HTTPStatusError(http_error)
-        # Ensure response attribute doesn't exist or is None
-        if hasattr(server_error, "response"):
-            object.__setattr__(server_error, "response", None)
         mock_client.post.side_effect = server_error
 
         with pytest.raises(exceptions.ServerException) as exc_info:

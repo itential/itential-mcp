@@ -1,6 +1,6 @@
 # Itential MCP — Codebase Reference
 
-**Version:** 0.12.1 | **Python:** 3.10–3.13 | **Updated:** 2026-03-08
+**Version:** 0.12.1 | **Python:** 3.10–3.14, beta 3.15 | **Updated:** 2026-03-18
 
 ---
 
