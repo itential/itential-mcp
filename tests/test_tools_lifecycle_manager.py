@@ -1333,3 +1333,67 @@ class TestIntegration:
         RunActionResponse(
             start_time="2024-01-01T00:00:00Z", job_id="test", status="running"
         )
+
+
+class TestDescribeInstanceTypeAnnotations:
+    """Regression tests for Warning 2 — describe_instance and run_action parameter annotations.
+
+    instance_name and instance_description were declared as `str` with default=None,
+    a type annotation mismatch.  They are now correctly declared as `str | None`.
+
+    Note: With FastMCP's Annotated[..., Field(default=None)] pattern the Python
+    default lives inside the Field metadata, not as param.default on the signature.
+    We verify the inner type hint includes NoneType.
+    """
+
+    def _get_inner_type(self, annotation):
+        """Unwrap Annotated[X, ...] to return X."""
+        import typing
+
+        args = typing.get_args(annotation)
+        return args[0] if args else annotation
+
+    def test_describe_instance_instance_name_is_optional(self):
+        """describe_instance must declare instance_name as str | None."""
+        import inspect
+        import typing
+        from itential_mcp.tools.lifecycle_manager import describe_instance
+
+        sig = inspect.signature(describe_instance)
+        param = sig.parameters["instance_name"]
+
+        inner_type = self._get_inner_type(param.annotation)
+        type_args = typing.get_args(inner_type)
+        assert type(None) in type_args, (
+            f"instance_name annotation should be str | None, got: {inner_type}"
+        )
+
+    def test_run_action_instance_name_is_optional(self):
+        """run_action must declare instance_name as str | None."""
+        import inspect
+        import typing
+        from itential_mcp.tools.lifecycle_manager import run_action
+
+        sig = inspect.signature(run_action)
+        param = sig.parameters["instance_name"]
+
+        inner_type = self._get_inner_type(param.annotation)
+        type_args = typing.get_args(inner_type)
+        assert type(None) in type_args, (
+            f"run_action instance_name annotation should be str | None, got: {inner_type}"
+        )
+
+    def test_run_action_instance_description_is_optional(self):
+        """run_action must declare instance_description as str | None."""
+        import inspect
+        import typing
+        from itential_mcp.tools.lifecycle_manager import run_action
+
+        sig = inspect.signature(run_action)
+        param = sig.parameters["instance_description"]
+
+        inner_type = self._get_inner_type(param.annotation)
+        type_args = typing.get_args(inner_type)
+        assert type(None) in type_args, (
+            f"run_action instance_description annotation should be str | None, got: {inner_type}"
+        )
