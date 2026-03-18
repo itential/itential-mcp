@@ -342,12 +342,13 @@ class MemoryUsage(BaseModel):
                 """
                 Resident Set Size - physical memory currently used by the process in bytes
                 """
-            )
+            ),
+            default=0,
         ),
     ]
 
     heap_total: Annotated[
-        int,
+        int | None,
         Field(
             alias="heapTotal",
             description=inspect.cleandoc(
@@ -355,11 +356,12 @@ class MemoryUsage(BaseModel):
                 Total heap memory allocated in bytes
                 """
             ),
+            default=None,
         ),
     ]
 
     heap_used: Annotated[
-        int,
+        int | None,
         Field(
             alias="heapUsed",
             description=inspect.cleandoc(
@@ -367,22 +369,24 @@ class MemoryUsage(BaseModel):
                 Heap memory currently used in bytes
                 """
             ),
+            default=None,
         ),
     ]
 
     external: Annotated[
-        int,
+        int | None,
         Field(
             description=inspect.cleandoc(
                 """
                 External memory used by C++ objects bound to JavaScript objects in bytes
                 """
-            )
+            ),
+            default=None,
         ),
     ]
 
     array_buffers: Annotated[
-        int,
+        int | None,
         Field(
             alias="arrayBuffers",
             description=inspect.cleandoc(
@@ -390,6 +394,7 @@ class MemoryUsage(BaseModel):
                 Memory allocated for ArrayBuffers and SharedArrayBuffers in bytes
                 """
             ),
+            default=None,
         ),
     ]
 
@@ -620,35 +625,38 @@ class LoggerConfig(BaseModel):
     """
 
     console: Annotated[
-        str,
+        str | None,
         Field(
             description=inspect.cleandoc(
                 """
                 Console logging level (e.g., 'info', 'debug', 'warning')
                 """
-            )
+            ),
+            default=None,
         ),
     ]
 
     file: Annotated[
-        str,
+        str | None,
         Field(
             description=inspect.cleandoc(
                 """
                 File logging level (e.g., 'info', 'debug', 'warning')
                 """
-            )
+            ),
+            default=None,
         ),
     ]
 
     syslog: Annotated[
-        str | dict,
+        str | dict | None,
         Field(
             description=inspect.cleandoc(
                 """
                 Syslog logging level (e.g., 'info', 'debug', 'warning')
                 """
-            )
+            ),
+            default=None,
         ),
     ]
 
@@ -875,7 +883,7 @@ class AdapterInfo(BaseModel):
     ]
 
     package_id: Annotated[
-        str,
+        str | None,
         Field(
             alias="package_id",
             description=inspect.cleandoc(
@@ -883,6 +891,7 @@ class AdapterInfo(BaseModel):
                 NPM package identifier for the adapter
                 """
             ),
+            default=None,
         ),
     ]
 
@@ -909,18 +918,19 @@ class AdapterInfo(BaseModel):
     ]
 
     description: Annotated[
-        str,
+        str | None,
         Field(
             description=inspect.cleandoc(
                 """
                 Human-readable description of the adapter
                 """
-            )
+            ),
+            default=None,
         ),
     ]
 
     route_prefix: Annotated[
-        str,
+        str | None,
         Field(
             alias="routePrefix",
             description=inspect.cleandoc(
@@ -928,6 +938,7 @@ class AdapterInfo(BaseModel):
                 HTTP route prefix for the adapter API endpoints
                 """
             ),
+            default=None,
         ),
     ]
 
@@ -943,13 +954,14 @@ class AdapterInfo(BaseModel):
     ]
 
     connection: Annotated[
-        ConnectionInfo,
+        ConnectionInfo | None,
         Field(
             description=inspect.cleandoc(
                 """
                 Connection status information for the adapter
                 """
-            )
+            ),
+            default=None,
         ),
     ]
 
@@ -965,7 +977,7 @@ class AdapterInfo(BaseModel):
     ]
 
     memory_usage: Annotated[
-        MemoryUsage,
+        MemoryUsage | None,
         Field(
             alias="memoryUsage",
             description=inspect.cleandoc(
@@ -973,11 +985,12 @@ class AdapterInfo(BaseModel):
                 Current memory usage statistics for the adapter
                 """
             ),
+            default=None,
         ),
     ]
 
     cpu_usage: Annotated[
-        CpuUsage,
+        CpuUsage | None,
         Field(
             alias="cpuUsage",
             description=inspect.cleandoc(
@@ -985,44 +998,48 @@ class AdapterInfo(BaseModel):
                 CPU usage statistics for the adapter
                 """
             ),
+            default=None,
         ),
     ]
 
     pid: Annotated[
-        int,
+        int | str | None,
         Field(
             description=inspect.cleandoc(
                 """
                 Process ID of the adapter
                 """
-            )
+            ),
+            default=None,
         ),
     ]
 
     logger: Annotated[
-        LoggerConfig,
+        LoggerConfig | None,
         Field(
             description=inspect.cleandoc(
                 """
                 Current logging configuration for the adapter
                 """
-            )
+            ),
+            default=None,
         ),
     ]
 
     timestamp: Annotated[
-        int,
+        int | None,
         Field(
             description=inspect.cleandoc(
                 """
                 Unix timestamp of the last status update
                 """
-            )
+            ),
+            default=None,
         ),
     ]
 
     prev_uptime: Annotated[
-        float,
+        float | None,
         Field(
             alias="prevUptime",
             description=inspect.cleandoc(
@@ -1030,6 +1047,7 @@ class AdapterInfo(BaseModel):
                 Previous uptime measurement in seconds
                 """
             ),
+            default=None,
         ),
     ]
 

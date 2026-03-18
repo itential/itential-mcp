@@ -1530,3 +1530,245 @@ class TestHealthResponse:
         assert "memoryUsage" in serialized["server"]
         assert serialized["applications"][0]["routePrefix"] == "ag-manager"
         assert serialized["adapters"][0]["routePrefix"] == "automationgateway"
+
+
+class TestAdapterInfoInactiveAdapter:
+    """Regression tests for Bug 1 — AdapterInfo must accept sparse inactive-adapter payloads.
+
+    An inactive adapter (e.g. Email) returns a minimal object with many fields
+    absent or set to empty string.  All previously-required fields that the
+    platform omits for inactive adapters are now Optional with default=None.
+    """
+
+    INACTIVE_ADAPTER_PAYLOAD = {
+        "id": "Email",
+        "type": "Adapter",
+        "state": "STOPPED",
+        "uptime": 0,
+        "version": "0.0.0",
+        "logger": {},
+    }
+
+    ACTIVE_ADAPTER_PAYLOAD = {
+        "id": "TestAdapter",
+        "package_id": "@itential/test-adapter",
+        "version": "1.0.0",
+        "type": "Adapter",
+        "description": "Test adapter",
+        "routePrefix": "test-adapter",
+        "state": "RUNNING",
+        "connection": {"state": "ONLINE"},
+        "uptime": 2000.0,
+        "memoryUsage": {
+            "rss": 150000000,
+            "heapTotal": 70000000,
+            "heapUsed": 60000000,
+            "external": 8000000,
+            "arrayBuffers": 7000000,
+        },
+        "cpuUsage": {"user": 2000000, "system": 1000000},
+        "pid": 456,
+        "logger": {"console": "info", "file": "info", "syslog": "warning"},
+        "timestamp": 1757004595716,
+        "prevUptime": 1999.0,
+    }
+
+    def test_inactive_adapter_minimal_payload(self):
+        """AdapterInfo must accept the sparse payload returned for inactive adapters."""
+        adapter = AdapterInfo(**self.INACTIVE_ADAPTER_PAYLOAD)
+
+        assert adapter.id == "Email"
+        assert adapter.state == "STOPPED"
+        assert adapter.uptime == 0
+        assert adapter.package_id is None
+        assert adapter.description is None
+        assert adapter.route_prefix is None
+        assert adapter.connection is None
+        assert adapter.memory_usage is None
+        assert adapter.cpu_usage is None
+        assert adapter.pid is None
+        assert adapter.timestamp is None
+        assert adapter.prev_uptime is None
+
+    def test_inactive_adapter_pid_empty_string(self):
+        """AdapterInfo must accept pid='' (empty string sent by platform for inactive adapters)."""
+        payload = {**self.INACTIVE_ADAPTER_PAYLOAD, "pid": ""}
+        adapter = AdapterInfo(**payload)
+
+        assert adapter.pid == ""
+
+    def test_inactive_adapter_empty_logger_object(self):
+        """LoggerConfig must accept an empty {} dict — platform sends this for inactive adapters."""
+        logger = LoggerConfig(**{})
+
+        assert logger.console is None
+        assert logger.file is None
+        assert logger.syslog is None
+
+    def test_inactive_adapter_missing_memory_usage_fields(self):
+        """MemoryUsage must work when heap fields are absent (inactive adapter has no process)."""
+        mem = MemoryUsage(rss=0)
+
+        assert mem.rss == 0
+        assert mem.heap_total is None
+        assert mem.heap_used is None
+        assert mem.external is None
+        assert mem.array_buffers is None
+
+    def test_active_adapter_full_payload_still_works(self):
+        """Regression — a fully-populated active adapter must still validate correctly."""
+        adapter = AdapterInfo(**self.ACTIVE_ADAPTER_PAYLOAD)
+
+        assert adapter.id == "TestAdapter"
+        assert adapter.package_id == "@itential/test-adapter"
+        assert adapter.description == "Test adapter"
+        assert adapter.route_prefix == "test-adapter"
+        assert adapter.connection.state == "ONLINE"
+        assert adapter.memory_usage.heap_total == 70000000
+        assert adapter.logger.console == "info"
+        assert adapter.pid == 456
+        assert adapter.timestamp == 1757004595716
+        assert adapter.prev_uptime == 1999.0
+
+    def test_health_response_with_mixed_active_inactive_adapters(self):
+        """HealthResponse must accept a list containing both active and inactive adapters."""
+        from itential_mcp.models.health import (
+            PlatformStatus,
+            SystemInfo,
+            ServerInfo,
+            ServerVersions,
+            MemoryUsage,
+            CpuUsage,
+        )
+
+        platform_status = PlatformStatus(
+            host="test.host",
+            serverId="server-1",
+            services=[],
+            timestamp=1000,
+            apps="running",
+            adapters="degraded",
+        )
+        system_info = SystemInfo(
+            arch="x64",
+            release="6.0",
+            uptime=1000.0,
+            freemem=1000000,
+            totalmem=2000000,
+            loadavg=[0.1, 0.2, 0.3],
+            cpus=[],
+        )
+        server_versions = ServerVersions(
+            node="20.0",
+            acorn="8.0",
+            ada="2.0",
+            ares="1.0",
+            brotli="1.0",
+            cjs_module_lexer="1.0",
+            cldr="43.0",
+            icu="73.0",
+            llhttp="8.0",
+            modules="115",
+            napi="9",
+            nghttp2="1.0",
+            openssl="3.0",
+            simdutf="3.0",
+            tz="2023c",
+            undici="5.0",
+            unicode="15.0",
+            uv="1.0",
+            uvwasi="0.0",
+            v8="11.0",
+            zlib="1.2",
+        )
+        server_info = ServerInfo(
+            version="1.0.0",
+            release="1.0",
+            arch="x64",
+            platform="linux",
+            versions=server_versions,
+            memoryUsage=MemoryUsage(rss=1000),
+            cpuUsage=CpuUsage(user=100, system=50),
+            uptime=1000.0,
+            pid=1,
+        )
+
+        health = HealthResponse(
+            status=platform_status,
+            system=system_info,
+            server=server_info,
+            applications=[],
+            adapters=[
+                AdapterInfo(**self.ACTIVE_ADAPTER_PAYLOAD),
+                AdapterInfo(**self.INACTIVE_ADAPTER_PAYLOAD),
+            ],
+        )
+
+        assert len(health.adapters) == 2
+        assert health.adapters[0].id == "TestAdapter"
+        assert health.adapters[0].package_id == "@itential/test-adapter"
+        assert health.adapters[1].id == "Email"
+        assert health.adapters[1].package_id is None
+        assert health.adapters[1].memory_usage is None
+
+
+class TestMemoryUsageOptionalFields:
+    """Regression tests for MemoryUsage optional heap fields (Bug 1)."""
+
+    def test_memory_usage_only_rss(self):
+        """MemoryUsage must be constructable with only rss."""
+        mem = MemoryUsage(rss=12345)
+
+        assert mem.rss == 12345
+        assert mem.heap_total is None
+        assert mem.heap_used is None
+        assert mem.external is None
+        assert mem.array_buffers is None
+
+    def test_memory_usage_default_rss_zero(self):
+        """MemoryUsage with no args should default rss to 0."""
+        mem = MemoryUsage()
+
+        assert mem.rss == 0
+
+    def test_memory_usage_full_payload_unchanged(self):
+        """Regression — full MemoryUsage payload still works after making fields optional."""
+        mem = MemoryUsage(
+            rss=469671936,
+            heapTotal=158703616,
+            heapUsed=147501584,
+            external=50291978,
+            arrayBuffers=46521129,
+        )
+
+        assert mem.rss == 469671936
+        assert mem.heap_total == 158703616
+        assert mem.heap_used == 147501584
+        assert mem.external == 50291978
+        assert mem.array_buffers == 46521129
+
+
+class TestLoggerConfigOptionalFields:
+    """Regression tests for LoggerConfig optional fields (Bug 1)."""
+
+    def test_logger_config_all_none(self):
+        """LoggerConfig must accept all-None (empty dict payload from inactive adapters)."""
+        logger = LoggerConfig()
+
+        assert logger.console is None
+        assert logger.file is None
+        assert logger.syslog is None
+
+    def test_logger_config_full_payload_unchanged(self):
+        """Regression — full LoggerConfig payload still works."""
+        logger = LoggerConfig(console="info", file="warning", syslog="debug")
+
+        assert logger.console == "info"
+        assert logger.file == "warning"
+        assert logger.syslog == "debug"
+
+    def test_logger_config_empty_dict_syslog_validator(self):
+        """Existing syslog validator: empty dict converts to empty string."""
+        logger = LoggerConfig(console="info", file="info", syslog={})
+
+        assert logger.syslog == ""
