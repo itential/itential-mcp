@@ -182,7 +182,7 @@ class TaskMetricElement(BaseModel):
         task_type (str): Task execution type ("automatic", "manual")
         name (str): Human-readable name of the task
         metrics (List[Mapping[str, Any]]): Performance and execution metrics data
-        app (str): Application or service that executes this task
+        app (str | None): Application or service that executes this task
         workflow (Mapping[str, str] | None): Workflow information containing the task
 
     Example:
@@ -268,13 +268,14 @@ class TaskMetricElement(BaseModel):
     ]
 
     app: Annotated[
-        str,
+        str | None,
         Field(
             description=inspect.cleandoc(
                 """
                 The application that runs the task
                 """
-            )
+            ),
+            default=None,
         ),
     ]
 
