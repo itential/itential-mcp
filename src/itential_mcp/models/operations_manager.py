@@ -343,7 +343,7 @@ class DescribeJobResponse(BaseModel):
 
     This model represents detailed information about a specific job
     from the operations manager API, including comprehensive execution
-    details, status, tasks, and metrics.
+    details, status, tasks, metrics, and output variables.
 
     Attributes:
         object_id: Unique job identifier.
@@ -354,6 +354,7 @@ class DescribeJobResponse(BaseModel):
         status: Current job status (error, complete, running, canceled, incomplete, paused).
         metrics: Job execution metrics including start time, end time, and account.
         updated: Last update timestamp.
+        variables: Job variable outputs produced during workflow execution.
     """
 
     object_id: Annotated[
@@ -445,6 +446,18 @@ class DescribeJobResponse(BaseModel):
                 Last update timestamp
                 """
             )
+        ),
+    ]
+
+    variables: Annotated[
+        Mapping[str, Any] | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Job variable outputs produced during workflow execution
+                """
+            ),
+            default=None,
         ),
     ]
 

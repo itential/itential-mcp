@@ -1017,10 +1017,38 @@ class TestDescribeJobSuccess:
         assert result.job_type == "automation"
         assert result.status == "complete"
         assert result.updated == "2022-01-01T12:00:00Z"
+        assert result.variables is None
 
         # Verify service was called with correct parameter
         mock_context.request_context.lifespan_context.get.return_value.operations_manager.describe_job.assert_called_with(
             "job-123"
+        )
+
+    @pytest.mark.asyncio
+    async def test_describe_job_with_variables(self, mock_context):
+        """Test describe_job returns variables when present in the API response"""
+        mock_data = {
+            "_id": "job-456",
+            "name": "Job With Variables",
+            "description": "A job that produces output variables",
+            "type": "automation",
+            "tasks": {"task1": {"type": "action", "status": "complete"}},
+            "status": "complete",
+            "metrics": {"start_time": 1640995200000, "end_time": 1640999200000},
+            "last_updated": "2022-01-01T12:00:00Z",
+            "variables": {"output_ip": "192.168.1.1", "result_code": 0},
+        }
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.describe_job.return_value = mock_data
+
+        result = await operations_manager.describe_job(mock_context, "job-456")
+
+        assert isinstance(result, DescribeJobResponse)
+        assert result.object_id == "job-456"
+        assert result.variables == {"output_ip": "192.168.1.1", "result_code": 0}
+
+        # Verify service was called with correct parameter
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.describe_job.assert_called_with(
+            "job-456"
         )
 
     @pytest.mark.asyncio

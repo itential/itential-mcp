@@ -359,3 +359,37 @@ class TestDescribeJobResponse:
         assert job_detail.job_type == "automation"
         assert job_detail.status == "complete"
         assert job_detail.updated == "2025-01-01T12:00:00Z"
+        assert job_detail.variables is None
+
+    def test_describe_job_response_with_variables(self):
+        """Test DescribeJobResponse with job variable outputs"""
+        job_detail = DescribeJobResponse(
+            _id="job-456",
+            name="Job With Variables",
+            description=None,
+            type="automation",
+            tasks={},
+            status="complete",
+            metrics={},
+            updated="2025-01-01T12:00:00Z",
+            variables={"output_ip": "192.168.1.1", "result_code": 0},
+        )
+
+        assert job_detail.object_id == "job-456"
+        assert job_detail.variables == {"output_ip": "192.168.1.1", "result_code": 0}
+
+    def test_describe_job_response_variables_none(self):
+        """Test DescribeJobResponse with explicitly None variables"""
+        job_detail = DescribeJobResponse(
+            _id="job-789",
+            name="No Variables Job",
+            description=None,
+            type="automation",
+            tasks={},
+            status="running",
+            metrics={},
+            updated="2025-01-01T12:00:00Z",
+            variables=None,
+        )
+
+        assert job_detail.variables is None

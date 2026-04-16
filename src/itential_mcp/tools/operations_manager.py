@@ -294,6 +294,7 @@ async def describe_job(
             - status: Current job status (error, complete, running, canceled, incomplete, paused)
             - metrics: Job execution metrics including start time, end time, and account
             - updated: Last update timestamp
+            - variables: Job variable outputs produced during workflow execution
     """
     await ctx.info("inside describe_job(...)")
 
@@ -311,6 +312,7 @@ async def describe_job(
             "status": data["status"],
             "metrics": data["metrics"],
             "updated": data["last_updated"],
+            "variables": data.get("variables"),
         }
     )
 
