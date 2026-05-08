@@ -229,7 +229,11 @@ async def start_workflow(
     if data:
         workflows = await client.operations_manager.get_workflows()
         input_schema = next(
-            (w.get("schema") or {} for w in workflows if w.get("routeName") == route_name),
+            (
+                w.get("schema") or {}
+                for w in workflows
+                if w.get("routeName") == route_name
+            ),
             {},
         )
         data = _coerce_data_to_schema(data, input_schema)

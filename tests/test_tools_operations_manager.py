@@ -351,7 +351,9 @@ class TestStartWorkflowCoercion:
         }
 
     @pytest.mark.asyncio
-    async def test_stringified_array_coerced_before_post(self, mock_context, mock_job_response):
+    async def test_stringified_array_coerced_before_post(
+        self, mock_context, mock_job_response
+    ):
         """A config value sent as a JSON string is coerced to a list before the platform call."""
         workflow_schema = {
             "type": "object",
@@ -368,7 +370,10 @@ class TestStartWorkflowCoercion:
         await operations_manager.start_workflow(
             mock_context,
             "frr_device_cfg",
-            {"device": "chicago-p", "config": '["interface eth0", "description Management"]'},
+            {
+                "device": "chicago-p",
+                "config": '["interface eth0", "description Management"]',
+            },
         )
 
         call_args = mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.call_args
@@ -377,7 +382,9 @@ class TestStartWorkflowCoercion:
         assert sent_data["device"] == "chicago-p"
 
     @pytest.mark.asyncio
-    async def test_no_matching_workflow_data_passed_through(self, mock_context, mock_job_response):
+    async def test_no_matching_workflow_data_passed_through(
+        self, mock_context, mock_job_response
+    ):
         """When route_name has no schema match, data is forwarded unchanged."""
         mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_workflows.return_value = []
         mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.return_value = mock_job_response
