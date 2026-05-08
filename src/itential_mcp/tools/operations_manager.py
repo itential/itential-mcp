@@ -2,7 +2,11 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from typing import Annotated
+from __future__ import annotations
+
+import json
+
+from typing import Annotated, Any
 
 from pydantic import Field
 
@@ -16,6 +20,45 @@ from itential_mcp.models import operations_manager as models
 
 
 __tags__ = ("operations_manager",)
+
+
+def _coerce_value(value: Any, schema: dict) -> Any:
+    """Coerce a single value to the type declared in its JSON Schema definition.
+
+    LLMs often stringify nested structures (arrays, objects) when calling tools.
+    This converts them back to the correct Python type using the schema as ground truth.
+    If the value cannot be parsed or the schema has no type declaration, it is returned
+    unchanged so the platform produces the real error rather than a silent wrong cast.
+    """
+    expected_type = schema.get("type")
+    if not isinstance(value, str) or expected_type not in ("array", "object"):
+        return value
+
+    try:
+        parsed = json.loads(value)
+    except (json.JSONDecodeError, ValueError):
+        return value
+
+    if expected_type == "array" and isinstance(parsed, list):
+        return parsed
+    if expected_type == "object" and isinstance(parsed, dict):
+        return parsed
+
+    return value
+
+
+def _coerce_data_to_schema(data: dict, input_schema: dict) -> dict:
+    """Recursively coerce data values to match the types declared in the workflow input schema.
+
+    Only top-level properties are coerced — nested structures beyond the first level
+    are left to the platform's own validation.
+    """
+    properties: dict = input_schema.get("properties") or {}
+    result = {}
+    for key, value in data.items():
+        prop_schema = properties.get(key, {})
+        result[key] = _coerce_value(value, prop_schema)
+    return result
 
 
 async def _account_id_to_username(ctx: Context, account_id: str) -> str:
@@ -180,6 +223,16 @@ async def start_workflow(
     # Parse data if it's a JSON string
     if isinstance(data, str):
         data = jsonutils.loads(data)
+
+    # Coerce stringified values (e.g. arrays passed as strings by LLMs) using
+    # the workflow's declared input schema so the platform receives the right types.
+    if data:
+        workflows = await client.operations_manager.get_workflows()
+        input_schema = next(
+            (w.get("schema") or {} for w in workflows if w.get("routeName") == route_name),
+            {},
+        )
+        data = _coerce_data_to_schema(data, input_schema)
 
     res = await client.operations_manager.start_workflow(route_name, data)
 

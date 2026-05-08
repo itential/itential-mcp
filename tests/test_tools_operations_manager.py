@@ -268,6 +268,131 @@ class TestStartWorkflow:
         assert result.metrics.user is None
 
 
+class TestCoerceValue:
+    """Unit tests for _coerce_value"""
+
+    def test_string_to_array(self):
+        result = operations_manager._coerce_value('["a", "b"]', {"type": "array"})
+        assert result == ["a", "b"]
+
+    def test_string_to_object(self):
+        result = operations_manager._coerce_value('{"key": "val"}', {"type": "object"})
+        assert result == {"key": "val"}
+
+    def test_non_json_string_unchanged(self):
+        result = operations_manager._coerce_value("hello", {"type": "array"})
+        assert result == "hello"
+
+    def test_single_quoted_string_unchanged(self):
+        # Single quotes are not valid JSON — value should pass through unmodified
+        result = operations_manager._coerce_value("['a', 'b']", {"type": "array"})
+        assert result == "['a', 'b']"
+
+    def test_correct_type_unchanged(self):
+        result = operations_manager._coerce_value(["a", "b"], {"type": "array"})
+        assert result == ["a", "b"]
+
+    def test_no_schema_type_unchanged(self):
+        result = operations_manager._coerce_value('["a"]', {})
+        assert result == '["a"]'
+
+    def test_type_mismatch_after_parse_unchanged(self):
+        # Schema says array but parsed value is an object — leave it for platform to reject
+        result = operations_manager._coerce_value('{"k": "v"}', {"type": "array"})
+        assert result == '{"k": "v"}'
+
+
+class TestCoerceDataToSchema:
+    """Unit tests for _coerce_data_to_schema"""
+
+    def test_coerces_stringified_array(self):
+        schema = {"properties": {"config": {"type": "array"}}}
+        data = {"device": "router1", "config": '["interface eth0"]'}
+        result = operations_manager._coerce_data_to_schema(data, schema)
+        assert result["config"] == ["interface eth0"]
+        assert result["device"] == "router1"
+
+    def test_unknown_keys_passed_through(self):
+        schema = {"properties": {}}
+        data = {"extra": '["x"]'}
+        result = operations_manager._coerce_data_to_schema(data, schema)
+        assert result["extra"] == '["x"]'
+
+    def test_empty_schema_no_coercion(self):
+        data = {"config": '["a", "b"]'}
+        result = operations_manager._coerce_data_to_schema(data, {})
+        assert result["config"] == '["a", "b"]'
+
+
+class TestStartWorkflowCoercion:
+    """Test that start_workflow coerces data values using the workflow schema"""
+
+    @pytest.fixture
+    def mock_context(self):
+        context = AsyncMock(spec=Context)
+        context.info = AsyncMock()
+        mock_client = MagicMock()
+        mock_operations_manager = AsyncMock()
+        mock_client.operations_manager = mock_operations_manager
+        context.request_context = MagicMock()
+        context.request_context.lifespan_context = MagicMock()
+        context.request_context.lifespan_context.get.return_value = mock_client
+        return context
+
+    @pytest.fixture
+    def mock_job_response(self):
+        return {
+            "_id": "job-999",
+            "name": "FRR Device Config",
+            "description": None,
+            "tasks": {},
+            "status": "running",
+            "metrics": {},
+        }
+
+    @pytest.mark.asyncio
+    async def test_stringified_array_coerced_before_post(self, mock_context, mock_job_response):
+        """A config value sent as a JSON string is coerced to a list before the platform call."""
+        workflow_schema = {
+            "type": "object",
+            "properties": {
+                "device": {"type": "string"},
+                "config": {"type": "array"},
+            },
+        }
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_workflows.return_value = [
+            {"routeName": "frr_device_cfg", "schema": workflow_schema}
+        ]
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.return_value = mock_job_response
+
+        await operations_manager.start_workflow(
+            mock_context,
+            "frr_device_cfg",
+            {"device": "chicago-p", "config": '["interface eth0", "description Management"]'},
+        )
+
+        call_args = mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.call_args
+        sent_data = call_args[0][1]
+        assert sent_data["config"] == ["interface eth0", "description Management"]
+        assert sent_data["device"] == "chicago-p"
+
+    @pytest.mark.asyncio
+    async def test_no_matching_workflow_data_passed_through(self, mock_context, mock_job_response):
+        """When route_name has no schema match, data is forwarded unchanged."""
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_workflows.return_value = []
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.return_value = mock_job_response
+
+        await operations_manager.start_workflow(
+            mock_context,
+            "unknown_route",
+            {"config": '["a", "b"]'},
+        )
+
+        call_args = mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.call_args
+        sent_data = call_args[0][1]
+        assert sent_data["config"] == '["a", "b"]'
+
+
 class TestGetJobs:
     """Test the get_jobs tool function"""
 
