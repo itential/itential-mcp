@@ -399,6 +399,27 @@ class TestStartWorkflowCoercion:
         sent_data = call_args[0][1]
         assert sent_data["config"] == '["a", "b"]'
 
+    @pytest.mark.asyncio
+    async def test_schema_fetch_failure_data_passed_through(
+        self, mock_context, mock_job_response
+    ):
+        """If fetching the workflow schema fails, data is forwarded unchanged."""
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_workflows.side_effect = Exception(
+            "platform unavailable"
+        )
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.return_value = mock_job_response
+
+        await operations_manager.start_workflow(
+            mock_context,
+            "frr_device_cfg",
+            {"config": '["a", "b"]'},
+        )
+
+        call_args = mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.call_args
+        sent_data = call_args[0][1]
+        assert sent_data["config"] == '["a", "b"]'
+        mock_context.warning.assert_awaited()
+
 
 class TestGetJobs:
     """Test the get_jobs tool function"""

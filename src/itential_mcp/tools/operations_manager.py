@@ -226,17 +226,25 @@ async def start_workflow(
 
     # Coerce stringified values (e.g. arrays passed as strings by LLMs) using
     # the workflow's declared input schema so the platform receives the right types.
+    # A failure to fetch the schema must not block the workflow start — fall back to
+    # sending the data unchanged so the platform still produces the real error.
     if data:
-        workflows = await client.operations_manager.get_workflows()
-        input_schema = next(
-            (
-                w.get("schema") or {}
-                for w in workflows
-                if w.get("routeName") == route_name
-            ),
-            {},
-        )
-        data = _coerce_data_to_schema(data, input_schema)
+        try:
+            workflows = await client.operations_manager.get_workflows()
+            input_schema = next(
+                (
+                    w.get("schema") or {}
+                    for w in workflows
+                    if w.get("routeName") == route_name
+                ),
+                {},
+            )
+            data = _coerce_data_to_schema(data, input_schema)
+        except Exception as exc:
+            await ctx.warning(
+                f"skipping input coercion for '{route_name}'; "
+                f"could not fetch workflow schema: {exc}"
+            )
 
     res = await client.operations_manager.start_workflow(route_name, data)
 
