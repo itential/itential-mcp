@@ -462,6 +462,261 @@ class DescribeJobResponse(BaseModel):
     ]
 
 
+class StartAgentResponse(BaseModel):
+    """Response returned when an agent endpoint trigger fires successfully.
+
+    Agent triggers return a session object rather than a job object. Use
+    session_id with describe_session to poll for completion and read the output.
+
+    Attributes:
+        session_id: Unique session identifier for this agent run.
+        status: Initial session status (RUNNING or COMPLETE).
+    """
+
+    session_id: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Unique session identifier; use with describe_session to poll
+                for completion and retrieve the agent output
+                """
+            )
+        ),
+    ]
+
+    status: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Initial session status (RUNNING or COMPLETE)
+                """
+            )
+        ),
+    ]
+
+
+class SessionMessage(BaseModel):
+    """A single message/event from an agent session.
+
+    Attributes:
+        event_type: Type of event (inference-succeeded, agent-session-completed, etc.).
+        category: Broad category (AGENT_REASONING, AGENT_STATUS, etc.).
+        text: Agent output text, present on inference-succeeded events.
+        timestamp: ISO 8601 event timestamp.
+    """
+
+    event_type: Annotated[
+        str,
+        Field(alias="type", description="Event type identifier"),
+    ]
+
+    category: Annotated[
+        str | None,
+        Field(description="Broad event category", default=None),
+    ]
+
+    text: Annotated[
+        str | None,
+        Field(
+            description="Agent output text (present on inference-succeeded events)",
+            default=None,
+        ),
+    ]
+
+    timestamp: Annotated[
+        str | None,
+        Field(description="ISO 8601 event timestamp", default=None),
+    ]
+
+
+class DescribeSessionResponse(BaseModel):
+    """Full details of a completed or running agent session.
+
+    Attributes:
+        session_id: Unique session identifier.
+        agent_name: Name of the agent that ran.
+        status: Session status (RUNNING, COMPLETE, FAILED).
+        output: Final text output from the agent (None while still running).
+        started_at: ISO 8601 start timestamp.
+        end_time: ISO 8601 end timestamp (None if still running).
+        duration_ms: Total session duration in milliseconds.
+        messages: All session events in order.
+    """
+
+    session_id: Annotated[
+        str,
+        Field(description="Unique session identifier"),
+    ]
+
+    agent_name: Annotated[
+        str | None,
+        Field(description="Name of the agent that ran", default=None),
+    ]
+
+    status: Annotated[
+        str,
+        Field(description="Session status (RUNNING, COMPLETE, FAILED)"),
+    ]
+
+    output: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Final text output from the agent; None while still RUNNING
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    started_at: Annotated[
+        str | None,
+        Field(description="ISO 8601 start timestamp", default=None),
+    ]
+
+    end_time: Annotated[
+        str | None,
+        Field(
+            description="ISO 8601 end timestamp (None if still running)", default=None
+        ),
+    ]
+
+    duration_ms: Annotated[
+        int | None,
+        Field(description="Total session duration in milliseconds", default=None),
+    ]
+
+    messages: Annotated[
+        list[SessionMessage],
+        Field(
+            description="All session events in chronological order",
+            default_factory=list,
+        ),
+    ]
+
+
+class AgentElement(BaseModel):
+    """
+    Represents a single agent automation from the operations manager.
+
+    Agents are AI-driven automation components that can be exposed as API
+    endpoints and triggered similarly to workflows. This model surfaces the
+    fields most useful to an LLM caller: the agent's identity, its input
+    contract, and the route name needed to start it.
+
+    Attributes:
+        name: Human-readable automation name wrapping the agent.
+        description: Optional description of the agent automation.
+        agent_id: UUID of the underlying agent component (componentId).
+        route_name: API route name for triggering via start_workflow (None if no
+            endpoint trigger has been created for this agent).
+        input_schema: JSON Schema for the endpoint trigger's input (None if no
+            endpoint trigger exists).
+        last_executed: ISO 8601 timestamp of the last trigger execution (None if
+            the agent has never been triggered via its endpoint).
+    """
+
+    name: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Human-readable name of the automation wrapping the agent
+                """
+            )
+        ),
+    ]
+
+    description: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Description of the agent automation
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    agent_id: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                UUID of the underlying agent component; use this to identify the agent
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    route_name: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                API route name for triggering this agent (use with start_workflow);
+                None means no endpoint trigger has been created yet — use expose_agent
+                to create one
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    input_schema: Annotated[
+        Mapping[str, Any] | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                JSON Schema describing the input the agent endpoint accepts
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    last_executed: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                ISO 8601 timestamp of last endpoint trigger execution (null if never executed)
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+
+class GetAgentsResponse(RootModel):
+    """
+    Response model for agent automation collection endpoints.
+
+    Wraps a list of AgentElement objects returned from the operations manager
+    when querying for agent-type automations.
+
+    Attributes:
+        root: List of AgentElement objects with agent metadata and trigger info.
+    """
+
+    root: Annotated[
+        list[AgentElement],
+        Field(
+            description=inspect.cleandoc(
+                """
+                List of agent automation objects with identity and trigger metadata
+                """
+            ),
+            default_factory=list,
+        ),
+    ]
+
+
 class ExposeWorkflowResponse(BaseModel):
     """Response model for workflow exposure endpoints.
 

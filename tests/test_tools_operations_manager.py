@@ -30,10 +30,13 @@ class TestModule:
         """Test all expected functions exist in the module"""
         expected_functions = [
             "get_workflows",
+            "get_agents",
             "start_workflow",
             "get_jobs",
             "describe_job",
+            "describe_session",
             "expose_workflow",
+            "expose_agent",
             "_account_id_to_username",
         ]
 
@@ -48,10 +51,13 @@ class TestModule:
         functions_to_test = [
             operations_manager._account_id_to_username,
             operations_manager.get_workflows,
+            operations_manager.get_agents,
             operations_manager.start_workflow,
             operations_manager.get_jobs,
             operations_manager.describe_job,
+            operations_manager.describe_session,
             operations_manager.expose_workflow,
+            operations_manager.expose_agent,
         ]
 
         for func in functions_to_test:
@@ -1408,3 +1414,242 @@ class TestErrorHandling:
 
         with pytest.raises(Exception, match="Authorization API Error"):
             await operations_manager._account_id_to_username(mock_context, "user-123")
+
+
+class TestGetAgentsTool:
+    """Test the get_agents tool function"""
+
+    @pytest.fixture
+    def mock_context(self):
+        ctx = MagicMock(spec=Context)
+        ctx.info = AsyncMock()
+        ctx.debug = AsyncMock()
+        ctx.warning = AsyncMock()
+        mock_client = MagicMock()
+        mock_client.operations_manager = AsyncMock()
+        ctx.request_context.lifespan_context.get.return_value = mock_client
+        return ctx
+
+    @pytest.mark.asyncio
+    async def test_get_agents_returns_response(self, mock_context):
+        """Test get_agents returns GetAgentsResponse"""
+        from itential_mcp.models.operations_manager import GetAgentsResponse
+
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_agents = AsyncMock(
+            return_value=[
+                {
+                    "name": "My Agent",
+                    "description": "does stuff",
+                    "agent_id": "uuid-001",
+                    "route_name": "my-agent",
+                    "input_schema": {"type": "object"},
+                    "last_executed": None,
+                }
+            ]
+        )
+
+        result = await operations_manager.get_agents(mock_context)
+
+        assert isinstance(result, GetAgentsResponse)
+        assert len(result.root) == 1
+        assert result.root[0].name == "My Agent"
+        assert result.root[0].route_name == "my-agent"
+
+    @pytest.mark.asyncio
+    async def test_get_agents_empty(self, mock_context):
+        """Test get_agents with empty result"""
+        from itential_mcp.models.operations_manager import GetAgentsResponse
+
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_agents = AsyncMock(
+            return_value=[]
+        )
+
+        result = await operations_manager.get_agents(mock_context)
+
+        assert isinstance(result, GetAgentsResponse)
+        assert result.root == []
+
+    @pytest.mark.asyncio
+    async def test_get_agents_converts_epoch_timestamp(self, mock_context):
+        """Test get_agents converts epoch last_executed to ISO string"""
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_agents = AsyncMock(
+            return_value=[
+                {
+                    "name": "Timed Agent",
+                    "description": "",
+                    "agent_id": "uuid-002",
+                    "route_name": "timed",
+                    "input_schema": None,
+                    "last_executed": 1640995200000,
+                }
+            ]
+        )
+
+        result = await operations_manager.get_agents(mock_context)
+
+        assert result.root[0].last_executed is not None
+        assert "2022" in result.root[0].last_executed
+
+
+class TestStartWorkflowAgentBranch:
+    """Test start_workflow when triggered against an agent endpoint"""
+
+    @pytest.fixture
+    def mock_context(self):
+        ctx = MagicMock(spec=Context)
+        ctx.info = AsyncMock()
+        ctx.debug = AsyncMock()
+        ctx.warning = AsyncMock()
+        mock_client = MagicMock()
+        mock_client.operations_manager = AsyncMock()
+        ctx.request_context.lifespan_context.get.return_value = mock_client
+        return ctx
+
+    @pytest.mark.asyncio
+    async def test_start_workflow_agent_returns_session(self, mock_context):
+        """Test start_workflow returns StartAgentResponse when platform returns sessionId"""
+        from itential_mcp.models.operations_manager import StartAgentResponse
+
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow = AsyncMock(
+            return_value={"sessionId": "sess-xyz", "status": "RUNNING"}
+        )
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_workflows = AsyncMock(
+            return_value=[]
+        )
+
+        result = await operations_manager.start_workflow(
+            mock_context, "jfagent", {"input": "hello"}
+        )
+
+        assert isinstance(result, StartAgentResponse)
+        assert result.session_id == "sess-xyz"
+        assert result.status == "RUNNING"
+
+    @pytest.mark.asyncio
+    async def test_start_workflow_agent_complete_status(self, mock_context):
+        """Test start_workflow handles COMPLETE status from agent session"""
+        from itential_mcp.models.operations_manager import StartAgentResponse
+
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow = AsyncMock(
+            return_value={"sessionId": "sess-done", "status": "COMPLETE"}
+        )
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_workflows = AsyncMock(
+            return_value=[]
+        )
+
+        result = await operations_manager.start_workflow(
+            mock_context, "some-agent-route", None
+        )
+
+        assert isinstance(result, StartAgentResponse)
+        assert result.status == "COMPLETE"
+
+
+class TestDescribeSessionTool:
+    """Test the describe_session tool function"""
+
+    @pytest.fixture
+    def mock_context(self):
+        ctx = MagicMock(spec=Context)
+        ctx.info = AsyncMock()
+        ctx.debug = AsyncMock()
+        ctx.warning = AsyncMock()
+        mock_client = MagicMock()
+        mock_client.operations_manager = AsyncMock()
+        ctx.request_context.lifespan_context.get.return_value = mock_client
+        return ctx
+
+    @pytest.mark.asyncio
+    async def test_describe_session_complete(self, mock_context):
+        """Test describe_session returns output for a completed session"""
+        from itential_mcp.models.operations_manager import DescribeSessionResponse
+
+        mock_ops = mock_context.request_context.lifespan_context.get.return_value.operations_manager
+        mock_ops.get_session = AsyncMock(
+            return_value={
+                "sessionId": "sess-001",
+                "status": "COMPLETE",
+                "startedAt": "2025-01-01T00:00:00Z",
+                "endTime": "2025-01-01T00:00:05Z",
+                "durationMs": 5000,
+                "agentSnapshot": {"_id": "uuid-001", "name": "JF Agent"},
+            }
+        )
+        mock_ops.get_session_messages = AsyncMock(
+            return_value=[
+                {
+                    "type": "inference-succeeded",
+                    "category": "AGENT_REASONING",
+                    "text": "Your one liner here.",
+                    "timestamp": 1640995200000,
+                },
+                {
+                    "type": "agent-session-completed",
+                    "category": "AGENT_STATUS",
+                    "timestamp": 1640995200100,
+                },
+            ]
+        )
+
+        result = await operations_manager.describe_session(mock_context, "sess-001")
+
+        assert isinstance(result, DescribeSessionResponse)
+        assert result.session_id == "sess-001"
+        assert result.status == "COMPLETE"
+        assert result.agent_name == "JF Agent"
+        assert result.output == "Your one liner here."
+        assert result.duration_ms == 5000
+        assert len(result.messages) == 2
+
+    @pytest.mark.asyncio
+    async def test_describe_session_running_no_output(self, mock_context):
+        """Test describe_session returns None output while session is RUNNING"""
+        from itential_mcp.models.operations_manager import DescribeSessionResponse
+
+        mock_ops = mock_context.request_context.lifespan_context.get.return_value.operations_manager
+        mock_ops.get_session = AsyncMock(
+            return_value={
+                "sessionId": "sess-002",
+                "status": "RUNNING",
+                "agentSnapshot": {"name": "Some Agent"},
+            }
+        )
+        mock_ops.get_session_messages = AsyncMock(return_value=[])
+
+        result = await operations_manager.describe_session(mock_context, "sess-002")
+
+        assert isinstance(result, DescribeSessionResponse)
+        assert result.status == "RUNNING"
+        assert result.output is None
+        assert result.messages == []
+
+    @pytest.mark.asyncio
+    async def test_describe_session_client_error(self, mock_context):
+        """Test describe_session propagates client errors"""
+        mock_ops = mock_context.request_context.lifespan_context.get.return_value.operations_manager
+        mock_ops.get_session = AsyncMock(side_effect=Exception("Session not found"))
+
+        with pytest.raises(Exception, match="Session not found"):
+            await operations_manager.describe_session(mock_context, "bad-id")
+
+    @pytest.mark.asyncio
+    async def test_describe_session_no_output_message(self, mock_context):
+        """Test describe_session with messages but no inference-succeeded event"""
+        mock_ops = mock_context.request_context.lifespan_context.get.return_value.operations_manager
+        mock_ops.get_session = AsyncMock(
+            return_value={
+                "sessionId": "sess-003",
+                "status": "FAILED",
+                "agentSnapshot": {"name": "Failing Agent"},
+            }
+        )
+        mock_ops.get_session_messages = AsyncMock(
+            return_value=[
+                {"type": "agent-session-completed", "category": "AGENT_STATUS"},
+            ]
+        )
+
+        result = await operations_manager.describe_session(mock_context, "sess-003")
+
+        assert result.output is None
+        assert result.status == "FAILED"

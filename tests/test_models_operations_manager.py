@@ -13,6 +13,11 @@ from itential_mcp.models.operations_manager import (
     JobElement,
     GetJobsResponse,
     DescribeJobResponse,
+    StartAgentResponse,
+    SessionMessage,
+    DescribeSessionResponse,
+    AgentElement,
+    GetAgentsResponse,
 )
 
 
@@ -393,3 +398,218 @@ class TestDescribeJobResponse:
         )
 
         assert job_detail.variables is None
+
+
+class TestStartAgentResponse:
+    """Test the StartAgentResponse model"""
+
+    def test_start_agent_response_basic(self):
+        """Test basic StartAgentResponse creation"""
+        response = StartAgentResponse(
+            session_id="abc-123",
+            status="RUNNING",
+        )
+
+        assert response.session_id == "abc-123"
+        assert response.status == "RUNNING"
+
+    def test_start_agent_response_complete_status(self):
+        """Test StartAgentResponse with COMPLETE status"""
+        response = StartAgentResponse(session_id="xyz-789", status="COMPLETE")
+
+        assert response.status == "COMPLETE"
+
+    def test_start_agent_response_missing_session_id(self):
+        """Test StartAgentResponse validation fails without session_id"""
+        with pytest.raises(ValidationError) as exc_info:
+            StartAgentResponse(status="RUNNING")
+
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("session_id",) for e in errors)
+
+    def test_start_agent_response_missing_status(self):
+        """Test StartAgentResponse validation fails without status"""
+        with pytest.raises(ValidationError) as exc_info:
+            StartAgentResponse(session_id="abc-123")
+
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("status",) for e in errors)
+
+
+class TestSessionMessage:
+    """Test the SessionMessage model"""
+
+    def test_session_message_basic(self):
+        """Test basic SessionMessage creation via alias"""
+        msg = SessionMessage(
+            type="inference-succeeded",
+            category="AGENT_REASONING",
+            text="Hello world",
+            timestamp="2025-01-01T00:00:00Z",
+        )
+
+        assert msg.event_type == "inference-succeeded"
+        assert msg.category == "AGENT_REASONING"
+        assert msg.text == "Hello world"
+        assert msg.timestamp == "2025-01-01T00:00:00Z"
+
+    def test_session_message_optional_fields(self):
+        """Test SessionMessage with only required type field"""
+        msg = SessionMessage(type="agent-session-completed")
+
+        assert msg.event_type == "agent-session-completed"
+        assert msg.category is None
+        assert msg.text is None
+        assert msg.timestamp is None
+
+    def test_session_message_missing_type(self):
+        """Test SessionMessage validation fails without type"""
+        with pytest.raises(ValidationError) as exc_info:
+            SessionMessage()
+
+        errors = exc_info.value.errors()
+        assert any(e["loc"] in (("type",), ("event_type",)) for e in errors)
+
+
+class TestDescribeSessionResponse:
+    """Test the DescribeSessionResponse model"""
+
+    def test_describe_session_response_basic(self):
+        """Test basic DescribeSessionResponse creation"""
+        response = DescribeSessionResponse(
+            session_id="sess-001",
+            agent_name="JF Agent",
+            status="COMPLETE",
+            output="Here is your one liner.",
+            started_at="2025-01-01T00:00:00Z",
+            end_time="2025-01-01T00:00:05Z",
+            duration_ms=5000,
+            messages=[],
+        )
+
+        assert response.session_id == "sess-001"
+        assert response.agent_name == "JF Agent"
+        assert response.status == "COMPLETE"
+        assert response.output == "Here is your one liner."
+        assert response.duration_ms == 5000
+        assert response.messages == []
+
+    def test_describe_session_response_running(self):
+        """Test DescribeSessionResponse for a still-running session"""
+        response = DescribeSessionResponse(
+            session_id="sess-002",
+            status="RUNNING",
+        )
+
+        assert response.status == "RUNNING"
+        assert response.output is None
+        assert response.end_time is None
+        assert response.duration_ms is None
+        assert response.messages == []
+
+    def test_describe_session_response_with_messages(self):
+        """Test DescribeSessionResponse with message list"""
+        msg = SessionMessage(
+            type="inference-succeeded",
+            category="AGENT_REASONING",
+            text="output text",
+        )
+        response = DescribeSessionResponse(
+            session_id="sess-003",
+            status="COMPLETE",
+            messages=[msg],
+        )
+
+        assert len(response.messages) == 1
+        assert response.messages[0].event_type == "inference-succeeded"
+        assert response.messages[0].text == "output text"
+
+    def test_describe_session_response_missing_required(self):
+        """Test DescribeSessionResponse validation fails without required fields"""
+        with pytest.raises(ValidationError) as exc_info:
+            DescribeSessionResponse()
+
+        errors = exc_info.value.errors()
+        required_locs = {e["loc"][0] for e in errors}
+        assert "session_id" in required_locs
+        assert "status" in required_locs
+
+
+class TestAgentElement:
+    """Test the AgentElement model"""
+
+    def test_agent_element_basic(self):
+        """Test basic AgentElement creation"""
+        element = AgentElement(
+            name="My Agent",
+            description="Does things",
+            agent_id="efaf23d0-4d10-482b-abde-a76180a95d5e",
+            route_name="my-agent",
+            input_schema={
+                "type": "object",
+                "properties": {"input": {"type": "string"}},
+            },
+            last_executed="2025-01-01T00:00:00Z",
+        )
+
+        assert element.name == "My Agent"
+        assert element.agent_id == "efaf23d0-4d10-482b-abde-a76180a95d5e"
+        assert element.route_name == "my-agent"
+
+    def test_agent_element_required_only(self):
+        """Test AgentElement with only required name field"""
+        element = AgentElement(name="Minimal Agent")
+
+        assert element.name == "Minimal Agent"
+        assert element.agent_id is None
+        assert element.route_name is None
+        assert element.input_schema is None
+        assert element.last_executed is None
+
+    def test_agent_element_no_endpoint_trigger(self):
+        """Test AgentElement with no endpoint trigger configured"""
+        element = AgentElement(
+            name="Unexposed Agent",
+            agent_id="some-uuid",
+            route_name=None,
+            input_schema=None,
+            last_executed=None,
+        )
+
+        assert element.route_name is None
+        assert element.input_schema is None
+
+    def test_agent_element_missing_required_name(self):
+        """Test AgentElement validation fails without name"""
+        with pytest.raises(ValidationError) as exc_info:
+            AgentElement()
+
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("name",) for e in errors)
+
+
+class TestGetAgentsResponse:
+    """Test the GetAgentsResponse model"""
+
+    def test_get_agents_response_empty(self):
+        """Test empty GetAgentsResponse"""
+        response = GetAgentsResponse(root=[])
+
+        assert response.root == []
+
+    def test_get_agents_response_default_factory(self):
+        """Test GetAgentsResponse default creates empty list"""
+        response = GetAgentsResponse()
+
+        assert response.root == []
+
+    def test_get_agents_response_with_elements(self):
+        """Test GetAgentsResponse with agent elements"""
+        agent1 = AgentElement(name="Agent A", agent_id="uuid-a", route_name="agent-a")
+        agent2 = AgentElement(name="Agent B", agent_id="uuid-b")
+        response = GetAgentsResponse(root=[agent1, agent2])
+
+        assert len(response.root) == 2
+        assert response.root[0].name == "Agent A"
+        assert response.root[0].route_name == "agent-a"
+        assert response.root[1].route_name is None

@@ -170,6 +170,61 @@ async def get_workflows(
     return models.GetWorkflowsResponse(root=workflow_elements)
 
 
+async def get_agents(
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+) -> models.GetAgentsResponse:
+    """
+    Get all agent automations from Itential Platform.
+
+    Agents are AI-driven automation components managed by the Operations Manager.
+    Each agent automation may optionally have an endpoint trigger that exposes it
+    for programmatic invocation via the same mechanism as workflows.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+    Returns:
+        models.GetAgentsResponse: List of agent objects with the following fields:
+            - name: Human-readable name of the automation wrapping the agent
+            - description: Description of the agent automation
+            - agent_id: UUID of the underlying agent component
+            - route_name: API route name for triggering (use with start_workflow);
+              None means no endpoint trigger exists yet — use expose_agent to create one
+            - input_schema: JSON Schema for the endpoint input (None if no endpoint trigger)
+            - last_executed: ISO 8601 timestamp of last endpoint trigger execution
+
+    Notes:
+        - Use agent_id when creating a new automation via create_automation
+        - Use route_name with start_workflow to trigger an agent that has an endpoint
+        - Agents without a route_name must be exposed first via expose_agent
+    """
+    await ctx.info("inside get_agents(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    data = await client.operations_manager.get_agents()
+
+    agent_elements = []
+
+    for item in data:
+        last_executed = None
+        if item.get("last_executed") is not None:
+            last_executed = timeutils.epoch_to_timestamp(item["last_executed"])
+
+        agent_elements.append(
+            models.AgentElement(
+                name=item["name"],
+                description=item.get("description"),
+                agent_id=item["agent_id"],
+                route_name=item.get("route_name"),
+                input_schema=item.get("input_schema"),
+                last_executed=last_executed,
+            )
+        )
+
+    return models.GetAgentsResponse(root=agent_elements)
+
+
 async def start_workflow(
     ctx: Annotated[Context, Field(description="The FastMCP Context object")],
     route_name: Annotated[
@@ -183,38 +238,37 @@ async def start_workflow(
             default=None,
         ),
     ],
-) -> models.StartWorkflowResponse:
+) -> models.StartWorkflowResponse | models.StartAgentResponse:
     """
-    Execute a workflow by triggering its API endpoint.
+    Execute a workflow or agent by triggering its API endpoint.
 
-    Workflows are the core automation processes in Itential Platform. This function
-    initiates workflow execution and returns a job object that can be monitored
-    for progress and results.
+    Works for both workflow triggers (returns a job object) and agent triggers
+    (returns a session object). Check whether the response has an object_id
+    (workflow job) or session_id (agent session) to determine the type and
+    use the appropriate follow-up tool.
 
     Args:
         ctx (Context): The FastMCP Context object
 
-        route_name (str): API route name for the workflow. Use the 'route_name'
-            field from `get_workflows`.
+        route_name (str): API route name. Use the 'route_name' field from
+            `get_workflows` for workflows or `get_agents` for agents.
 
-        data (dict | None): Input data for workflow execution. Structure must
-            match the workflow's input schema (available in the 'schema'
-            field from `get_workflows`).
+        data (dict | None): Input data matching the trigger's input schema.
 
     Returns:
-        models.StartWorkflowResponse: Job execution details with the following fields:
-            - object_id: Unique job identifier (use with `describe_job` for monitoring)
-            - name: Workflow name that was executed
-            - description: Workflow description
-            - tasks: Complete set of tasks to be executed in the workflow
-            - status: Current job status (error, complete, running, canceled, incomplete, paused)
-            - metrics: Job execution metrics including start_time, end_time, and user
+        models.StartWorkflowResponse: For workflow triggers — job details with:
+            - object_id: Job identifier (use with describe_job for monitoring)
+            - name: Workflow name
+            - status: Job status (error, complete, running, canceled, incomplete, paused)
+            - metrics: Execution metrics
+
+        models.StartAgentResponse: For agent triggers — session details with:
+            - session_id: Session identifier (use with describe_session for output)
+            - status: Initial session status (RUNNING or COMPLETE)
 
     Notes:
-        - Use the returned 'object_id' field with `describe_job` to monitor workflow progress
-        - The 'data' parameter must conform to the workflow's input schema
-        - Job status can be monitored using the `get_jobs` or `describe_job` functions
-        - Workflow schemas are available via the `get_workflows` function
+        - For agents: use describe_session with the returned session_id to get output
+        - For workflows: use describe_job with the returned object_id to monitor progress
     """
     await ctx.info("inside start_workflow(...)")
 
@@ -247,6 +301,14 @@ async def start_workflow(
             )
 
     res = await client.operations_manager.start_workflow(route_name, data)
+
+    # Agent endpoint triggers return a session object: {"sessionId": ..., "status": ...}
+    # Workflow endpoint triggers return a job object:   {"_id": ..., "name": ..., "tasks": ...}
+    if "sessionId" in res:
+        return models.StartAgentResponse(
+            session_id=res["sessionId"],
+            status=res.get("status", "RUNNING"),
+        )
 
     metrics_data = res.get("metrics") or {}
 
@@ -490,4 +552,175 @@ async def expose_workflow(
 
     return models.ExposeWorkflowResponse(
         message=f"Successfully exposed workflow `{name}` with route `{route_name}`"
+    )
+
+
+async def expose_agent(
+    ctx: Annotated[
+        Context,
+        Field(description="The FastMCP Context object"),
+    ],
+    agent_id: Annotated[
+        str,
+        Field(description="UUID of the agent to expose (agent_id from get_agents)"),
+    ],
+    automation_name: Annotated[
+        str,
+        Field(description="Name for the automation wrapping the agent"),
+    ],
+    route_name: Annotated[
+        str | None,
+        Field(
+            description="API route name for the endpoint trigger; defaults to automation_name with spaces replaced by underscores",
+            default=None,
+        ),
+    ],
+    endpoint_name: Annotated[
+        str | None,
+        Field(
+            description="Name for the trigger endpoint; defaults to 'API Route for {automation_name}'",
+            default=None,
+        ),
+    ],
+    endpoint_description: Annotated[
+        str | None,
+        Field(description="Description for the endpoint trigger", default=None),
+    ],
+    endpoint_schema: Annotated[
+        dict | None,
+        Field(
+            description="JSON Schema for the endpoint input; defaults to an open schema if not provided",
+            default=None,
+        ),
+    ],
+) -> models.ExposeWorkflowResponse:
+    """Expose an agent as an API endpoint trigger.
+
+    Creates an automation wrapping the specified agent and an endpoint trigger
+    so the agent can be started via start_workflow using the assigned route_name.
+
+    Args:
+        ctx (Context): The FastMCP Context object.
+        agent_id (str): UUID of the agent component to expose. Use get_agents to
+            retrieve available agent UUIDs.
+        automation_name (str): Name for the automation that wraps this agent in
+            the Operations Manager.
+        route_name (str | None): API route name for the endpoint. Defaults to
+            automation_name with spaces replaced by underscores.
+        endpoint_name (str | None): Display name for the trigger. Defaults to
+            "API Route for {automation_name}".
+        endpoint_description (str | None): Description for the trigger. Defaults
+            to "auto-created by itential-mcp".
+        endpoint_schema (dict | None): JSON Schema for trigger input validation.
+            Defaults to an open schema that accepts any object.
+
+    Returns:
+        models.ExposeWorkflowResponse: Status message confirming the operation.
+
+    Raises:
+        exceptions.ConfigurationException: If the endpoint trigger cannot be created.
+        Exception: If the automation cannot be created.
+    """
+    await ctx.info("inside expose_agent(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    res = await client.operations_manager.create_automation(
+        name=automation_name,
+        component_type="agents",
+        component_name=agent_id,
+        description="auto-created by itential-mcp",
+    )
+
+    automation_id = res["_id"]
+    resolved_route = route_name or automation_name.replace(" ", "_")
+
+    try:
+        await client.operations_manager.create_endpoint_trigger(
+            name=endpoint_name or f"API Route for {automation_name}",
+            automation_id=automation_id,
+            description=endpoint_description or "auto-created by itential-mcp",
+            route_name=resolved_route,
+            schema=endpoint_schema,
+        )
+
+    except Exception as exc:
+        await client.operations_manager.delete_automation(automation_id)
+        raise exceptions.ConfigurationException(f"failed to expose agent: {exc}")
+
+    return models.ExposeWorkflowResponse(
+        message=f"Successfully exposed agent `{agent_id}` as automation `{automation_name}` with route `{resolved_route}`"
+    )
+
+
+async def describe_session(
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    session_id: Annotated[
+        str,
+        Field(description="Session ID returned by start_workflow for an agent trigger"),
+    ],
+) -> models.DescribeSessionResponse:
+    """
+    Get the status and output of an agent session.
+
+    Use this after start_workflow returns a StartAgentResponse to poll for
+    completion and retrieve the agent's text output. Sessions complete quickly
+    (typically under 30 seconds); if status is RUNNING, call this again.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+        session_id (str): Session identifier from start_workflow's session_id field
+
+    Returns:
+        models.DescribeSessionResponse: Session details with the following fields:
+            - session_id: The session identifier
+            - agent_name: Name of the agent that ran
+            - status: Session status (RUNNING, COMPLETE, FAILED)
+            - output: Final text output from the agent (None while RUNNING)
+            - started_at: ISO 8601 start timestamp
+            - end_time: ISO 8601 end timestamp (None if still RUNNING)
+            - duration_ms: Total duration in milliseconds
+            - messages: All session events in chronological order
+
+    Notes:
+        - The agent output is in the 'output' field once status is COMPLETE
+        - Poll every few seconds if status is RUNNING
+    """
+    await ctx.info("inside describe_session(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    session = await client.operations_manager.get_session(session_id)
+    raw_messages = await client.operations_manager.get_session_messages(session_id)
+
+    # Extract final text output from the inference-succeeded event
+    output = None
+    for msg in raw_messages:
+        if msg.get("type") == "inference-succeeded" and msg.get("text"):
+            output = msg["text"]
+
+    messages = []
+    for msg in raw_messages:
+        ts_epoch = msg.get("timestamp")
+        ts = timeutils.epoch_to_timestamp(ts_epoch) if ts_epoch else None
+        messages.append(
+            models.SessionMessage(
+                type=msg.get("type", ""),
+                category=msg.get("category"),
+                text=msg.get("text"),
+                timestamp=ts,
+            )
+        )
+
+    snap = session.get("agentSnapshot") or {}
+
+    return models.DescribeSessionResponse(
+        session_id=session_id,
+        agent_name=snap.get("name"),
+        status=session.get("status", "UNKNOWN"),
+        output=output,
+        started_at=session.get("startedAt"),
+        end_time=session.get("endTime"),
+        duration_ms=session.get("durationMs"),
+        messages=messages,
     )

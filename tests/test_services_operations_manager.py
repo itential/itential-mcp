@@ -1675,3 +1675,230 @@ class TestDeleteAutomation:
         service.client.delete.assert_called_once_with(
             "/operations-manager/automations/"
         )
+
+
+class TestGetAgents:
+    """Test the get_agents method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        return AsyncMock(spec=AsyncPlatform)
+
+    @pytest.fixture
+    def service(self, mock_client):
+        return Service(mock_client)
+
+    @pytest.fixture
+    def mock_automations_response(self):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "data": [
+                {
+                    "_id": "auto-001",
+                    "name": "My Agent",
+                    "description": "An agent",
+                    "componentType": "agents",
+                    "componentId": "uuid-001",
+                },
+                {
+                    "_id": "auto-002",
+                    "name": "No ID Agent",
+                    "description": "",
+                    "componentType": "agents",
+                    "componentId": None,
+                },
+            ],
+            "metadata": {"total": 2},
+        }
+        return mock_response
+
+    @pytest.fixture
+    def mock_triggers_response(self):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "data": [
+                {
+                    "_id": "trig-001",
+                    "type": "endpoint",
+                    "actionId": "auto-001",
+                    "routeName": "my-agent",
+                    "schema": {"type": "object"},
+                    "lastExecuted": None,
+                },
+            ],
+            "metadata": {"total": 1},
+        }
+        return mock_response
+
+    @pytest.mark.asyncio
+    async def test_get_agents_joins_triggers(
+        self, service, mock_automations_response, mock_triggers_response
+    ):
+        """Test get_agents joins automations with their endpoint triggers"""
+        service.client.get = AsyncMock(
+            side_effect=[mock_automations_response, mock_triggers_response]
+        )
+
+        result = await service.get_agents()
+
+        # auto-002 skipped (no componentId); auto-001 joined with trigger
+        assert len(result) == 1
+        assert result[0]["name"] == "My Agent"
+        assert result[0]["agent_id"] == "uuid-001"
+        assert result[0]["route_name"] == "my-agent"
+        assert result[0]["input_schema"] == {"type": "object"}
+
+    @pytest.mark.asyncio
+    async def test_get_agents_skips_no_component_id(
+        self, service, mock_automations_response, mock_triggers_response
+    ):
+        """Test get_agents skips automations without a componentId"""
+        service.client.get = AsyncMock(
+            side_effect=[mock_automations_response, mock_triggers_response]
+        )
+
+        result = await service.get_agents()
+
+        names = [r["name"] for r in result]
+        assert "No ID Agent" not in names
+
+    @pytest.mark.asyncio
+    async def test_get_agents_no_endpoint_trigger(self, service):
+        """Test get_agents returns None for route_name when no endpoint trigger exists"""
+        auto_response = MagicMock()
+        auto_response.json.return_value = {
+            "data": [
+                {
+                    "_id": "auto-003",
+                    "name": "Agent No Trigger",
+                    "description": "",
+                    "componentType": "agents",
+                    "componentId": "uuid-003",
+                }
+            ],
+            "metadata": {"total": 1},
+        }
+        trigger_response = MagicMock()
+        trigger_response.json.return_value = {"data": [], "metadata": {"total": 0}}
+
+        service.client.get = AsyncMock(side_effect=[auto_response, trigger_response])
+
+        result = await service.get_agents()
+
+        assert len(result) == 1
+        assert result[0]["route_name"] is None
+        assert result[0]["input_schema"] is None
+        assert result[0]["last_executed"] is None
+
+    @pytest.mark.asyncio
+    async def test_get_agents_empty(self, service):
+        """Test get_agents with no agent automations"""
+        empty_auto = MagicMock()
+        empty_auto.json.return_value = {"data": [], "metadata": {"total": 0}}
+        empty_trigger = MagicMock()
+        empty_trigger.json.return_value = {"data": [], "metadata": {"total": 0}}
+
+        service.client.get = AsyncMock(side_effect=[empty_auto, empty_trigger])
+
+        result = await service.get_agents()
+
+        assert result == []
+
+
+class TestGetSession:
+    """Test the get_session method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        return AsyncMock(spec=AsyncPlatform)
+
+    @pytest.fixture
+    def service(self, mock_client):
+        return Service(mock_client)
+
+    @pytest.mark.asyncio
+    async def test_get_session_returns_session_data(self, service):
+        """Test get_session returns session detail dict"""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "sessionId": "sess-abc",
+            "status": "COMPLETE",
+            "agentDefinitionId": "uuid-001",
+        }
+        service.client.get = AsyncMock(return_value=mock_response)
+
+        result = await service.get_session("sess-abc")
+
+        assert result["sessionId"] == "sess-abc"
+        assert result["status"] == "COMPLETE"
+        service.client.get.assert_called_once_with(
+            "/agent-session-manager/sessions/sess-abc"
+        )
+
+    @pytest.mark.asyncio
+    async def test_get_session_client_error(self, service):
+        """Test get_session raises on client error"""
+        service.client.get = AsyncMock(side_effect=Exception("Not found"))
+
+        with pytest.raises(Exception, match="Not found"):
+            await service.get_session("missing-id")
+
+
+class TestGetSessionMessages:
+    """Test the get_session_messages method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        return AsyncMock(spec=AsyncPlatform)
+
+    @pytest.fixture
+    def service(self, mock_client):
+        return Service(mock_client)
+
+    @pytest.mark.asyncio
+    async def test_get_session_messages_list_response(self, service):
+        """Test get_session_messages handles a direct list response"""
+        messages = [
+            {
+                "type": "inference-succeeded",
+                "text": "Hello",
+                "category": "AGENT_REASONING",
+            },
+            {"type": "agent-session-completed", "category": "AGENT_STATUS"},
+        ]
+        mock_response = MagicMock()
+        mock_response.json.return_value = messages
+        service.client.get = AsyncMock(return_value=mock_response)
+
+        result = await service.get_session_messages("sess-abc")
+
+        assert len(result) == 2
+        assert result[0]["type"] == "inference-succeeded"
+        service.client.get.assert_called_once_with(
+            "/agent-session-manager/sessions/sess-abc/messages"
+        )
+
+    @pytest.mark.asyncio
+    async def test_get_session_messages_dict_response(self, service):
+        """Test get_session_messages handles a dict-wrapped response"""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "data": [{"type": "inference-succeeded", "text": "output"}]
+        }
+        service.client.get = AsyncMock(return_value=mock_response)
+
+        result = await service.get_session_messages("sess-abc")
+
+        assert len(result) == 1
+        assert result[0]["text"] == "output"
+
+    @pytest.mark.asyncio
+    async def test_get_session_messages_empty(self, service):
+        """Test get_session_messages with no messages"""
+        mock_response = MagicMock()
+        mock_response.json.return_value = []
+        service.client.get = AsyncMock(return_value=mock_response)
+
+        result = await service.get_session_messages("sess-abc")
+
+        assert result == []

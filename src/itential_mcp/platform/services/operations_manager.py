@@ -130,7 +130,48 @@ class Service(ServiceBase):
             json=data,
         )
 
-        return res.json().get("data")
+        body = res.json()
+        # Workflow jobs return under "data"; agent sessions return the session
+        # object directly at the top level alongside message/metadata keys.
+        if "data" in body and body["data"] is not None:
+            return body["data"]
+        # Agent session response: {"message": "OK", "data": {"sessionId": ..., "status": ...}}
+        # already handled above, but guard for unexpected shapes
+        return body
+
+    async def get_session(self, session_id: str) -> dict:
+        """Retrieve details for a specific agent session.
+
+        Args:
+            session_id: The session UUID returned by start_workflow for agent triggers.
+
+        Returns:
+            dict: Session detail object from AgentSessionManager.
+
+        Raises:
+            Exception: If the session is not found or the API call fails.
+        """
+        res = await self.client.get(f"/agent-session-manager/sessions/{session_id}")
+        return res.json()
+
+    async def get_session_messages(self, session_id: str) -> list[dict]:
+        """Retrieve all messages/events for an agent session.
+
+        Args:
+            session_id: The session UUID returned by start_workflow for agent triggers.
+
+        Returns:
+            list[dict]: Ordered list of session event objects. The inference-succeeded
+                event carries the agent's text output in its ``text`` field.
+
+        Raises:
+            Exception: If the session is not found or the API call fails.
+        """
+        res = await self.client.get(
+            f"/agent-session-manager/sessions/{session_id}/messages"
+        )
+        body = res.json()
+        return body if isinstance(body, list) else body.get("data", [])
 
     async def get_jobs(self, name: str, project: str | None = None) -> list[dict]:
         """
@@ -332,10 +373,94 @@ class Service(ServiceBase):
 
         return res.json()
 
+    async def get_agents(self) -> list[dict]:
+        """Retrieve all agent automations and join their endpoint triggers.
+
+        Fetches automations where componentType is "agents", then fetches all
+        endpoint triggers and joins them by actionId so callers can surface the
+        route_name and input_schema for each agent in a single response.
+
+        Returns:
+            list[dict]: Each dict contains automation fields plus optional
+                ``route_name``, ``input_schema``, and ``last_executed`` from the
+                matching endpoint trigger (all None when no endpoint trigger exists).
+
+        Raises:
+            Exception: If either API call fails.
+        """
+        limit = 100
+        skip = 0
+        automations = []
+
+        while True:
+            res = await self.client.get(
+                "/operations-manager/automations",
+                params={
+                    "limit": limit,
+                    "skip": skip,
+                    "equalsField": "componentType",
+                    "equals": "agents",
+                },
+            )
+            data = res.json()
+            page = data.get("data", [])
+            automations.extend(page)
+
+            if len(automations) >= data.get("metadata", {}).get("total", 0):
+                break
+
+            skip += limit
+
+        # Build a lookup of endpoint triggers keyed by actionId
+        skip = 0
+        endpoint_triggers: dict[str, dict] = {}
+
+        while True:
+            res = await self.client.get(
+                "/operations-manager/triggers",
+                params={
+                    "limit": limit,
+                    "skip": skip,
+                    "equalsField": "type",
+                    "equals": "endpoint",
+                },
+            )
+            data = res.json()
+            page = data.get("data", [])
+
+            for trigger in page:
+                action_id = trigger.get("actionId")
+                if action_id and action_id not in endpoint_triggers:
+                    endpoint_triggers[action_id] = trigger
+
+            total = data.get("metadata", {}).get("total", 0)
+            skip += limit
+            if skip >= total:
+                break
+
+        results = []
+        for auto in automations:
+            # Skip automations with no linked agent component
+            if not auto.get("componentId"):
+                continue
+            trigger = endpoint_triggers.get(auto["_id"])
+            results.append(
+                {
+                    "name": auto.get("name"),
+                    "description": auto.get("description"),
+                    "agent_id": auto.get("componentId"),
+                    "route_name": trigger.get("routeName") if trigger else None,
+                    "input_schema": trigger.get("schema") if trigger else None,
+                    "last_executed": trigger.get("lastExecuted") if trigger else None,
+                }
+            )
+
+        return results
+
     async def create_automation(
         self,
         name: str,
-        component_type: Literal["workflows", "ucm_compliance_plan"],
+        component_type: Literal["workflows", "ucm_compliance_plan", "agents"],
         component_name: str | None = None,
         description: str | None = None,
     ) -> Mapping[str, Any]:
@@ -352,9 +477,10 @@ class Service(ServiceBase):
         Args:
             name (str): The name of the automation to create. This name will be
                 used to identify the automation in the Operations Manager.
-            component_type (Literal["workflows", "ucm_compliance_plan"]): The type
+            component_type (Literal["workflows", "ucm_compliance_plan", "agents"]): The type
                 of component this automation will execute. "workflows" for Automation
-                Studio workflows, "ucm_compliance_plan" for compliance plans.
+                Studio workflows, "ucm_compliance_plan" for compliance plans,
+                "agents" for FlowAgent agents.
             component_name (str | None): The name of the specific component to
                 associate with this automation. If provided, the method will look up
                 the component ID. Defaults to None.
@@ -390,6 +516,12 @@ class Service(ServiceBase):
                     )
 
                 body["componentId"] = json_data["items"][0]["_id"]
+
+            elif component_type == "agents":
+                # Agents are identified by UUID (componentId). The caller may pass
+                # either the UUID directly or the automation name — accept either.
+                body["componentId"] = component_name
+                body["componentName"] = component_name
 
             elif component_type == "ucm_compliance_plan":
                 pass
