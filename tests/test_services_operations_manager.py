@@ -1675,3 +1675,140 @@ class TestDeleteAutomation:
         service.client.delete.assert_called_once_with(
             "/operations-manager/automations/"
         )
+
+
+class TestGetAgents:
+    """Test the get_agents method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        """Create a mock AsyncPlatform client"""
+        return AsyncMock(spec=AsyncPlatform)
+
+    @pytest.fixture
+    def service(self, mock_client):
+        """Create a Service instance with mock client"""
+        return Service(mock_client)
+
+    @pytest.mark.asyncio
+    async def test_joins_triggers(self, service):
+        """Test get_agents joins triggers to matching automations by _id/actionId"""
+        auto_response = MagicMock()
+        auto_response.json.return_value = {
+            "data": [
+                {
+                    "_id": "auto-uuid-a",
+                    "name": "My Agent Automation",
+                    "description": "Agent desc",
+                    "componentId": "uuid-a",
+                    "componentType": "agents",
+                }
+            ],
+            "metadata": {"total": 1},
+        }
+
+        trigger_response = MagicMock()
+        trigger_response.json.return_value = {
+            "data": [
+                {
+                    "_id": "trigger-1",
+                    "actionId": "auto-uuid-a",
+                    "type": "endpoint",
+                    "routeName": "agent_route",
+                    "schema": {"type": "object"},
+                    "lastExecuted": None,
+                }
+            ],
+            "metadata": {"total": 1},
+        }
+
+        service.client.get = AsyncMock(side_effect=[auto_response, trigger_response])
+
+        result = await service.get_agents()
+
+        assert len(result) == 1
+        assert result[0]["route_name"] == "agent_route"
+        assert result[0]["agent_id"] == "uuid-a"
+        assert result[0]["name"] == "My Agent Automation"
+
+    @pytest.mark.asyncio
+    async def test_skips_no_component_id(self, service):
+        """Test get_agents skips automations with no componentId"""
+        auto_response = MagicMock()
+        auto_response.json.return_value = {
+            "data": [
+                {
+                    "_id": "auto-no-comp",
+                    "name": "No Component Agent",
+                    "description": None,
+                    # no componentId
+                    "componentType": "agents",
+                }
+            ],
+            "metadata": {"total": 1},
+        }
+
+        trigger_response = MagicMock()
+        trigger_response.json.return_value = {
+            "data": [],
+            "metadata": {"total": 0},
+        }
+
+        service.client.get = AsyncMock(side_effect=[auto_response, trigger_response])
+
+        result = await service.get_agents()
+
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_no_matching_trigger_returns_none(self, service):
+        """Test get_agents returns None for route_name when no trigger matches"""
+        auto_response = MagicMock()
+        auto_response.json.return_value = {
+            "data": [
+                {
+                    "_id": "auto-uuid-b",
+                    "name": "Untriggered Agent",
+                    "description": None,
+                    "componentId": "uuid-b",
+                    "componentType": "agents",
+                }
+            ],
+            "metadata": {"total": 1},
+        }
+
+        trigger_response = MagicMock()
+        trigger_response.json.return_value = {
+            "data": [],
+            "metadata": {"total": 0},
+        }
+
+        service.client.get = AsyncMock(side_effect=[auto_response, trigger_response])
+
+        result = await service.get_agents()
+
+        assert len(result) == 1
+        assert result[0]["route_name"] is None
+        assert result[0]["input_schema"] is None
+        assert result[0]["last_executed"] is None
+
+    @pytest.mark.asyncio
+    async def test_empty_returns_empty_list(self, service):
+        """Test get_agents returns empty list when there are no agent automations"""
+        auto_response = MagicMock()
+        auto_response.json.return_value = {
+            "data": [],
+            "metadata": {"total": 0},
+        }
+
+        trigger_response = MagicMock()
+        trigger_response.json.return_value = {
+            "data": [],
+            "metadata": {"total": 0},
+        }
+
+        service.client.get = AsyncMock(side_effect=[auto_response, trigger_response])
+
+        result = await service.get_agents()
+
+        assert result == []

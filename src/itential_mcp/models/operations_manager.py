@@ -462,6 +462,158 @@ class DescribeJobResponse(BaseModel):
     ]
 
 
+class StartAgentResponse(BaseModel):
+    """
+    Response returned when an agent endpoint trigger fires successfully.
+
+    Agent triggers return a session object rather than a job object. Use
+    session_id with describe_session to poll for completion and read the
+    output.
+
+    Attributes:
+        session_id: Unique session identifier for this agent run.
+        status: Initial session status (RUNNING or COMPLETE).
+    """
+
+    session_id: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Unique session identifier; use with describe_session to poll for
+                completion and retrieve the agent output
+                """
+            )
+        ),
+    ]
+
+    status: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Initial session status (RUNNING or COMPLETE)
+                """
+            )
+        ),
+    ]
+
+
+class AgentElement(BaseModel):
+    """
+    Represents a single agent automation from the operations manager.
+
+    Agents are AI-driven automation components that can be exposed as API
+    endpoints and triggered similarly to workflows.
+
+    Attributes:
+        name: Human-readable name of the automation wrapping the agent.
+        description: Description of the agent automation.
+        agent_id: UUID of the underlying agent component; use this to identify the agent.
+        route_name: API route name for triggering this agent (use with trigger_automation).
+        input_schema: JSON Schema describing the input the agent endpoint accepts.
+        last_executed: ISO 8601 timestamp of last endpoint trigger execution.
+    """
+
+    name: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Human-readable name of the automation wrapping the agent
+                """
+            )
+        ),
+    ]
+
+    description: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Description of the agent automation
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    agent_id: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                UUID of the underlying agent component; use this to identify the agent
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    route_name: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                API route name for triggering this agent (use with trigger_automation);
+                None means no endpoint trigger has been created yet — use expose_agent
+                to create one
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    input_schema: Annotated[
+        Mapping[str, Any] | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                JSON Schema describing the input the agent endpoint accepts
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    last_executed: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                ISO 8601 timestamp of last endpoint trigger execution (null if never
+                executed)
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+
+class GetAgentsResponse(RootModel):
+    """
+    Response model for agent automation collection endpoints.
+
+    Wraps a list of AgentElement objects returned from the operations manager
+    when querying for agent-type automations.
+
+    Attributes:
+        root: List of AgentElement objects with agent metadata and trigger info.
+    """
+
+    root: Annotated[
+        list[AgentElement],
+        Field(
+            description=inspect.cleandoc(
+                """
+                List of agent automation objects with identity and trigger metadata
+                """
+            ),
+            default_factory=list,
+        ),
+    ]
+
+
 class ExposeWorkflowResponse(BaseModel):
     """Response model for workflow exposure endpoints.
 

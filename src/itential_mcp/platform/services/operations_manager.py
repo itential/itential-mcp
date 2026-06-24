@@ -130,7 +130,86 @@ class Service(ServiceBase):
             json=data,
         )
 
-        return res.json().get("data")
+        body = res.json()
+        if "data" in body and body["data"] is not None:
+            return body["data"]
+        return body
+
+    async def get_agents(self) -> list[dict]:
+        """Retrieve all agent automations and join their endpoint triggers.
+
+        Fetches automations where componentType is "agents", then fetches all
+        endpoint triggers and joins them by actionId so callers can surface the
+        route_name and input_schema for each agent in a single response.
+
+        Returns:
+            list[dict]: Each dict contains: name, description, agent_id, route_name,
+                input_schema, last_executed. Last three are None when no endpoint
+                trigger exists. Automations with no componentId are skipped.
+
+        Raises:
+            Exception: If either API call fails.
+        """
+        limit = 100
+        skip = 0
+        automations = []
+
+        while True:
+            res = await self.client.get(
+                "/operations-manager/automations",
+                params={
+                    "limit": limit,
+                    "skip": skip,
+                    "equalsField": "componentType",
+                    "equals": "agents",
+                },
+            )
+            data = res.json()
+            automations.extend(data.get("data", []))
+            if len(automations) >= data.get("metadata", {}).get("total", 0):
+                break
+            skip += limit
+
+        skip = 0
+        endpoint_triggers: dict[str, dict] = {}
+
+        while True:
+            res = await self.client.get(
+                "/operations-manager/triggers",
+                params={
+                    "limit": limit,
+                    "skip": skip,
+                    "equalsField": "type",
+                    "equals": "endpoint",
+                },
+            )
+            data = res.json()
+            for trigger in data.get("data", []):
+                action_id = trigger.get("actionId")
+                if action_id and action_id not in endpoint_triggers:
+                    endpoint_triggers[action_id] = trigger
+            total = data.get("metadata", {}).get("total", 0)
+            skip += limit
+            if skip >= total:
+                break
+
+        results = []
+        for auto in automations:
+            if not auto.get("componentId"):
+                continue
+            trigger = endpoint_triggers.get(auto["_id"])
+            results.append(
+                {
+                    "name": auto.get("name"),
+                    "description": auto.get("description"),
+                    "agent_id": auto.get("componentId"),
+                    "route_name": trigger.get("routeName") if trigger else None,
+                    "input_schema": trigger.get("schema") if trigger else None,
+                    "last_executed": trigger.get("lastExecuted") if trigger else None,
+                }
+            )
+
+        return results
 
     async def get_jobs(self, name: str, project: str | None = None) -> list[dict]:
         """
@@ -335,29 +414,32 @@ class Service(ServiceBase):
     async def create_automation(
         self,
         name: str,
-        component_type: Literal["workflows", "ucm_compliance_plan"],
+        component_type: Literal["workflows", "ucm_compliance_plan", "agents"],
         component_name: str | None = None,
         description: str | None = None,
     ) -> Mapping[str, Any]:
         """Create a new automation in the Operations Manager.
 
-        This method creates an automation object that wraps a workflow or compliance
-        plan for execution through the Operations Manager. Automations serve as the
-        execution containers that can be triggered through various mechanisms including
-        manual triggers, scheduled triggers, or API endpoints.
+        This method creates an automation object that wraps a workflow, compliance
+        plan, or FlowAgent agent for execution through the Operations Manager.
+        Automations serve as the execution containers that can be triggered through
+        various mechanisms including manual triggers, scheduled triggers, or API
+        endpoints.
 
-        The automation acts as a bridge between the underlying component (workflow or
-        compliance plan) and the trigger mechanisms that initiate execution.
+        The automation acts as a bridge between the underlying component (workflow,
+        compliance plan, or agent) and the trigger mechanisms that initiate execution.
 
         Args:
             name (str): The name of the automation to create. This name will be
                 used to identify the automation in the Operations Manager.
-            component_type (Literal["workflows", "ucm_compliance_plan"]): The type
-                of component this automation will execute. "workflows" for Automation
-                Studio workflows, "ucm_compliance_plan" for compliance plans.
-            component_name (str | None): The name of the specific component to
+            component_type (Literal["workflows", "ucm_compliance_plan", "agents"]): The
+                type of component this automation will execute. "workflows" for
+                Automation Studio workflows, "ucm_compliance_plan" for compliance plans,
+                "agents" for FlowAgent agents.
+            component_name (str | None): The name or ID of the specific component to
                 associate with this automation. If provided, the method will look up
-                the component ID. Defaults to None.
+                the component ID (for workflows) or set it directly (for agents).
+                Defaults to None.
             description (str | None): Optional description for the automation.
                 Defaults to None.
 
@@ -393,6 +475,10 @@ class Service(ServiceBase):
 
             elif component_type == "ucm_compliance_plan":
                 pass
+
+            elif component_type == "agents":
+                body["componentId"] = component_name
+                body["componentName"] = component_name
 
         res = await self.client.post("/operations-manager/automations", json=body)
 

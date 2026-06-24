@@ -30,10 +30,12 @@ class TestModule:
         """Test all expected functions exist in the module"""
         expected_functions = [
             "get_workflows",
+            "get_agents",
             "start_workflow",
             "get_jobs",
             "describe_job",
             "expose_workflow",
+            "expose_agent",
             "_account_id_to_username",
         ]
 
@@ -48,10 +50,12 @@ class TestModule:
         functions_to_test = [
             operations_manager._account_id_to_username,
             operations_manager.get_workflows,
+            operations_manager.get_agents,
             operations_manager.start_workflow,
             operations_manager.get_jobs,
             operations_manager.describe_job,
             operations_manager.expose_workflow,
+            operations_manager.expose_agent,
         ]
 
         for func in functions_to_test:
@@ -1408,3 +1412,215 @@ class TestErrorHandling:
 
         with pytest.raises(Exception, match="Authorization API Error"):
             await operations_manager._account_id_to_username(mock_context, "user-123")
+
+
+class TestGetAgentsTool:
+    """Test the get_agents tool function"""
+
+    @pytest.fixture
+    def mock_context(self):
+        """Create a mock Context object"""
+        context = AsyncMock(spec=Context)
+        context.info = AsyncMock()
+
+        mock_client = MagicMock()
+        mock_operations_manager = AsyncMock()
+        mock_client.operations_manager = mock_operations_manager
+
+        context.request_context = MagicMock()
+        context.request_context.lifespan_context = MagicMock()
+        context.request_context.lifespan_context.get.return_value = mock_client
+
+        return context
+
+    @pytest.mark.asyncio
+    async def test_returns_response(self, mock_context):
+        """Test get_agents returns GetAgentsResponse with one AgentElement"""
+        from itential_mcp.models.operations_manager import GetAgentsResponse
+
+        mock_data = [
+            {
+                "name": "Test Agent",
+                "description": "An agent",
+                "agent_id": "uuid-agent-001",
+                "route_name": "test_agent_route",
+                "input_schema": {"type": "object"},
+                "last_executed": None,
+            }
+        ]
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_agents.return_value = mock_data
+
+        result = await operations_manager.get_agents(mock_context)
+
+        assert isinstance(result, GetAgentsResponse)
+        assert len(result.root) == 1
+        assert result.root[0].name == "Test Agent"
+        assert result.root[0].agent_id == "uuid-agent-001"
+
+    @pytest.mark.asyncio
+    async def test_empty(self, mock_context):
+        """Test get_agents with empty data returns empty response"""
+        from itential_mcp.models.operations_manager import GetAgentsResponse
+
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_agents.return_value = []
+
+        result = await operations_manager.get_agents(mock_context)
+
+        assert isinstance(result, GetAgentsResponse)
+        assert len(result.root) == 0
+
+    @pytest.mark.asyncio
+    async def test_epoch_timestamp_converted(self, mock_context):
+        """Test get_agents converts epoch last_executed via timeutils"""
+        mock_data = [
+            {
+                "name": "Timestamped Agent",
+                "description": None,
+                "agent_id": "uuid-ts",
+                "route_name": "ts_route",
+                "input_schema": None,
+                "last_executed": 1640995200000,
+            }
+        ]
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_agents.return_value = mock_data
+
+        with patch(
+            "itential_mcp.tools.operations_manager.timeutils.epoch_to_timestamp"
+        ) as mock_timestamp:
+            mock_timestamp.return_value = "2022-01-01T00:00:00Z"
+
+            await operations_manager.get_agents(mock_context)
+
+            mock_timestamp.assert_called_once_with(1640995200000)
+
+
+class TestStartWorkflowAgentBranch:
+    """Test the agent-detection branch in start_workflow"""
+
+    @pytest.fixture
+    def mock_context(self):
+        """Create a mock Context object"""
+        context = AsyncMock(spec=Context)
+        context.info = AsyncMock()
+
+        mock_client = MagicMock()
+        mock_operations_manager = AsyncMock()
+        mock_client.operations_manager = mock_operations_manager
+
+        context.request_context = MagicMock()
+        context.request_context.lifespan_context = MagicMock()
+        context.request_context.lifespan_context.get.return_value = mock_client
+
+        return context
+
+    @pytest.mark.asyncio
+    async def test_returns_start_agent_response(self, mock_context):
+        """Test start_workflow returns StartAgentResponse when response contains sessionId"""
+        from itential_mcp.models.operations_manager import StartAgentResponse
+
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.return_value = {
+            "sessionId": "sess-xyz",
+            "status": "RUNNING",
+        }
+
+        result = await operations_manager.start_workflow(
+            mock_context, "agent-route", None
+        )
+
+        assert isinstance(result, StartAgentResponse)
+        assert result.session_id == "sess-xyz"
+        assert result.status == "RUNNING"
+
+    @pytest.mark.asyncio
+    async def test_workflow_response_unchanged(self, mock_context):
+        """Test start_workflow returns StartWorkflowResponse for normal job responses"""
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.return_value = {
+            "_id": "job-normal",
+            "name": "Normal Workflow",
+            "tasks": {},
+            "status": "running",
+            "metrics": {},
+        }
+
+        result = await operations_manager.start_workflow(
+            mock_context, "workflow-route", None
+        )
+
+        assert isinstance(result, StartWorkflowResponse)
+        assert result.object_id == "job-normal"
+
+
+class TestExposeAgentTool:
+    """Test the expose_agent tool function"""
+
+    @pytest.fixture
+    def mock_context(self):
+        """Create a mock Context object"""
+        context = AsyncMock(spec=Context)
+        context.info = AsyncMock()
+
+        mock_client = MagicMock()
+        mock_operations_manager = AsyncMock()
+        mock_client.operations_manager = mock_operations_manager
+
+        context.request_context = MagicMock()
+        context.request_context.lifespan_context = MagicMock()
+        context.request_context.lifespan_context.get.return_value = mock_client
+
+        return context
+
+    @pytest.mark.asyncio
+    async def test_success(self, mock_context):
+        """Test expose_agent creates automation and trigger, returns ExposeWorkflowResponse"""
+        from itential_mcp.models.operations_manager import ExposeWorkflowResponse
+
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.create_automation.return_value = {
+            "_id": "auto-1"
+        }
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.create_endpoint_trigger.return_value = {
+            "_id": "trigger-1"
+        }
+
+        result = await operations_manager.expose_agent(
+            mock_context,
+            agent_id="uuid-agent-001",
+            automation_name="My Agent Automation",
+            route_name=None,
+            endpoint_name=None,
+            endpoint_description=None,
+            endpoint_schema=None,
+        )
+
+        assert isinstance(result, ExposeWorkflowResponse)
+        assert "uuid-agent-001" in result.message
+        assert "My Agent Automation" in result.message
+
+    @pytest.mark.asyncio
+    async def test_trigger_failure_rolls_back(self, mock_context):
+        """Test expose_agent deletes automation when trigger creation fails"""
+        from itential_mcp.core.exceptions import ConfigurationException
+
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.create_automation.return_value = {
+            "_id": "auto-rollback"
+        }
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.create_endpoint_trigger.side_effect = Exception(
+            "trigger failed"
+        )
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.delete_automation.return_value = {
+            "message": "deleted"
+        }
+
+        with pytest.raises(ConfigurationException, match="failed to expose agent"):
+            await operations_manager.expose_agent(
+                mock_context,
+                agent_id="uuid-agent-fail",
+                automation_name="Failing Agent",
+                route_name=None,
+                endpoint_name=None,
+                endpoint_description=None,
+                endpoint_schema=None,
+            )
+
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.delete_automation.assert_called_once_with(
+            "auto-rollback"
+        )
