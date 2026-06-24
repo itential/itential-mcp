@@ -13,6 +13,7 @@ from itential_mcp.models.operations_manager import (
     GetWorkflowsResponse,
     GetJobsResponse,
     StartWorkflowResponse,
+    StartAgentResponse,
     JobMetrics,
     DescribeJobResponse,
 )
@@ -1594,6 +1595,22 @@ class TestTriggerAutomation:
         assert sent_data["host"] == "router1"
 
     @pytest.mark.asyncio
+    async def test_returns_start_agent_response_for_agent_route(self, mock_context):
+        """trigger_automation returns StartAgentResponse when service returns sessionId"""
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.return_value = {
+            "sessionId": "sess-agent-1",
+            "status": "RUNNING",
+        }
+
+        result = await operations_manager.trigger_automation(
+            mock_context, "my-agent-route", None
+        )
+
+        assert isinstance(result, StartAgentResponse)
+        assert result.session_id == "sess-agent-1"
+        assert result.status == "RUNNING"
+
+    @pytest.mark.asyncio
     async def test_start_workflow_delegates(self, mock_context, mock_job_response):
         """start_workflow(ctx, route, data) delegates to trigger_automation and returns StartWorkflowResponse"""
         mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.return_value = mock_job_response
@@ -1602,3 +1619,18 @@ class TestTriggerAutomation:
 
         assert isinstance(result, StartWorkflowResponse)
         assert result.object_id == "job-trigger-1"
+
+    @pytest.mark.asyncio
+    async def test_start_workflow_delegates_agent_response(self, mock_context):
+        """start_workflow delegates to trigger_automation and returns StartAgentResponse for agent routes"""
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.return_value = {
+            "sessionId": "sess-compat-1",
+            "status": "RUNNING",
+        }
+
+        result = await operations_manager.start_workflow(
+            mock_context, "agent-route", None
+        )
+
+        assert isinstance(result, StartAgentResponse)
+        assert result.session_id == "sess-compat-1"

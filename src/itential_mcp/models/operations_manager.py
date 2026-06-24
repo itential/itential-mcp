@@ -462,6 +462,41 @@ class DescribeJobResponse(BaseModel):
     ]
 
 
+class StartAgentResponse(BaseModel):
+    """
+    Response model returned when an agent automation is triggered.
+
+    Agent automations return a session identifier instead of a job object.
+    Use the session_id with describe_session to monitor progress and retrieve output.
+
+    Attributes:
+        session_id: Unique agent session identifier.
+        status: Current session status (typically RUNNING immediately after trigger).
+    """
+
+    session_id: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Unique agent session identifier (use with describe_session for monitoring)
+                """
+            )
+        ),
+    ]
+
+    status: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Current session status (typically RUNNING immediately after trigger)
+                """
+            )
+        ),
+    ]
+
+
 class AutomationElement(BaseModel):
     """
     Represents a single automation from the Operations Manager. Automations are the

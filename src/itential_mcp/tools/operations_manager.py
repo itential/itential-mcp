@@ -239,12 +239,17 @@ async def trigger_automation(
             default=None,
         ),
     ],
-) -> models.StartWorkflowResponse:
+) -> models.StartWorkflowResponse | models.StartAgentResponse:
     """
     Trigger an automation via its Operations Manager endpoint.
 
-    Executes a workflow automation by calling its endpoint trigger. Returns a job
-    object that can be monitored with describe_job.
+    Executes any automation (workflow or agent) by calling its endpoint trigger.
+    The response type depends on the automation's component type:
+    - Workflow automations return a job object (StartWorkflowResponse) monitored via describe_job.
+    - Agent automations return a session object (StartAgentResponse) monitored via describe_session.
+
+    Use get_automations to discover available automations and their component_type
+    before triggering, so you know which monitoring tool to use afterward.
 
     Args:
         ctx (Context): The FastMCP Context object
@@ -257,14 +262,13 @@ async def trigger_automation(
             trigger schema. Pass None if the automation requires no input.
 
     Returns:
-        models.StartWorkflowResponse: Job details with:
-            - object_id: Job identifier (use with describe_job for monitoring)
-            - name: Workflow name
-            - status: Job status (error, complete, running, canceled, incomplete, paused)
-            - metrics: Execution metrics including start_time, end_time, and user
+        models.StartWorkflowResponse | models.StartAgentResponse:
+            - StartWorkflowResponse (workflow): object_id for describe_job monitoring
+            - StartAgentResponse (agent): session_id for describe_session monitoring
 
     Notes:
-        - Use describe_job with the returned object_id to monitor progress
+        - Use describe_job with object_id to monitor workflow execution progress
+        - Use describe_session with session_id to monitor agent execution progress
         - Use expose_workflow first if the automation has no route_name
     """
     await ctx.info("inside trigger_automation(...)")
@@ -292,6 +296,12 @@ async def trigger_automation(
             )
 
     res = await client.operations_manager.start_workflow(route_name, data)
+
+    if "sessionId" in res:
+        return models.StartAgentResponse(
+            session_id=res["sessionId"],
+            status=res.get("status", "RUNNING"),
+        )
 
     metrics_data = res.get("metrics") or {}
     start_time = None
@@ -332,7 +342,7 @@ async def start_workflow(
             default=None,
         ),
     ],
-) -> models.StartWorkflowResponse:
+) -> models.StartWorkflowResponse | models.StartAgentResponse:
     """
     Deprecated: use trigger_automation instead.
 
@@ -345,7 +355,7 @@ async def start_workflow(
         data (dict | None): Input data for the automation.
 
     Returns:
-        models.StartWorkflowResponse: See trigger_automation.
+        models.StartWorkflowResponse | models.StartAgentResponse: See trigger_automation.
     """
     return await trigger_automation(ctx, route_name, data)
 
