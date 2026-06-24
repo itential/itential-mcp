@@ -13,6 +13,8 @@ from itential_mcp.models.operations_manager import (
     JobElement,
     GetJobsResponse,
     DescribeJobResponse,
+    AutomationElement,
+    GetAutomationsResponse,
 )
 
 
@@ -393,3 +395,73 @@ class TestDescribeJobResponse:
         )
 
         assert job_detail.variables is None
+
+
+class TestAutomationElement:
+    """Test the AutomationElement model"""
+
+    def test_required_fields_only(self):
+        """Test AutomationElement with required fields only — all optionals are None"""
+        element = AutomationElement(name="My Auto", component_type="workflows")
+
+        assert element.name == "My Auto"
+        assert element.component_type == "workflows"
+        assert element.description is None
+        assert element.component_id is None
+        assert element.route_name is None
+        assert element.input_schema is None
+        assert element.last_executed is None
+
+    def test_all_fields(self):
+        """Test AutomationElement with all fields populated"""
+        element = AutomationElement(
+            name="Full Auto",
+            description="A complete automation",
+            component_type="agents",
+            component_id="comp-abc-123",
+            route_name="full-auto-route",
+            input_schema={"type": "object", "properties": {"host": {"type": "string"}}},
+            last_executed="2025-06-01T12:00:00Z",
+        )
+
+        assert element.name == "Full Auto"
+        assert element.description == "A complete automation"
+        assert element.component_type == "agents"
+        assert element.component_id == "comp-abc-123"
+        assert element.route_name == "full-auto-route"
+        assert element.input_schema == {
+            "type": "object",
+            "properties": {"host": {"type": "string"}},
+        }
+        assert element.last_executed == "2025-06-01T12:00:00Z"
+
+    def test_compliance_plan_type(self):
+        """Test AutomationElement with compliance plan component_type"""
+        element = AutomationElement(
+            name="Compliance Check",
+            component_type="ucm_compliance_plan",
+        )
+
+        assert element.component_type == "ucm_compliance_plan"
+        assert element.name == "Compliance Check"
+
+
+class TestGetAutomationsResponse:
+    """Test the GetAutomationsResponse model"""
+
+    def test_empty_default(self):
+        """Test GetAutomationsResponse with no arguments produces empty root list"""
+        response = GetAutomationsResponse()
+
+        assert response.root == []
+
+    def test_with_elements(self):
+        """Test GetAutomationsResponse with two elements of different component types"""
+        el1 = AutomationElement(name="Workflow Auto", component_type="workflows")
+        el2 = AutomationElement(name="Agent Auto", component_type="agents")
+
+        response = GetAutomationsResponse(root=[el1, el2])
+
+        assert len(response.root) == 2
+        assert response.root[0].component_type == "workflows"
+        assert response.root[1].component_type == "agents"

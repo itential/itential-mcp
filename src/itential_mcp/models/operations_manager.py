@@ -462,6 +462,129 @@ class DescribeJobResponse(BaseModel):
     ]
 
 
+class AutomationElement(BaseModel):
+    """
+    Represents a single automation from the Operations Manager. Automations are the
+    execution containers that wrap a component (workflow, agent, or compliance plan)
+    and expose it for triggering. The component_type field discriminates between types.
+
+    Attributes:
+        name: Human-readable name of the automation.
+        description: Description of the automation.
+        component_type: Type of the underlying component (workflows, agents, ucm_compliance_plan).
+        component_id: ID or UUID of the underlying component.
+        route_name: API route name for triggering this automation (use with trigger_automation);
+            None means no endpoint trigger has been created yet.
+        input_schema: JSON Schema describing the input the automation endpoint accepts.
+        last_executed: ISO 8601 timestamp of last endpoint trigger execution (null if never executed).
+    """
+
+    name: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Human-readable name of the automation
+                """
+            )
+        ),
+    ]
+
+    description: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Description of the automation
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    component_type: Annotated[
+        str,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Type of the underlying component (workflows, agents, ucm_compliance_plan)
+                """
+            )
+        ),
+    ]
+
+    component_id: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                ID or UUID of the underlying component
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    route_name: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                API route name for triggering this automation (use with trigger_automation);
+                None means no endpoint trigger has been created yet
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    input_schema: Annotated[
+        Mapping[str, Any] | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                JSON Schema describing the input the automation endpoint accepts
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    last_executed: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                ISO 8601 timestamp of last endpoint trigger execution (null if never executed)
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+
+class GetAutomationsResponse(RootModel):
+    """
+    Response model for the unified automations collection. Wraps a list of
+    AutomationElement objects covering all component types.
+
+    Attributes:
+        root: List of AutomationElement objects.
+    """
+
+    root: Annotated[
+        list[AutomationElement],
+        Field(
+            description=inspect.cleandoc(
+                """
+                List of automation objects across all component types
+                """
+            ),
+            default_factory=list,
+        ),
+    ]
+
+
 class ExposeWorkflowResponse(BaseModel):
     """Response model for workflow exposure endpoints.
 
