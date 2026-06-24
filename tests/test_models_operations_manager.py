@@ -13,6 +13,9 @@ from itential_mcp.models.operations_manager import (
     JobElement,
     GetJobsResponse,
     DescribeJobResponse,
+    StartAgentResponse,
+    AgentElement,
+    GetAgentsResponse,
 )
 
 
@@ -393,3 +396,81 @@ class TestDescribeJobResponse:
         )
 
         assert job_detail.variables is None
+
+
+class TestStartAgentResponse:
+    """Test the StartAgentResponse model"""
+
+    def test_required_fields(self):
+        """Test StartAgentResponse with required fields"""
+        response = StartAgentResponse(session_id="sess-001", status="RUNNING")
+
+        assert response.session_id == "sess-001"
+        assert response.status == "RUNNING"
+
+    def test_complete_status(self):
+        """Test StartAgentResponse with COMPLETE status"""
+        response = StartAgentResponse(session_id="sess-002", status="COMPLETE")
+
+        assert response.session_id == "sess-002"
+        assert response.status == "COMPLETE"
+
+
+class TestAgentElement:
+    """Test the AgentElement model"""
+
+    def test_required_fields_only(self):
+        """Test AgentElement with required fields only"""
+        element = AgentElement(name="Agent")
+
+        assert element.name == "Agent"
+        assert element.description is None
+        assert element.agent_id is None
+        assert element.route_name is None
+        assert element.input_schema is None
+        assert element.last_executed is None
+
+    def test_all_fields(self):
+        """Test AgentElement with all fields populated"""
+        element = AgentElement(
+            name="My Agent",
+            description="An agent automation",
+            agent_id="uuid-agent-001",
+            route_name="my_agent_route",
+            input_schema={"type": "object", "properties": {}},
+            last_executed="2025-01-01T10:00:00Z",
+        )
+
+        assert element.name == "My Agent"
+        assert element.description == "An agent automation"
+        assert element.agent_id == "uuid-agent-001"
+        assert element.route_name == "my_agent_route"
+        assert element.input_schema == {"type": "object", "properties": {}}
+        assert element.last_executed == "2025-01-01T10:00:00Z"
+
+    def test_agent_id_optional(self):
+        """Test AgentElement without agent_id"""
+        element = AgentElement(name="No ID Agent")
+
+        assert element.agent_id is None
+
+
+class TestGetAgentsResponse:
+    """Test the GetAgentsResponse model"""
+
+    def test_empty_default(self):
+        """Test GetAgentsResponse default produces empty list"""
+        response = GetAgentsResponse()
+
+        assert response.root == []
+
+    def test_with_elements(self):
+        """Test GetAgentsResponse with two AgentElements"""
+        element1 = AgentElement(name="Agent One", agent_id="uuid-a")
+        element2 = AgentElement(name="Agent Two", agent_id="uuid-b")
+
+        response = GetAgentsResponse(root=[element1, element2])
+
+        assert len(response.root) == 2
+        assert response.root[0].name == "Agent One"
+        assert response.root[1].name == "Agent Two"
