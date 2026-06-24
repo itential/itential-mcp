@@ -457,6 +457,83 @@ class Service(ServiceBase):
 
         return results
 
+    async def get_automations(self) -> list[dict]:
+        """Retrieve all automations from the Operations Manager, joined with endpoint triggers.
+
+        Fetches all automations regardless of component type, then fetches all endpoint
+        triggers and joins them by actionId so callers get route_name, input_schema, and
+        last_executed in a single response entry.
+
+        Returns:
+            list[dict]: Each dict contains automation fields plus optional
+                ``route_name``, ``input_schema``, and ``last_executed`` from the
+                matching endpoint trigger (all None when no endpoint trigger exists).
+
+        Raises:
+            Exception: If either API call fails.
+        """
+        limit = 100
+        skip = 0
+        automations = []
+
+        while True:
+            res = await self.client.get(
+                "/operations-manager/automations",
+                params={"limit": limit, "skip": skip},
+            )
+            data = res.json()
+            page = data.get("data", [])
+            automations.extend(page)
+
+            if len(automations) >= data.get("metadata", {}).get("total", 0):
+                break
+
+            skip += limit
+
+        # Build a lookup of endpoint triggers keyed by actionId
+        skip = 0
+        endpoint_triggers: dict[str, dict] = {}
+
+        while True:
+            res = await self.client.get(
+                "/operations-manager/triggers",
+                params={
+                    "limit": limit,
+                    "skip": skip,
+                    "equalsField": "type",
+                    "equals": "endpoint",
+                },
+            )
+            data = res.json()
+            page = data.get("data", [])
+
+            for trigger in page:
+                action_id = trigger.get("actionId")
+                if action_id and action_id not in endpoint_triggers:
+                    endpoint_triggers[action_id] = trigger
+
+            total = data.get("metadata", {}).get("total", 0)
+            skip += limit
+            if skip >= total:
+                break
+
+        results = []
+        for auto in automations:
+            trigger = endpoint_triggers.get(auto["_id"])
+            results.append(
+                {
+                    "name": auto.get("name"),
+                    "description": auto.get("description"),
+                    "component_type": auto.get("componentType"),
+                    "component_id": auto.get("componentId"),
+                    "route_name": trigger.get("routeName") if trigger else None,
+                    "input_schema": trigger.get("schema") if trigger else None,
+                    "last_executed": trigger.get("lastExecuted") if trigger else None,
+                }
+            )
+
+        return results
+
     async def create_automation(
         self,
         name: str,

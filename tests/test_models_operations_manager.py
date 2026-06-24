@@ -18,6 +18,8 @@ from itential_mcp.models.operations_manager import (
     DescribeSessionResponse,
     AgentElement,
     GetAgentsResponse,
+    AutomationElement,
+    GetAutomationsResponse,
 )
 
 
@@ -612,4 +614,71 @@ class TestGetAgentsResponse:
         assert len(response.root) == 2
         assert response.root[0].name == "Agent A"
         assert response.root[0].route_name == "agent-a"
+        assert response.root[1].route_name is None
+
+
+class TestAutomationElement:
+    """Test the AutomationElement model"""
+
+    def test_automation_element_required_fields(self):
+        """Test AutomationElement with only required fields"""
+        elem = AutomationElement(name="My Automation", component_type="workflows")
+
+        assert elem.name == "My Automation"
+        assert elem.component_type == "workflows"
+        assert elem.description is None
+        assert elem.component_id is None
+        assert elem.route_name is None
+        assert elem.input_schema is None
+        assert elem.last_executed is None
+
+    def test_automation_element_all_fields(self):
+        """Test AutomationElement with all fields populated"""
+        elem = AutomationElement(
+            name="Full Automation",
+            description="desc",
+            component_type="agents",
+            component_id="uuid-001",
+            route_name="full_route",
+            input_schema={"type": "object"},
+            last_executed="2025-01-01T00:00:00Z",
+        )
+
+        assert elem.name == "Full Automation"
+        assert elem.component_type == "agents"
+        assert elem.component_id == "uuid-001"
+        assert elem.route_name == "full_route"
+        assert elem.last_executed == "2025-01-01T00:00:00Z"
+
+    def test_automation_element_compliance_plan_type(self):
+        """Test AutomationElement accepts compliance plan component type"""
+        elem = AutomationElement(
+            name="Compliance Plan", component_type="ucm_compliance_plan"
+        )
+
+        assert elem.component_type == "ucm_compliance_plan"
+
+
+class TestGetAutomationsResponse:
+    """Test the GetAutomationsResponse model"""
+
+    def test_get_automations_response_empty(self):
+        """Test GetAutomationsResponse defaults to empty list"""
+        response = GetAutomationsResponse()
+
+        assert response.root == []
+
+    def test_get_automations_response_with_elements(self):
+        """Test GetAutomationsResponse wraps a list of AutomationElement objects"""
+        elem1 = AutomationElement(
+            name="Workflow A", component_type="workflows", route_name="wf_a"
+        )
+        elem2 = AutomationElement(
+            name="Agent B", component_type="agents", component_id="uuid-b"
+        )
+        response = GetAutomationsResponse(root=[elem1, elem2])
+
+        assert len(response.root) == 2
+        assert response.root[0].component_type == "workflows"
+        assert response.root[1].component_type == "agents"
         assert response.root[1].route_name is None

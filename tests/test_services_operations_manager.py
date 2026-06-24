@@ -1902,3 +1902,126 @@ class TestGetSessionMessages:
         result = await service.get_session_messages("sess-abc")
 
         assert result == []
+
+
+class TestGetAutomations:
+    """Test the get_automations service method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        return AsyncMock(spec=AsyncPlatform)
+
+    @pytest.fixture
+    def service(self, mock_client):
+        return Service(mock_client)
+
+    @pytest.mark.asyncio
+    async def test_get_automations_joins_triggers(self, service):
+        """Test get_automations joins endpoint triggers onto automation entries"""
+        auto_response = MagicMock()
+        auto_response.json.return_value = {
+            "data": [
+                {
+                    "_id": "auto-001",
+                    "name": "My Workflow",
+                    "description": None,
+                    "componentType": "workflows",
+                    "componentId": "wf-001",
+                },
+                {
+                    "_id": "auto-002",
+                    "name": "JF Agent",
+                    "description": "an agent",
+                    "componentType": "agents",
+                    "componentId": "agent-uuid",
+                },
+            ],
+            "metadata": {"total": 2},
+        }
+        trigger_response = MagicMock()
+        trigger_response.json.return_value = {
+            "data": [
+                {
+                    "actionId": "auto-001",
+                    "routeName": "my_workflow",
+                    "schema": {"type": "object"},
+                    "lastExecuted": None,
+                }
+            ],
+            "metadata": {"total": 1},
+        }
+        service.client.get = AsyncMock(side_effect=[auto_response, trigger_response])
+
+        result = await service.get_automations()
+
+        assert len(result) == 2
+        wf = next(r for r in result if r["component_type"] == "workflows")
+        assert wf["route_name"] == "my_workflow"
+        assert wf["component_id"] == "wf-001"
+
+        agent = next(r for r in result if r["component_type"] == "agents")
+        assert agent["route_name"] is None
+        assert agent["component_id"] == "agent-uuid"
+
+    @pytest.mark.asyncio
+    async def test_get_automations_no_trigger_returns_none_fields(self, service):
+        """Test automation with no endpoint trigger has None route_name and input_schema"""
+        auto_response = MagicMock()
+        auto_response.json.return_value = {
+            "data": [
+                {
+                    "_id": "auto-003",
+                    "name": "No Trigger Automation",
+                    "componentType": "workflows",
+                    "componentId": "wf-003",
+                }
+            ],
+            "metadata": {"total": 1},
+        }
+        trigger_response = MagicMock()
+        trigger_response.json.return_value = {"data": [], "metadata": {"total": 0}}
+        service.client.get = AsyncMock(side_effect=[auto_response, trigger_response])
+
+        result = await service.get_automations()
+
+        assert len(result) == 1
+        assert result[0]["route_name"] is None
+        assert result[0]["input_schema"] is None
+        assert result[0]["last_executed"] is None
+
+    @pytest.mark.asyncio
+    async def test_get_automations_empty(self, service):
+        """Test get_automations with no automations configured"""
+        auto_response = MagicMock()
+        auto_response.json.return_value = {"data": [], "metadata": {"total": 0}}
+        trigger_response = MagicMock()
+        trigger_response.json.return_value = {"data": [], "metadata": {"total": 0}}
+        service.client.get = AsyncMock(side_effect=[auto_response, trigger_response])
+
+        result = await service.get_automations()
+
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_get_automations_includes_all_component_types(self, service):
+        """Test get_automations returns compliance plans alongside workflows and agents"""
+        auto_response = MagicMock()
+        auto_response.json.return_value = {
+            "data": [
+                {
+                    "_id": "auto-010",
+                    "name": "Compliance Plan A",
+                    "componentType": "ucm_compliance_plan",
+                    "componentId": "plan-001",
+                }
+            ],
+            "metadata": {"total": 1},
+        }
+        trigger_response = MagicMock()
+        trigger_response.json.return_value = {"data": [], "metadata": {"total": 0}}
+        service.client.get = AsyncMock(side_effect=[auto_response, trigger_response])
+
+        result = await service.get_automations()
+
+        assert len(result) == 1
+        assert result[0]["component_type"] == "ucm_compliance_plan"

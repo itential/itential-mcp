@@ -225,6 +225,67 @@ async def get_agents(
     return models.GetAgentsResponse(root=agent_elements)
 
 
+async def get_automations(
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+) -> models.GetAutomationsResponse:
+    """
+    Get all automations from the Itential Platform Operations Manager.
+
+    Returns a unified list of all automation objects regardless of component type
+    (workflows, agents, compliance plans). Each entry includes the component_type
+    discriminator so callers can tell what kind of automation they are working with,
+    along with the route_name needed to trigger it via trigger_automation.
+
+    Use this tool when you need a full picture of what is available in the Operations
+    Manager. Use get_workflows or get_agents when you only need one type.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+    Returns:
+        models.GetAutomationsResponse: List of automation objects with the following fields:
+            - name: Human-readable automation name
+            - description: Automation description
+            - component_type: Underlying component type (workflows, agents, ucm_compliance_plan)
+            - component_id: ID or UUID of the underlying component
+            - route_name: API route name for triggering (use with trigger_automation);
+              None means no endpoint trigger exists yet
+            - input_schema: JSON Schema for the endpoint input (None if no endpoint trigger)
+            - last_executed: ISO 8601 timestamp of last endpoint execution
+
+    Notes:
+        - Use trigger_automation with the route_name field to execute an automation
+        - Use expose_workflow or expose_agent if route_name is None
+        - component_type of "agents" means describe_session applies after triggering;
+          all other types use describe_job
+    """
+    await ctx.info("inside get_automations(...)")
+
+    client = ctx.request_context.lifespan_context.get("client")
+
+    data = await client.operations_manager.get_automations()
+
+    elements = []
+    for item in data:
+        last_executed = None
+        if item.get("last_executed") is not None:
+            last_executed = timeutils.epoch_to_timestamp(item["last_executed"])
+
+        elements.append(
+            models.AutomationElement(
+                name=item["name"],
+                description=item.get("description"),
+                component_type=item.get("component_type", ""),
+                component_id=item.get("component_id"),
+                route_name=item.get("route_name"),
+                input_schema=item.get("input_schema"),
+                last_executed=last_executed,
+            )
+        )
+
+    return models.GetAutomationsResponse(root=elements)
+
+
 async def trigger_automation(
     ctx: Annotated[Context, Field(description="The FastMCP Context object")],
     route_name: Annotated[

@@ -31,6 +31,7 @@ class TestModule:
         expected_functions = [
             "get_workflows",
             "get_agents",
+            "get_automations",
             "trigger_automation",
             "start_workflow",
             "get_jobs",
@@ -53,6 +54,7 @@ class TestModule:
             operations_manager._account_id_to_username,
             operations_manager.get_workflows,
             operations_manager.get_agents,
+            operations_manager.get_automations,
             operations_manager.trigger_automation,
             operations_manager.start_workflow,
             operations_manager.get_jobs,
@@ -1752,3 +1754,123 @@ class TestTriggerAutomation:
         assert isinstance(result, StartAgentResponse)
         assert result.session_id == "sess-alias-001"
         assert result.status == "RUNNING"
+
+
+class TestGetAutomationsTool:
+    """Test the get_automations tool function"""
+
+    @pytest.fixture
+    def mock_context(self):
+        ctx = MagicMock(spec=Context)
+        ctx.info = AsyncMock()
+        mock_client = MagicMock()
+        mock_client.operations_manager = AsyncMock()
+        ctx.request_context.lifespan_context.get.return_value = mock_client
+        return ctx
+
+    @pytest.mark.asyncio
+    async def test_get_automations_mixed_types(self, mock_context):
+        """Test get_automations returns workflow and agent entries with correct types"""
+        from itential_mcp.models.operations_manager import GetAutomationsResponse
+
+        mock_ops = mock_context.request_context.lifespan_context.get.return_value.operations_manager
+        mock_ops.get_automations = AsyncMock(
+            return_value=[
+                {
+                    "name": "My Workflow",
+                    "description": "A workflow",
+                    "component_type": "workflows",
+                    "component_id": "wf-id-001",
+                    "route_name": "my_workflow",
+                    "input_schema": {"type": "object"},
+                    "last_executed": None,
+                },
+                {
+                    "name": "JF Agent",
+                    "description": "An agent",
+                    "component_type": "agents",
+                    "component_id": "agent-uuid-001",
+                    "route_name": "jfagent",
+                    "input_schema": None,
+                    "last_executed": None,
+                },
+            ]
+        )
+
+        result = await operations_manager.get_automations(mock_context)
+
+        assert isinstance(result, GetAutomationsResponse)
+        assert len(result.root) == 2
+        assert result.root[0].component_type == "workflows"
+        assert result.root[0].route_name == "my_workflow"
+        assert result.root[1].component_type == "agents"
+        assert result.root[1].component_id == "agent-uuid-001"
+
+    @pytest.mark.asyncio
+    async def test_get_automations_no_endpoint_trigger(self, mock_context):
+        """Test get_automations handles automations with no endpoint trigger (route_name None)"""
+        from itential_mcp.models.operations_manager import GetAutomationsResponse
+
+        mock_ops = mock_context.request_context.lifespan_context.get.return_value.operations_manager
+        mock_ops.get_automations = AsyncMock(
+            return_value=[
+                {
+                    "name": "Unexposed Automation",
+                    "description": None,
+                    "component_type": "workflows",
+                    "component_id": "wf-id-002",
+                    "route_name": None,
+                    "input_schema": None,
+                    "last_executed": None,
+                },
+            ]
+        )
+
+        result = await operations_manager.get_automations(mock_context)
+
+        assert isinstance(result, GetAutomationsResponse)
+        assert len(result.root) == 1
+        assert result.root[0].route_name is None
+
+    @pytest.mark.asyncio
+    async def test_get_automations_empty(self, mock_context):
+        """Test get_automations with no automations configured"""
+        from itential_mcp.models.operations_manager import GetAutomationsResponse
+
+        mock_ops = mock_context.request_context.lifespan_context.get.return_value.operations_manager
+        mock_ops.get_automations = AsyncMock(return_value=[])
+
+        result = await operations_manager.get_automations(mock_context)
+
+        assert isinstance(result, GetAutomationsResponse)
+        assert result.root == []
+
+    @pytest.mark.asyncio
+    async def test_get_automations_epoch_timestamp_converted(self, mock_context):
+        """Test get_automations converts epoch last_executed to ISO 8601"""
+        from itential_mcp.models.operations_manager import GetAutomationsResponse
+
+        mock_ops = mock_context.request_context.lifespan_context.get.return_value.operations_manager
+        mock_ops.get_automations = AsyncMock(
+            return_value=[
+                {
+                    "name": "Timestamped Automation",
+                    "description": None,
+                    "component_type": "workflows",
+                    "component_id": "wf-id-003",
+                    "route_name": "ts_wf",
+                    "input_schema": None,
+                    "last_executed": 1640995200000,
+                },
+            ]
+        )
+
+        with patch(
+            "itential_mcp.tools.operations_manager.timeutils.epoch_to_timestamp"
+        ) as mock_ts:
+            mock_ts.return_value = "2022-01-01T00:00:00Z"
+            result = await operations_manager.get_automations(mock_context)
+
+        assert isinstance(result, GetAutomationsResponse)
+        assert result.root[0].last_executed == "2022-01-01T00:00:00Z"
+        mock_ts.assert_called_once_with(1640995200000)
