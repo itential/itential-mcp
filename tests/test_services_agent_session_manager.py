@@ -73,7 +73,7 @@ class TestGetSessions:
                     "startedAt": "2025-06-01T11:00:00Z",
                 },
             ],
-            "metadata": {"total": 2},
+            "total": 2,
         }
         mock_client.get.return_value = mock_response
 
@@ -88,10 +88,10 @@ class TestGetSessions:
         assert result[1]["end_time"] is None
 
     @pytest.mark.asyncio
-    async def test_get_sessions_agent_name_filter_passes_correct_params(
+    async def test_get_sessions_agent_name_filter_client_side(
         self, service, mock_client
     ):
-        """Test get_sessions passes equalsField and equals params when agent_name given"""
+        """Test get_sessions filters by agent_name client-side after fetching all pages"""
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "data": [
@@ -99,44 +99,50 @@ class TestGetSessions:
                     "sessionId": "sess-001",
                     "status": "COMPLETE",
                     "agentSnapshot": {"name": "my-agent"},
-                }
+                },
+                {
+                    "sessionId": "sess-002",
+                    "status": "COMPLETE",
+                    "agentSnapshot": {"name": "other-agent"},
+                },
             ],
-            "metadata": {"total": 1},
+            "total": 2,
         }
         mock_client.get.return_value = mock_response
 
         result = await service.get_sessions(agent_name="my-agent")
 
+        # Server-side filter params must NOT be sent (API ignores them)
         call_kwargs = mock_client.get.call_args
-        params = (
-            call_kwargs[1]["params"]
-            if "params" in call_kwargs[1]
-            else call_kwargs[0][1]
-        )
-        assert params.get("equalsField") == "agentSnapshot.name"
-        assert params.get("equals") == "my-agent"
+        params = call_kwargs[1].get("params", {})
+        assert "equalsField" not in params
+        assert "equals" not in params
+
+        # Only the matching session returned
         assert len(result) == 1
         assert result[0]["agent_name"] == "my-agent"
 
     @pytest.mark.asyncio
-    async def test_get_sessions_pagination(self, service, mock_client):
-        """Test get_sessions paginates until all results are retrieved"""
+    async def test_get_sessions_pagination_uses_offset(self, service, mock_client):
+        """Test get_sessions paginates using offset (not skip) and top-level total"""
+        page1_items = [
+            {"sessionId": f"sess-{i:03}", "status": "COMPLETE"} for i in range(100)
+        ]
+        page2_items = [{"sessionId": "sess-100", "status": "COMPLETE"}]
         page1 = MagicMock()
-        page1.json.return_value = {
-            "data": [{"sessionId": "sess-001", "status": "COMPLETE"}],
-            "metadata": {"total": 2},
-        }
+        page1.json.return_value = {"data": page1_items, "total": 101}
         page2 = MagicMock()
-        page2.json.return_value = {
-            "data": [{"sessionId": "sess-002", "status": "FAILED"}],
-            "metadata": {"total": 2},
-        }
+        page2.json.return_value = {"data": page2_items, "total": 101}
         mock_client.get.side_effect = [page1, page2]
 
         result = await service.get_sessions()
 
-        assert len(result) == 2
+        assert len(result) == 101
         assert mock_client.get.call_count == 2
+        # Second call should use offset=100, not skip=100
+        second_call_params = mock_client.get.call_args_list[1][1]["params"]
+        assert second_call_params.get("offset") == 100
+        assert "skip" not in second_call_params
 
     @pytest.mark.asyncio
     async def test_get_sessions_empty_result(self, service, mock_client):
@@ -144,7 +150,7 @@ class TestGetSessions:
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "data": [],
-            "metadata": {"total": 0},
+            "total": 0,
         }
         mock_client.get.return_value = mock_response
 
@@ -163,7 +169,7 @@ class TestGetSessions:
                     "status": "COMPLETE",
                 }
             ],
-            "metadata": {"total": 1},
+            "total": 1,
         }
         mock_client.get.return_value = mock_response
 

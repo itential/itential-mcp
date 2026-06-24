@@ -46,17 +46,11 @@ class Service(ServiceBase):
                 Platform API or if the API returns an unexpected response format.
         """
         limit = 100
-        skip = 0
+        offset = 0
         results = []
 
-        params: dict = {}
-        if agent_name is not None:
-            params["equalsField"] = "agentSnapshot.name"
-            params["equals"] = agent_name
-
         while True:
-            params["limit"] = limit
-            params["skip"] = skip
+            params: dict = {"limit": limit, "offset": offset}
 
             res = await self.client.get(
                 "/agent-session-manager/sessions",
@@ -65,6 +59,9 @@ class Service(ServiceBase):
 
             data = res.json()
             items = data.get("data", [])
+
+            if not items:
+                break
 
             for item in items:
                 results.append(
@@ -78,11 +75,13 @@ class Service(ServiceBase):
                     }
                 )
 
-            total = data.get("metadata", {}).get("total", 0)
-            if len(results) >= total:
+            total = data.get("total", 0)
+            offset += limit
+            if offset >= total:
                 break
 
-            skip += limit
+        if agent_name is not None:
+            results = [r for r in results if r["agent_name"] == agent_name]
 
         return results
 
