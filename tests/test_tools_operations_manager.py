@@ -31,6 +31,7 @@ class TestModule:
         expected_functions = [
             "get_workflows",
             "get_agents",
+            "trigger_automation",
             "start_workflow",
             "get_jobs",
             "describe_job",
@@ -52,6 +53,7 @@ class TestModule:
             operations_manager._account_id_to_username,
             operations_manager.get_workflows,
             operations_manager.get_agents,
+            operations_manager.trigger_automation,
             operations_manager.start_workflow,
             operations_manager.get_jobs,
             operations_manager.describe_job,
@@ -1652,4 +1654,101 @@ class TestDescribeSessionTool:
         result = await operations_manager.describe_session(mock_context, "sess-003")
 
         assert result.output is None
-        assert result.status == "FAILED"
+
+
+class TestTriggerAutomation:
+    """Test the trigger_automation tool function"""
+
+    @pytest.fixture
+    def mock_context(self):
+        ctx = MagicMock(spec=Context)
+        ctx.info = AsyncMock()
+        ctx.warning = AsyncMock()
+        mock_client = MagicMock()
+        mock_client.operations_manager = AsyncMock()
+        ctx.request_context.lifespan_context.get.return_value = mock_client
+        return ctx
+
+    @pytest.mark.asyncio
+    async def test_trigger_automation_workflow_response(self, mock_context):
+        """Test trigger_automation returns StartWorkflowResponse for a workflow automation"""
+        mock_ops = mock_context.request_context.lifespan_context.get.return_value.operations_manager
+        mock_ops.start_workflow = AsyncMock(
+            return_value={
+                "_id": "job-ta-001",
+                "name": "My Workflow",
+                "description": None,
+                "tasks": {},
+                "status": "running",
+                "metrics": {},
+            }
+        )
+        mock_ops.get_workflows = AsyncMock(return_value=[])
+
+        result = await operations_manager.trigger_automation(
+            mock_context, "my-workflow-route", None
+        )
+
+        assert isinstance(result, StartWorkflowResponse)
+        assert result.object_id == "job-ta-001"
+        assert result.name == "My Workflow"
+        assert result.status == "running"
+
+    @pytest.mark.asyncio
+    async def test_trigger_automation_agent_response(self, mock_context):
+        """Test trigger_automation returns StartAgentResponse for an agent automation"""
+        from itential_mcp.models.operations_manager import StartAgentResponse
+
+        mock_ops = mock_context.request_context.lifespan_context.get.return_value.operations_manager
+        mock_ops.start_workflow = AsyncMock(
+            return_value={"sessionId": "sess-ta-001", "status": "RUNNING"}
+        )
+        mock_ops.get_workflows = AsyncMock(return_value=[])
+
+        result = await operations_manager.trigger_automation(
+            mock_context, "my-agent-route", {"input": "hello"}
+        )
+
+        assert isinstance(result, StartAgentResponse)
+        assert result.session_id == "sess-ta-001"
+        assert result.status == "RUNNING"
+
+    @pytest.mark.asyncio
+    async def test_trigger_automation_json_string_data(self, mock_context):
+        """Test trigger_automation parses JSON string data before sending"""
+        mock_ops = mock_context.request_context.lifespan_context.get.return_value.operations_manager
+        mock_ops.start_workflow = AsyncMock(
+            return_value={
+                "_id": "job-ta-002",
+                "name": "Workflow",
+                "tasks": {},
+                "status": "complete",
+                "metrics": {},
+            }
+        )
+        mock_ops.get_workflows = AsyncMock(return_value=[])
+
+        result = await operations_manager.trigger_automation(
+            mock_context, "route", '{"key": "value"}'
+        )
+
+        assert isinstance(result, StartWorkflowResponse)
+
+    @pytest.mark.asyncio
+    async def test_start_workflow_delegates_to_trigger_automation(self, mock_context):
+        """Test start_workflow is a thin alias that delegates to trigger_automation"""
+        from itential_mcp.models.operations_manager import StartAgentResponse
+
+        mock_ops = mock_context.request_context.lifespan_context.get.return_value.operations_manager
+        mock_ops.start_workflow = AsyncMock(
+            return_value={"sessionId": "sess-alias-001", "status": "RUNNING"}
+        )
+        mock_ops.get_workflows = AsyncMock(return_value=[])
+
+        result = await operations_manager.start_workflow(
+            mock_context, "agent-route", None
+        )
+
+        assert isinstance(result, StartAgentResponse)
+        assert result.session_id == "sess-alias-001"
+        assert result.status == "RUNNING"
