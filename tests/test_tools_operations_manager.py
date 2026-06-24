@@ -13,6 +13,7 @@ from itential_mcp.models.operations_manager import (
     GetWorkflowsResponse,
     GetJobsResponse,
     StartWorkflowResponse,
+    StartAgentResponse,
     JobMetrics,
     DescribeJobResponse,
 )
@@ -30,6 +31,8 @@ class TestModule:
         """Test all expected functions exist in the module"""
         expected_functions = [
             "get_workflows",
+            "get_automations",
+            "trigger_automation",
             "start_workflow",
             "get_jobs",
             "describe_job",
@@ -48,6 +51,8 @@ class TestModule:
         functions_to_test = [
             operations_manager._account_id_to_username,
             operations_manager.get_workflows,
+            operations_manager.get_automations,
+            operations_manager.trigger_automation,
             operations_manager.start_workflow,
             operations_manager.get_jobs,
             operations_manager.describe_job,
@@ -1408,3 +1413,224 @@ class TestErrorHandling:
 
         with pytest.raises(Exception, match="Authorization API Error"):
             await operations_manager._account_id_to_username(mock_context, "user-123")
+
+
+class TestGetAutomationsTool:
+    """Test the get_automations tool function"""
+
+    @pytest.fixture
+    def mock_context(self):
+        """Create a mock Context object"""
+        context = AsyncMock(spec=Context)
+        context.info = AsyncMock()
+
+        mock_client = MagicMock()
+        mock_operations_manager = AsyncMock()
+        mock_client.operations_manager = mock_operations_manager
+
+        context.request_context = MagicMock()
+        context.request_context.lifespan_context = MagicMock()
+        context.request_context.lifespan_context.get.return_value = mock_client
+
+        return context
+
+    @pytest.mark.asyncio
+    async def test_mixed_types(self, mock_context):
+        """Service returns workflow + agent entries — result is GetAutomationsResponse with 2 elements and correct component_types"""
+        from itential_mcp.models.operations_manager import GetAutomationsResponse
+
+        mock_data = [
+            {
+                "name": "Workflow Auto",
+                "description": "A workflow",
+                "component_type": "workflows",
+                "component_id": "wf-id-1",
+                "route_name": "workflow-auto",
+                "input_schema": {"type": "object"},
+                "last_executed": None,
+            },
+            {
+                "name": "Agent Auto",
+                "description": None,
+                "component_type": "agents",
+                "component_id": "agent-id-2",
+                "route_name": None,
+                "input_schema": None,
+                "last_executed": None,
+            },
+        ]
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_automations.return_value = mock_data
+
+        result = await operations_manager.get_automations(mock_context)
+
+        assert isinstance(result, GetAutomationsResponse)
+        assert len(result.root) == 2
+        types = [el.component_type for el in result.root]
+        assert "workflows" in types
+        assert "agents" in types
+
+    @pytest.mark.asyncio
+    async def test_empty(self, mock_context):
+        """Empty service data produces empty GetAutomationsResponse"""
+        from itential_mcp.models.operations_manager import GetAutomationsResponse
+
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_automations.return_value = []
+
+        result = await operations_manager.get_automations(mock_context)
+
+        assert isinstance(result, GetAutomationsResponse)
+        assert len(result.root) == 0
+
+    @pytest.mark.asyncio
+    async def test_no_endpoint_trigger(self, mock_context):
+        """route_name=None on service data passes through to the response element"""
+        from itential_mcp.models.operations_manager import GetAutomationsResponse
+
+        mock_data = [
+            {
+                "name": "No Trigger Auto",
+                "description": None,
+                "component_type": "workflows",
+                "component_id": "wf-id-x",
+                "route_name": None,
+                "input_schema": None,
+                "last_executed": None,
+            }
+        ]
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_automations.return_value = mock_data
+
+        result = await operations_manager.get_automations(mock_context)
+
+        assert isinstance(result, GetAutomationsResponse)
+        assert result.root[0].route_name is None
+
+    @pytest.mark.asyncio
+    async def test_epoch_timestamp_converted(self, mock_context):
+        """last_executed as epoch int is converted via epoch_to_timestamp"""
+        mock_data = [
+            {
+                "name": "Timestamped Auto",
+                "description": None,
+                "component_type": "workflows",
+                "component_id": "wf-id-ts",
+                "route_name": "ts-route",
+                "input_schema": None,
+                "last_executed": 1640995200000,
+            }
+        ]
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_automations.return_value = mock_data
+
+        with patch(
+            "itential_mcp.tools.operations_manager.timeutils.epoch_to_timestamp"
+        ) as mock_epoch:
+            mock_epoch.return_value = "2022-01-01T00:00:00Z"
+
+            result = await operations_manager.get_automations(mock_context)
+
+            mock_epoch.assert_called_once_with(1640995200000)
+            assert result.root[0].last_executed == "2022-01-01T00:00:00Z"
+
+
+class TestTriggerAutomation:
+    """Test the trigger_automation tool function"""
+
+    @pytest.fixture
+    def mock_context(self):
+        """Create a mock Context object"""
+        context = AsyncMock(spec=Context)
+        context.info = AsyncMock()
+        context.warning = AsyncMock()
+
+        mock_client = MagicMock()
+        mock_operations_manager = AsyncMock()
+        mock_client.operations_manager = mock_operations_manager
+
+        context.request_context = MagicMock()
+        context.request_context.lifespan_context = MagicMock()
+        context.request_context.lifespan_context.get.return_value = mock_client
+
+        return context
+
+    @pytest.fixture
+    def mock_job_response(self):
+        """Minimal job dict returned by start_workflow service method"""
+        return {
+            "_id": "job-trigger-1",
+            "name": "My Workflow",
+            "description": None,
+            "tasks": {},
+            "status": "running",
+            "metrics": {},
+        }
+
+    @pytest.mark.asyncio
+    async def test_returns_start_workflow_response(
+        self, mock_context, mock_job_response
+    ):
+        """trigger_automation returns a StartWorkflowResponse when service call succeeds"""
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.return_value = mock_job_response
+
+        result = await operations_manager.trigger_automation(
+            mock_context, "my-route", None
+        )
+
+        assert isinstance(result, StartWorkflowResponse)
+        assert result.object_id == "job-trigger-1"
+        assert result.name == "My Workflow"
+        assert result.status == "running"
+
+    @pytest.mark.asyncio
+    async def test_json_string_data_parsed(self, mock_context, mock_job_response):
+        """data passed as a JSON string is parsed to a dict before the service call"""
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.return_value = mock_job_response
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.get_workflows.return_value = []
+
+        await operations_manager.trigger_automation(
+            mock_context, "my-route", '{"host": "router1"}'
+        )
+
+        call_args = mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.call_args
+        sent_data = call_args[0][1]
+        assert isinstance(sent_data, dict)
+        assert sent_data["host"] == "router1"
+
+    @pytest.mark.asyncio
+    async def test_returns_start_agent_response_for_agent_route(self, mock_context):
+        """trigger_automation returns StartAgentResponse when service returns sessionId"""
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.return_value = {
+            "sessionId": "sess-agent-1",
+            "status": "RUNNING",
+        }
+
+        result = await operations_manager.trigger_automation(
+            mock_context, "my-agent-route", None
+        )
+
+        assert isinstance(result, StartAgentResponse)
+        assert result.session_id == "sess-agent-1"
+        assert result.status == "RUNNING"
+
+    @pytest.mark.asyncio
+    async def test_start_workflow_delegates(self, mock_context, mock_job_response):
+        """start_workflow(ctx, route, data) delegates to trigger_automation and returns StartWorkflowResponse"""
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.return_value = mock_job_response
+
+        result = await operations_manager.start_workflow(mock_context, "my-route", None)
+
+        assert isinstance(result, StartWorkflowResponse)
+        assert result.object_id == "job-trigger-1"
+
+    @pytest.mark.asyncio
+    async def test_start_workflow_delegates_agent_response(self, mock_context):
+        """start_workflow delegates to trigger_automation and returns StartAgentResponse for agent routes"""
+        mock_context.request_context.lifespan_context.get.return_value.operations_manager.start_workflow.return_value = {
+            "sessionId": "sess-compat-1",
+            "status": "RUNNING",
+        }
+
+        result = await operations_manager.start_workflow(
+            mock_context, "agent-route", None
+        )
+
+        assert isinstance(result, StartAgentResponse)
+        assert result.session_id == "sess-compat-1"

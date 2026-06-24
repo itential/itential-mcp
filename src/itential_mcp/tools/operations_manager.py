@@ -170,64 +170,113 @@ async def get_workflows(
     return models.GetWorkflowsResponse(root=workflow_elements)
 
 
-async def start_workflow(
+async def get_automations(
     ctx: Annotated[Context, Field(description="The FastMCP Context object")],
-    route_name: Annotated[
-        str,
-        Field(description="The name of the API endpoint used to start the workflow"),
-    ],
-    data: Annotated[
-        dict | str | None,
-        Field(
-            description="Data to include in the request body when calling the route",
-            default=None,
-        ),
-    ],
-) -> models.StartWorkflowResponse:
+) -> models.GetAutomationsResponse:
     """
-    Execute a workflow by triggering its API endpoint.
+    Get all automations from the Itential Platform Operations Manager.
 
-    Workflows are the core automation processes in Itential Platform. This function
-    initiates workflow execution and returns a job object that can be monitored
-    for progress and results.
+    Returns a unified list of all automation objects regardless of component type
+    (workflows, agents, compliance plans). Each entry includes the component_type
+    discriminator and the route_name needed to trigger it via trigger_automation.
+
+    Use this when you need a full picture of what is available in the Operations
+    Manager. Use get_workflows when you only need workflow-type automations.
 
     Args:
         ctx (Context): The FastMCP Context object
 
-        route_name (str): API route name for the workflow. Use the 'route_name'
-            field from `get_workflows`.
-
-        data (dict | None): Input data for workflow execution. Structure must
-            match the workflow's input schema (available in the 'schema'
-            field from `get_workflows`).
-
     Returns:
-        models.StartWorkflowResponse: Job execution details with the following fields:
-            - object_id: Unique job identifier (use with `describe_job` for monitoring)
-            - name: Workflow name that was executed
-            - description: Workflow description
-            - tasks: Complete set of tasks to be executed in the workflow
-            - status: Current job status (error, complete, running, canceled, incomplete, paused)
-            - metrics: Job execution metrics including start_time, end_time, and user
+        models.GetAutomationsResponse: List of automation objects with:
+            - name: Human-readable automation name
+            - description: Automation description
+            - component_type: Underlying component type (workflows, agents, ucm_compliance_plan)
+            - component_id: ID or UUID of the underlying component
+            - route_name: API route name for triggering (use with trigger_automation);
+              None means no endpoint trigger exists yet
+            - input_schema: JSON Schema for the endpoint input (None if no endpoint trigger)
+            - last_executed: ISO 8601 timestamp of last endpoint execution
 
     Notes:
-        - Use the returned 'object_id' field with `describe_job` to monitor workflow progress
-        - The 'data' parameter must conform to the workflow's input schema
-        - Job status can be monitored using the `get_jobs` or `describe_job` functions
-        - Workflow schemas are available via the `get_workflows` function
+        - Use trigger_automation with route_name to execute an automation
+        - Use expose_workflow if route_name is None for a workflow automation
     """
-    await ctx.info("inside start_workflow(...)")
+    await ctx.info("inside get_automations(...)")
+    client = ctx.request_context.lifespan_context.get("client")
+    data = await client.operations_manager.get_automations()
 
+    elements = []
+    for item in data:
+        last_executed = None
+        if item.get("last_executed") is not None:
+            last_executed = timeutils.epoch_to_timestamp(item["last_executed"])
+        elements.append(
+            models.AutomationElement(
+                name=item["name"],
+                description=item.get("description"),
+                component_type=item.get("component_type", ""),
+                component_id=item.get("component_id"),
+                route_name=item.get("route_name"),
+                input_schema=item.get("input_schema"),
+                last_executed=last_executed,
+            )
+        )
+    return models.GetAutomationsResponse(root=elements)
+
+
+async def trigger_automation(
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    route_name: Annotated[
+        str,
+        Field(
+            description="The API route name of the automation to trigger (use route_name from get_workflows or get_automations)"
+        ),
+    ],
+    data: Annotated[
+        dict | str | None,
+        Field(
+            description="Input data for the automation matching its endpoint trigger schema",
+            default=None,
+        ),
+    ],
+) -> models.StartWorkflowResponse | models.StartAgentResponse:
+    """
+    Trigger an automation via its Operations Manager endpoint.
+
+    Executes any automation (workflow or agent) by calling its endpoint trigger.
+    The response type depends on the automation's component type:
+    - Workflow automations return a job object (StartWorkflowResponse) monitored via describe_job.
+    - Agent automations return a session object (StartAgentResponse) monitored via describe_session.
+
+    Use get_automations to discover available automations and their component_type
+    before triggering, so you know which monitoring tool to use afterward.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+
+        route_name (str): API route name of the automation to trigger. Retrieve
+            this value from the 'route_name' field returned by get_workflows or
+            get_automations.
+
+        data (dict | None): Input payload matching the automation's endpoint
+            trigger schema. Pass None if the automation requires no input.
+
+    Returns:
+        models.StartWorkflowResponse | models.StartAgentResponse:
+            - StartWorkflowResponse (workflow): object_id for describe_job monitoring
+            - StartAgentResponse (agent): session_id for describe_session monitoring
+
+    Notes:
+        - Use describe_job with object_id to monitor workflow execution progress
+        - Use describe_session with session_id to monitor agent execution progress
+        - Use expose_workflow first if the automation has no route_name
+    """
+    await ctx.info("inside trigger_automation(...)")
     client = ctx.request_context.lifespan_context.get("client")
 
-    # Parse data if it's a JSON string
     if isinstance(data, str):
         data = jsonutils.loads(data)
 
-    # Coerce stringified values (e.g. arrays passed as strings by LLMs) using
-    # the workflow's declared input schema so the platform receives the right types.
-    # A failure to fetch the schema must not block the workflow start — fall back to
-    # sending the data unchanged so the platform still produces the real error.
     if data:
         try:
             workflows = await client.operations_manager.get_workflows()
@@ -248,26 +297,25 @@ async def start_workflow(
 
     res = await client.operations_manager.start_workflow(route_name, data)
 
-    metrics_data = res.get("metrics") or {}
+    if "sessionId" in res:
+        return models.StartAgentResponse(
+            session_id=res["sessionId"],
+            status=res.get("status", "RUNNING"),
+        )
 
+    metrics_data = res.get("metrics") or {}
     start_time = None
     end_time = None
     user = None
 
     if metrics_data.get("start_time") is not None:
         start_time = timeutils.epoch_to_timestamp(metrics_data["start_time"])
-
     if metrics_data.get("end_time") is not None:
         end_time = timeutils.epoch_to_timestamp(metrics_data["end_time"])
-
     if metrics_data.get("user") is not None:
         user = await _account_id_to_username(ctx, metrics_data["user"])
 
-    metrics = models.JobMetrics(
-        start_time=start_time,
-        end_time=end_time,
-        user=user,
-    )
+    metrics = models.JobMetrics(start_time=start_time, end_time=end_time, user=user)
 
     return models.StartWorkflowResponse(
         **{
@@ -279,6 +327,37 @@ async def start_workflow(
             "metrics": metrics,
         }
     )
+
+
+async def start_workflow(
+    ctx: Annotated[Context, Field(description="The FastMCP Context object")],
+    route_name: Annotated[
+        str,
+        Field(description="The name of the API endpoint used to start the workflow"),
+    ],
+    data: Annotated[
+        dict | str | None,
+        Field(
+            description="Data to include in the request body when calling the route",
+            default=None,
+        ),
+    ],
+) -> models.StartWorkflowResponse | models.StartAgentResponse:
+    """
+    Deprecated: use trigger_automation instead.
+
+    Triggers a workflow automation endpoint by route name. Retained for backward
+    compatibility — new integrations should use trigger_automation.
+
+    Args:
+        ctx (Context): The FastMCP Context object
+        route_name (str): The API route name of the automation to trigger.
+        data (dict | None): Input data for the automation.
+
+    Returns:
+        models.StartWorkflowResponse | models.StartAgentResponse: See trigger_automation.
+    """
+    return await trigger_automation(ctx, route_name, data)
 
 
 async def get_jobs(
