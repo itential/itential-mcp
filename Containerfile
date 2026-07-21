@@ -28,7 +28,7 @@ ADD . /app
 RUN uv sync --frozen --no-dev --no-editable
 
 # Create the final container with the application installed
-FROM python:3.10-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 
