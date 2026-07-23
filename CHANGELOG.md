@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.12.2] - 2026-07-23
 
+### Added
+- Inventory manager tools for CRUD operations and node management (#319)
+
 ### Security
 - Bump pygments to 2.20.0 for CVE-2026-4539 (#350)
 
