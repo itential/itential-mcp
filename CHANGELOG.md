@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.2] - 2026-07-23
+
+### Security
+- Bump pygments to 2.20.0 for CVE-2026-4539 (#350)
+
+### Fixed
+- Coerce stringified values in start_workflow data to match workflow input schema (#348)
+- Expose variables field in describe_job response (#347)
+- Add missing await on render_template service call (#336) (#344)
+- Correct Annotated type for optional str parameters in lifecycle_manager (#335) (#343)
+- Add missing await on start_application service call (#334) (#342)
+- Add missing await on compliance report service call (#333) (#341)
+- Add missing await on compliance plan service calls (#332) (#340)
+- Make app field optional on TaskMetricElement (#331) (#339)
+- Make package and description optional on GetAdaptersElement (#330) (#338)
+- Allow optional fields on AdapterInfo for inactive adapter payloads (#329) (#337)
+- `--config` flag ignored when placed before subcommand (#322)
+
+### Changed
+- Rename premerge to ci and harden CI workflow (#325)
+- Modernize Makefile with best practices (#324)
+- Rewrite AGENTS.md as concise codebase reference (#323)
+- Bump actions/checkout from 6 to 7 (#351)
+- Bump softprops/action-gh-release from 2 to 3 (#346)
+- Bump docker/build-push-action from 6 to 7 (#326)
+- Bump docker/setup-buildx-action from 3 to 4 (#327)
+- Bump docker/login-action from 3 to 4 (#328)
+
 ## [0.12.1] - 2026-02-25
 
 ### Fixed
