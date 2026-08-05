@@ -1,3 +1,5 @@
+[![MCP Toplist](https://mcptoplist.com/badge/glama%2Fitential%2Fitential-mcp.svg)](https://mcptoplist.com/server/glama%2Fitential%2Fitential-mcp)
+
 <div align="left">
 
 [![PyPI version](https://badge.fury.io/py/itential-mcp.svg)](https://badge.fury.io/py/itential-mcp)
