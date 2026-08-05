@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.3] - 2026-08-05
+
 ### Security
 - Constrain pydantic-settings to >=2.14.2, resolving GHSA-4xgf-cpjx-pc3j
   (medium severity, `NestedSecretsSettingsSource` issue with
@@ -56,7 +58,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   notes) is still deliberately held at the 46.x line pending evaluation of
   47.x/48.x breaking API changes; not yet re-assessed against the new
   high-severity findings.
-
 ## [0.13.2] - 2026-08-03
 
 ### Security
