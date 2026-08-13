@@ -299,7 +299,7 @@ async def display_tools():
     for f, _, _annotations in itertools(path):
         if len(f.__name__) > maxlen:
             maxlen = len(f.__name__)
-        tools[f.__name__] = f.__doc__
+        tools[f.__name__] = inspect.getdoc(f)
 
     maxlen += 3
 
@@ -308,7 +308,13 @@ async def display_tools():
     print(f"{'TOOLS':{maxlen}}DESCRIPTION")
 
     for key, value in dict(sorted(tools.items())).items():
-        doc = value.splitlines()[1].strip()
+        doc = ""
+        if value:
+            for line in value.splitlines():
+                stripped = line.strip()
+                if stripped:
+                    doc = stripped
+                    break
         if maxlen + len(doc) > width:
             doclen = width - maxlen - 4
             doc = doc[:doclen]

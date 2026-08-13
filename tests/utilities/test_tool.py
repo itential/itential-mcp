@@ -478,6 +478,154 @@ class TestDisplayFunctions:
         assert "TOOLS" in str(header_call)
         assert "DESCRIPTION" in str(header_call)
 
+    @pytest.mark.asyncio
+    @patch("itential_mcp.utilities.tool.terminal.getcols", return_value=80)
+    @patch("itential_mcp.utilities.tool.itertools")
+    @patch("builtins.print")
+    async def test_display_tools_google_style_docstring(
+        self, mock_print, mock_itertools, mock_getcols
+    ):
+        """Google-style docstrings (summary on line 0) render the summary.
+
+        This is a regression guard for the bug where `splitlines()[1]` picked
+        the blank separator line instead of the summary for Google-style
+        docstrings, rendering a blank description.
+        """
+        mock_func = MagicMock()
+        mock_func.__name__ = "google_tool"
+        mock_func.__doc__ = "Summary google style.\n\nBody."
+
+        mock_itertools.return_value = [(mock_func, set(), None)]
+
+        await display_tools()
+
+        tool_line_calls = [
+            call for call in mock_print.call_args_list if "google_tool" in str(call)
+        ]
+        assert len(tool_line_calls) == 1
+        assert "Summary google style." in str(tool_line_calls[0])
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.utilities.tool.terminal.getcols", return_value=80)
+    @patch("itential_mcp.utilities.tool.itertools")
+    @patch("builtins.print")
+    async def test_display_tools_leading_blank_docstring(
+        self, mock_print, mock_itertools, mock_getcols
+    ):
+        """Leading-blank-line docstrings (health.py-style) still render correctly.
+
+        Regression guard proving the fix does not break the previously
+        working shape.
+        """
+        mock_func = MagicMock()
+        mock_func.__name__ = "leading_blank_tool"
+        mock_func.__doc__ = "\n    Summary leading blank.\n\n    Body.\n    "
+
+        mock_itertools.return_value = [(mock_func, set(), None)]
+
+        await display_tools()
+
+        tool_line_calls = [
+            call
+            for call in mock_print.call_args_list
+            if "leading_blank_tool" in str(call)
+        ]
+        assert len(tool_line_calls) == 1
+        assert "Summary leading blank." in str(tool_line_calls[0])
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.utilities.tool.terminal.getcols", return_value=80)
+    @patch("itential_mcp.utilities.tool.itertools")
+    @patch("builtins.print")
+    async def test_display_tools_oneliner_docstring(
+        self, mock_print, mock_itertools, mock_getcols
+    ):
+        """One-liner docstrings with no body render correctly."""
+        mock_func = MagicMock()
+        mock_func.__name__ = "oneliner_tool"
+        mock_func.__doc__ = "Do the thing."
+
+        mock_itertools.return_value = [(mock_func, set(), None)]
+
+        await display_tools()
+
+        tool_line_calls = [
+            call for call in mock_print.call_args_list if "oneliner_tool" in str(call)
+        ]
+        assert len(tool_line_calls) == 1
+        assert "Do the thing." in str(tool_line_calls[0])
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.utilities.tool.terminal.getcols", return_value=80)
+    @patch("itential_mcp.utilities.tool.itertools")
+    @patch("builtins.print")
+    async def test_display_tools_undocumented_tool(
+        self, mock_print, mock_itertools, mock_getcols
+    ):
+        """Undocumented tools (`__doc__ is None`) render blank without crashing.
+
+        Guards the `None.splitlines()` AttributeError the old code would
+        raise for an undocumented tool.
+        """
+        mock_func = MagicMock()
+        mock_func.__name__ = "undocumented_tool"
+        mock_func.__doc__ = None
+
+        mock_itertools.return_value = [(mock_func, set(), None)]
+
+        # Should not raise
+        await display_tools()
+
+        tool_line_calls = [
+            call
+            for call in mock_print.call_args_list
+            if "undocumented_tool" in str(call)
+        ]
+        assert len(tool_line_calls) == 1
+
+    @pytest.mark.asyncio
+    @patch("itential_mcp.utilities.tool.terminal.getcols", return_value=200)
+    @patch("builtins.print")
+    async def test_display_tools_real_affected_tools(self, mock_print, mock_getcols):
+        """The 8 real tools named in the roadmap render non-empty, correct summaries.
+
+        Runs the actual `display_tools()` (and therefore the real
+        `itertools()` tool discovery) against the real `tools/` directory
+        with no mocking of docstrings. This is the test that would have
+        caught the original bug and guards against regression if docstring
+        shapes drift.
+        """
+        expected = {
+            "create_template": "Create a new template in Automation Studio.",
+            "describe_template": (
+                "Get detailed information about a specific template from "
+                "Automation Studio."
+            ),
+            "update_template": "Update an existing template in Automation Studio.",
+            "get_templates": "Get all templates from Automation Studio.",
+            "describe_project": (
+                "Get detailed information about a specific Automation Studio project."
+            ),
+            "get_projects": (
+                "Get all Automation Studio projects from Itential Platform."
+            ),
+            "expose_agent": "Expose an agent as an API endpoint trigger.",
+            "expose_workflow": "Expose a workflow as an API endpoint.",
+        }
+
+        await display_tools()
+
+        printed_lines = [
+            call.args[0] for call in mock_print.call_args_list if call.args
+        ]
+
+        for tool_name, summary in expected.items():
+            matches = [line for line in printed_lines if line.startswith(tool_name)]
+            assert len(matches) == 1, f"expected exactly one line for {tool_name}"
+            assert summary in matches[0], (
+                f"{tool_name} description missing expected summary: {matches[0]!r}"
+            )
+
 
 class TestAnnotateDecorator:
     """Test the annotate decorator functionality"""
