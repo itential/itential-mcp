@@ -697,14 +697,14 @@ wheels = [
 
 [[package]]
 name = "ipsdk"
-version = "0.8.0"
+version = "0.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/66/df/7cf57ee93e6d76c631bf52603daa720d8af4f30af90d7e379255612413be/ipsdk-0.8.0.tar.gz", hash = "sha256:c3f39914019500853c93cbd0062c7a9139c0702c0df4d5a6faa310066e4420ae", size = 81487, upload-time = "2026-02-25T15:59:32.013Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/04/fb/64f0218e7a3ab71c09bc40bced3e750a37b1bee65caf46b4f44dde3c870c/ipsdk-0.9.0.tar.gz", hash = "sha256:3bb93e303963731fbb651085dad79df1d351c13acff40565f0081af1b71b5fc1", size = 85491, upload-time = "2026-08-21T16:02:47.555Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/db/1f/8142fd899ff8e831207212f9f6b8deaefb042f3eeb30e21dad72218d16a6/ipsdk-0.8.0-py3-none-any.whl", hash = "sha256:894856a6ba3ecfe05425efb683c0a12d236f01ec65d4c42e4006fcb6378be33b", size = 52283, upload-time = "2026-02-25T15:59:22.573Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/68/55e3b627556b2fd3f681d710f9082809b8e5aff73c5144823c583d46c6e2/ipsdk-0.9.0-py3-none-any.whl", hash = "sha256:1e12f76fff760032145a0772dd84154a9d1236ac6cd77b484a9cd305e613ffc7", size = 53666, upload-time = "2026-08-21T16:02:46.303Z" },
 ]
 
 [[package]]
@@ -733,7 +733,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastmcp", specifier = ">=3.4.1,<4" },
-    { name = "ipsdk", specifier = ">=0.7.0" },
+    { name = "ipsdk", specifier = ">=0.9.0" },
     { name = "python-toon" },
     { name = "wsproto" },
 ]
