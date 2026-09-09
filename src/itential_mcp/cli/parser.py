@@ -2,6 +2,8 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
+
 import sys
 import argparse
 
@@ -36,7 +38,7 @@ class Parser(argparse.ArgumentParser):
         print("\nCommands:", file=file)
         commands = dict(sorted(self._subparsers._group_actions[0].choices.items()))
         for key, value in commands.items():
-            print(f"  {key:<20}{value.description}")
+            print(f"  {key:<20}{value.description}", file=file)
 
         print("\nOptions:", file=file)
 
@@ -59,6 +61,29 @@ class Parser(argparse.ArgumentParser):
             '\nUse "itential-mcp <COMMAND> --help" for more information about a command.\n',
             file=file,
         )
+
+    def print_app_help_to_stderr(self, message: str) -> None:
+        """
+        Print a diagnostic message followed by the app help to stderr.
+
+        This method is used for the error path where arguments were supplied
+        on the command line but no subcommand was given.  Writing to stderr
+        (rather than stdout) is required so that, under a stdio MCP
+        transport, the host does not mistake this human-readable text for
+        JSON-RPC protocol output.
+
+        Args:
+            message (str): The diagnostic message to print before the help
+                text.
+
+        Returns:
+            None
+
+        Raises:
+            None
+        """
+        print(message, file=sys.stderr)
+        self.print_app_help(file=sys.stderr)
 
     def print_help(self, file: IO | None = None) -> None:
         """

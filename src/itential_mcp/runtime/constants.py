@@ -27,6 +27,18 @@ COMMAND_HELP_SUFFIX = (
 
 # Error messages
 HANDLER_TYPE_ERROR = "handler must be callable and awaitable"
+MISSING_SUBCOMMAND_MESSAGE = (
+    "Error: arguments were provided but no subcommand was given. A subcommand "
+    "is required, e.g.: itential-mcp <COMMAND>"
+)
+CONFIG_WITHOUT_SUBCOMMAND_HINT = (
+    "Error: '--config' was provided but no subcommand was given. A subcommand "
+    "is required, e.g.: itential-mcp --config <FILE> run"
+)
+ENV_CONFIGURED_WITHOUT_SUBCOMMAND_HINT = (
+    "Error: ITENTIAL_MCP_* environment variables are set but no subcommand "
+    "was given. A subcommand is required, e.g.: itential-mcp run"
+)
 
 
 @dataclass(frozen=True)

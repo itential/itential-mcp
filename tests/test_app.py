@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
+import argparse
 import inspect
 from unittest.mock import Mock, patch
 from io import StringIO
@@ -12,6 +13,7 @@ import pytest
 from itential_mcp import app
 from itential_mcp import runtime
 from itential_mcp.cli import Parser
+from itential_mcp.runtime import constants
 
 
 class TestParseArgs:
@@ -53,7 +55,119 @@ class TestParseArgs:
     @patch("itential_mcp.cli.Parser.print_app_help")
     @patch("sys.exit")
     def test_parse_args_no_command(self, mock_exit, mock_print_help):
-        """Test parsing with no command"""
+        """Test parsing bare invocation (no args at all) still prints help
+        to stdout and exits 0 - no regression."""
+        mock_exit.side_effect = SystemExit(0)
+
+        with pytest.raises(SystemExit):
+            runtime.parse_args([])
+
+        mock_print_help.assert_called_once()
+        mock_exit.assert_called_once_with(0)
+
+    @patch("sys.stdout", new_callable=StringIO)
+    @patch("sys.stderr", new_callable=StringIO)
+    def test_parse_args_config_without_subcommand(self, mock_stderr, mock_stdout):
+        """Test that supplying --config without a subcommand exits with
+        code 2 and writes the config-specific hint to stderr, not stdout.
+
+        This is the diagnostic behavior for the stdio-transport footgun
+        where a host supplies --config but omits the required subcommand
+        (e.g. `run`), which previously produced a silent exit-0/stdout-help
+        result that was indistinguishable from a healthy stdio handshake.
+        """
+        with pytest.raises(SystemExit) as excinfo:
+            runtime.parse_args(["--config", "/x.conf"])
+
+        assert excinfo.value.code == 2
+
+        stderr_output = mock_stderr.getvalue()
+        stdout_output = mock_stdout.getvalue()
+
+        first_line = stderr_output.splitlines()[0]
+        assert first_line == constants.CONFIG_WITHOUT_SUBCOMMAND_HINT
+        assert "--config" in first_line
+        assert stdout_output == ""
+
+    @patch("sys.stdout", new_callable=StringIO)
+    @patch("sys.stderr", new_callable=StringIO)
+    @patch("itential_mcp.cli.Parser.parse_args")
+    def test_parse_args_other_arg_without_subcommand(
+        self, mock_parse_args, mock_stderr, mock_stdout
+    ):
+        """Test that a non-empty args list without a subcommand and without
+        --config also exits with code 2 and writes a generic hint to
+        stderr, distinct from the --config-specific message.
+
+        The global parser today only exposes --config and -h/--help, so
+        this exercises the generic branch directly by supplying a parsed
+        namespace where command and config are both None, matching what
+        would occur if a future global flag were added without a
+        subcommand.
+        """
+        mock_parse_args.return_value = argparse.Namespace(
+            help=False, command=None, config=None
+        )
+
+        with pytest.raises(SystemExit) as excinfo:
+            runtime.parse_args(["--some-future-flag"])
+
+        assert excinfo.value.code == 2
+
+        stderr_output = mock_stderr.getvalue()
+        stdout_output = mock_stdout.getvalue()
+
+        first_line = stderr_output.splitlines()[0]
+        assert first_line == constants.MISSING_SUBCOMMAND_MESSAGE
+        assert first_line != constants.CONFIG_WITHOUT_SUBCOMMAND_HINT
+        assert stdout_output == ""
+
+    @patch("sys.stdout", new_callable=StringIO)
+    @patch("sys.stderr", new_callable=StringIO)
+    def test_parse_args_env_configured_without_subcommand(
+        self, mock_stderr, mock_stdout, monkeypatch
+    ):
+        """Test that a bare invocation (zero argv args) with ITENTIAL_MCP_*
+        environment variables set also exits with code 2 and writes the
+        env-var-specific hint to stderr.
+
+        This is the "universal" deployment shape where a container or
+        supervisor sets ITENTIAL_MCP_* env vars for platform/server/auth
+        config and execs itential-mcp with no CLI args at all, expecting
+        the subcommand (typically `run`) to be part of the exec line. A
+        zero-argv invocation must not be treated as the curious/interactive
+        "just show me help" case when the environment clearly indicates a
+        real, non-interactive deployment attempt.
+        """
+        monkeypatch.setenv("ITENTIAL_MCP_PLATFORM_HOST", "platform.example.com")
+
+        with pytest.raises(SystemExit) as excinfo:
+            runtime.parse_args([])
+
+        assert excinfo.value.code == 2
+
+        stderr_output = mock_stderr.getvalue()
+        stdout_output = mock_stdout.getvalue()
+
+        first_line = stderr_output.splitlines()[0]
+        assert first_line == constants.ENV_CONFIGURED_WITHOUT_SUBCOMMAND_HINT
+        assert first_line != constants.CONFIG_WITHOUT_SUBCOMMAND_HINT
+        assert first_line != constants.MISSING_SUBCOMMAND_MESSAGE
+        assert stdout_output == ""
+
+    @patch("itential_mcp.cli.Parser.print_app_help")
+    @patch("sys.exit")
+    def test_parse_args_no_command_no_env_still_exits_zero(
+        self, mock_exit, mock_print_help, monkeypatch
+    ):
+        """Test that a truly bare invocation (no args, no ITENTIAL_MCP_*
+        env vars) is unaffected by the env-var detection and still prints
+        help to stdout and exits 0 - confirms the new check is additive,
+        not a regression for the plain interactive case."""
+        for key in list(os.environ):
+            if key.startswith(constants.ENV_PREFIX):
+                monkeypatch.delenv(key, raising=False)
+
         mock_exit.side_effect = SystemExit(0)
 
         with pytest.raises(SystemExit):

@@ -54,6 +54,18 @@ Compatible with Claude Desktop and many other desktop applications like Cline, A
 }
 ```
 
+**Important:** notice `run` appears twice in the `args` array above, and they
+are two different, unrelated things. The first `run` (right after
+`"itential-mcp"`) belongs to `uv run` — it tells `uv` to run a command in its
+managed environment. The second `run` (right before `--config`) is the
+`itential-mcp` **subcommand** itself, and it is required. If you omit the
+second `run` — e.g. by ending the args array at `--config
+/path/to/your/itential-mcp.conf` with no subcommand after it — `itential-mcp`
+has nothing to execute, and the host will fail the connection with a generic
+"Connection closed" error and no further diagnostic in its own logs. See
+[Troubleshooting: MCP Host Shows "Connection Closed"](troubleshooting.md#mcp-host-shows-connection-closed--rapid-init-close-loop-stdio)
+for details.
+
 ### HTTP Configuration
 ```json
 "itential-mcp": {

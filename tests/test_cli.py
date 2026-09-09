@@ -111,6 +111,33 @@ class TestParser:
         assert "NO HELP AVAILABLE!!" in output  # For option without help
 
     @patch("sys.stdout", new_callable=StringIO)
+    @patch("sys.stderr", new_callable=StringIO)
+    def test_print_app_help_to_stderr_routes_to_stderr(self, mock_stderr, mock_stdout):
+        """Test that print_app_help_to_stderr writes the diagnostic message
+        and the full app help to stderr, and nothing to stdout.
+
+        This is the routing behavior relied on for the args-supplied-but-
+        no-subcommand diagnostic under a stdio MCP transport, where stdout
+        must remain reserved for JSON-RPC protocol traffic.
+        """
+        parser = Parser(prog="test-prog", description="Test CLI application")
+        parser.add_argument("--config", help="Configuration file")
+
+        subparsers = parser.add_subparsers(dest="command")
+        subparsers.add_parser("run", description="Run the server")
+
+        parser.print_app_help_to_stderr("Error: a diagnostic message")
+
+        stderr_output = mock_stderr.getvalue()
+        stdout_output = mock_stdout.getvalue()
+
+        assert "Error: a diagnostic message" in stderr_output
+        assert "Test CLI application" in stderr_output
+        assert "Commands:" in stderr_output
+        assert "run" in stderr_output
+        assert stdout_output == ""
+
+    @patch("sys.stdout", new_callable=StringIO)
     def test_print_help_basic(self, mock_stdout):
         """Test basic print_help functionality"""
         parser = Parser(prog="test-prog", description="Test application")

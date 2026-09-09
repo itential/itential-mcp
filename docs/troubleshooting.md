@@ -181,6 +181,75 @@ itential-mcp run
 curl http://localhost:8000/status/healthz
 ```
 
+### MCP Host Shows "Connection Closed" / Rapid Init-Close Loop (stdio)
+
+**Problem:** An MCP host (e.g. Claude Desktop) configured to launch `itential-mcp`
+over a stdio transport reports a generic "Connection closed" error, or shows
+the server process starting and immediately exiting in a repeated loop, with
+no diagnostic information in the host's own logs.
+
+**Cause:** The `args` array in the host's stdio launch configuration supplied
+arguments (most commonly `--config <file>`) but omitted the required
+subcommand (typically `run`). Without a subcommand, `itential-mcp` has
+nothing to execute, so it prints its help text and exits. Under a stdio
+transport the host expects the process to emit live JSON-RPC on stdout from
+the moment it starts — receiving human-readable help text there instead
+looks like protocol garbage, and the immediate exit is read back as the
+connection being closed.
+
+```bash
+# Wrong - --config is supplied but no subcommand follows
+itential-mcp --config /path/to/config.toml
+
+# Right - the "run" subcommand is required
+itential-mcp --config /path/to/config.toml run
+```
+
+This same mistake also happens with a purely environment-variable-driven
+deployment — a container or supervisor sets `ITENTIAL_MCP_*` variables for
+platform/server/auth config and execs `itential-mcp` with **no CLI
+arguments at all**, expecting the subcommand to be part of the exec line:
+
+```bash
+# Wrong - ITENTIAL_MCP_* env vars are set, but itential-mcp is invoked bare
+export ITENTIAL_MCP_PLATFORM_HOST=platform.example.com
+itential-mcp
+
+# Right - the "run" subcommand is still required
+export ITENTIAL_MCP_PLATFORM_HOST=platform.example.com
+itential-mcp run
+```
+
+**Improved diagnostic behavior:** Starting in this release, supplying any
+argument (such as `--config`) without a subcommand — or having any
+`ITENTIAL_MCP_*` environment variable set without a subcommand, even with
+zero CLI arguments — is treated as a usage error rather than silently
+printing help and exiting cleanly:
+
+- The diagnostic hint and help text are written to **stderr** (not stdout),
+  so they cannot be mistaken for JSON-RPC traffic by a stdio host.
+- The process exits with code **2** (not 0), signaling a real usage error.
+- Bare `itential-mcp` with no arguments at all **and** no `ITENTIAL_MCP_*`
+  environment variables set (or explicit `-h`/`--help`) is unaffected — it
+  still prints help to stdout and exits 0, since that is a normal,
+  intentional way to discover available commands.
+
+**Solution:** Add the missing subcommand to the host's launch configuration:
+
+```json
+{
+  "mcpServers": {
+    "itential-mcp": {
+      "command": "itential-mcp",
+      "args": ["--config", "/path/to/config.toml", "run"]
+    }
+  }
+}
+```
+
+or, for an environment-variable-driven deployment, add the subcommand to the
+exec/entrypoint line rather than the config file or environment.
+
 ### Tool Loading Failures
 
 **Problem:** Server starts but tools are not loaded or warnings appear in logs.

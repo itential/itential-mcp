@@ -4,10 +4,12 @@
 
 """Argument parsing logic for the Itential MCP application."""
 
+from __future__ import annotations
+
 import os
 import sys
 import argparse
-from typing import Tuple, Callable, Any
+from typing import Any, Callable
 from collections.abc import Sequence
 
 from .. import cli
@@ -145,7 +147,7 @@ def _set_environment_variables(args: argparse.Namespace) -> None:
         os.environ[constants.CONFIG_ENV_VAR] = args.config
 
 
-def parse_args(args: Sequence) -> Tuple[Callable, Tuple[Any, ...], dict]:
+def parse_args(args: Sequence) -> tuple[Callable, tuple[Any, ...], dict]:
     """
     Parse command line arguments and return the command handler.
 
@@ -158,11 +160,16 @@ def parse_args(args: Sequence) -> Tuple[Callable, Tuple[Any, ...], dict]:
         args (Sequence): The list of arguments to parse
 
     Returns:
-        Tuple[Callable, Tuple, dict]: The command handler function, positional
+        tuple[Callable, tuple, dict]: The command handler function, positional
             arguments tuple, and keyword arguments dict
 
     Raises:
-        SystemExit: If help is requested or no command is provided
+        SystemExit: If help is requested (exit 0); no command is provided
+            with no other arguments and no ITENTIAL_MCP_* environment
+            variables set (exit 0); or no command is provided while
+            arguments were supplied or ITENTIAL_MCP_* environment
+            variables are set, indicating a real (non-interactive)
+            invocation missing its subcommand (exit 2)
         TypeError: If the command handler is invalid
         AttributeError: If the command doesn't exist
     """
@@ -174,9 +181,25 @@ def parse_args(args: Sequence) -> Tuple[Callable, Tuple[Any, ...], dict]:
 
     _process_logging_config(parsed_args)
 
-    if parsed_args.help or parsed_args.command is None:
+    if parsed_args.help:
         parser.print_app_help()
         sys.exit(0)
+    elif parsed_args.command is None:
+        env_configured = any(key.startswith(constants.ENV_PREFIX) for key in os.environ)
+
+        if len(args) == 0 and not env_configured:
+            parser.print_app_help()
+            sys.exit(0)
+
+        if parsed_args.config is not None:
+            message = constants.CONFIG_WITHOUT_SUBCOMMAND_HINT
+        elif len(args) == 0 and env_configured:
+            message = constants.ENV_CONFIGURED_WITHOUT_SUBCOMMAND_HINT
+        else:
+            message = constants.MISSING_SUBCOMMAND_MESSAGE
+
+        parser.print_app_help_to_stderr(message)
+        sys.exit(2)
 
     _set_environment_variables(parsed_args)
 
