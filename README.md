@@ -104,7 +104,7 @@ uv run itential-mcp run
 uv run itential-mcp run --transport http --host 0.0.0.0 --port 8000
 
 # Run with specific configuration
-uv run itential-mcp run --include-tags "system,devices" --exclude-tags "experimental"
+uv run itential-mcp run --include-tags "health,configuration_manager" --exclude-tags "experimental"
 ```
 
 ### Container Usage
@@ -321,15 +321,17 @@ itential-mcp run --exclude-tags "experimental,beta,lifecycle_manager"
 | Tag Group | Tool Count | Description | Use Case |
 |-----------|------------|-------------|----------|
 | `health` | 1 | Platform health and monitoring | Platform administrators |
-| `configuration_manager` | 15 | Device, compliance, and config management | Network engineers |
-| `operations_manager` | 5 | Workflow and job management | Automation developers |
-| `automation_studio` | 8 | Command templates, projects, templates | Network operators |
+| `configuration_manager` | 16 | Device, compliance, and config management | Network engineers |
+| `operations_manager` | 9 | Automation, workflow, and job management | Automation developers |
+| `automation_studio` | 12 | Command templates, projects, templates | Network operators |
 | `lifecycle_manager` | 7 | Resource lifecycle and instance management | Product managers |
 | `workflow_engine` | 6 | Workflow execution metrics | Performance analysts |
 | `adapters` | 4 | Adapter lifecycle management | Integration specialists |
 | `applications` | 4 | Application lifecycle management | Application owners |
-| `gateway_manager` | 3 | External service management | System integrators |
+| `gateway_manager` | 5 | External service management | System integrators |
 | `integrations` | 3 | External system integrations | API developers |
+| `agent_session_manager` | 5 | Agent sessions and token usage | AI/agent operators |
+| `inventory_manager` | 5 | Inventory management | Network engineers |
 
 ### **Role-Based Configurations**
 

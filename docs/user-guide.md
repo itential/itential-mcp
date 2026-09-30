@@ -129,7 +129,7 @@ transport = "sse"
 host = "0.0.0.0"
 port = 8000
 log_level = "INFO"
-include_tags = ["system", "devices", "operations_manager"]
+include_tags = ["health", "configuration_manager", "operations_manager"]
 exclude_tags = ["experimental", "beta"]
 
 [platform]
@@ -146,7 +146,7 @@ Use with: `itential-mcp run --config itential-mcp.conf`
 
 ## Tool Categories & Use Cases
 
-### System Management (`system` tag)
+### System Management (`health` tag)
 
 **Use Case:** Monitor platform health and system status
 
@@ -160,7 +160,7 @@ Use with: `itential-mcp run --config itential-mcp.conf`
 "Show me system health metrics"
 ```
 
-### Device Management (`devices`, `configuration_manager` tags)
+### Device Management (`configuration_manager` tag)
 
 **Use Case:** Manage network devices, configurations, and compliance
 
@@ -188,7 +188,11 @@ Use with: `itential-mcp run --config itential-mcp.conf`
 
 **Available Tools:**
 - `get_workflows` - List available workflows
-- `start_workflow` - Execute a workflow
+- `get_agents` - List agent automations
+- `get_automations` - List all automations (workflows and agents)
+- `trigger_automation` - Trigger any automation (workflow or agent)
+- `start_workflow` - Workflow-specific wrapper around `trigger_automation`
+- `expose_workflow`, `expose_agent` - Expose a workflow or agent as an automation
 - `get_jobs` - List workflow jobs
 - `describe_job` - Get detailed job information
 - `get_job_metrics` - Performance metrics for jobs
@@ -248,6 +252,7 @@ Use with: `itential-mcp run --config itential-mcp.conf`
 - `get_services` - List available external services
 - `get_gateways` - List gateway configurations
 - `run_service` - Execute external services
+- `export_gateway_configuration`, `import_gateway_configuration` - Export/import gateway cluster configuration
 
 **Example Interactions:**
 ```
@@ -267,6 +272,7 @@ Use with: `itential-mcp run --config itential-mcp.conf`
 - `get_instances` - List resource instances
 - `describe_instance` - Get instance details
 - `run_action` - Execute lifecycle actions
+- `get_action_executions` - View action execution history
 
 **Example Interactions:**
 ```
@@ -276,11 +282,33 @@ Use with: `itential-mcp run --config itential-mcp.conf`
 "Run the provision action on service instance 123"
 ```
 
+### Agent Sessions (`agent_session_manager` tag)
+
+**Use Case:** Inspect agent sessions and track token usage
+
+**Available Tools:**
+- `get_sessions` - List agent sessions
+- `describe_session` - Get session details
+- `get_agent_token_usage` - Token usage aggregated by agent
+- `get_agent_session_token_usage` - Per-session token usage for one agent
+- `describe_session_token_usage` - Per-turn token usage for one session
+
+### Inventory Management (`inventory_manager` tag)
+
+**Use Case:** Manage inventories of devices/nodes
+
+**Available Tools:**
+- `get_inventories` - List inventories
+- `describe_inventory` - Get inventory details
+- `create_inventory` - Create an inventory
+- `add_nodes_to_inventory` - Add nodes in bulk
+- `delete_inventory` - Delete an inventory
+
 ## Role-Based Workflows
 
 ### Platform Administrator
 
-**Recommended Tags:** `system`, `adapters`, `applications`, `integrations`
+**Recommended Tags:** `health`, `adapters`, `applications`, `integrations`
 
 **Common Workflows:**
 1. **Health Monitoring:** Regular platform health checks
@@ -302,7 +330,7 @@ Use with: `itential-mcp run --config itential-mcp.conf`
 
 ### Network Engineer
 
-**Recommended Tags:** `devices`, `configuration_manager`, `automation_studio`
+**Recommended Tags:** `configuration_manager`, `automation_studio`
 
 **Common Workflows:**
 1. **Device Management:** Inventory and configuration management
@@ -346,7 +374,7 @@ Use with: `itential-mcp run --config itential-mcp.conf`
 
 ### Platform Operator
 
-**Recommended Tags:** `operations_manager`, `devices`, `configuration_manager`
+**Recommended Tags:** `operations_manager`, `configuration_manager`
 
 **Common Workflows:**
 1. **Daily Operations:** Execute routine automation jobs
@@ -374,13 +402,13 @@ Control available functionality using tag-based filtering:
 
 ```bash
 # Include only specific tool categories
-itential-mcp run --include-tags "system,devices,operations_manager"
+itential-mcp run --include-tags "health,configuration_manager,operations_manager"
 
 # Exclude experimental features
 itential-mcp run --exclude-tags "experimental,beta"
 
 # Combine inclusion and exclusion
-itential-mcp run --include-tags "system,devices" --exclude-tags "lifecycle_manager"
+itential-mcp run --include-tags "health,configuration_manager" --exclude-tags "lifecycle_manager"
 ```
 
 ### Container Deployment

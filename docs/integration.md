@@ -37,7 +37,7 @@ You can filter available tools using tags to limit functionality:
     "itential-platform": {
       "command": "itential-mcp",
       "args": [
-        "--include-tags", "system,operations_manager,devices",
+        "--include-tags", "health,operations_manager,configuration_manager",
         "--exclude-tags", "lifecycle_manager"
       ],
       "env": {
@@ -75,7 +75,7 @@ You can filter available tools using tags to limit functionality:
 
 | Argument | Description | Example |
 |----------|-------------|---------|
-| `--include-tags` | Comma-separated list of tags to include | `--include-tags system,devices` |
+| `--include-tags` | Comma-separated list of tags to include | `--include-tags health,configuration_manager` |
 | `--exclude-tags` | Comma-separated list of tags to exclude | `--exclude-tags lifecycle_manager` |
 | `--transport` | Transport protocol (stdio/sse/http) | `--transport stdio` |
 | `--host` | Host for SSE/HTTP transport | `--host 0.0.0.0` |
@@ -163,7 +163,7 @@ Use tool tags to create role-specific configurations:
     "itential-admin": {
       "command": "itential-mcp",
       "args": [
-        "--include-tags", "system,adapters,applications"
+        "--include-tags", "health,adapters,applications"
       ],
       "env": {
         "ITENTIAL_MCP_SERVER_HOST": "itential.example.com",
@@ -183,7 +183,7 @@ Use tool tags to create role-specific configurations:
     "itential-netops": {
       "command": "itential-mcp",
       "args": [
-        "--include-tags", "devices,configuration_manager,automation_studio",
+        "--include-tags", "configuration_manager,automation_studio",
         "--exclude-tags", "adapters,applications"
       ],
       "env": {
@@ -205,7 +205,7 @@ Use tool tags to create role-specific configurations:
       "command": "itential-mcp",
       "args": [
         "--include-tags", "operations_manager,workflow_engine,lifecycle_manager",
-        "--exclude-tags", "system,adapters"
+        "--exclude-tags", "health,adapters"
       ],
       "env": {
         "ITENTIAL_MCP_SERVER_HOST": "itential.example.com",
@@ -321,15 +321,16 @@ itential-mcp --test-connection
 For reference, here are the available tool tags for filtering:
 
 - `adapters` - Adapter lifecycle management
+- `agent_session_manager` - Agent sessions and token usage
 - `applications` - Application lifecycle management
 - `automation_studio` - Command templates and automation
 - `configuration_manager` - Configuration and compliance management
-- `devices` - Device-specific operations
 - `gateway_manager` - Gateway and external service management
 - `integrations` - External system integrations
+- `inventory_manager` - Inventory management
 - `lifecycle_manager` - Resource lifecycle management
-- `operations_manager` - Workflow and job management
-- `system` - Platform health and monitoring
+- `operations_manager` - Automation, workflow, and job management
+- `health` - Platform health and monitoring
 - `workflow_engine` - Workflow execution metrics
 
 See the [Tools Reference](tools.md) for complete details on available tools and their capabilities.

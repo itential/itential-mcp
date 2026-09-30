@@ -30,7 +30,7 @@ New to the MCP server? Start here:
 
 ### Tools & Features
 
-- **[Tools Reference](tools.md)** - All 50+ tools organized by category
+- **[Tools Reference](tools.md)** - All 77 tools organized by category
 - **[Tagging System](tags.md)** - Filter tools by role and functionality
 - **[Workflow Execution](exposing-workflows.md)** - Execute and monitor Itential workflows
 - **[TOON Response Format](toon.md)** - LLM-optimized serialization with 30-60% token reduction
@@ -45,12 +45,12 @@ New to the MCP server? Start here:
 
 ### 👨‍💼 Platform Administrators
 System health, component management, platform operations
-- **Tools:** `system`, `adapters`, `applications`, `integrations`
+- **Tools:** `health`, `adapters`, `applications`, `integrations`
 - **Focus:** [Status monitoring](status-endpoints.md), [system tools](tools.md#system-management-tools)
 
 ### 👨‍💻 Network Engineers  
 Device management, configurations, compliance, network automation
-- **Tools:** `devices`, `configuration_manager`, `automation_studio`
+- **Tools:** `configuration_manager`, `automation_studio`
 - **Focus:** [Device tools](tools.md#device-management-tools), [workflows](exposing-workflows.md)
 
 ### 🔧 Automation Developers
@@ -60,15 +60,15 @@ Workflow building, performance analysis, platform extension
 
 ### 🎯 Platform Operators
 Daily operations, job monitoring, report generation
-- **Tools:** `operations_manager`, `devices`, `configuration_manager`
+- **Tools:** `operations_manager`, `configuration_manager`
 - **Focus:** [Operations tools](tools.md#operations-management-tools), [basic config](integration.md)
 
 ## By Tool Category
 
 | Category | Tags | Description |
 |----------|------|-------------|
-| **System Management** | `system`, `adapters`, `applications` | Platform health and monitoring |
-| **Device Management** | `devices`, `configuration_manager` | Network device operations |
+| **System Management** | `health`, `adapters`, `applications` | Platform health and monitoring |
+| **Device Management** | `configuration_manager` | Network device operations |
 | **Workflow Operations** | `operations_manager`, `workflow_engine` | Automation and job management |
 | **Command Execution** | `automation_studio` | Template and command automation |
 | **External Services** | `gateway_manager`, `integrations` | Gateway and integration management |
@@ -90,7 +90,7 @@ itential-mcp
 itential-mcp --transport sse --host 0.0.0.0 --port 8000
 
 # Role-specific tools
-itential-mcp --include-tags "system,devices"
+itential-mcp --include-tags "health,configuration_manager"
 ```
 
 ### Environment Variables
@@ -132,7 +132,7 @@ ITENTIAL_MCP_PLATFORM_PASSWORD="password"
   "mcpServers": {
     "itential-netops": {
       "command": "itential-mcp", 
-      "args": ["--include-tags", "devices,configuration_manager,automation_studio"],
+      "args": ["--include-tags", "configuration_manager,automation_studio"],
       "env": {
         "ITENTIAL_MCP_PLATFORM_HOST": "platform.example.com",
         "ITENTIAL_MCP_PLATFORM_USER": "netops-user",

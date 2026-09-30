@@ -70,14 +70,16 @@ The following table lists all available tag groups and the number of tools they 
 | Tag Group | File(s) | Tools Count | Description |
 |-----------|---------|-------------|-------------|
 | `adapters` | adapters.py | 4 | Adapter lifecycle management (get, start, stop, restart) |
+| `agent_session_manager` | agent_session_manager.py | 5 | Agent sessions and token usage reporting |
 | `applications` | applications.py | 4 | Application lifecycle management (get, start, stop, restart) |
-| `automation_studio` | command_templates.py | 4 | Command templates and device command execution |
-| `configuration_manager` | compliance_plans.py, compliance_reports.py, configuration_manager.py, device_groups.py, devices.py, golden_config.py | 15 | Configuration management, compliance, devices, and golden configs |
-| `gateway_manager` | gateway_manager.py | 3 | Gateway and service management |
+| `automation_studio` | command_templates.py, projects.py, templates.py | 12 | Command templates, projects, and template management |
+| `configuration_manager` | compliance_plans.py, compliance_reports.py, configuration_manager.py, device_groups.py, devices.py, golden_config.py | 16 | Configuration management, compliance, devices, and golden configs |
+| `gateway_manager` | gateway_manager.py | 5 | Gateway and service management, gateway configuration export/import |
 | `health` | health.py | 1 | Platform health monitoring |
-| `integrations` | integrations.py | 2 | Integration model management |
-| `lifecycle_manager` | lifecycle_manager.py | 6 | Resource lifecycle and instance management |
-| `operations_manager` | operations_manager.py | 4 | Workflow execution and job management |
+| `integrations` | integrations.py | 3 | Integration instance and model management |
+| `inventory_manager` | inventory_manager.py | 5 | Inventory management |
+| `lifecycle_manager` | lifecycle_manager.py | 7 | Resource lifecycle and instance management |
+| `operations_manager` | operations_manager.py | 9 | Automation discovery, triggering, exposing, and job management |
 | `workflow_engine` | workflow_engine.py | 6 | Job and task metrics |
 
 ## Standard Tags
@@ -89,13 +91,20 @@ The following table lists all available tag groups and the number of tools they 
 
 ## Individual Tool Tags
 
-Every tool function automatically receives a tag matching its function name. This enables fine-grained control over individual tools. The complete list includes 48 tool-specific tags:
+Every tool function automatically receives a tag matching its function name. This enables fine-grained control over individual tools. The complete list includes 77 tool-specific tags:
 
 ### Adapters Tools
 - `get_adapters`
 - `start_adapter`
 - `stop_adapter`
 - `restart_adapter`
+
+### Agent Session Manager Tools
+- `get_sessions`
+- `describe_session`
+- `get_agent_token_usage`
+- `get_agent_session_token_usage`
+- `describe_session_token_usage`
 
 ### Applications Tools
 - `get_applications`
@@ -108,11 +117,20 @@ Every tool function automatically receives a tag matching its function name. Thi
 - `describe_command_template`
 - `run_command_template`
 - `run_command`
+- `create_command_template`
+- `update_command_template`
+- `get_projects`
+- `describe_project`
+- `get_templates`
+- `describe_template`
+- `create_template`
+- `update_template`
 
 ### Configuration Manager Tools
 - `get_compliance_plans`
 - `run_compliance_plan`
 - `describe_compliance_report`
+- `get_compliance_reports_by_batch`
 - `render_template`
 - `get_device_groups`
 - `create_device_group`
@@ -130,13 +148,23 @@ Every tool function automatically receives a tag matching its function name. Thi
 - `get_services`
 - `get_gateways`
 - `run_service`
+- `export_gateway_configuration`
+- `import_gateway_configuration`
 
 ### Health Tools
 - `get_health`
 
 ### Integrations Tools
+- `get_integrations`
 - `get_integration_models`
 - `create_integration_model`
+
+### Inventory Manager Tools
+- `get_inventories`
+- `describe_inventory`
+- `create_inventory`
+- `add_nodes_to_inventory`
+- `delete_inventory`
 
 ### Lifecycle Manager Tools
 - `get_resources`
@@ -145,12 +173,18 @@ Every tool function automatically receives a tag matching its function name. Thi
 - `get_instances`
 - `describe_instance`
 - `run_action`
+- `get_action_executions`
 
 ### Operations Manager Tools
 - `get_workflows`
+- `get_agents`
+- `get_automations`
+- `trigger_automation`
 - `start_workflow`
 - `get_jobs`
 - `describe_job`
+- `expose_workflow`
+- `expose_agent`
 
 ### Workflow Engine Tools
 - `get_job_metrics`
