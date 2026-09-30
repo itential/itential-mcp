@@ -816,7 +816,7 @@ unset ITENTIAL_MCP_SERVER_EXCLUDE_TAGS
 
 # Or adjust filters
 export ITENTIAL_MCP_SERVER_EXCLUDE_TAGS=experimental  # Exclude only experimental
-export ITENTIAL_MCP_SERVER_INCLUDE_TAGS=health,devices  # Include only specific tags
+export ITENTIAL_MCP_SERVER_INCLUDE_TAGS=health,configuration_manager  # Include only specific tags
 ```
 
 See [tags.md](tags.md) for detailed information about tool tagging.

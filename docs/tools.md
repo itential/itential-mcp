@@ -7,20 +7,22 @@ This document provides a comprehensive list of all tools available in the Itenti
 The following tags are available for filtering tools based on their functionality:
 
 - `adapters` - Adapter lifecycle management tools
+- `agent_session_manager` - Agent session and token usage tools
 - `applications` - Application lifecycle management tools  
 - `automation_studio` - Command templates, projects, and template management tools
 - `configuration_manager` - Configuration, compliance, device, and golden config management tools
-- `gateway_manager` - Gateway and external service management tools
+- `gateway_manager` - Gateway, external service, and gateway configuration import/export tools
 - `health` - Platform health and monitoring tools
 - `integrations` - External system integration tools
+- `inventory_manager` - Inventory management tools
 - `lifecycle_manager` - Resource lifecycle and instance management tools
 - `operations_manager` - Workflow and job management tools
 - `workflow_engine` - Workflow execution metrics and performance tools
 
 ## Tool Count Summary
 
-- **Total Tools**: 56 MCP tools across 17 files
-- **Most Popular Tags**: `configuration_manager` (15 tools), `automation_studio` (8 tools), `lifecycle_manager` (7 tools)
+- **Total Tools**: 77 MCP tools across 19 files in 12 tag groups
+- **Largest Tags**: `configuration_manager` (16 tools), `automation_studio` (12 tools), `operations_manager` (9 tools)
 
 ## Adapters Management (`adapters.py`)
 **Group Tags:** `adapters`
@@ -29,6 +31,15 @@ The following tags are available for filtering tools based on their functionalit
 - **start_adapter** - Start an adapter on Itential Platform with timeout and state validation
 - **stop_adapter** - Stop an adapter on Itential Platform with timeout and state validation
 - **restart_adapter** - Restart an adapter on Itential Platform with timeout and state validation
+
+## Agent Session Manager (`agent_session_manager.py`)
+**Group Tags:** `agent_session_manager`
+
+- **get_sessions** - List agent sessions from Itential Platform with optional filtering
+- **describe_session** - Get detailed information about a specific agent session
+- **get_agent_token_usage** - Aggregate agent session token usage grouped by agent name
+- **get_agent_session_token_usage** - List per-session token usage for a single agent, sorted chronologically
+- **describe_session_token_usage** - Break down a single agent session's token usage per inference turn
 
 ## Applications Management (`applications.py`)
 **Group Tags:** `applications`
@@ -62,6 +73,7 @@ The following tags are available for filtering tools based on their functionalit
 - **get_compliance_plans** - Get all compliance plans from Itential Platform with pagination support
 - **run_compliance_plan** - Execute a compliance plan against network devices and return running instance
 - **describe_compliance_report** - Retrieve detailed compliance report results including validation outcomes and rule violations
+- **get_compliance_reports_by_batch** - Retrieve compliance reports produced by a specific compliance plan batch run
 
 ## Configuration Manager (`configuration_manager.py`)
 **Group Tags:** `configuration_manager`
@@ -90,6 +102,8 @@ The following tags are available for filtering tools based on their functionalit
 - **get_services** - Get all services from Itential Platform Gateway Manager including metadata and schemas
 - **get_gateways** - Get all gateways from Gateway Manager with connection status and cluster information
 - **run_service** - Execute a service with optional input parameters and get execution results
+- **export_gateway_configuration** - Export a gateway cluster's full DB configuration as a DSL document
+- **import_gateway_configuration** - Import a DB configuration into a connected gateway cluster
 
 ## Golden Configuration (`golden_config.py`)
 **Group Tags:** `configuration_manager`
@@ -104,6 +118,15 @@ The following tags are available for filtering tools based on their functionalit
 - **get_integrations** - Get all integration instances from Itential Platform with optional model filtering
 - **get_integration_models** - Get all integration models from Itential Platform with OpenAPI specifications
 - **create_integration_model** - Create a new integration model from an OpenAPI specification with validation
+
+## Inventory Manager (`inventory_manager.py`)
+**Group Tags:** `inventory_manager`
+
+- **get_inventories** - Get all inventories from Itential Platform
+- **describe_inventory** - Get detailed information about a specific inventory
+- **create_inventory** - Create a new inventory and optionally populate it with devices
+- **add_nodes_to_inventory** - Add nodes in bulk to an existing inventory
+- **delete_inventory** - Delete an inventory from Itential Platform
 
 ## Lifecycle Manager (`lifecycle_manager.py`)
 **Group Tags:** `lifecycle_manager`
@@ -120,10 +143,14 @@ The following tags are available for filtering tools based on their functionalit
 **Group Tags:** `operations_manager`
 
 - **get_workflows** - Get all workflow API endpoints with schemas, route names, and execution history
-- **start_workflow** - Execute a workflow by triggering its API endpoint with input validation and job creation
-- **expose_workflow** - Expose a workflow as an API endpoint with custom routing and input validation
+- **get_agents** - Get all agent automations from Itential Platform
+- **get_automations** - Get all automations (workflows and agents) from Operations Manager, including component type
+- **trigger_automation** - General-purpose entry point to trigger any automation (workflow or agent) by route name; returns a job (monitor with `describe_job`) for workflows or a session (monitor with `describe_session`) for agents
+- **start_workflow** - Thin, workflow-specific wrapper around `trigger_automation`, kept as a stable entry point
 - **get_jobs** - Get all jobs from Itential Platform with optional workflow and project filtering
 - **describe_job** - Get detailed information about a specific job including tasks, metrics, and execution status
+- **expose_workflow** - Expose a workflow as an API endpoint with custom routing and input validation
+- **expose_agent** - Expose an agent as an automation so it can be started via `trigger_automation`
 
 ## Projects (`projects.py`)
 **Group Tags:** `automation_studio`
@@ -156,14 +183,15 @@ The following tags are available for filtering tools based on their functionalit
 ### Device & Network Management Tools  
 | Tag | Tools | Description |
 |-----|--------|-------------|
-| `configuration_manager` | 15 tools | Devices, device groups, compliance, golden config, template rendering |
+| `configuration_manager` | 16 tools | Devices, device groups, compliance, golden config, template rendering |
 
 ### Workflow & Automation Tools
 | Tag | Tools | Description |
 |-----|--------|-------------|
-| `operations_manager` | 5 tools | Workflow execution and job management |
+| `operations_manager` | 9 tools | Automation discovery, triggering, exposing, and job management |
 | `workflow_engine` | 6 tools | Workflow and task performance metrics |
-| `automation_studio` | 8 tools | Command templates, projects, and template management |
+| `automation_studio` | 12 tools | Command templates, projects, and template management |
+| `agent_session_manager` | 5 tools | Agent sessions and token usage |
 
 ### Platform Management Tools
 | Tag | Tools | Description |
@@ -171,11 +199,12 @@ The following tags are available for filtering tools based on their functionalit
 | `adapters` | 4 tools | Adapter lifecycle management |
 | `applications` | 4 tools | Application lifecycle management |
 | `lifecycle_manager` | 7 tools | Resource lifecycle and instance management |
+| `inventory_manager` | 5 tools | Inventory management |
 
 ### External Integration Tools
 | Tag | Tools | Description |
 |-----|--------|-------------|
-| `gateway_manager` | 3 tools | Gateway and external service management |
+| `gateway_manager` | 5 tools | Gateway, external service, and gateway configuration management |
 | `integrations` | 3 tools | Integration model and instance management |
 
 ## Usage Examples
