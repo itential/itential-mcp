@@ -24,7 +24,7 @@ Build automation workflows, integrate with external systems, manage application 
 ## 📒 Key Features
 
 ### **Core Capabilities**
-- **56+ Automation Tools**: Comprehensive toolkit across 10 tag categories for all network automation needs
+- **77 Automation Tools**: Comprehensive toolkit across 12 tag categories for all network automation needs
 - **Advanced Tool Selection**: Filter and control available tools using flexible tagging system
 - **Multiple Transport Methods**: stdio and HTTP (Streamable HTTP, recommended) transports with optional TLS encryption; legacy SSE transport is also available but deprecated
 - **Dynamic Tool Discovery**: Automatically discovers and registers tools without code modifications
