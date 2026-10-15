@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from itential_mcp.core import logging
 from itential_mcp.platform.services import ServiceBase
 
 
@@ -42,7 +43,9 @@ class Service(ServiceBase):
             list[dict]: A list of dictionaries containing session data with
                 normalized field names: session_id, agent_name, status,
                 started_at, end_time, duration_ms, total_input_tokens,
-                total_output_tokens.
+                total_output_tokens. Sessions that failed before an
+                execution-engine session ID was assigned (no sessionId) are
+                skipped.
 
         Raises:
             Exception: If there is an error communicating with the Itential
@@ -67,11 +70,22 @@ class Service(ServiceBase):
                 break
 
             for item in items:
+                session_id = item.get("sessionId")
+                if session_id is None:
+                    # Sessions that failed before the execution engine
+                    # assigned an ID carry no sessionId and cannot be
+                    # inspected, so they are not listed.
+                    logging.debug(
+                        "Skipping agent session without a sessionId "
+                        f"(status={item.get('status')})"
+                    )
+                    continue
+
                 results.append(
                     {
-                        "session_id": item["sessionId"],
+                        "session_id": session_id,
                         "agent_name": item.get("agentSnapshot", {}).get("name"),
-                        "status": item["status"],
+                        "status": item.get("status"),
                         "started_at": item.get("startedAt"),
                         "end_time": item.get("endTime"),
                         "duration_ms": item.get("durationMs"),

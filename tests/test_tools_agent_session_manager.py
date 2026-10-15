@@ -1340,3 +1340,69 @@ class TestDescribeSessionTokenUsageTool:
             await agent_session_manager.describe_session_token_usage(
                 ctx, "sess-missing"
             )
+
+
+class TestEarlyFailedSessionsThroughService:
+    """Raw platform data containing a session that failed before getting a
+    sessionId must not break the three tools that list sessions."""
+
+    @staticmethod
+    def _ctx():
+        from itential_mcp.platform.services.agent_session_manager import Service
+
+        good = {
+            "sessionId": "sess-001",
+            "agentSnapshot": {"name": "network-agent"},
+            "status": "COMPLETE",
+            "startedAt": "2026-01-01T00:00:00Z",
+            "totalInputTokens": 10,
+            "totalOutputTokens": 5,
+        }
+        early_failed = {
+            "agentDefinitionId": "def-1",
+            "agentSnapshot": {"name": "network-agent"},
+            "createdAt": 1700000000000,
+            "createdBy": "user-1",
+            "endTime": 1700000001000,
+            "errorMessage": "Failed to look up tool definitions",
+            "inputs": {},
+            "status": "FAILED",
+            "trigger": {},
+        }
+        res = MagicMock()
+        res.json.return_value = {
+            "data": [good, early_failed],
+            "total": 2,
+            "offset": 0,
+            "limit": 100,
+        }
+        client = AsyncMock()
+        client.get.return_value = res
+        return _make_context(Service(client))
+
+    @pytest.mark.asyncio
+    async def test_get_sessions(self):
+        result = await agent_session_manager.get_sessions(self._ctx(), None)
+
+        assert [e.session_id for e in result.root] == ["sess-001"]
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("include_failed", [False, True])
+    async def test_get_agent_token_usage(self, include_failed):
+        result = await agent_session_manager.get_agent_token_usage(
+            self._ctx(), None, include_failed, None, None
+        )
+
+        assert isinstance(result, GetAgentTokenUsageResponse)
+        assert len(result.root) == 1
+        assert result.root[0].session_count == 1
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("include_failed", [False, True])
+    async def test_get_agent_session_token_usage(self, include_failed):
+        result = await agent_session_manager.get_agent_session_token_usage(
+            self._ctx(), "network", include_failed, None, None
+        )
+
+        assert isinstance(result, GetAgentSessionTokenUsageResponse)
+        assert [e.session_id for e in result.root] == ["sess-001"]

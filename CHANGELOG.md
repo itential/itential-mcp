@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `get_sessions`, `get_agent_token_usage` and `get_agent_session_token_usage`
+  no longer fail with `Not found: 'sessionId'` when the session history
+  contains sessions that failed before an execution-engine session ID was
+  assigned; those records are now skipped (#422)
+
 ## [0.14.1] - 2026-10-15
 
 ### Fixed

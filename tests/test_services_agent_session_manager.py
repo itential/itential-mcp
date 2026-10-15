@@ -348,3 +348,84 @@ class TestGetSessionMessages:
         assert result == full_page
         assert len(result) == 100
         assert mock_client.get.call_count == 2
+
+
+EARLY_FAILED = {
+    "agentDefinitionId": "def-1",
+    "agentSnapshot": {"name": "network-agent"},
+    "createdAt": 1700000000000,
+    "createdBy": "user-1",
+    "endTime": 1700000001000,
+    "errorMessage": "Failed to look up tool definitions",
+    "inputs": {},
+    "status": "FAILED",
+    "trigger": {},
+}
+
+GOOD = {
+    "sessionId": "sess-001",
+    "agentSnapshot": {"name": "network-agent"},
+    "status": "COMPLETE",
+    "startedAt": 1700000000000,
+}
+
+
+def _page(items, total, offset=0):
+    res = MagicMock()
+    res.json.return_value = {
+        "data": items,
+        "total": total,
+        "offset": offset,
+        "limit": 100,
+    }
+    return res
+
+
+class TestGetSessionsMissingSessionId:
+    """Sessions that failed before getting a sessionId are skipped"""
+
+    @pytest.fixture
+    def mock_client(self):
+        return AsyncMock(spec=AsyncPlatform)
+
+    @pytest.fixture
+    def service(self, mock_client):
+        return Service(mock_client)
+
+    @pytest.mark.asyncio
+    async def test_early_failed_record_skipped(self, service, mock_client):
+        mock_client.get.return_value = _page([GOOD, EARLY_FAILED], 2)
+
+        result = await service.get_sessions()
+
+        assert [r["session_id"] for r in result] == ["sess-001"]
+
+    @pytest.mark.asyncio
+    async def test_early_failed_record_on_later_page_skipped(
+        self, service, mock_client
+    ):
+        page1 = [dict(GOOD, sessionId=f"s-{i}") for i in range(100)]
+        page2 = [GOOD, EARLY_FAILED]
+        mock_client.get.side_effect = [_page(page1, 102), _page(page2, 102, 100)]
+
+        result = await service.get_sessions()
+
+        assert len(result) == 101
+        assert mock_client.get.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_all_records_missing_session_id_returns_empty(
+        self, service, mock_client
+    ):
+        mock_client.get.return_value = _page([EARLY_FAILED, EARLY_FAILED], 2)
+
+        assert await service.get_sessions() == []
+
+    @pytest.mark.asyncio
+    async def test_missing_status_does_not_raise(self, service, mock_client):
+        mock_client.get.return_value = _page([{"sessionId": "sess-9"}], 1)
+
+        result = await service.get_sessions()
+
+        assert result[0]["session_id"] == "sess-9"
+        assert result[0]["status"] is None

@@ -240,6 +240,8 @@ async def get_sessions(
 
     Notes:
         - Use describe_session with a session_id to get the full event log and output
+        - Sessions that failed before an execution-engine session ID was
+          assigned are not listed
         - Timestamps are converted from epoch milliseconds to ISO 8601 format
     """
     await ctx.debug("inside get_sessions(...)")
@@ -429,7 +431,9 @@ async def get_agent_token_usage(
     counted toward session_count but contribute 0 to sum, average, and
     min/max calculations. Sessions with no agent name are grouped under a
     None-keyed entry rather than dropped. Only COMPLETE sessions are included
-    by default — see include_failed to also include FAILED sessions.
+    by default — see include_failed to also include FAILED sessions. Sessions
+    that failed before an execution-engine session ID was assigned are not
+    included.
 
     Args:
         ctx (Context): The FastMCP Context object.
@@ -579,7 +583,9 @@ async def get_agent_session_token_usage(
     Fetches agent sessions filtered to the given agent name and returns one
     row per matching session (no aggregation), useful for time-series
     inspection of an agent's usage. Only COMPLETE sessions are included by
-    default — see include_failed to also include FAILED sessions.
+    default — see include_failed to also include FAILED sessions. Sessions
+    that failed before an execution-engine session ID was assigned are not
+    included.
 
     Args:
         ctx (Context): The FastMCP Context object.
