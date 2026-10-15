@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-10-15
+
 ### Fixed
 - Exclude agent (and other non-workflow) automation triggers from
   `get_workflows`, which previously listed agent-backed endpoint triggers as
@@ -14,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `get_automations` now lists only automations with an enabled API endpoint
   trigger (those startable via `trigger_automation`); automations with no or a
   disabled endpoint trigger are no longer returned (#419)
+- `itential-mcp tools` now shows each tool's description for all docstring
+  styles; previously 8 tools displayed a blank description and undocumented
+  tools could raise `AttributeError` (#409)
 
 ### Security
 - Refresh `uv.lock` to clear transitive-dependency advisories (no
@@ -30,6 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     GHSA-94p9-xgh2-xp45, GHSA-x78j-v8h9-3j2q, GHSA-p58f-9548-mpm2 and
     medium GHSA-9h9j-4vrj-gf7g; adds python-discovery as a new transitive
     dependency of virtualenv (#420)
+
+### Docs
+- Clarify that `get_workflows` and `get_automations` return only automations
+  with an enabled endpoint trigger, and refresh the Operations Manager tool
+  lists in `docs/tools.md` and `docs/user-guide.md` (#418)
 
 ## [0.14.0] - 2026-08-13
 
