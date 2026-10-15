@@ -15,6 +15,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   trigger (those startable via `trigger_automation`); automations with no or a
   disabled endpoint trigger are no longer returned (#419)
 
+### Security
+- Refresh `uv.lock` to clear transitive-dependency advisories (no
+  `pyproject.toml` changes; all three are transitive pins):
+  - PyJWT 2.13.0 -> 2.15.1, resolving 13 advisories including critical
+    GHSA-ffc3-869f-jxw9 (CVE-2026-102268), high GHSA-p4g4-x82p-q773,
+    GHSA-w2cx-738m-mc7w, GHSA-r6x4-923q-g947, GHSA-9j54-fg26-wv3r,
+    GHSA-9v7f-9g4p-ffgj, and medium GHSA-2gx3-rcp4-g85q,
+    GHSA-jwrc-g2q2-pq5p, GHSA-8wjv-2p76-3863, GHSA-w6j9-cwv2-h6wq,
+    GHSA-hxm8-2xgr-2p9m, GHSA-42vr-xj54-vc7v, GHSA-gvp8-978c-rx2q
+  - anyio 4.12.1 -> 4.14.2, resolving critical GHSA-82r6-8w77-94w6
+    (CVE-2026-63374) and medium GHSA-5p39-cfhj-2xmp (CVE-2026-64847)
+  - virtualenv 20.39.0 -> 21.14.5 (dev-only, via tox), resolving high
+    GHSA-94p9-xgh2-xp45, GHSA-x78j-v8h9-3j2q, GHSA-p58f-9548-mpm2 and
+    medium GHSA-9h9j-4vrj-gf7g; adds python-discovery as a new transitive
+    dependency of virtualenv (#420)
+
 ## [0.14.0] - 2026-08-13
 
 ### Added
