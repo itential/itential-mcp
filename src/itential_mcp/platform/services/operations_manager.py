@@ -243,11 +243,13 @@ class Service(ServiceBase):
         return results
 
     async def get_automations(self) -> list[dict]:
-        """Retrieve all automations from the Operations Manager, joined with endpoint triggers.
+        """Retrieve automations that have an enabled endpoint trigger.
 
-        Fetches all automations regardless of component type, then fetches all endpoint
-        triggers and joins them by actionId. Returns route_name, input_schema, and
-        last_executed from the matching trigger (all None when no endpoint trigger exists).
+        Fetches all automations regardless of component type, then fetches all
+        enabled endpoint triggers and joins them by actionId. Only automations with
+        a matching enabled endpoint trigger are returned, since those are the only
+        ones that can be started via trigger_automation. Automations with no
+        endpoint trigger, or only a disabled one, are omitted.
 
         Returns:
             list[dict]: Each dict: name, description, component_type, component_id,
@@ -282,6 +284,7 @@ class Service(ServiceBase):
                     "skip": skip,
                     "equalsField": "type",
                     "equals": "endpoint",
+                    "enabled": True,
                 },
             )
             data = res.json()
@@ -297,15 +300,17 @@ class Service(ServiceBase):
         results = []
         for auto in automations:
             trigger = endpoint_triggers.get(auto["_id"])
+            if trigger is None:
+                continue
             results.append(
                 {
                     "name": auto.get("name"),
                     "description": auto.get("description"),
                     "component_type": auto.get("componentType"),
                     "component_id": auto.get("componentId"),
-                    "route_name": trigger.get("routeName") if trigger else None,
-                    "input_schema": trigger.get("schema") if trigger else None,
-                    "last_executed": trigger.get("lastExecuted") if trigger else None,
+                    "route_name": trigger.get("routeName"),
+                    "input_schema": trigger.get("schema"),
+                    "last_executed": trigger.get("lastExecuted"),
                 }
             )
 

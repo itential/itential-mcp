@@ -1888,7 +1888,7 @@ class TestGetAutomations:
 
     @pytest.mark.asyncio
     async def test_joins_triggers(self, service):
-        """Automations are joined with matching endpoint triggers by actionId"""
+        """Automations are joined with matching endpoint triggers; unmatched are dropped"""
         automation_id_1 = "auto-id-1"
         automation_id_2 = "auto-id-2"
 
@@ -1932,21 +1932,18 @@ class TestGetAutomations:
 
         result = await service.get_automations()
 
-        assert len(result) == 2
+        # The agent automation has no endpoint trigger, so it is dropped
+        assert len(result) == 1
 
-        matched = next(r for r in result if r["name"] == "Workflow Auto")
+        matched = result[0]
+        assert matched["name"] == "Workflow Auto"
         assert matched["route_name"] == "workflow-auto-route"
         assert matched["input_schema"] == {"type": "object", "properties": {}}
         assert matched["component_type"] == "workflows"
 
-        unmatched = next(r for r in result if r["name"] == "Agent Auto")
-        assert unmatched["route_name"] is None
-        assert unmatched["input_schema"] is None
-        assert unmatched["component_type"] == "agents"
-
     @pytest.mark.asyncio
-    async def test_no_trigger_returns_none_fields(self, service):
-        """Automation with no matching trigger has route_name, input_schema, last_executed all None"""
+    async def test_no_trigger_is_dropped(self, service):
+        """Automation with no matching enabled endpoint trigger is not returned"""
         mock_automations_response = MagicMock()
         mock_automations_response.json.return_value = {
             "data": [
@@ -1973,10 +1970,80 @@ class TestGetAutomations:
 
         result = await service.get_automations()
 
-        assert len(result) == 1
-        assert result[0]["route_name"] is None
-        assert result[0]["input_schema"] is None
-        assert result[0]["last_executed"] is None
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_requests_only_enabled_endpoint_triggers(self, service):
+        """The triggers query asks the platform for enabled endpoint triggers only"""
+        mock_automations_response = MagicMock()
+        mock_automations_response.json.return_value = {
+            "data": [],
+            "metadata": {"total": 0},
+        }
+        mock_triggers_response = MagicMock()
+        mock_triggers_response.json.return_value = {
+            "data": [],
+            "metadata": {"total": 0},
+        }
+        service.client.get = AsyncMock(
+            side_effect=[mock_automations_response, mock_triggers_response]
+        )
+
+        await service.get_automations()
+
+        triggers_call = service.client.get.call_args_list[1]
+        assert triggers_call[0] == ("/operations-manager/triggers",)
+        params = triggers_call[1]["params"]
+        assert params["enabled"] is True
+        assert params["equalsField"] == "type"
+        assert params["equals"] == "endpoint"
+
+    @pytest.mark.asyncio
+    async def test_disabled_trigger_dropped(self, service):
+        """An automation whose only trigger is absent from the enabled set is dropped
+
+        The platform filters with enabled=True, so a disabled trigger is never
+        returned and the automation has no matching entry.
+        """
+        mock_automations_response = MagicMock()
+        mock_automations_response.json.return_value = {
+            "data": [
+                {
+                    "_id": "auto-enabled",
+                    "name": "Enabled Auto",
+                    "description": None,
+                    "componentType": "workflows",
+                    "componentId": "wf-1",
+                },
+                {
+                    "_id": "auto-disabled",
+                    "name": "Disabled Auto",
+                    "description": None,
+                    "componentType": "workflows",
+                    "componentId": "wf-2",
+                },
+            ],
+            "metadata": {"total": 2},
+        }
+        mock_triggers_response = MagicMock()
+        mock_triggers_response.json.return_value = {
+            "data": [
+                {
+                    "actionId": "auto-enabled",
+                    "routeName": "enabled-route",
+                    "schema": None,
+                    "lastExecuted": None,
+                }
+            ],
+            "metadata": {"total": 1},
+        }
+        service.client.get = AsyncMock(
+            side_effect=[mock_automations_response, mock_triggers_response]
+        )
+
+        result = await service.get_automations()
+
+        assert [r["name"] for r in result] == ["Enabled Auto"]
 
     @pytest.mark.asyncio
     async def test_empty_returns_empty_list(self, service):
@@ -2003,7 +2070,7 @@ class TestGetAutomations:
 
     @pytest.mark.asyncio
     async def test_includes_all_component_types(self, service):
-        """Compliance plan automations are included in results alongside workflows and agents"""
+        """Non-workflow/agent automations with an enabled endpoint trigger are retained"""
         mock_automations_response = MagicMock()
         mock_automations_response.json.return_value = {
             "data": [
@@ -2020,8 +2087,15 @@ class TestGetAutomations:
 
         mock_triggers_response = MagicMock()
         mock_triggers_response.json.return_value = {
-            "data": [],
-            "metadata": {"total": 0},
+            "data": [
+                {
+                    "actionId": "auto-compliance",
+                    "routeName": "compliance-route",
+                    "schema": None,
+                    "lastExecuted": None,
+                }
+            ],
+            "metadata": {"total": 1},
         }
 
         service.client.get = AsyncMock(
@@ -2033,6 +2107,7 @@ class TestGetAutomations:
         assert len(result) == 1
         assert result[0]["component_type"] == "ucm_compliance_plan"
         assert result[0]["name"] == "Compliance Plan Auto"
+        assert result[0]["route_name"] == "compliance-route"
 
     @pytest.mark.asyncio
     async def test_paginates_automations_across_multiple_pages(self, service):
@@ -2076,9 +2151,15 @@ class TestGetAutomations:
                     "routeName": "workflow-auto-route",
                     "schema": {"type": "object", "properties": {}},
                     "lastExecuted": None,
-                }
+                },
+                {
+                    "actionId": automation_id_2,
+                    "routeName": "agent-auto-route",
+                    "schema": None,
+                    "lastExecuted": None,
+                },
             ],
-            "metadata": {"total": 1},
+            "metadata": {"total": 2},
         }
 
         service.client.get = AsyncMock(
@@ -2108,9 +2189,9 @@ class TestGetAutomations:
         assert matched["route_name"] == "workflow-auto-route"
         assert matched["input_schema"] == {"type": "object", "properties": {}}
 
-        unmatched = next(r for r in result if r["name"] == "Agent Auto")
-        assert unmatched["route_name"] is None
-        assert unmatched["input_schema"] is None
+        agent = next(r for r in result if r["name"] == "Agent Auto")
+        assert agent["route_name"] == "agent-auto-route"
+        assert agent["component_type"] == "agents"
 
     @pytest.mark.asyncio
     async def test_paginates_triggers_across_multiple_pages(self, service):

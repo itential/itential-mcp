@@ -144,7 +144,7 @@ The following tags are available for filtering tools based on their functionalit
 
 - **get_workflows** - Get workflow automations that have an enabled API endpoint trigger, with schemas, route names, and execution history. Agent automations are not included; use `get_agents` or `get_automations` for those
 - **get_agents** - Get all agent automations from Itential Platform
-- **get_automations** - Get all automations (workflows and agents) from Operations Manager, including component type
+- **get_automations** - Get automations triggerable via `trigger_automation` (those with an enabled API endpoint trigger) from Operations Manager, including component type
 - **trigger_automation** - General-purpose entry point to trigger any automation (workflow or agent) by route name; returns a job (monitor with `describe_job`) for workflows or a session (monitor with `describe_session`) for agents
 - **start_workflow** - Thin, workflow-specific wrapper around `trigger_automation`, kept as a stable entry point
 - **get_jobs** - Get all jobs from Itential Platform with optional workflow and project filtering
@@ -155,8 +155,9 @@ The following tags are available for filtering tools based on their functionalit
 > **Note:** `get_workflows` returns only workflow automations with an enabled
 > endpoint trigger; workflows whose endpoint trigger is disabled, or that have
 > none, are not returned. Agent automations appear under `get_agents`, and
-> [`get_automations`](#operations-manager-operations_managerpy)
-> lists every automation type (workflows, agents, and others) with its component type.
+> [`get_automations`](#operations-manager-operations_managerpy) lists the
+> automations that have an enabled endpoint trigger, across all types
+> (workflows, agents, and others), with their component type.
 
 ## Projects (`projects.py`)
 **Group Tags:** `automation_studio`
