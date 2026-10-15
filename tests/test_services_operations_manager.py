@@ -43,6 +43,40 @@ class TestService:
         assert service.name == "operations_manager"
 
 
+def _page(data, total=None, skip=0):
+    """Build a mock paginated API response"""
+    response = MagicMock()
+    response.json.return_value = {
+        "data": data,
+        "metadata": {
+            "total": len(data) if total is None else total,
+            "count": len(data),
+            "skip": skip,
+            "limit": 100,
+        },
+    }
+    return response
+
+
+def _automation(auto_id, component_type, name=None):
+    return {
+        "_id": auto_id,
+        "name": name or f"automation-{auto_id}",
+        "componentType": component_type,
+    }
+
+
+def _trigger(trigger_id, action_id, route_name=None):
+    return {
+        "_id": trigger_id,
+        "name": f"trigger-{trigger_id}",
+        "type": "endpoint",
+        "enabled": True,
+        "actionId": action_id,
+        "routeName": route_name or f"route-{trigger_id}",
+    }
+
+
 class TestGetWorkflows:
     """Test the get_workflows method"""
 
@@ -56,93 +90,25 @@ class TestGetWorkflows:
         """Create a Service instance with mock client"""
         return Service(mock_client)
 
-    @pytest.fixture
-    def mock_response_single_page(self):
-        """Mock response with workflows that fit in a single page"""
-        mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "data": [
-                {
-                    "_id": "workflow-1",
-                    "name": "Test Workflow 1",
-                    "type": "endpoint",
-                    "enabled": True,
-                },
-                {
-                    "_id": "workflow-2",
-                    "name": "Test Workflow 2",
-                    "type": "endpoint",
-                    "enabled": True,
-                },
-            ],
-            "metadata": {"total": 2, "count": 2, "skip": 0, "limit": 100},
-        }
-        return mock_response
-
-    @pytest.fixture
-    def mock_response_multi_page(self):
-        """Mock responses for multi-page workflow results"""
-        # First page response - has 1 item but total is 3, so another page needed
-        mock_response_1 = MagicMock()
-        mock_response_1.json.return_value = {
-            "data": [
-                {
-                    "_id": "workflow-1",
-                    "name": "Test Workflow 1",
-                    "type": "endpoint",
-                    "enabled": True,
-                }
-            ],
-            "metadata": {"total": 3, "count": 1, "skip": 0, "limit": 100},
-        }
-
-        # Second page response - has 2 more items, making total received 3
-        mock_response_2 = MagicMock()
-        mock_response_2.json.return_value = {
-            "data": [
-                {
-                    "_id": "workflow-2",
-                    "name": "Test Workflow 2",
-                    "type": "endpoint",
-                    "enabled": True,
-                },
-                {
-                    "_id": "workflow-3",
-                    "name": "Test Workflow 3",
-                    "type": "endpoint",
-                    "enabled": True,
-                },
-            ],
-            "metadata": {"total": 3, "count": 2, "skip": 100, "limit": 100},
-        }
-
-        return [mock_response_1, mock_response_2]
-
-    @pytest.fixture
-    def mock_response_empty(self):
-        """Mock response with no workflows"""
-        mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "data": [],
-            "metadata": {"total": 0, "count": 0, "skip": 0, "limit": 100},
-        }
-        return mock_response
-
     @pytest.mark.asyncio
-    async def test_get_workflows_single_page(self, service, mock_response_single_page):
+    async def test_get_workflows_single_page(self, service):
         """Test get_workflows with single page of results"""
-        service.client.get = AsyncMock(return_value=mock_response_single_page)
+        service.client.get = AsyncMock(
+            side_effect=[
+                _page([_automation("W1", "workflows"), _automation("W2", "workflows")]),
+                _page([_trigger("t1", "W1"), _trigger("t2", "W2")]),
+            ]
+        )
 
         result = await service.get_workflows()
 
-        assert len(result) == 2
-        assert result[0]["_id"] == "workflow-1"
-        assert result[0]["name"] == "Test Workflow 1"
-        assert result[1]["_id"] == "workflow-2"
-        assert result[1]["name"] == "Test Workflow 2"
-
-        # Verify client.get was called with correct parameters
-        service.client.get.assert_called_once_with(
+        assert [r["_id"] for r in result] == ["t1", "t2"]
+        assert service.client.get.call_count == 2
+        service.client.get.assert_any_call(
+            "/operations-manager/automations",
+            params={"limit": 100, "skip": 0},
+        )
+        service.client.get.assert_any_call(
             "/operations-manager/triggers",
             params={
                 "limit": 100,
@@ -154,57 +120,150 @@ class TestGetWorkflows:
         )
 
     @pytest.mark.asyncio
-    async def test_get_workflows_multi_page(self, service, mock_response_multi_page):
-        """Test get_workflows with multiple pages of results"""
-        service.client.get = AsyncMock(side_effect=mock_response_multi_page)
+    async def test_get_workflows_multi_page(self, service):
+        """Test get_workflows paginates both automations and triggers"""
+        service.client.get = AsyncMock(
+            side_effect=[
+                _page([_automation("W1", "workflows")], total=2),
+                _page([_automation("W2", "workflows")], total=2, skip=100),
+                _page([_trigger("t1", "W1")], total=3),
+                _page(
+                    [_trigger("t2", "W2"), _trigger("t3", "W1")],
+                    total=3,
+                    skip=100,
+                ),
+            ]
+        )
 
         result = await service.get_workflows()
 
-        assert len(result) == 3
-        assert result[0]["_id"] == "workflow-1"
-        assert result[1]["_id"] == "workflow-2"
-        assert result[2]["_id"] == "workflow-3"
+        assert [r["_id"] for r in result] == ["t1", "t2", "t3"]
+        calls = service.client.get.call_args_list
+        assert len(calls) == 4
+        assert calls[0][0] == ("/operations-manager/automations",)
+        assert calls[0][1]["params"]["skip"] == 0
+        assert calls[1][0] == ("/operations-manager/automations",)
+        assert calls[1][1]["params"]["skip"] == 100
+        assert calls[2][0] == ("/operations-manager/triggers",)
+        assert calls[2][1]["params"]["skip"] == 0
+        assert calls[3][0] == ("/operations-manager/triggers",)
+        assert calls[3][1]["params"]["skip"] == 100
 
-        # Verify client.get was called twice for pagination
+    @pytest.mark.asyncio
+    async def test_get_workflows_empty_result(self, service):
+        """Test get_workflows with empty result"""
+        service.client.get = AsyncMock(side_effect=[_page([]), _page([])])
+
+        result = await service.get_workflows()
+
+        assert result == []
         assert service.client.get.call_count == 2
 
-        # Check first call parameters
-        first_call = service.client.get.call_args_list[0]
-        assert first_call[0] == ("/operations-manager/triggers",)
-        assert first_call[1]["params"]["skip"] == 0
-
-        # Check second call parameters
-        second_call = service.client.get.call_args_list[1]
-        assert second_call[0] == ("/operations-manager/triggers",)
-        assert second_call[1]["params"]["skip"] == 100
-
     @pytest.mark.asyncio
-    async def test_get_workflows_empty_result(self, service, mock_response_empty):
-        """Test get_workflows with empty result"""
-        service.client.get = AsyncMock(return_value=mock_response_empty)
-
-        result = await service.get_workflows()
-
-        assert len(result) == 0
-        assert result == []
-
-        service.client.get.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_get_workflows_parameters(self, service, mock_response_single_page):
-        """Test get_workflows uses correct API parameters"""
-        service.client.get = AsyncMock(return_value=mock_response_single_page)
+    async def test_get_workflows_parameters(self, service):
+        """Test get_workflows uses correct trigger API parameters"""
+        service.client.get = AsyncMock(
+            side_effect=[_page([_automation("W1", "workflows")]), _page([])]
+        )
 
         await service.get_workflows()
 
-        call_args = service.client.get.call_args
-        params = call_args[1]["params"]
+        params = service.client.get.call_args_list[1][1]["params"]
 
         assert params["limit"] == 100
         assert params["skip"] == 0
         assert params["equalsField"] == "type"
         assert params["equals"] == "endpoint"
         assert params["enabled"] is True
+
+    @pytest.mark.asyncio
+    async def test_get_workflows_excludes_agent_trigger(self, service):
+        """Agent-backed endpoint triggers must not be returned as workflows"""
+        service.client.get = AsyncMock(
+            side_effect=[
+                _page([_automation("A", "agents")]),
+                _page([_trigger("t1", "A", route_name="devops")]),
+            ]
+        )
+
+        result = await service.get_workflows()
+
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_get_workflows_includes_workflow_trigger(self, service):
+        """Workflow-backed endpoint triggers are returned"""
+        service.client.get = AsyncMock(
+            side_effect=[
+                _page([_automation("W", "workflows")]),
+                _page([_trigger("t1", "W", route_name="my_route")]),
+            ]
+        )
+
+        result = await service.get_workflows()
+
+        assert len(result) == 1
+        assert result[0]["routeName"] == "my_route"
+        assert result[0]["actionId"] == "W"
+
+    @pytest.mark.asyncio
+    async def test_get_workflows_mixed_component_types(self, service):
+        """Only workflow triggers survive when several component types exist"""
+        service.client.get = AsyncMock(
+            side_effect=[
+                _page(
+                    [
+                        _automation("W", "workflows"),
+                        _automation("A", "agents"),
+                        _automation("C", "ucm_compliance_plan"),
+                    ]
+                ),
+                _page([_trigger("tw", "W"), _trigger("ta", "A"), _trigger("tc", "C")]),
+            ]
+        )
+
+        result = await service.get_workflows()
+
+        assert [r["_id"] for r in result] == ["tw"]
+
+    @pytest.mark.asyncio
+    async def test_get_workflows_excludes_orphan_trigger(self, service):
+        """Triggers with a missing or unknown actionId are excluded"""
+        orphan_none = _trigger("t-none", None)
+        orphan_missing = _trigger("t-missing", "does-not-exist")
+        no_key = _trigger("t-nokey", "x")
+        del no_key["actionId"]
+        service.client.get = AsyncMock(
+            side_effect=[
+                _page([_automation("W", "workflows")]),
+                _page([orphan_none, orphan_missing, no_key, _trigger("tw", "W")]),
+            ]
+        )
+
+        result = await service.get_workflows()
+
+        assert [r["_id"] for r in result] == ["tw"]
+
+    @pytest.mark.asyncio
+    async def test_get_workflows_agent_still_in_get_agents(self, service):
+        """The agent excluded from get_workflows is still returned by get_agents"""
+        automation = _automation("A", "agents", name="My Agent")
+        automation["componentId"] = "agent-uuid"
+        trigger = _trigger("t1", "A", route_name="devops")
+
+        service.client.get = AsyncMock(
+            side_effect=[_page([automation]), _page([trigger])]
+        )
+        assert await service.get_workflows() == []
+
+        service.client.get = AsyncMock(
+            side_effect=[_page([automation]), _page([trigger])]
+        )
+        agents = await service.get_agents()
+
+        assert len(agents) == 1
+        assert agents[0]["route_name"] == "devops"
+        assert agents[0]["agent_id"] == "agent-uuid"
 
     @pytest.mark.asyncio
     async def test_get_workflows_client_error(self, service):

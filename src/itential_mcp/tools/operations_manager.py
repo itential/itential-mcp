@@ -122,6 +122,10 @@ async def get_workflows(
     """
     Get all workflow API endpoints from Itential Platform.
 
+    Only automations backed by a workflow are returned. Agent automations and
+    other automation types are not included; use `get_agents` to list agents and
+    `get_automations` to list automations of every type.
+
     Workflows are the core automation engine of Itential Platform, defining
     executable processes that orchestrate network operations, device management,
     and service provisioning. Each workflow exposes an API endpoint that can be
@@ -143,6 +147,8 @@ async def get_workflows(
         - Use the 'route_name' field specifically for `start_workflow` function
         - The 'input_schema' field defines required input parameters for workflow execution
         - Only enabled workflows are returned by this function
+        - Agent and other non-workflow automations are excluded; see `get_agents`
+          and `get_automations`
     """
     await ctx.debug("inside get_workflows(...)")
 

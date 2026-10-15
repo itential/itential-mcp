@@ -40,9 +40,12 @@ class Service(ServiceBase):
         Retrieve all workflow API endpoints from Itential Platform.
 
         This method queries the Itential Platform operations manager to fetch all
-        workflow trigger endpoints that are enabled and of type "endpoint". It
-        implements pagination to handle large result sets by making multiple API
-        calls until all workflows are retrieved.
+        trigger endpoints that are enabled and of type "endpoint", and returns
+        only those whose owning automation has a componentType of "workflows".
+        Triggers owned by other automation types (for example agents or
+        compliance plans), or whose automation cannot be resolved, are excluded.
+        Both the automations and the triggers are fetched with pagination to
+        handle large result sets.
 
         Workflows are the core automation engine of Itential Platform, defining
         executable processes that orchestrate network operations, device management,
@@ -53,7 +56,7 @@ class Service(ServiceBase):
             None
 
         Returns:
-            list[dict]: A list of dictionaries containing workflow data.
+            list[dict]: A list of dictionaries containing workflow trigger data.
 
         Raises:
             Exception: If there is an error communicating with the Itential Platform API
@@ -62,7 +65,27 @@ class Service(ServiceBase):
         limit = 100
         skip = 0
 
-        results = list()
+        # Triggers do not carry the type of the automation that owns them, so
+        # resolve componentType from the automations (actionId -> automation _id).
+        automations = list()
+
+        while True:
+            res = await self.client.get(
+                "/operations-manager/automations",
+                params={"limit": limit, "skip": skip},
+            )
+            data = res.json()
+            automations.extend(data.get("data", []))
+            if len(automations) >= data.get("metadata", {}).get("total", 0):
+                break
+            skip += limit
+
+        component_types = {
+            item.get("_id"): item.get("componentType") for item in automations
+        }
+
+        skip = 0
+        triggers = list()
 
         while True:
             call_params = {
@@ -79,14 +102,19 @@ class Service(ServiceBase):
             )
 
             response_data = res.json()
-            results.extend(response_data.get("data", []))
+            triggers.extend(response_data.get("data", []))
 
-            if len(results) >= response_data.get("metadata", {}).get("total", 0):
+            if len(triggers) >= response_data.get("metadata", {}).get("total", 0):
                 break
 
             skip += limit
 
-        return results
+        # Allowlist: a trigger with no actionId or an unknown automation is excluded.
+        return [
+            trigger
+            for trigger in triggers
+            if component_types.get(trigger.get("actionId")) == "workflows"
+        ]
 
     async def start_workflow(self, route_name: str, data: dict | None = None) -> dict:
         """
