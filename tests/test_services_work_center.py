@@ -102,3 +102,48 @@ class TestService:
         mock_client.get.return_value = res
 
         assert await service.get_work_item_incoming("wi-1") == {}
+
+    @pytest.mark.asyncio
+    async def test_complete_work_item(self, service, mock_client):
+        res = MagicMock()
+        res.json.return_value = {
+            "id": "wi-1",
+            "status": "completed",
+            "metrics": {"finishState": "success"},
+        }
+        mock_client.patch.return_value = res
+
+        result = await service.complete_work_item("wi-1", finish_state="success")
+
+        assert result["status"] == "completed"
+        mock_client.patch.assert_awaited_once_with(
+            "/work-center-service/work-items/wi-1/complete",
+            json={"finishState": "success", "variables": {}},
+        )
+
+    @pytest.mark.asyncio
+    async def test_complete_work_item_passes_variables(self, service, mock_client):
+        res = MagicMock()
+        res.json.return_value = {}
+        mock_client.patch.return_value = res
+
+        await service.complete_work_item(
+            "wi-1", finish_state="failure", variables={"a": 1}
+        )
+
+        mock_client.patch.assert_awaited_once_with(
+            "/work-center-service/work-items/wi-1/complete",
+            json={"finishState": "failure", "variables": {"a": 1}},
+        )
+
+    @pytest.mark.asyncio
+    async def test_complete_work_item_conflict_propagates(self, service, mock_client):
+        from itential_mcp.core.exceptions import ItentialMcpException
+
+        mock_client.patch.side_effect = ItentialMcpException(
+            "must be pending", http_status=409
+        )
+
+        with pytest.raises(ItentialMcpException) as exc_info:
+            await service.complete_work_item("wi-1", finish_state="success")
+        assert exc_info.value.http_status == 409

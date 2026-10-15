@@ -778,6 +778,7 @@ class TestToolAnnotationSafetyInvariants:
         "remove_devices_from_group",
         "trigger_automation",
         "start_workflow",
+        "complete_manual_task",
         "start_adapter",
         "stop_adapter",
         "restart_adapter",

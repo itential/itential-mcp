@@ -17,12 +17,12 @@ The following tags are available for filtering tools based on their functionalit
 - `inventory_manager` - Inventory management tools
 - `lifecycle_manager` - Resource lifecycle and instance management tools
 - `operations_manager` - Workflow and job management tools
-- `work_center` - Manual task (work item) inspection tools
+- `work_center` - Manual task (work item) inspection tools and the experimental `complete_manual_task`
 - `workflow_engine` - Workflow execution metrics and performance tools
 
 ## Tool Count Summary
 
-- **Total Tools**: 78 MCP tools across 20 files in 13 tag groups
+- **Total Tools**: 79 MCP tools across 20 files in 13 tag groups (78 enabled by default; 1 is `experimental` and excluded by default)
 - **Largest Tags**: `configuration_manager` (16 tools), `automation_studio` (12 tools), `operations_manager` (9 tools)
 
 ## Adapters Management (`adapters.py`)
@@ -176,6 +176,10 @@ The following tags are available for filtering tools based on their functionalit
 
 - **describe_manual_task** - Get the detail of a manual task (work item) waiting on a human: header, message, body, variables, button labels, view type and the owning job or session. Read-only. The platform runs all MCP operations as the MCP service account or OAuth client, with no per-user authorization.
 
+- **complete_manual_task** - **EXPERIMENTAL, DESTRUCTIVE, off by default.** Complete exactly one pending manual task with a finish state of `success` or `failure`. Irreversible and cannot be retried. Defaults to a preview (`confirm=False`) that changes nothing; the agent must ask the human before calling with `confirm=True`. `failure` is only valid when the task has a failure button. Supports `ViewData`, `ViewHTML` and `InteractiveHTML` tasks only; form views must be completed in the Itential UI. **Identity caveat:** the completion is recorded against the MCP service account or OAuth client, not the person who asked, and there is no per-user authorization.
+
+`complete_manual_task` carries the `experimental` tag, which is excluded by default (`exclude_tags` defaults to `experimental,beta`). To enable it, remove `experimental` from the exclude tags, for example `ITENTIAL_MCP_SERVER_EXCLUDE_TAGS=beta`, `--exclude-tags beta`, or `exclude_tags = beta` in the `[server]` section of the configuration file. `experimental` must be removed from the excluded tags even if `include_tags` is used: the exclude tags are applied after the include tags, so the default exclusion still wins.
+
 Manual tasks are discovered through the `pending_manual_tasks` field of `describe_job` and `describe_session`.
 
 ## Workflow Engine Metrics (`workflow_engine.py`)
@@ -204,7 +208,7 @@ Manual tasks are discovered through the `pending_manual_tasks` field of `describ
 | Tag | Tools | Description |
 |-----|--------|-------------|
 | `operations_manager` | 9 tools | Automation discovery, triggering, exposing, and job management |
-| `work_center` | 1 tool | Manual task (work item) inspection |
+| `work_center` | 2 tools (1 experimental) | Manual task (work item) inspection and, experimentally, completion |
 | `workflow_engine` | 6 tools | Workflow and task performance metrics |
 | `automation_studio` | 12 tools | Command templates, projects, and template management |
 | `agent_session_manager` | 5 tools | Agent sessions and token usage |

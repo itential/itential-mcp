@@ -1362,3 +1362,66 @@ async def test_error_formatting_client_preserves_http_status():
         await wrapper.get("/missing")
 
     assert exc_info.value.http_status == 404
+
+
+@pytest.mark.asyncio
+async def test_error_formatting_client_patch_returns_raw_response_on_success():
+    """Test that _ErrorFormattingClient.patch returns the raw response object
+    unchanged (same identity) on success."""
+    raw_client = AsyncMock()
+    sentinel_response = MagicMock()
+    raw_client.patch = AsyncMock(return_value=sentinel_response)
+
+    wrapper = _ErrorFormattingClient(raw_client)
+    result = await wrapper.patch("/path", json={"b": 2})
+
+    raw_client.patch.assert_called_once_with("/path", params=None, json={"b": 2})
+    assert result is sentinel_response
+
+
+@pytest.mark.asyncio
+async def test_error_formatting_client_patch_preserves_http_status():
+    """A PATCH HTTPStatusError is reformatted and keeps its status code."""
+    from itential_mcp.core.exceptions import ItentialMcpException
+
+    exc = _make_http_status_error('{"error": "must be pending"}', "409 Conflict")
+    exc.response.status_code = 409
+    raw_client = AsyncMock()
+    raw_client.patch = AsyncMock(side_effect=exc)
+
+    wrapper = _ErrorFormattingClient(raw_client)
+
+    with pytest.raises(ItentialMcpException) as exc_info:
+        await wrapper.patch("/resource/1", json={"a": 1})
+
+    assert exc_info.value.http_status == 409
+    assert "409 Conflict" in str(exc_info.value)
+    assert '{"error": "must be pending"}' in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("verb", "kwargs", "status"),
+    [
+        ("post", {"json": {"a": 1}}, 400),
+        ("put", {"json": {"a": 1}}, 409),
+        ("delete", {}, 403),
+    ],
+)
+async def test_error_formatting_client_write_verbs_preserve_http_status(
+    verb, kwargs, status
+):
+    """post/put/delete keep the HTTP status code on the raised exception."""
+    from itential_mcp.core.exceptions import ItentialMcpException
+
+    exc = _make_http_status_error("boom", f"{status} Error")
+    exc.response.status_code = status
+    raw_client = AsyncMock()
+    setattr(raw_client, verb, AsyncMock(side_effect=exc))
+
+    wrapper = _ErrorFormattingClient(raw_client)
+
+    with pytest.raises(ItentialMcpException) as exc_info:
+        await getattr(wrapper, verb)("/resource", **kwargs)
+
+    assert exc_info.value.http_status == status

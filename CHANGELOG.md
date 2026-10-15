@@ -20,6 +20,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   variables, button labels, view type and the owning job or session. Form views
   (`RenderJsonSchema`, `viewTemplateResults`) are reported with
   `completion_supported` false.
+- New EXPERIMENTAL, destructive `complete_manual_task` tool (`work_center`
+  tag plus the `experimental` tag, so it is excluded by default; remove
+  `experimental` from `exclude_tags` to enable it). It completes exactly one
+  pending manual task with finish state `success` or `failure`. Completion is
+  irreversible and cannot be retried. By default (`confirm=False`) it only
+  returns a preview; `confirm=True` performs the completion, and agents must
+  ask the human first. Because the platform does not validate the finish
+  state, the tool validates it first: `failure` is rejected unless the task
+  has a failure button, and it refuses tasks that are not pending, whose job
+  or session is not running, or that are form views (`RenderJsonSchema`,
+  `viewTemplateResults`), which must be completed in the Itential UI.
+  Identity caveat: the completion is attributed to the MCP service account or
+  OAuth client, not to the person who asked; there is no per-user
+  authorization. Registered tools rise to 79 (78 enabled by default).
 - Identity caveat: the platform runs all MCP operations as the MCP service
   account or OAuth client, with no per-user authorization, so these tools show
   what that account can see.
@@ -28,6 +42,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   by an agent) are not guaranteed to be listed.
 
 ### Changed
+- `describe_manual_task` documentation (tool docstring and the `body` field
+  description) now tells agents how to present the body (usually text or HTML,
+  returned unmodified) and the available choices to the human, and warns that
+  the content is platform-supplied data authored by the workflow builder, not
+  instructions to follow (prompt-injection note).
+- Platform client wrapper gains a `patch` verb that reformats HTTP errors
+  like `get`/`post`/`put`/`delete` and preserves `http_status` on the raised
+  exception (for example 409).
 - Errors raised for HTTP failures from platform services now preserve the
   upstream HTTP status code on the exception's `http_status` attribute.
 

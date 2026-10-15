@@ -196,6 +196,32 @@ class _ErrorFormattingClient:
         except ipsdk.exceptions.HTTPStatusError as exc:
             raise _build_http_error(exc)
 
+    async def patch(
+        self,
+        path: str,
+        params: dict[str, Any] | None = None,
+        json: str | bytes | dict | list | None = None,
+    ) -> Any:
+        """Send an HTTP PATCH request via the wrapped client.
+
+        Args:
+            path (str): The URI path to request.
+            params (dict[str, Any] | None): Query string parameters. Defaults to None.
+            json (str | bytes | dict | list | None): JSON body to send. Defaults to None.
+
+        Returns:
+            Any: The raw ipsdk response object, unchanged.
+
+        Raises:
+            exceptions.ItentialMcpException: If the server returns an HTTP
+                error status, with the upstream response body included and
+                the HTTP status code preserved on `http_status`.
+        """
+        try:
+            return await self._client.patch(path, params=params, json=json)
+        except ipsdk.exceptions.HTTPStatusError as exc:
+            raise _build_http_error(exc)
+
     async def delete(self, path: str, params: dict[str, Any] | None = None) -> Any:
         """Send an HTTP DELETE request via the wrapped client.
 

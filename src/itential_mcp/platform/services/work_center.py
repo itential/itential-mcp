@@ -13,7 +13,8 @@ class Service(ServiceBase):
     """WorkCenter service for Itential Platform manual task (work item) access.
 
     The Work Center holds work items, which represent manual tasks that wait
-    on a human. This service is read-only.
+    on a human. This service reads work items and can complete a single
+    pending work item.
 
     Attributes:
         name (str): The service identifier used for registration and routing.
@@ -85,3 +86,38 @@ class Service(ServiceBase):
         )
         data = res.json()
         return data.get("incoming") or {}
+
+    async def complete_work_item(
+        self,
+        work_item_id: str,
+        *,
+        finish_state: str,
+        variables: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Complete a single pending work item.
+
+        This is irreversible: the platform does not validate `finish_state`
+        against the task's transitions, so callers must validate it before
+        calling this method.
+
+        Args:
+            work_item_id (str): The work item identifier.
+            finish_state (str): The literal finish state, "success" or
+                "failure".
+            variables (dict[str, Any] | None): Variables to submit with the
+                completion. Defaults to an empty mapping.
+
+        Returns:
+            dict[str, Any]: The completed work item record, including
+                `status` and `metrics`.
+
+        Raises:
+            ItentialMcpException: If the platform returns an HTTP error. An
+                HTTP 409 (work item not pending) is raised with
+                `http_status == 409`.
+        """
+        res = await self.client.patch(
+            f"/work-center-service/work-items/{work_item_id}/complete",
+            json={"finishState": finish_state, "variables": variables or {}},
+        )
+        return res.json()
