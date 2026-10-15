@@ -15,6 +15,7 @@ from fastmcp import Context
 from itential_mcp.utilities import time as timeutils
 from itential_mcp.core import exceptions
 from itential_mcp.utilities import json as jsonutils
+from itential_mcp.utilities import manual_tasks
 from itential_mcp.utilities.tool import annotate
 
 from itential_mcp.models import operations_manager as models
@@ -339,6 +340,8 @@ async def trigger_automation(
     Notes:
         - Use describe_job with object_id to monitor workflow execution progress
         - Use describe_session with session_id to monitor agent execution progress
+        - If a run waits on human input, pending_manual_tasks in describe_job /
+          describe_session lists the task and describe_manual_task gives the detail
         - Use expose_workflow first if the automation has no route_name
     """
     await ctx.debug("inside trigger_automation(...)")
@@ -433,6 +436,10 @@ async def start_workflow(
 
     Returns:
         models.StartWorkflowResponse | models.StartAgentResponse: See trigger_automation.
+
+    Notes:
+        - If the job waits on human input, pending_manual_tasks in describe_job
+          lists it and describe_manual_task gives the detail.
     """
     return await trigger_automation(ctx, route_name, data)
 
@@ -518,12 +525,35 @@ async def describe_job(
             - metrics: Job execution metrics including start time, end time, and account
             - updated: Last update timestamp
             - variables: Job variable outputs produced during workflow execution
+            - pending_manual_tasks: Manual tasks waiting on a human. None means
+              unknown (the lookup failed with an error other than not-found);
+              an empty list means none pending (including any job that is not
+              running); otherwise the pending tasks, each with a work_item_id
+              to pass to describe_manual_task
+
+    Notes:
+        - A running job may be blocked on a manual task (human input). Check
+          pending_manual_tasks and use describe_manual_task for the detail.
+        - Detection covers manual tasks attached directly to this job's own
+          ID; tasks inside nested or child workflows are not guaranteed to be
+          listed.
+        - The platform runs all MCP operations as the MCP service account or
+          OAuth client, with no per-user authorization.
     """
     await ctx.debug("inside describe_job(...)")
 
     client = ctx.request_context.lifespan_context.get("client")
 
     data = await client.operations_manager.describe_job(object_id)
+
+    # The job status is only known after the job is fetched, so the manual
+    # task lookup runs afterwards and only for running jobs.
+    pending = await manual_tasks.pending_manual_tasks(
+        client,
+        object_id,
+        status=data["status"],
+        live_status=manual_tasks.LIVE_JOB_STATUS,
+    )
 
     return models.DescribeJobResponse(
         **{
@@ -536,6 +566,7 @@ async def describe_job(
             "metrics": data["metrics"],
             "updated": data["last_updated"],
             "variables": data.get("variables"),
+            "pending_manual_tasks": pending,
         }
     )
 

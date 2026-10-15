@@ -720,3 +720,31 @@ class TestDescribeSessionTokenUsageResponse:
         errors = exc_info.value.errors()
         error_locs = {e["loc"][0] for e in errors}
         assert "summary" in error_locs
+
+
+class TestDescribeSessionResponsePendingManualTasks:
+    """Test the pending_manual_tasks field on DescribeSessionResponse"""
+
+    def test_defaults_to_none(self):
+        r = DescribeSessionResponse(session_id="s", status="RUNNING")
+        assert r.pending_manual_tasks is None
+
+    def test_accepts_empty_list_and_summaries(self):
+        from itential_mcp.models.work_center import ManualTaskSummary
+
+        r = DescribeSessionResponse(
+            session_id="s", status="RUNNING", pending_manual_tasks=[]
+        )
+        assert r.pending_manual_tasks == []
+        r = DescribeSessionResponse(
+            session_id="s",
+            status="RUNNING",
+            pending_manual_tasks=[ManualTaskSummary(work_item_id="w")],
+        )
+        assert r.pending_manual_tasks[0].work_item_id == "w"
+
+    def test_field_description_spells_out_tri_state(self):
+        desc = DescribeSessionResponse.model_fields["pending_manual_tasks"].description
+        assert "unknown" in desc
+        assert "none are" in desc
+        assert "nested" in desc

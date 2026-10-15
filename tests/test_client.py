@@ -1343,3 +1343,22 @@ async def test_init_plugins_wires_error_formatting_client_into_services(
             message = str(exc_info.value)
             assert "410 Gone" in message
             assert '{"error": "gone"}' in message
+
+
+@pytest.mark.asyncio
+async def test_error_formatting_client_preserves_http_status():
+    """The HTTP status code of an HTTPStatusError is kept on http_status so
+    callers can branch on it (e.g. treat 404 as empty)."""
+    from itential_mcp.core.exceptions import ItentialMcpException
+
+    exc = _make_http_status_error("not found", "404 Not Found")
+    exc.response.status_code = 404
+    raw_client = AsyncMock()
+    raw_client.get = AsyncMock(side_effect=exc)
+
+    wrapper = _ErrorFormattingClient(raw_client)
+
+    with pytest.raises(ItentialMcpException) as exc_info:
+        await wrapper.get("/missing")
+
+    assert exc_info.value.http_status == 404

@@ -14,6 +14,7 @@ from pydantic import Field
 from fastmcp import Context
 
 from itential_mcp.core.exceptions import ValidationException
+from itential_mcp.utilities import manual_tasks
 from itential_mcp.utilities import time as timeutils
 from itential_mcp.utilities.tool import annotate
 from itential_mcp.models import agent_session_manager as models
@@ -310,8 +311,20 @@ async def describe_session(
             - end_time: ISO 8601 end timestamp (None if still running)
             - duration_ms: Total session duration in milliseconds
             - reasoning_events: Ordered list of kept AGENT_REASONING events
+            - pending_manual_tasks: Manual tasks waiting on a human. None means
+              unknown (the lookup failed with an error other than not-found);
+              an empty list means none pending (including any session that is
+              not RUNNING); otherwise the pending tasks, each with a
+              work_item_id to pass to describe_manual_task
 
     Notes:
+        - A RUNNING session may be blocked on a manual task (human input).
+          Check pending_manual_tasks and use describe_manual_task for detail.
+        - Detection covers manual tasks attached directly to this session's
+          own ID; tasks inside nested runs (for example a workflow the agent
+          calls) are not guaranteed to be listed.
+        - The platform runs all MCP operations as the MCP service account or
+          OAuth client, with no per-user authorization.
         - Only AGENT_REASONING events with data.stopReason == "end_turn" are
           kept; everything else is filtered out of reasoning_events
         - The output field is taken from the last kept reasoning event's text
@@ -325,6 +338,15 @@ async def describe_session(
     session, raw_messages = await asyncio.gather(
         client.agent_session_manager.get_session(session_id),
         client.agent_session_manager.get_session_messages(session_id),
+    )
+
+    # The session status is only known after the session is fetched, so the
+    # manual task lookup runs afterwards and only for RUNNING sessions.
+    pending = await manual_tasks.pending_manual_tasks(
+        client,
+        session_id,
+        status=session.get("status", ""),
+        live_status=manual_tasks.LIVE_SESSION_STATUS,
     )
 
     agent_snapshot = session.get("agentSnapshot") or {}
@@ -370,6 +392,7 @@ async def describe_session(
         end_time=end_time,
         duration_ms=session.get("durationMs"),
         reasoning_events=reasoning_events,
+        pending_manual_tasks=pending,
     )
 
 

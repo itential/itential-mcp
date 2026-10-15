@@ -63,6 +63,33 @@ def _format_error_message(exc: Exception) -> str:
     return str(exc)
 
 
+def _build_http_error(exc: Exception) -> exceptions.ItentialMcpException:
+    """Build an ItentialMcpException from an HTTP status error.
+
+    The message is formatted with the upstream response body (see
+    `_format_error_message`). When the underlying exception carries a
+    response with an integer HTTP status code, that code is preserved on the
+    returned exception's `http_status` attribute so callers can branch on it
+    (for example to treat a 404 as "no results") instead of parsing the
+    message text.
+
+    Args:
+        exc (Exception): The HTTP status error raised by the ipsdk client.
+
+    Returns:
+        exceptions.ItentialMcpException: The reformatted exception.
+
+    Raises:
+        None
+    """
+    status = getattr(getattr(exc, "response", None), "status_code", None)
+    if isinstance(status, int) and not isinstance(status, bool):
+        return exceptions.ItentialMcpException(
+            _format_error_message(exc), http_status=status
+        )
+    return exceptions.ItentialMcpException(_format_error_message(exc))
+
+
 class _ErrorFormattingClient:
     """Wraps a raw ipsdk client to surface upstream response bodies on error.
 
@@ -117,7 +144,7 @@ class _ErrorFormattingClient:
         try:
             return await self._client.get(path, params=params)
         except ipsdk.exceptions.HTTPStatusError as exc:
-            raise exceptions.ItentialMcpException(_format_error_message(exc))
+            raise _build_http_error(exc)
 
     async def post(
         self,
@@ -142,7 +169,7 @@ class _ErrorFormattingClient:
         try:
             return await self._client.post(path, params=params, json=json)
         except ipsdk.exceptions.HTTPStatusError as exc:
-            raise exceptions.ItentialMcpException(_format_error_message(exc))
+            raise _build_http_error(exc)
 
     async def put(
         self,
@@ -167,7 +194,7 @@ class _ErrorFormattingClient:
         try:
             return await self._client.put(path, params=params, json=json)
         except ipsdk.exceptions.HTTPStatusError as exc:
-            raise exceptions.ItentialMcpException(_format_error_message(exc))
+            raise _build_http_error(exc)
 
     async def delete(self, path: str, params: dict[str, Any] | None = None) -> Any:
         """Send an HTTP DELETE request via the wrapped client.
@@ -186,7 +213,7 @@ class _ErrorFormattingClient:
         try:
             return await self._client.delete(path, params=params)
         except ipsdk.exceptions.HTTPStatusError as exc:
-            raise exceptions.ItentialMcpException(_format_error_message(exc))
+            raise _build_http_error(exc)
 
     def __getattr__(self, name: str) -> Any:
         """Delegate any other attribute access to the wrapped client.

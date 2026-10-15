@@ -24,7 +24,7 @@ Build automation workflows, integrate with external systems, manage application 
 ## 📒 Key Features
 
 ### **Core Capabilities**
-- **77 Automation Tools**: Comprehensive toolkit across 12 tag categories for all network automation needs
+- **78 Automation Tools**: Comprehensive toolkit across 13 tag categories for all network automation needs
 - **Advanced Tool Selection**: Filter and control available tools using flexible tagging system
 - **Multiple Transport Methods**: stdio and HTTP (Streamable HTTP, recommended) transports with optional TLS encryption; legacy SSE transport is also available but deprecated
 - **Dynamic Tool Discovery**: Automatically discovers and registers tools without code modifications
@@ -325,6 +325,7 @@ itential-mcp run --exclude-tags "experimental,beta,lifecycle_manager"
 | `operations_manager` | 9 | Automation, workflow, and job management | Automation developers |
 | `automation_studio` | 12 | Command templates, projects, templates | Network operators |
 | `lifecycle_manager` | 7 | Resource lifecycle and instance management | Product managers |
+| `work_center` | 1 | Manual task (work item) inspection | Automation operators |
 | `workflow_engine` | 6 | Workflow execution metrics | Performance analysts |
 | `adapters` | 4 | Adapter lifecycle management | Integration specialists |
 | `applications` | 4 | Application lifecycle management | Application owners |

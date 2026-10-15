@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `describe_job` and `describe_session` now return a `pending_manual_tasks`
+  field so agents can see when a run is waiting on a human. It is tri-state:
+  `null` means unknown (the lookup failed with an error other than not-found;
+  the tool still succeeds), an empty list means none are pending (including a
+  not-found result and any run that is not live), and a list holds the pending
+  tasks. The lookup only runs for jobs with status `running` and sessions with
+  status `RUNNING`.
+- New read-only `describe_manual_task` tool (new `work_center` tag, enabled by
+  default) returning the detail of a manual task: header, message, body,
+  variables, button labels, view type and the owning job or session. Form views
+  (`RenderJsonSchema`, `viewTemplateResults`) are reported with
+  `completion_supported` false.
+- Identity caveat: the platform runs all MCP operations as the MCP service
+  account or OAuth client, with no per-user authorization, so these tools show
+  what that account can see.
+- Limitation: detection covers manual tasks attached directly to the run's own
+  ID. Manual tasks inside nested runs (child workflows, or a workflow called
+  by an agent) are not guaranteed to be listed.
+
+### Changed
+- Errors raised for HTTP failures from platform services now preserve the
+  upstream HTTP status code on the exception's `http_status` attribute.
+
 ### Fixed
 - `get_sessions`, `get_agent_token_usage` and `get_agent_session_token_usage`
   no longer fail with `Not found: 'sessionId'` when the session history

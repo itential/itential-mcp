@@ -80,6 +80,7 @@ The following table lists all available tag groups and the number of tools they 
 | `inventory_manager` | inventory_manager.py | 5 | Inventory management |
 | `lifecycle_manager` | lifecycle_manager.py | 7 | Resource lifecycle and instance management |
 | `operations_manager` | operations_manager.py | 9 | Automation discovery, triggering, exposing, and job management |
+| `work_center` | work_center.py | 1 | Manual task (work item) inspection |
 | `workflow_engine` | workflow_engine.py | 6 | Job and task metrics |
 
 ## Standard Tags
@@ -91,7 +92,7 @@ The following table lists all available tag groups and the number of tools they 
 
 ## Individual Tool Tags
 
-Every tool function automatically receives a tag matching its function name. This enables fine-grained control over individual tools. The complete list includes 77 tool-specific tags:
+Every tool function automatically receives a tag matching its function name. This enables fine-grained control over individual tools. The complete list includes 78 tool-specific tags:
 
 ### Adapters Tools
 - `get_adapters`
@@ -185,6 +186,9 @@ Every tool function automatically receives a tag matching its function name. Thi
 - `describe_job`
 - `expose_workflow`
 - `expose_agent`
+
+### Work Center Tools
+- `describe_manual_task`
 
 ### Workflow Engine Tools
 - `get_job_metrics`

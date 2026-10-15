@@ -30,7 +30,7 @@ New to the MCP server? Start here:
 
 ### Tools & Features
 
-- **[Tools Reference](tools.md)** - All 77 tools organized by category
+- **[Tools Reference](tools.md)** - All 78 tools organized by category
 - **[Tagging System](tags.md)** - Filter tools by role and functionality
 - **[Workflow Execution](exposing-workflows.md)** - Execute and monitor Itential workflows
 - **[TOON Response Format](toon.md)** - LLM-optimized serialization with 30-60% token reduction

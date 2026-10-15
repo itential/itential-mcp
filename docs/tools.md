@@ -17,11 +17,12 @@ The following tags are available for filtering tools based on their functionalit
 - `inventory_manager` - Inventory management tools
 - `lifecycle_manager` - Resource lifecycle and instance management tools
 - `operations_manager` - Workflow and job management tools
+- `work_center` - Manual task (work item) inspection tools
 - `workflow_engine` - Workflow execution metrics and performance tools
 
 ## Tool Count Summary
 
-- **Total Tools**: 77 MCP tools across 19 files in 12 tag groups
+- **Total Tools**: 78 MCP tools across 20 files in 13 tag groups
 - **Largest Tags**: `configuration_manager` (16 tools), `automation_studio` (12 tools), `operations_manager` (9 tools)
 
 ## Adapters Management (`adapters.py`)
@@ -36,7 +37,7 @@ The following tags are available for filtering tools based on their functionalit
 **Group Tags:** `agent_session_manager`
 
 - **get_sessions** - List agent sessions from Itential Platform with optional filtering
-- **describe_session** - Get detailed information about a specific agent session
+- **describe_session** - Get detailed information about a specific agent session, including any manual tasks waiting on a human
 - **get_agent_token_usage** - Aggregate agent session token usage grouped by agent name
 - **get_agent_session_token_usage** - List per-session token usage for a single agent, sorted chronologically
 - **describe_session_token_usage** - Break down a single agent session's token usage per inference turn
@@ -170,6 +171,13 @@ The following tags are available for filtering tools based on their functionalit
 
 - **get_health** - Get comprehensive health information including system status, resource utilization, and component status
 
+## Work Center (`work_center.py`)
+**Group Tags:** `work_center`
+
+- **describe_manual_task** - Get the detail of a manual task (work item) waiting on a human: header, message, body, variables, button labels, view type and the owning job or session. Read-only. The platform runs all MCP operations as the MCP service account or OAuth client, with no per-user authorization.
+
+Manual tasks are discovered through the `pending_manual_tasks` field of `describe_job` and `describe_session`.
+
 ## Workflow Engine Metrics (`workflow_engine.py`)
 **Group Tags:** `workflow_engine`
 
@@ -196,6 +204,7 @@ The following tags are available for filtering tools based on their functionalit
 | Tag | Tools | Description |
 |-----|--------|-------------|
 | `operations_manager` | 9 tools | Automation discovery, triggering, exposing, and job management |
+| `work_center` | 1 tool | Manual task (work item) inspection |
 | `workflow_engine` | 6 tools | Workflow and task performance metrics |
 | `automation_studio` | 12 tools | Command templates, projects, and template management |
 | `agent_session_manager` | 5 tools | Agent sessions and token usage |

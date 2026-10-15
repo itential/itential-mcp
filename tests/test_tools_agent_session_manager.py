@@ -1406,3 +1406,91 @@ class TestEarlyFailedSessionsThroughService:
 
         assert isinstance(result, GetAgentSessionTokenUsageResponse)
         assert [e.session_id for e in result.root] == ["sess-001"]
+
+
+class TestDescribeSessionPendingManualTasks:
+    """Test the pending_manual_tasks field of describe_session"""
+
+    @staticmethod
+    def _ctx(status):
+        service = AsyncMock()
+        service.get_session.return_value = {
+            "sessionId": "sess-1",
+            "status": status,
+            "agentSnapshot": {"name": "a"},
+        }
+        service.get_session_messages.return_value = []
+        ctx = _make_context(service)
+        client = ctx.request_context.lifespan_context.get.return_value
+        client.work_center = AsyncMock()
+        return ctx, client
+
+    @pytest.mark.asyncio
+    async def test_running_with_pending_item(self):
+        ctx, client = self._ctx("RUNNING")
+        client.work_center.get_work_items.return_value = [
+            {
+                "id": "wi-1",
+                "summary": "Approve",
+                "status": "pending",
+                "view": "/workflow_engine/task/InteractiveHTML",
+                "createdAt": 0,
+            }
+        ]
+
+        result = await agent_session_manager.describe_session(ctx, "sess-1")
+
+        assert [t.work_item_id for t in result.pending_manual_tasks] == ["wi-1"]
+        client.work_center.get_work_items.assert_awaited_once_with("sess-1")
+
+    @pytest.mark.asyncio
+    async def test_running_with_only_completed_items(self):
+        ctx, client = self._ctx("RUNNING")
+        client.work_center.get_work_items.return_value = [
+            {"id": "wi-1", "status": "completed", "view": "/a/ViewData"}
+        ]
+
+        result = await agent_session_manager.describe_session(ctx, "sess-1")
+
+        assert result.pending_manual_tasks == []
+
+    @pytest.mark.asyncio
+    async def test_running_with_404(self):
+        from itential_mcp.core.exceptions import ItentialMcpException
+
+        ctx, client = self._ctx("RUNNING")
+        client.work_center.get_work_items.side_effect = ItentialMcpException(
+            "404", http_status=404
+        )
+
+        result = await agent_session_manager.describe_session(ctx, "sess-1")
+
+        assert result.pending_manual_tasks == []
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("code", [403, 500])
+    async def test_running_with_lookup_error_is_unknown(self, code):
+        from itential_mcp.core.exceptions import ItentialMcpException
+
+        ctx, client = self._ctx("RUNNING")
+        client.work_center.get_work_items.side_effect = ItentialMcpException(
+            "err", http_status=code
+        )
+
+        result = await agent_session_manager.describe_session(ctx, "sess-1")
+
+        assert result.pending_manual_tasks is None
+        assert result.status == "RUNNING"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("status", ["COMPLETE", "FAILED", "PAUSED"])
+    async def test_non_running_makes_no_lookup(self, status):
+        ctx, client = self._ctx(status)
+
+        result = await agent_session_manager.describe_session(ctx, "sess-1")
+
+        assert result.pending_manual_tasks == []
+        client.work_center.get_work_items.assert_not_called()
+
+    def test_docstring_mentions_manual_tasks(self):
+        assert "pending_manual_tasks" in agent_session_manager.describe_session.__doc__

@@ -331,6 +331,7 @@ For reference, here are the available tool tags for filtering:
 - `lifecycle_manager` - Resource lifecycle management
 - `operations_manager` - Automation, workflow, and job management
 - `health` - Platform health and monitoring
+- `work_center` - Manual task (work item) inspection
 - `workflow_engine` - Workflow execution metrics
 
 See the [Tools Reference](tools.md) for complete details on available tools and their capabilities.

@@ -10,6 +10,8 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, RootModel
 
+from itential_mcp.models.work_center import ManualTaskSummary
+
 
 class SessionMessage(BaseModel):
     """
@@ -309,6 +311,7 @@ class DescribeSessionResponse(BaseModel):
         duration_ms: Total session duration in milliseconds.
         reasoning_events: Ordered list of kept AGENT_REASONING events (those
             with data.stopReason == "end_turn").
+        pending_manual_tasks: Manual tasks waiting on a human (None if unknown).
     """
 
     session_id: Annotated[
@@ -405,6 +408,27 @@ class DescribeSessionResponse(BaseModel):
                 """
             ),
             default_factory=list,
+        ),
+    ]
+
+    pending_manual_tasks: Annotated[
+        list[ManualTaskSummary] | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Manual tasks currently waiting on a human. Tri-state: None
+                means unknown (the lookup failed with an error other than
+                not-found, e.g. 403, 500 or a timeout; the rest of this
+                response is still valid). An empty list means none are
+                pending, including when the session is not running (the
+                lookup only runs while status is RUNNING). A non-empty list holds the
+                pending tasks; use describe_manual_task with a work_item_id for
+                detail. Detection covers manual tasks attached directly to
+                this session's own ID; tasks inside nested or child runs are not
+                guaranteed to be listed.
+                """
+            ),
+            default=None,
         ),
     ]
 

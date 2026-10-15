@@ -575,3 +575,41 @@ class TestGetAutomationsResponse:
         assert len(response.root) == 2
         assert response.root[0].component_type == "workflows"
         assert response.root[1].component_type == "agents"
+
+
+class TestDescribeJobResponsePendingManualTasks:
+    """Test the pending_manual_tasks field on DescribeJobResponse"""
+
+    _base = {
+        "_id": "j",
+        "name": "n",
+        "type": "automation",
+        "tasks": {},
+        "status": "running",
+        "metrics": {},
+        "updated": "2022-01-01T00:00:00Z",
+    }
+
+    def test_defaults_to_none(self):
+        assert DescribeJobResponse(**self._base).pending_manual_tasks is None
+
+    def test_accepts_empty_list_and_summaries(self):
+        from itential_mcp.models.work_center import ManualTaskSummary
+
+        assert (
+            DescribeJobResponse(
+                **self._base, pending_manual_tasks=[]
+            ).pending_manual_tasks
+            == []
+        )
+        r = DescribeJobResponse(
+            **self._base,
+            pending_manual_tasks=[ManualTaskSummary(work_item_id="w")],
+        )
+        assert r.pending_manual_tasks[0].work_item_id == "w"
+
+    def test_field_description_spells_out_tri_state(self):
+        desc = DescribeJobResponse.model_fields["pending_manual_tasks"].description
+        assert "unknown" in desc
+        assert "none are" in desc
+        assert "nested" in desc

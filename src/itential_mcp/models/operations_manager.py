@@ -10,6 +10,8 @@ from typing import Annotated, Any, Literal, Mapping
 
 from pydantic import BaseModel, Field, RootModel
 
+from itential_mcp.models.work_center import ManualTaskSummary
+
 
 class WorkflowElement(BaseModel):
     """
@@ -355,6 +357,7 @@ class DescribeJobResponse(BaseModel):
         metrics: Job execution metrics including start time, end time, and account.
         updated: Last update timestamp.
         variables: Job variable outputs produced during workflow execution.
+        pending_manual_tasks: Manual tasks waiting on a human (None if unknown).
     """
 
     object_id: Annotated[
@@ -455,6 +458,27 @@ class DescribeJobResponse(BaseModel):
             description=inspect.cleandoc(
                 """
                 Job variable outputs produced during workflow execution
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    pending_manual_tasks: Annotated[
+        list[ManualTaskSummary] | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Manual tasks currently waiting on a human. Tri-state: None
+                means unknown (the lookup failed with an error other than
+                not-found, e.g. 403, 500 or a timeout; the rest of this
+                response is still valid). An empty list means none are
+                pending, including when the job is not running (the lookup
+                only runs while status is running). A non-empty list holds the
+                pending tasks; use describe_manual_task with a work_item_id for
+                detail. Detection covers manual tasks attached directly to
+                this job's own ID; tasks inside nested or child runs are not
+                guaranteed to be listed.
                 """
             ),
             default=None,

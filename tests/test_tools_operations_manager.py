@@ -1858,3 +1858,114 @@ class TestExposeAgentTool:
         mock_context.request_context.lifespan_context.get.return_value.operations_manager.delete_automation.assert_called_once_with(
             "auto-rollback"
         )
+
+
+class TestDescribeJobPendingManualTasks:
+    """Test the pending_manual_tasks field of describe_job"""
+
+    @pytest.fixture
+    def mock_context(self):
+        context = AsyncMock(spec=Context)
+        context.info = AsyncMock()
+        mock_client = MagicMock()
+        mock_client.operations_manager = AsyncMock()
+        mock_client.work_center = AsyncMock()
+        context.request_context = MagicMock()
+        context.request_context.lifespan_context = MagicMock()
+        context.request_context.lifespan_context.get.return_value = mock_client
+        return context
+
+    @staticmethod
+    def _job(status):
+        return {
+            "_id": "job-1",
+            "name": "J",
+            "description": None,
+            "type": "automation",
+            "tasks": {},
+            "status": status,
+            "metrics": {},
+            "last_updated": "2022-01-01T12:00:00Z",
+        }
+
+    @staticmethod
+    def _client(ctx):
+        return ctx.request_context.lifespan_context.get.return_value
+
+    @pytest.mark.asyncio
+    async def test_running_with_pending_item(self, mock_context):
+        client = self._client(mock_context)
+        client.operations_manager.describe_job.return_value = self._job("running")
+        client.work_center.get_work_items.return_value = [
+            {
+                "id": "wi-1",
+                "summary": "Approve",
+                "status": "pending",
+                "view": "/workflow_engine/task/ViewData",
+                "createdAt": 0,
+            }
+        ]
+
+        result = await operations_manager.describe_job(mock_context, "job-1")
+
+        assert [t.work_item_id for t in result.pending_manual_tasks] == ["wi-1"]
+        assert result.pending_manual_tasks[0].completion_supported is True
+        client.work_center.get_work_items.assert_awaited_once_with("job-1")
+
+    @pytest.mark.asyncio
+    async def test_running_with_only_completed_items(self, mock_context):
+        client = self._client(mock_context)
+        client.operations_manager.describe_job.return_value = self._job("running")
+        client.work_center.get_work_items.return_value = [
+            {"id": "wi-1", "status": "completed", "view": "/a/ViewData"}
+        ]
+
+        result = await operations_manager.describe_job(mock_context, "job-1")
+
+        assert result.pending_manual_tasks == []
+
+    @pytest.mark.asyncio
+    async def test_running_with_404(self, mock_context):
+        from itential_mcp.core.exceptions import ItentialMcpException
+
+        client = self._client(mock_context)
+        client.operations_manager.describe_job.return_value = self._job("running")
+        client.work_center.get_work_items.side_effect = ItentialMcpException(
+            "404", http_status=404
+        )
+
+        result = await operations_manager.describe_job(mock_context, "job-1")
+
+        assert result.pending_manual_tasks == []
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("code", [403, 500])
+    async def test_running_with_lookup_error_is_unknown(self, mock_context, code):
+        from itential_mcp.core.exceptions import ItentialMcpException
+
+        client = self._client(mock_context)
+        client.operations_manager.describe_job.return_value = self._job("running")
+        client.work_center.get_work_items.side_effect = ItentialMcpException(
+            "err", http_status=code
+        )
+
+        result = await operations_manager.describe_job(mock_context, "job-1")
+
+        assert result.pending_manual_tasks is None
+        assert result.status == "running"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("status", ["complete", "error", "paused", "canceled"])
+    async def test_non_running_makes_no_lookup(self, mock_context, status):
+        client = self._client(mock_context)
+        client.operations_manager.describe_job.return_value = self._job(status)
+
+        result = await operations_manager.describe_job(mock_context, "job-1")
+
+        assert result.pending_manual_tasks == []
+        client.work_center.get_work_items.assert_not_called()
+
+    def test_docstrings_mention_manual_tasks(self):
+        assert "pending_manual_tasks" in operations_manager.describe_job.__doc__
+        assert "describe_manual_task" in operations_manager.trigger_automation.__doc__
+        assert "describe_manual_task" in operations_manager.start_workflow.__doc__
