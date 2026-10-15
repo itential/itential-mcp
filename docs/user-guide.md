@@ -189,7 +189,7 @@ Use with: `itential-mcp run --config itential-mcp.conf`
 **Available Tools:**
 - `get_workflows` - List workflow automations with an enabled API endpoint trigger (workflows with a disabled or missing endpoint trigger and agents are excluded; see `get_agents` and `get_automations`)
 - `get_agents` - List agent automations
-- `get_automations` - List all automations (workflows and agents)
+- `get_automations` - List automations triggerable via `trigger_automation` (enabled API endpoint trigger)
 - `trigger_automation` - Trigger any automation (workflow or agent)
 - `start_workflow` - Workflow-specific wrapper around `trigger_automation`
 - `expose_workflow`, `expose_agent` - Expose a workflow or agent as an automation

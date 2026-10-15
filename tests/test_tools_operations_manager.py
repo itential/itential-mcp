@@ -1538,7 +1538,7 @@ class TestGetAutomationsTool:
                 "description": None,
                 "component_type": "agents",
                 "component_id": "agent-id-2",
-                "route_name": None,
+                "route_name": "agent-auto",
                 "input_schema": None,
                 "last_executed": None,
             },
@@ -1549,6 +1549,7 @@ class TestGetAutomationsTool:
 
         assert isinstance(result, GetAutomationsResponse)
         assert len(result.root) == 2
+        assert all(el.route_name for el in result.root)
         types = [el.component_type for el in result.root]
         assert "workflows" in types
         assert "agents" in types
@@ -1566,18 +1567,18 @@ class TestGetAutomationsTool:
         assert len(result.root) == 0
 
     @pytest.mark.asyncio
-    async def test_no_endpoint_trigger(self, mock_context):
-        """route_name=None on service data passes through to the response element"""
+    async def test_route_name_passes_through(self, mock_context):
+        """route_name from the (already filtered) service data reaches the response element"""
         from itential_mcp.models.operations_manager import GetAutomationsResponse
 
         mock_data = [
             {
-                "name": "No Trigger Auto",
+                "name": "Triggerable Auto",
                 "description": None,
                 "component_type": "workflows",
                 "component_id": "wf-id-x",
-                "route_name": None,
-                "input_schema": None,
+                "route_name": "triggerable-route",
+                "input_schema": {"type": "object"},
                 "last_executed": None,
             }
         ]
@@ -1586,7 +1587,7 @@ class TestGetAutomationsTool:
         result = await operations_manager.get_automations(mock_context)
 
         assert isinstance(result, GetAutomationsResponse)
-        assert result.root[0].route_name is None
+        assert result.root[0].route_name == "triggerable-route"
 
     @pytest.mark.asyncio
     async def test_epoch_timestamp_converted(self, mock_context):

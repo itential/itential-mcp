@@ -625,8 +625,7 @@ class AutomationElement(BaseModel):
         description: Description of the automation.
         component_type: Type of the underlying component (workflows, agents, ucm_compliance_plan).
         component_id: ID or UUID of the underlying component.
-        route_name: API route name for triggering this automation (use with trigger_automation);
-            None means no endpoint trigger has been created yet.
+        route_name: API route name for triggering this automation (use with trigger_automation).
         input_schema: JSON Schema describing the input the automation endpoint accepts.
         last_executed: ISO 8601 timestamp of last endpoint trigger execution (null if never executed).
     """
@@ -682,8 +681,7 @@ class AutomationElement(BaseModel):
         Field(
             description=inspect.cleandoc(
                 """
-                API route name for triggering this automation (use with trigger_automation);
-                None means no endpoint trigger has been created yet
+                API route name for triggering this automation (use with trigger_automation)
                 """
             ),
             default=None,

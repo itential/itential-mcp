@@ -238,14 +238,16 @@ async def get_automations(
     ctx: Annotated[Context, Field(description="The FastMCP Context object")],
 ) -> models.GetAutomationsResponse:
     """
-    Get all automations from the Itential Platform Operations Manager.
+    Get the automations that can be started via trigger_automation.
 
-    Returns a unified list of all automation objects regardless of component type
-    (workflows, agents, compliance plans). Each entry includes the component_type
-    discriminator and the route_name needed to trigger it via trigger_automation.
+    Returns a unified list of automations that have an enabled API endpoint
+    trigger, regardless of component type (workflows, agents, compliance plans).
+    Automations with no endpoint trigger, or only a disabled one, are not listed.
+    Each entry includes the component_type discriminator and the route_name needed
+    to trigger it via trigger_automation.
 
-    Use this when you need a full picture of what is available in the Operations
-    Manager. Use get_workflows when you only need workflow-type automations.
+    Use this when you need to see everything startable through trigger_automation.
+    Use get_workflows when you only need workflow-type automations.
 
     Args:
         ctx (Context): The FastMCP Context object
@@ -256,14 +258,12 @@ async def get_automations(
             - description: Automation description
             - component_type: Underlying component type (workflows, agents, ucm_compliance_plan)
             - component_id: ID or UUID of the underlying component
-            - route_name: API route name for triggering (use with trigger_automation);
-              None means no endpoint trigger exists yet
-            - input_schema: JSON Schema for the endpoint input (None if no endpoint trigger)
+            - route_name: API route name for triggering (use with trigger_automation)
+            - input_schema: JSON Schema for the endpoint input
             - last_executed: ISO 8601 timestamp of last endpoint execution
 
     Notes:
         - Use trigger_automation with route_name to execute an automation
-        - Use expose_workflow if route_name is None for a workflow automation
     """
     await ctx.debug("inside get_automations(...)")
     client = ctx.request_context.lifespan_context.get("client")
