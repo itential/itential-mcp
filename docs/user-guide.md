@@ -187,7 +187,7 @@ Use with: `itential-mcp run --config itential-mcp.conf`
 **Use Case:** Execute workflows, monitor jobs, and track automation
 
 **Available Tools:**
-- `get_workflows` - List available workflow automations (agents are excluded; see `get_agents` and `get_automations`)
+- `get_workflows` - List workflow automations with an enabled API endpoint trigger (workflows with a disabled or missing endpoint trigger and agents are excluded; see `get_agents` and `get_automations`)
 - `get_agents` - List agent automations
 - `get_automations` - List all automations (workflows and agents)
 - `trigger_automation` - Trigger any automation (workflow or agent)
