@@ -187,8 +187,12 @@ Use with: `itential-mcp run --config itential-mcp.conf`
 **Use Case:** Execute workflows, monitor jobs, and track automation
 
 **Available Tools:**
-- `get_workflows` - List available workflows
-- `start_workflow` - Execute a workflow
+- `get_workflows` - List available workflow automations (agents are excluded; see `get_agents` and `get_automations`)
+- `get_agents` - List agent automations
+- `get_automations` - List all automations (workflows and agents)
+- `trigger_automation` - Trigger any automation (workflow or agent)
+- `start_workflow` - Workflow-specific wrapper around `trigger_automation`
+- `expose_workflow`, `expose_agent` - Expose a workflow or agent as an automation
 - `get_jobs` - List workflow jobs
 - `describe_job` - Get detailed job information
 - `get_job_metrics` - Performance metrics for jobs
@@ -455,7 +459,7 @@ See the [custom tools guide](custom-tools.md) for detailed instructions.
 **Solutions:**
 - Check tool tag filtering configuration
 - Verify tool is not excluded by `--exclude-tags`
-- Review available tools with `get_workflows` or similar
+- Review available tools with `get_workflows` or similar (`get_workflows` lists workflow automations only)
 - Check if experimental tools need inclusion
 
 #### Performance Issues

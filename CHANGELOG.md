@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Exclude agent (and other non-workflow) automation triggers from
+  `get_workflows`, which previously listed agent-backed endpoint triggers as
+  workflows; they remain available via `get_agents` and `get_automations` (#417)
+
 ## [0.14.0] - 2026-08-13
 
 ### Added

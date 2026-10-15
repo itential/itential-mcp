@@ -119,11 +119,17 @@ The following tags are available for filtering tools based on their functionalit
 ## Operations Manager (`operations_manager.py`)
 **Group Tags:** `operations_manager`
 
-- **get_workflows** - Get all workflow API endpoints with schemas, route names, and execution history
-- **start_workflow** - Execute a workflow by triggering its API endpoint with input validation and job creation
-- **expose_workflow** - Expose a workflow as an API endpoint with custom routing and input validation
+- **get_workflows** - Get all workflow API endpoints (workflow automations only) with schemas, route names, and execution history. Agent automations are not included; use `get_agents` or `get_automations` for those
+- **get_agents** - Get all agent automations from Itential Platform
+- **get_automations** - Get all automations (workflows and agents) from Operations Manager, including component type
+- **trigger_automation** - General-purpose entry point to trigger any automation (workflow or agent) by route name; returns a job (monitor with `describe_job`) for workflows or a session (monitor with `describe_session`) for agents
+- **start_workflow** - Thin, workflow-specific wrapper around `trigger_automation`, kept as a stable entry point
 - **get_jobs** - Get all jobs from Itential Platform with optional workflow and project filtering
 - **describe_job** - Get detailed information about a specific job including tasks, metrics, and execution status
+
+> **Note:** `get_workflows` returns only workflow automations. Agent automations
+> appear under `get_agents`, and [`get_automations`](#operations-manager-operations_managerpy)
+> lists every automation type (workflows, agents, and others) with its component type.
 
 ## Projects (`projects.py`)
 **Group Tags:** `automation_studio`
