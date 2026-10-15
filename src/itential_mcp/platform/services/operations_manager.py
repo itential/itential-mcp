@@ -37,15 +37,16 @@ class Service(ServiceBase):
 
     async def get_workflows(self) -> list[dict]:
         """
-        Retrieve all workflow API endpoints from Itential Platform.
+        Retrieve workflow API endpoints with an enabled endpoint trigger.
 
         This method queries the Itential Platform operations manager to fetch all
         trigger endpoints that are enabled and of type "endpoint", and returns
         only those whose owning automation has a componentType of "workflows".
-        Triggers owned by other automation types (for example agents or
-        compliance plans), or whose automation cannot be resolved, are excluded.
-        Both the automations and the triggers are fetched with pagination to
-        handle large result sets.
+        Workflows whose endpoint trigger is disabled, or that have no endpoint
+        trigger, are therefore not returned. Triggers owned by other automation
+        types (for example agents or compliance plans), or whose automation
+        cannot be resolved, are also excluded. Both the automations and the
+        triggers are fetched with pagination to handle large result sets.
 
         Workflows are the core automation engine of Itential Platform, defining
         executable processes that orchestrate network operations, device management,

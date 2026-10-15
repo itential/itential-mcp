@@ -120,10 +120,13 @@ async def get_workflows(
     ctx: Annotated[Context, Field(description="The FastMCP Context object")],
 ) -> models.GetWorkflowsResponse:
     """
-    Get all workflow API endpoints from Itential Platform.
+    Get workflow automations that have an enabled API endpoint trigger.
 
-    Only automations backed by a workflow are returned. Agent automations and
-    other automation types are not included; use `get_agents` to list agents and
+    Only automations backed by a workflow and exposed through an enabled
+    endpoint trigger are returned. Workflows whose endpoint trigger is
+    disabled, and workflows with no endpoint trigger, are not returned.
+    Agent automations and other automation types are also not included;
+    use `get_agents` to list agents and
     `get_automations` to list automations of every type.
 
     Workflows are the core automation engine of Itential Platform, defining
@@ -146,7 +149,8 @@ async def get_workflows(
         - Use the 'name' field as the workflow identifier for most operations
         - Use the 'route_name' field specifically for `start_workflow` function
         - The 'input_schema' field defines required input parameters for workflow execution
-        - Only enabled workflows are returned by this function
+        - Only workflows with an enabled endpoint trigger are returned; workflows
+          whose endpoint trigger is disabled (or that have none) are omitted
         - Agent and other non-workflow automations are excluded; see `get_agents`
           and `get_automations`
     """
