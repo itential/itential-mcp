@@ -42,6 +42,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   by an agent) are not guaranteed to be listed.
 
 ### Changed
+- `complete_manual_task` and `describe_manual_task` guidance now explains that
+  `finish_state` `success` is the task's main button (not necessarily
+  "approve") and `failure` the second button, that `btn_success` and
+  `btn_failure` are the labels to show the human, and that agents must map the
+  human's answer to a finish state rather than assume `success`. Text only, no
+  behavior change.
 - `describe_manual_task` documentation (tool docstring and the `body` field
   description) now tells agents how to present the body (usually text or HTML,
   returned unmodified) and the available choices to the human, and warns that

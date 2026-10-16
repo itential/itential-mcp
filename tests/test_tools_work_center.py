@@ -413,6 +413,9 @@ class TestCompleteManualTaskRegistration:
         assert "IRREVERSIBLE" in doc
         assert "ASK THE HUMAN" in doc
         assert "failure button" in doc
+        assert "not necessarily" in doc
+        assert "main button" in doc
+        assert "never decide on the human's behalf" in doc.lower()
 
     def test_union_output_schema_is_valid(self):
         tool = Tool.from_function(work_center.complete_manual_task)

@@ -128,9 +128,9 @@ class DescribeManualTaskResponse(BaseModel):
         message: Message text shown to the human.
         body: Body content shown to the human.
         variables: Variables supplied to the task view.
-        btn_success: Label of the success button.
-        btn_failure: Label of the failure button; empty or None when the
-            view is success-only.
+        btn_success: Label of the primary button (finish_state success).
+        btn_failure: Label of the secondary button (finish_state failure);
+            empty or None when the view is success-only.
         run_id: Identifier of the job or session that owns the task.
         run_type: Whether the owning run is a "job" or a "session".
     """
@@ -252,7 +252,8 @@ class DescribeManualTaskResponse(BaseModel):
         Field(
             description=inspect.cleandoc(
                 """
-                Label of the success button
+                Label of the primary button (maps to finish_state success);
+                show this label to the human
                 """
             ),
             default=None,
@@ -264,8 +265,9 @@ class DescribeManualTaskResponse(BaseModel):
         Field(
             description=inspect.cleandoc(
                 """
-                Label of the failure button; empty when the view is
-                success-only (ViewData, ViewHTML)
+                Label of the secondary button (maps to finish_state
+                failure); show this label to the human. Empty when the view
+                is success-only (ViewData, ViewHTML)
                 """
             ),
             default=None,
@@ -404,7 +406,9 @@ class CompleteManualTaskPreview(BaseModel):
         Field(
             description=inspect.cleandoc(
                 """
-                Finish states that are valid for this task
+                Finish states that are valid for this task: success (the
+                main button, not necessarily approve) and, only when the task
+                has a second button, failure
                 """
             ),
             default_factory=list,
