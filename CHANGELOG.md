@@ -93,6 +93,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     GHSA-94p9-xgh2-xp45, GHSA-x78j-v8h9-3j2q, GHSA-p58f-9548-mpm2 and
     medium GHSA-9h9j-4vrj-gf7g; adds python-discovery as a new transitive
     dependency of virtualenv (#420)
+- Refresh `uv.lock` again to clear further advisories (no `pyproject.toml`
+  changes; all are transitive pins):
+  - fastmcp and fastmcp-slim 3.4.4 -> 3.4.11, resolving medium
+    GHSA-7xgj-8392-5q4r (authorization skipped on direct calls)
+  - mcp 1.29.0 -> 1.30.0, resolving medium GHSA-84m7-p3x7-pcfv
+    (CVE-2026-59951)
+  - opentelemetry-api 1.39.1 -> 1.45.1, resolving medium GHSA-xcq7-p3pf-p88h
+    (CVE-2026-114603)
+  - uv 0.12.2 -> 0.13.5, resolving critical GHSA-hq85-5cpj-mr62 (emSign root
+    CA)
+  - virtualenv 21.14.5 -> 21.14.13 (dev-only, via tox), resolving 12
+    advisories: high GHSA-vxj4-q4g9-crj7, GHSA-c978-59m8-c77v,
+    GHSA-6w3r-xr62-4xcp, GHSA-394h-qwmc-48pf, medium GHSA-43mp-35q3-x3fq,
+    GHSA-cw65-gx24-rc82, GHSA-558c-9hv2-4prj, GHSA-hhxq-47xx-j5xx,
+    GHSA-fc2g-4w5p-6whm, and low GHSA-qmx5-4p3x-wvqf, GHSA-494p-63j8-28p3,
+    GHSA-cx28-75q4-x26q
+  - filelock 3.24.3 -> 4.2.4 (dev-only, via tox/virtualenv) on Python 3.11+;
+    Python 3.10 resolves to 4.1.0 because 4.2.x requires Python 3.11+, so
+    high GHSA-v4x8-3wr5-3wq8 and low GHSA-567q-5qvw-pf92, GHSA-9vhv-jxww-xfm5
+    (patched in 4.2.1) remain open for the Python 3.10 branch of the lock
+  - Incidental lock movement: certifi, distlib and packaging, plus
+    typing-extensions 4.16.0 on Python below 3.11 only (required by mcp 1.30)
 
 ### Docs
 - Clarify that `get_workflows` and `get_automations` return only automations
