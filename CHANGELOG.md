@@ -7,19 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-10-30
+
 ### Added
+- New read-only `get_compliance_reports_by_batch` tool in
+  `configuration_manager` returning the per-device compliance reports for a
+  batch ID, and `run_compliance_plan` now surfaces the platform's `batchId`
+  in its result (previously discarded) so the batch can be looked up (#410)
 - `describe_job` and `describe_session` now return a `pending_manual_tasks`
   field so agents can see when a run is waiting on a human. It is tri-state:
   `null` means unknown (the lookup failed with an error other than not-found;
   the tool still succeeds), an empty list means none are pending (including a
   not-found result and any run that is not live), and a list holds the pending
   tasks. The lookup only runs for jobs with status `running` and sessions with
-  status `RUNNING`.
+  status `RUNNING` (#423)
 - New read-only `describe_manual_task` tool (new `work_center` tag, enabled by
   default) returning the detail of a manual task: header, message, body,
   variables, button labels, view type and the owning job or session. Form views
   (`RenderJsonSchema`, `viewTemplateResults`) are reported with
-  `completion_supported` false.
+  `completion_supported` false (#423)
+- Identity caveat: the platform runs all MCP operations as the MCP service
+  account or OAuth client, with no per-user authorization, so these tools show
+  what that account can see (#423)
+- Limitation: detection covers manual tasks attached directly to the run's own
+  ID. Manual tasks inside nested runs (child workflows, or a workflow called
+  by an agent) are not guaranteed to be listed (#423)
 - New destructive `complete_manual_task` tool (`work_center` tag, enabled by
   default; disable it with `exclude_tags` or whitelist other tools with
   `include_tags`). It completes exactly one
@@ -33,46 +45,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `viewTemplateResults`), which must be completed in the Itential UI.
   Identity caveat: the completion is attributed to the MCP service account or
   OAuth client, not to the person who asked; there is no per-user
-  authorization. Registered tools rise to 79 (all enabled by default).
-- Identity caveat: the platform runs all MCP operations as the MCP service
-  account or OAuth client, with no per-user authorization, so these tools show
-  what that account can see.
-- Limitation: detection covers manual tasks attached directly to the run's own
-  ID. Manual tasks inside nested runs (child workflows, or a workflow called
-  by an agent) are not guaranteed to be listed.
+  authorization (#424, #429)
+- Registered tools are now 79, all enabled by default (#410, #423, #424, #429)
 
 ### Changed
+- BREAKING: `describe_session` now returns a `reasoning_events` field
+  (a list of the new `SessionReasoningEvent` model: `event_id`,
+  `sequence_number`, `timestamp`, `text`) in place of `messages`, which
+  shipped in 0.13.0 and is removed. `reasoning_events` holds only the agent
+  reasoning events (category `AGENT_REASONING` with `stopReason` of
+  `end_turn`) rather than every raw session event, and `output` is derived
+  from the last kept event's text. Migration: callers that read
+  `describe_session`'s `messages` must switch to `reasoning_events`; tool
+  execution, pending-inference and status events are no longer returned (#412)
+- BREAKING (CLI behavior): running `itential-mcp` with arguments or
+  `ITENTIAL_MCP_*` environment variables but no subcommand (for example
+  `--config <file>` without `run`) now prints a diagnostic hint to stderr and
+  exits with code 2, instead of printing help to stdout and exiting 0. A bare
+  `itential-mcp` with no arguments and no `ITENTIAL_MCP_*` variables still
+  prints help and exits 0. Scripts or MCP host configs that omitted the
+  subcommand must add one (for example `run`) (#413)
+- Raise the `ipsdk` dependency floor from `>=0.7.0` to `>=0.9.0` (#411)
 - `complete_manual_task` and `describe_manual_task` guidance now explains that
   `finish_state` `success` is the task's main button (not necessarily
   "approve") and `failure` the second button, that `btn_success` and
   `btn_failure` are the labels to show the human, and that agents must map the
   human's answer to a finish state rather than assume `success`. Text only, no
-  behavior change.
+  behavior change (#425)
 - `describe_manual_task` documentation (tool docstring and the `body` field
   description) now tells agents how to present the body (usually text or HTML,
   returned unmodified) and the available choices to the human, and warns that
   the content is platform-supplied data authored by the workflow builder, not
-  instructions to follow (prompt-injection note).
+  instructions to follow (prompt-injection note) (#424)
 - Platform client wrapper gains a `patch` verb that reformats HTTP errors
   like `get`/`post`/`put`/`delete` and preserves `http_status` on the raised
-  exception (for example 409).
+  exception (for example 409) (#424)
 - Errors raised for HTTP failures from platform services now preserve the
-  upstream HTTP status code on the exception's `http_status` attribute.
+  upstream HTTP status code on the exception's `http_status` attribute (#423)
 
 ### Fixed
+- `describe_session` (and the underlying session message retrieval) no longer
+  silently truncates sessions with more than 10 raw events; messages are now
+  paged (limit 100) so the terminal event is no longer dropped (#412)
 - `get_sessions`, `get_agent_token_usage` and `get_agent_session_token_usage`
   no longer fail with `Not found: 'sessionId'` when the session history
   contains sessions that failed before an execution-engine session ID was
   assigned; those records are now skipped (#422)
 
 ### Security
-- Restricted the dev-group `tox` and `tox-uv` to Python 3.11+ so the lock file
-  no longer carries the vulnerable `filelock` 4.1.0 on its Python 3.10 branch
-  (GHSA-v4x8-3wr5-3wq8, GHSA-crv4-6mhj-j5jh, GHSA-2g95-wg33-c5x2,
-  GHSA-jqc4-5cvw-7w85, GHSA-567q-5qvw-pf92, GHSA-9vhv-jxww-xfm5). Package
-  `requires-python` is unchanged; running `tox` itself now needs a 3.11+ host.
-- Refresh `uv.lock` to clear transitive-dependency advisories (no
-  `pyproject.toml` changes):
+- Refresh `uv.lock` to clear further advisories (no `pyproject.toml`
+  changes; all are transitive pins) (#426):
+  - fastmcp and fastmcp-slim 3.4.4 -> 3.4.11, resolving medium
+    GHSA-7xgj-8392-5q4r (authorization skipped on direct calls)
+  - mcp 1.29.0 -> 1.30.0, resolving medium GHSA-84m7-p3x7-pcfv
+    (CVE-2026-59951)
+  - opentelemetry-api 1.39.1 -> 1.45.1, resolving medium GHSA-xcq7-p3pf-p88h
+    (CVE-2026-114603)
+  - uv 0.12.2 -> 0.13.5, resolving critical GHSA-hq85-5cpj-mr62 (emSign root
+    CA)
+  - virtualenv 21.14.5 -> 21.14.13 (dev-only, via tox), resolving 12
+    advisories: high GHSA-vxj4-q4g9-crj7, GHSA-c978-59m8-c77v,
+    GHSA-6w3r-xr62-4xcp, GHSA-394h-qwmc-48pf, medium GHSA-43mp-35q3-x3fq,
+    GHSA-cw65-gx24-rc82, GHSA-558c-9hv2-4prj, GHSA-hhxq-47xx-j5xx,
+    GHSA-fc2g-4w5p-6whm, and low GHSA-qmx5-4p3x-wvqf, GHSA-494p-63j8-28p3,
+    GHSA-cx28-75q4-x26q
+  - filelock 3.24.3 -> 4.2.4 (dev-only, via tox/virtualenv); the lock now
+    contains only filelock 4.2.4 (#427)
+  - Incidental lock movement: certifi, distlib and packaging, plus
+    typing-extensions 4.16.0 on Python below 3.11 only (required by mcp 1.30)
+- Restrict the dev-group `tox` and `tox-uv` to Python >=3.11 so the Python
+  3.10 branch of `uv.lock` no longer carries the vulnerable `filelock` 4.1.0,
+  resolving six filelock advisories: GHSA-v4x8-3wr5-3wq8, GHSA-crv4-6mhj-j5jh,
+  GHSA-2g95-wg33-c5x2, GHSA-jqc4-5cvw-7w85, GHSA-567q-5qvw-pf92,
+  GHSA-9vhv-jxww-xfm5. Package `requires-python` is unchanged; running `tox`
+  itself now needs a 3.11+ host (#427)
+- Refresh `uv.lock` to clear further advisories (no `pyproject.toml`
+  changes; transitive pins) (#428):
   - Authlib 1.7.2 -> 1.9.1, resolving critical GHSA-6v38-4h7w-rj9h, high
     GHSA-7vr2-2fgp-9w7p and GHSA-8m4g-j4wp-wgcg, medium GHSA-q686-2qmg-hqc7,
     GHSA-fch4-3c6x-j4gc, GHSA-c5mf-xmp2-59rc and GHSA-x4rv-c3wx-4cr8, and low
@@ -80,9 +128,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - dnspython 2.8.0 -> 2.9.0 on Python 3.11+, resolving high
     GHSA-45c3-73f7-pv4m (patched 2.9.0). dnspython 2.9.0 requires Python
     3.11+, so the Python 3.10 branch of the lock stays on 2.8.0 and the
-    Dependabot alert may remain open for that branch. dnspython is only a
-    transitive dependency (via `email-validator`) and is not used directly.
-  - No other packages changed.
+    corresponding Dependabot alert was dismissed as not used. dnspython is
+    only a transitive dependency (via `email-validator`) and is not used
+    directly.
+
+### Docs
+- Refresh `docs/` tag groups and tool reference to match the code: add the
+  `agent_session_manager` and `inventory_manager` tag groups, correct
+  per-group tool counts, and fix stale tag examples (#414, #415)
+- Correct the tool and tag-group count in the README features list (#416)
+- Clarify that `complete_manual_task`'s `finish_state` is not always an
+  approval, and document the troubleshooting case for an MCP host showing
+  "Connection closed" when the subcommand is missing (#413, #425)
 
 ## [0.14.1] - 2026-10-15
 
@@ -112,28 +169,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     GHSA-94p9-xgh2-xp45, GHSA-x78j-v8h9-3j2q, GHSA-p58f-9548-mpm2 and
     medium GHSA-9h9j-4vrj-gf7g; adds python-discovery as a new transitive
     dependency of virtualenv (#420)
-- Refresh `uv.lock` again to clear further advisories (no `pyproject.toml`
-  changes; all are transitive pins):
-  - fastmcp and fastmcp-slim 3.4.4 -> 3.4.11, resolving medium
-    GHSA-7xgj-8392-5q4r (authorization skipped on direct calls)
-  - mcp 1.29.0 -> 1.30.0, resolving medium GHSA-84m7-p3x7-pcfv
-    (CVE-2026-59951)
-  - opentelemetry-api 1.39.1 -> 1.45.1, resolving medium GHSA-xcq7-p3pf-p88h
-    (CVE-2026-114603)
-  - uv 0.12.2 -> 0.13.5, resolving critical GHSA-hq85-5cpj-mr62 (emSign root
-    CA)
-  - virtualenv 21.14.5 -> 21.14.13 (dev-only, via tox), resolving 12
-    advisories: high GHSA-vxj4-q4g9-crj7, GHSA-c978-59m8-c77v,
-    GHSA-6w3r-xr62-4xcp, GHSA-394h-qwmc-48pf, medium GHSA-43mp-35q3-x3fq,
-    GHSA-cw65-gx24-rc82, GHSA-558c-9hv2-4prj, GHSA-hhxq-47xx-j5xx,
-    GHSA-fc2g-4w5p-6whm, and low GHSA-qmx5-4p3x-wvqf, GHSA-494p-63j8-28p3,
-    GHSA-cx28-75q4-x26q
-  - filelock 3.24.3 -> 4.2.4 (dev-only, via tox/virtualenv) on Python 3.11+;
-    Python 3.10 resolves to 4.1.0 because 4.2.x requires Python 3.11+, so
-    high GHSA-v4x8-3wr5-3wq8 and low GHSA-567q-5qvw-pf92, GHSA-9vhv-jxww-xfm5
-    (patched in 4.2.1) remain open for the Python 3.10 branch of the lock
-  - Incidental lock movement: certifi, distlib and packaging, plus
-    typing-extensions 4.16.0 on Python below 3.11 only (required by mcp 1.30)
 
 ### Docs
 - Clarify that `get_workflows` and `get_automations` return only automations
