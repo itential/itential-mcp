@@ -77,8 +77,11 @@ dev = [
     "ruff",
     "build",
     "bandit[toml]>=1.7.0",
-    "tox>=4.0",
-    "tox-uv>=1.0.0"
+    # tox pulls in filelock 4.2.x, which requires Python 3.11+. Restricting tox
+    # keeps the Python 3.10 lock branch free of the vulnerable filelock 4.1.0.
+    # The package requires-python is unchanged; tox-py310 still runs from 3.11+.
+    "tox>=4.0; python_full_version >= '3.11'",
+    "tox-uv>=1.0.0; python_full_version >= '3.11'"
 ]
 
 [tool.pytest.ini_options]

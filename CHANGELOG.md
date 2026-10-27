@@ -65,6 +65,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   contains sessions that failed before an execution-engine session ID was
   assigned; those records are now skipped (#422)
 
+### Security
+- Restricted the dev-group `tox` and `tox-uv` to Python 3.11+ so the lock file
+  no longer carries the vulnerable `filelock` 4.1.0 on its Python 3.10 branch
+  (GHSA-v4x8-3wr5-3wq8, GHSA-crv4-6mhj-j5jh, GHSA-2g95-wg33-c5x2,
+  GHSA-jqc4-5cvw-7w85, GHSA-567q-5qvw-pf92, GHSA-9vhv-jxww-xfm5). Package
+  `requires-python` is unchanged; running `tox` itself now needs a 3.11+ host.
+
 ## [0.14.1] - 2026-10-15
 
 ### Fixed
