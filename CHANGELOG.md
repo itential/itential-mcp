@@ -71,6 +71,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (GHSA-v4x8-3wr5-3wq8, GHSA-crv4-6mhj-j5jh, GHSA-2g95-wg33-c5x2,
   GHSA-jqc4-5cvw-7w85, GHSA-567q-5qvw-pf92, GHSA-9vhv-jxww-xfm5). Package
   `requires-python` is unchanged; running `tox` itself now needs a 3.11+ host.
+- Refresh `uv.lock` to clear transitive-dependency advisories (no
+  `pyproject.toml` changes):
+  - Authlib 1.7.2 -> 1.9.1, resolving critical GHSA-6v38-4h7w-rj9h, high
+    GHSA-7vr2-2fgp-9w7p and GHSA-8m4g-j4wp-wgcg, medium GHSA-q686-2qmg-hqc7,
+    GHSA-fch4-3c6x-j4gc, GHSA-c5mf-xmp2-59rc and GHSA-x4rv-c3wx-4cr8, and low
+    GHSA-jj7h-c3hg-m23x (first patched 1.9.1 covers all of them).
+  - dnspython 2.8.0 -> 2.9.0 on Python 3.11+, resolving high
+    GHSA-45c3-73f7-pv4m (patched 2.9.0). dnspython 2.9.0 requires Python
+    3.11+, so the Python 3.10 branch of the lock stays on 2.8.0 and the
+    Dependabot alert may remain open for that branch. dnspython is only a
+    transitive dependency (via `email-validator`) and is not used directly.
+  - No other packages changed.
 
 ## [0.14.1] - 2026-10-15
 
