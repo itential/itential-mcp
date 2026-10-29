@@ -14,7 +14,7 @@ from fastmcp import Context
 
 from itential_mcp.core import exceptions
 from itential_mcp.utilities import manual_tasks
-from itential_mcp.utilities.tool import annotate, tags
+from itential_mcp.utilities.tool import annotate
 from itential_mcp.models import work_center as models
 
 
@@ -197,7 +197,6 @@ async def _ensure_run_is_live(
         )
 
 
-@tags("experimental")
 @annotate(
     read_only=False,
     destructive=True,
@@ -249,7 +248,7 @@ async def complete_manual_task(
     ] = None,
 ) -> models.CompleteManualTaskPreview | models.CompleteManualTaskResult:
     """
-    EXPERIMENTAL, DESTRUCTIVE: complete a single manual task (work item).
+    DESTRUCTIVE: complete a single manual task (work item).
 
     IMPORTANT: completing a manual task is IRREVERSIBLE and cannot be retried.
     It lets the waiting job or agent session proceed. The platform records the
@@ -312,8 +311,8 @@ async def complete_manual_task(
     Notes:
         - Identity: every completion is attributed to the MCP service account
           or OAuth client, never to the end user.
-        - Enabled only when the experimental tag is not excluded
-          (exclude_tags defaults to experimental,beta).
+        - Enabled by default. To disable it, add complete_manual_task to
+          exclude_tags, or whitelist other tools with include_tags.
     """
     await ctx.debug("inside complete_manual_task(...)")
 

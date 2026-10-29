@@ -426,25 +426,25 @@ class TestCompleteManualTaskRegistration:
         assert "CompleteManualTaskPreview" in schema_text
         assert "CompleteManualTaskResult" in schema_text
 
-    def test_experimental_tag_discovered(self):
+    def test_tags_discovered(self):
         import pathlib
 
         path = pathlib.Path(work_center.__file__).parent
         found = {f.__name__: t for f, t, _ in toolutils.itertools(path)}
 
-        assert "experimental" in found["complete_manual_task"]
         assert "work_center" in found["complete_manual_task"]
+        assert "experimental" not in found["complete_manual_task"]
         assert "experimental" not in found["describe_manual_task"]
 
     @pytest.mark.asyncio
-    async def test_excluded_by_default_included_when_enabled(self):
+    async def test_enabled_under_default_exclude_tags(self):
         def build(exclude):
             mcp = FastMCP("t")
             if exclude:
                 mcp.disable(tags=set(exclude))
             tool = Tool.from_function(
                 work_center.complete_manual_task,
-                tags={"work_center", "experimental"},
+                tags={"work_center"},
             )
             mcp.add_tool(tool)
             return mcp
@@ -452,5 +452,5 @@ class TestCompleteManualTaskRegistration:
         default = await build(["experimental", "beta"]).list_tools()
         enabled = await build([]).list_tools()
 
-        assert "complete_manual_task" not in {t.name for t in default}
+        assert "complete_manual_task" in {t.name for t in default}
         assert "complete_manual_task" in {t.name for t in enabled}
