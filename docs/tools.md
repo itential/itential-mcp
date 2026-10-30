@@ -37,7 +37,7 @@ The following tags are available for filtering tools based on their functionalit
 **Group Tags:** `agent_session_manager`
 
 - **get_sessions** - List agent sessions from Itential Platform with optional filtering
-- **describe_session** - Get detailed information about a specific agent session, including any manual tasks waiting on a human
+- **describe_session** - Get detailed information about a specific agent session: its status, final `output`, the agent's reasoning events (`reasoning_events`, each with `event_id`, `sequence_number`, `timestamp` and `text`) and any manual tasks waiting on a human (`pending_manual_tasks`). Only agent reasoning events that ended a turn are returned; tool-execution, pending-inference and status events are not. `output` is the text of the last reasoning event. Migration note: callers that read `messages` (0.13.0) must switch to `reasoning_events`
 - **get_agent_token_usage** - Aggregate agent session token usage grouped by agent name
 - **get_agent_session_token_usage** - List per-session token usage for a single agent, sorted chronologically
 - **describe_session_token_usage** - Break down a single agent session's token usage per inference turn
@@ -149,7 +149,7 @@ The following tags are available for filtering tools based on their functionalit
 - **trigger_automation** - General-purpose entry point to trigger any automation (workflow or agent) by route name; returns a job (monitor with `describe_job`) for workflows or a session (monitor with `describe_session`) for agents
 - **start_workflow** - Thin, workflow-specific wrapper around `trigger_automation`, kept as a stable entry point
 - **get_jobs** - Get all jobs from Itential Platform with optional workflow and project filtering
-- **describe_job** - Get detailed information about a specific job including tasks, metrics, and execution status
+- **describe_job** - Get detailed information about a specific job including tasks, metrics, execution status, and any manual tasks waiting on a human (`pending_manual_tasks`)
 - **expose_workflow** - Expose a workflow as an API endpoint with custom routing and input validation
 - **expose_agent** - Expose an agent as an automation so it can be started via `trigger_automation`
 

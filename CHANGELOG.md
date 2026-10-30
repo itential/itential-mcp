@@ -84,6 +84,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     transitive dependency (via `email-validator`) and is not used directly.
   - No other packages changed.
 
+### Docs
+- Document the `describe_session` `reasoning_events` field (replacing `messages`)
+  and the `describe_job` `pending_manual_tasks` field in `docs/tools.md` (#412)
+
 ## [0.14.1] - 2026-10-15
 
 ### Fixed
