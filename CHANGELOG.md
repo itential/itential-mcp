@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Docs
+- Refresh CLAUDE.md and AGENTS.md (version, tool count, ipsdk floor, Python
+  range, tox note, CLI exit behavior) (#433)
+
 ## [0.15.0] - 2026-10-30
 
 ### Added

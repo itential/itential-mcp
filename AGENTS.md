@@ -1,12 +1,12 @@
 # Itential MCP — Codebase Reference
 
-**Version:** 0.12.1 | **Python:** 3.10–3.13 | **Updated:** 2026-03-08
+**Version:** 0.15.0 | **Python:** 3.10–3.14 | **Updated:** 2026-10-30
 
 ---
 
 ## Purpose & Architecture
 
-Itential MCP is a production-grade Model Context Protocol (MCP) server that bridges AI agents with the Itential Platform — a network automation and orchestration system. It exposes 76+ tools across 10 functional categories (health, device config, workflow execution, lifecycle management, adapters, applications, compliance, projects, gateway, operations), allowing AI agents to configure devices, execute workflows, run compliance checks, and monitor platform health through a standardized MCP interface.
+Itential MCP is a production-grade Model Context Protocol (MCP) server that bridges AI agents with the Itential Platform — a network automation and orchestration system. It exposes 79 tools across 13 tag groups, all enabled by default (adapters, agent sessions, applications, automation studio, configuration manager, gateway manager, health, integrations, inventory manager, lifecycle manager, operations manager, work center, workflow engine), allowing AI agents to configure devices, execute workflows, run compliance checks, and monitor platform health through a standardized MCP interface.
 
 **Primary data flow:**
 
@@ -50,14 +50,14 @@ AI Agent → MCP Transport (stdio|sse|http)
 
 ## Tech Stack
 
-**Language:** Python 3.10–3.13 (all versions tested via tox)
+**Language:** Python 3.10–3.14 (all versions tested via tox and the CI matrix)
 
 **Core dependencies and why:**
 
 | Dependency | Role |
 |------------|------|
 | `fastmcp` | MCP server framework — handles protocol, tool registration, middleware, transports |
-| `ipsdk>=0.7.0` | Itential Platform SDK — async HTTP client with auth and connection pooling |
+| `ipsdk>=0.9.0` | Itential Platform SDK — async HTTP client with auth and connection pooling |
 | `pydantic` | Config models (frozen dataclasses), tool return types, validation |
 | `uvicorn` | ASGI server for SSE and HTTP transports |
 | `python-toon` | Alternative response serialization format (configured via `ITENTIAL_MCP_SERVER_RESPONSE_FORMAT=toon`) |
@@ -71,7 +71,7 @@ AI Agent → MCP Transport (stdio|sse|http)
 | `hatchling` + `uv-dynamic-versioning` | Build backend with git-tag-based semver |
 | `ruff` | Linter and formatter (single tool, replaces flake8/black/isort) |
 | `bandit` | Security scanner |
-| `tox` + `tox-uv` | Multi-version test matrix |
+| `tox` + `tox-uv` | Multi-version test matrix (dev group restricted to Python >=3.11) |
 | `pytest` + `pytest-asyncio` | Async-capable test framework |
 
 **What's intentionally absent:**
@@ -100,7 +100,7 @@ make format         # Format with ruff
 make check          # Lint with ruff check
 make coverage       # HTML + terminal coverage report
 make security       # bandit security scan
-make ci             # Full pipeline: clean → format → check → security → test
+make ci             # Full pipeline: clean → format → check → check-headers → security → test
 ```
 
 **Before every commit:** `make ci` — this is what CI runs.
@@ -117,21 +117,26 @@ ITENTIAL_MCP_SERVER_LOG_LEVEL=DEBUG uv run itential-mcp run    # verbose logging
 **CLI reference:**
 
 ```
-itential-mcp [--config FILE]
-  run       - Start the server
-  tools     - List available tools
-  tags      - List available tags
-  call      - Call a specific tool
-  version   - Show version
+itential-mcp <COMMAND> [--config FILE]
+  call      - Call a tool and return the results
+  run       - Run the MCP server
+  tags      - Get list of available tags
+  test      - Test connection to Itential Platform
+  tools     - Get list of available tools
+  version   - Print the version information
 ```
+
+A subcommand is required. A bare `itential-mcp` prints help and exits 0, but arguments (e.g. `--config FILE`) or `ITENTIAL_MCP_*` env vars with no subcommand print a hint to stderr and exit 2.
 
 **Multi-version testing:**
 
 ```bash
-make tox            # Test against Python 3.10, 3.11, 3.12, 3.13
+make tox            # Test against Python 3.10, 3.11, 3.12, 3.13, 3.14
 make tox-py312      # Single version
 make tox-ci         # Full CI pipeline via tox
 ```
+
+Running tox requires a Python 3.11+ host: tox and tox-uv are restricted to Python >=3.11 in the dev group, while the package itself still supports 3.10 (`make tox-py310` still works from a 3.11+ host).
 
 **Environment variables for local dev:**
 
@@ -330,12 +335,12 @@ Config example: `docs/mcp.conf.example`
 
 ### Areas in Flux
 
-- FastMCP API compatibility: v0.12.1 fixed a breaking change where `include_tags`/`exclude_tags` kwargs were removed in FastMCP 3.x in favor of `enable()`/`disable()` API. Watch for further FastMCP API changes.
+- FastMCP API compatibility: `pyproject.toml` pins `fastmcp>=3.4.1,<4` (locked at 3.4.11 in `uv.lock`). v0.12.1 fixed a breaking change where `include_tags`/`exclude_tags` kwargs were removed in FastMCP 3.x in favor of `enable()`/`disable()` API. Watch for further FastMCP API changes.
 - `ITENTIAL_MCP_SERVER_RESPONSE_FORMAT=toon` — TOON serialization support is relatively new (v0.10.0). Less battle-tested than JSON mode.
 
 ### Testing Gaps
 
-- 99% line coverage, but integration tests are limited — most tests mock the platform client. Real platform connectivity is only tested via the `connection test` command.
+- ~98% line coverage (CI enforces a 95% floor), but integration tests are limited — most tests mock the platform client. Real platform connectivity is only tested via the `itential-mcp test` command.
 - `core/errors.py` is only tested in isolation with no production callers — these tests provide false coverage confidence for a dead module.
 
 ---
@@ -397,7 +402,7 @@ docs/mcp.conf.example           Config file reference
 
 **Pipelines:** `.github/workflows/`
 
-- `ci.yaml` — format → lint → check-headers → security → test. Runs on every PR.
+- `ci.yaml` — format → lint → check-headers → security → test (tests run on Python 3.10–3.14 with a 95% coverage floor). Runs on every PR.
 - `container.yaml` — builds amd64 + arm64 images on merge to main branches.
 - `release.yaml` — triggered by a tag push; automatically creates the GitHub Release (via `softprops/action-gh-release`) AND publishes to PyPI via OIDC trusted publisher in the same run. No manual `gh release create` step needed.
 
