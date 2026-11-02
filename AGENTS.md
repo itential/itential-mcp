@@ -1,6 +1,6 @@
 # Itential MCP — Codebase Reference
 
-**Version:** 0.15.0 | **Python:** 3.10–3.14 | **Updated:** 2026-10-30
+**Version:** 0.15.0 | **Python:** 3.11–3.14 | **Updated:** 2026-10-30
 
 ---
 
@@ -50,7 +50,7 @@ AI Agent → MCP Transport (stdio|sse|http)
 
 ## Tech Stack
 
-**Language:** Python 3.10–3.14 (all versions tested via tox and the CI matrix)
+**Language:** Python 3.11–3.14 (all versions tested via tox and the CI matrix)
 
 **Core dependencies and why:**
 
@@ -71,7 +71,7 @@ AI Agent → MCP Transport (stdio|sse|http)
 | `hatchling` + `uv-dynamic-versioning` | Build backend with git-tag-based semver |
 | `ruff` | Linter and formatter (single tool, replaces flake8/black/isort) |
 | `bandit` | Security scanner |
-| `tox` + `tox-uv` | Multi-version test matrix (dev group restricted to Python >=3.11) |
+| `tox` + `tox-uv` | Multi-version test matrix |
 | `pytest` + `pytest-asyncio` | Async-capable test framework |
 
 **What's intentionally absent:**
@@ -131,12 +131,10 @@ A subcommand is required. A bare `itential-mcp` prints help and exits 0, but arg
 **Multi-version testing:**
 
 ```bash
-make tox            # Test against Python 3.10, 3.11, 3.12, 3.13, 3.14
+make tox            # Test against Python 3.11, 3.12, 3.13, 3.14
 make tox-py312      # Single version
 make tox-ci         # Full CI pipeline via tox
 ```
-
-Running tox requires a Python 3.11+ host: tox and tox-uv are restricted to Python >=3.11 in the dev group, while the package itself still supports 3.10 (`make tox-py310` still works from a 3.11+ host).
 
 **Environment variables for local dev:**
 
@@ -402,7 +400,7 @@ docs/mcp.conf.example           Config file reference
 
 **Pipelines:** `.github/workflows/`
 
-- `ci.yaml` — format → lint → check-headers → security → test (tests run on Python 3.10–3.14 with a 95% coverage floor). Runs on every PR.
+- `ci.yaml` — format → lint → check-headers → security → test (tests run on Python 3.11–3.14 with a 95% coverage floor). Runs on every PR.
 - `container.yaml` — builds amd64 + arm64 images on merge to main branches.
 - `release.yaml` — triggered by a tag push; automatically creates the GitHub Release (via `softprops/action-gh-release`) AND publishes to PyPI via OIDC trusted publisher in the same run. No manual `gh release create` step needed.
 
