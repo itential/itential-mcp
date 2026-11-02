@@ -333,7 +333,7 @@ uv pip install --upgrade itential-mcp
 # Verify installation
 itential-mcp version
 
-# Check Python version (3.10-3.13 required)
+# Check Python version (3.11-3.14 required)
 python --version
 ```
 

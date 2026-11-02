@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- BREAKING: Dropped support for Python 3.10, which reached end-of-life on
+  2026-10-31. The minimum supported version is now Python 3.11. Update your
+  environment to Python 3.11 or later before upgrading.
+
 ### Docs
 - Refresh CLAUDE.md and AGENTS.md (version, tool count, ipsdk floor, Python
   range, tox note, CLI exit behavior) (#433)

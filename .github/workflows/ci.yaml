@@ -6,7 +6,7 @@
 #
 # Jobs:
 #   quality  — format check, lint, copyright headers, security scan (runs once)
-#   test     — full test suite with coverage enforcement (matrix: 3.10–3.14)
+#   test     — full test suite with coverage enforcement (matrix: 3.11–3.14)
 #
 # The quality job runs on a single Python version since these checks are
 # version-agnostic. The test matrix runs independently so all versions
@@ -73,14 +73,14 @@ jobs:
   # -- test
   # Runs the full test suite with coverage enforcement on all supported
   # Python versions. fail-fast is disabled so all versions report results
-  # independently — a 3.10 failure doesn't hide a 3.13 failure.
+  # independently — a 3.11 failure doesn't hide a 3.13 failure.
   test:
     name: Test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        python-version: ['3.11', '3.12', '3.13', '3.14']
 
     steps:
       - name: Checkout repository

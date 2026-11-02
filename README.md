@@ -1,7 +1,7 @@
 <div align="left">
 
 [![PyPI version](https://badge.fury.io/py/itential-mcp.svg)](https://badge.fury.io/py/itential-mcp)
-[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
+[![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/itential/itential-mcp)
 [![Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen)](https://github.com/itential/itential-mcp)
@@ -59,16 +59,16 @@ Build automation workflows, integrate with external systems, manage application 
 - **Data Validation**: Schema-based validation for resource data and action parameters
 
 ## 🔍 Requirements
-- Python _3.10_ or higher
+- Python _3.11_ or higher
 - Access to an [Itential Platform Instance](https://www.itential.com/)
 - For _development_ - `uv` and `make`
 
 ### Tested Python Versions
 This project is automatically tested against the following Python versions:
-- Python 3.10
 - Python 3.11
 - Python 3.12
 - Python 3.13
+- Python 3.14
 
 ## 🔧 Installation
 The `itential-mcp` application can be installed using either PyPI or it can be
