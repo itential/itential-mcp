@@ -19,7 +19,7 @@ This comprehensive guide helps you get started with the Itential MCP (Model Cont
 
 Before you begin, ensure you have:
 
-- **Python 3.10 or higher** installed on your system
+- **Python 3.11 or higher** installed on your system
 - **Access to an Itential Platform instance** with valid credentials
 - **An MCP-compatible AI client** (Claude Desktop, Continue.dev, etc.)
 

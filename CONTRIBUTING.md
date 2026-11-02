@@ -44,7 +44,7 @@ When you submit your first pull request, you will be prompted to sign the CLA. P
 
 ### Prerequisites
 
-- Python 3.10 or later
+- Python 3.11 or later
 - [uv](https://github.com/astral-sh/uv) package manager
 - Git
 

@@ -42,7 +42,7 @@ export PYTHONDONTWRITEBYTECODE := 1
 
 .PHONY: build certs check check-headers clean clean-venv container coverage \
         fix fix-headers format lint ci run security test \
-        tox tox-py310 tox-py311 tox-py312 tox-py313 tox-py314 \
+        tox tox-py311 tox-py312 tox-py313 tox-py314 \
         tox-coverage tox-format tox-lint tox-list tox-ci tox-security \
         help
 
@@ -102,11 +102,8 @@ container: ## Build multi-arch container image (amd64 + arm64)
 # Tox (multi-version testing)
 # ------------------------------------------------------------------------------
 
-tox: ## Run tests across all supported Python versions (3.10-3.14)
+tox: ## Run tests across all supported Python versions (3.11-3.14)
 	uv run tox
-
-tox-py310: ## Run tests with Python 3.10
-	uv run tox -e py310
 
 tox-py311: ## Run tests with Python 3.11
 	uv run tox -e py311

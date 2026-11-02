@@ -11,7 +11,7 @@ dependencies = [
 
 dynamic = [ "version" ]
 
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 readme = "README.md"
 license = "GPL-3.0-or-later"
 
@@ -29,7 +29,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -77,11 +76,8 @@ dev = [
     "ruff",
     "build",
     "bandit[toml]>=1.7.0",
-    # tox pulls in filelock 4.2.x, which requires Python 3.11+. Restricting tox
-    # keeps the Python 3.10 lock branch free of the vulnerable filelock 4.1.0.
-    # The package requires-python is unchanged; tox-py310 still runs from 3.11+.
-    "tox>=4.0; python_full_version >= '3.11'",
-    "tox-uv>=1.0.0; python_full_version >= '3.11'"
+    "tox>=4.0",
+    "tox-uv>=1.0.0"
 ]
 
 [tool.pytest.ini_options]
