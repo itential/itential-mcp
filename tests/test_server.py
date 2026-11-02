@@ -1561,7 +1561,7 @@ class TestServerInfoVersion:
 
         async with server_instance:
             async with Client(server_instance.mcp) as client:
-                server_info = client.initialize_result.serverInfo
+                server_info = client.server_info
 
                 # The fix: serverInfo.version must be itential-mcp's own
                 # resolved version.
@@ -1617,13 +1617,13 @@ class TestToolAnnotationsAndOrdering:
                 assert "get_health" in by_name
                 health_annotations = by_name["get_health"].annotations
                 assert health_annotations is not None
-                assert health_annotations.readOnlyHint is True
+                assert health_annotations.read_only_hint is True
 
                 assert "apply_device_configuration" in by_name
                 apply_annotations = by_name["apply_device_configuration"].annotations
                 assert apply_annotations is not None
-                assert apply_annotations.destructiveHint is True
-                assert not apply_annotations.readOnlyHint
+                assert apply_annotations.destructive_hint is True
+                assert not apply_annotations.read_only_hint
 
     @pytest.mark.asyncio
     @patch("itential_mcp.server.auth.build_auth_provider")

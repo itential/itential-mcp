@@ -128,9 +128,9 @@ async def bind_to_tool(
         "name": tool.tool_name,
         "exclude_args": ("_tool_config",),
         "annotations": ToolAnnotations(
-            destructiveHint=True,
-            readOnlyHint=False,
-            openWorldHint=True,
+            destructive_hint=True,
+            read_only_hint=False,
+            open_world_hint=True,
         ),
         "title": _humanize_title(tool.tool_name),
     }

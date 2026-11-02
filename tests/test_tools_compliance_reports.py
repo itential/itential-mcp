@@ -231,5 +231,5 @@ class TestGetComplianceReportsByBatchTool:
         annotations = get_compliance_reports_by_batch.annotations
 
         assert annotations is not None
-        assert annotations.readOnlyHint is True
-        assert annotations.destructiveHint is not True
+        assert annotations.read_only_hint is True
+        assert annotations.destructive_hint is not True

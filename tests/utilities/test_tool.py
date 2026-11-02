@@ -637,8 +637,8 @@ class TestAnnotateDecorator:
 
         assert hasattr(my_func, "annotations")
         assert isinstance(my_func.annotations, ToolAnnotations)
-        assert my_func.annotations.readOnlyHint is True
-        assert my_func.annotations.idempotentHint is True
+        assert my_func.annotations.read_only_hint is True
+        assert my_func.annotations.idempotent_hint is True
         assert my_func.annotations.title == "Get Health"
 
     def test_annotate_destructive_tool(self):
@@ -646,9 +646,9 @@ class TestAnnotateDecorator:
         def apply_config():
             return "applied"
 
-        assert apply_config.annotations.readOnlyHint is False
-        assert apply_config.annotations.destructiveHint is True
-        assert apply_config.annotations.openWorldHint is True
+        assert apply_config.annotations.read_only_hint is False
+        assert apply_config.annotations.destructive_hint is True
+        assert apply_config.annotations.open_world_hint is True
 
     def test_annotate_defaults_to_none(self):
         @annotate()
@@ -656,10 +656,10 @@ class TestAnnotateDecorator:
             return None
 
         annotations = unspecified_func.annotations
-        assert annotations.readOnlyHint is None
-        assert annotations.destructiveHint is None
-        assert annotations.idempotentHint is None
-        assert annotations.openWorldHint is None
+        assert annotations.read_only_hint is None
+        assert annotations.destructive_hint is None
+        assert annotations.idempotent_hint is None
+        assert annotations.open_world_hint is None
         assert annotations.title is None
 
     def test_annotate_does_not_modify_function_behavior(self):
@@ -804,7 +804,7 @@ class TestToolAnnotationSafetyInvariants:
         violations = [
             f.__name__
             for f, _tags, ann in tools
-            if ann is not None and ann.readOnlyHint and ann.destructiveHint
+            if ann is not None and ann.read_only_hint and ann.destructive_hint
         ]
 
         assert violations == [], (
@@ -823,5 +823,7 @@ class TestToolAnnotationSafetyInvariants:
         for name in self._EXPLICITLY_DESTRUCTIVE:
             ann = by_name[name]
             assert ann is not None, f"{name} has no annotations at all"
-            assert ann.destructiveHint is True, f"{name} must have destructiveHint=True"
-            assert not ann.readOnlyHint, f"{name} must not have readOnlyHint truthy"
+            assert ann.destructive_hint is True, (
+                f"{name} must have destructiveHint=True"
+            )
+            assert not ann.read_only_hint, f"{name} must not have readOnlyHint truthy"

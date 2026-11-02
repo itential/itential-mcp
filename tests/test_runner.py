@@ -48,12 +48,11 @@ class TestRun:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock tool list response
         mock_tool = MagicMock()
         mock_tool.name = "test_tool"
-        mock_tool.inputSchema = {
+        mock_tool.input_schema = {
             "properties": {"param1": {"type": "string"}},
             "required": [],
         }
@@ -77,7 +76,6 @@ class TestRun:
         # Verify
         mock_config_get.assert_called_once()
         mock_server_class.assert_called_once_with(mock_config)
-        mock_client.ping.assert_called_once()
         mock_client.list_tools_mcp.assert_called_once()
         mock_client.call_tool.assert_called_once_with("test_tool", arguments=None)
 
@@ -106,12 +104,11 @@ class TestRun:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock tool list response
         mock_tool = MagicMock()
         mock_tool.name = "test_tool"
-        mock_tool.inputSchema = {
+        mock_tool.input_schema = {
             "properties": {"param1": {"type": "string"}, "param2": {"type": "integer"}},
             "required": ["param1"],
         }
@@ -150,39 +147,6 @@ class TestRun:
     @patch("itential_mcp.runtime.runner.Client")
     @patch("itential_mcp.runtime.runner.Server")
     @patch("itential_mcp.runtime.runner.config.get")
-    async def test_run_server_ping_failure(
-        self, mock_config_get, mock_server_class, mock_client_class
-    ):
-        """Test failure when server ping fails"""
-        # Setup mocks
-        mock_config = MagicMock()
-        mock_config_get.return_value = mock_config
-
-        # Setup server instance mock
-        mock_server_instance = MagicMock()
-        mock_server_instance.mcp = MagicMock()
-        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
-        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
-        mock_server_class.return_value = mock_server_instance
-
-        mock_client = AsyncMock()
-        mock_client.ping.return_value = False
-
-        mock_client_class.return_value.__aenter__.return_value = mock_client
-        mock_client_class.return_value.__aexit__.return_value = None
-
-        # Execute and verify exception
-        with pytest.raises(ValueError, match="ERROR: cannot reach the server"):
-            await runner.run("test_tool")
-
-        mock_client.ping.assert_called_once()
-        # Should not proceed to list tools
-        mock_client.list_tools_mcp.assert_not_called()
-
-    @pytest.mark.asyncio
-    @patch("itential_mcp.runtime.runner.Client")
-    @patch("itential_mcp.runtime.runner.Server")
-    @patch("itential_mcp.runtime.runner.config.get")
     async def test_run_invalid_tool(
         self, mock_config_get, mock_server_class, mock_client_class
     ):
@@ -199,12 +163,11 @@ class TestRun:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock tool list response with different tool
         mock_tool = MagicMock()
         mock_tool.name = "other_tool"
-        mock_tool.inputSchema = {"properties": {}, "required": []}
+        mock_tool.input_schema = {"properties": {}, "required": []}
 
         mock_list_response = MagicMock()
         mock_list_response.tools = [mock_tool]
@@ -241,12 +204,11 @@ class TestRun:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock tool list response with required parameters
         mock_tool = MagicMock()
         mock_tool.name = "test_tool"
-        mock_tool.inputSchema = {
+        mock_tool.input_schema = {
             "properties": {
                 "required_param": {"type": "string"},
                 "optional_param": {"type": "string"},
@@ -297,12 +259,11 @@ class TestRun:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock tool list response
         mock_tool = MagicMock()
         mock_tool.name = "test_tool"
-        mock_tool.inputSchema = {
+        mock_tool.input_schema = {
             "properties": {"valid_param": {"type": "string"}},
             "required": [],
         }
@@ -343,12 +304,11 @@ class TestRun:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock tool list response with no required field (None)
         mock_tool = MagicMock()
         mock_tool.name = "test_tool"
-        mock_tool.inputSchema = {
+        mock_tool.input_schema = {
             "properties": {"optional_param": {"type": "string"}},
             "required": None,  # No required parameters
         }
@@ -397,16 +357,15 @@ class TestRun:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock multiple tools
         mock_tool1 = MagicMock()
         mock_tool1.name = "tool1"
-        mock_tool1.inputSchema = {"properties": {}, "required": []}
+        mock_tool1.input_schema = {"properties": {}, "required": []}
 
         mock_tool2 = MagicMock()
         mock_tool2.name = "tool2"
-        mock_tool2.inputSchema = {
+        mock_tool2.input_schema = {
             "properties": {"param": {"type": "string"}},
             "required": [],
         }
@@ -454,12 +413,11 @@ class TestRun:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock tool list response
         mock_tool = MagicMock()
         mock_tool.name = "test_tool"
-        mock_tool.inputSchema = {"properties": {}, "required": []}
+        mock_tool.input_schema = {"properties": {}, "required": []}
 
         mock_list_response = MagicMock()
         mock_list_response.tools = [mock_tool]
@@ -494,12 +452,11 @@ class TestRun:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock tool list response
         mock_tool = MagicMock()
         mock_tool.name = "test_tool"
-        mock_tool.inputSchema = {"properties": {}, "required": []}
+        mock_tool.input_schema = {"properties": {}, "required": []}
 
         mock_list_response = MagicMock()
         mock_list_response.tools = [mock_tool]
@@ -555,12 +512,11 @@ class TestRun:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock tool list response
         mock_tool = MagicMock()
         mock_tool.name = "test_tool"
-        mock_tool.inputSchema = {"properties": {}, "required": []}
+        mock_tool.input_schema = {"properties": {}, "required": []}
 
         mock_list_response = MagicMock()
         mock_list_response.tools = [mock_tool]
@@ -605,7 +561,6 @@ class TestRunEdgeCases:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock empty tool list response
         mock_list_response = MagicMock()
@@ -640,12 +595,11 @@ class TestRunEdgeCases:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock tool list response
         mock_tool = MagicMock()
         mock_tool.name = "test_tool"
-        mock_tool.inputSchema = {"properties": {}, "required": []}
+        mock_tool.input_schema = {"properties": {}, "required": []}
 
         mock_list_response = MagicMock()
         mock_list_response.tools = [mock_tool]
@@ -691,12 +645,11 @@ class TestRunIntegration:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock realistic tool list response
         mock_tool = MagicMock()
         mock_tool.name = "get_user_info"
-        mock_tool.inputSchema = {
+        mock_tool.input_schema = {
             "properties": {
                 "user_id": {"type": "string", "description": "User ID to retrieve"},
                 "include_details": {
@@ -736,7 +689,6 @@ class TestRunIntegration:
         # Verify complete flow
         mock_config_get.assert_called_once()
         mock_server_class.assert_called_once_with(mock_config)
-        mock_client.ping.assert_called_once()
         mock_client.list_tools_mcp.assert_called_once()
 
         expected_args = {"user_id": "12345", "include_details": True}
@@ -776,12 +728,11 @@ class TestRunJSONParsing:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock tool list response
         mock_tool = MagicMock()
         mock_tool.name = "test_tool"
-        mock_tool.inputSchema = {"properties": {}, "required": []}
+        mock_tool.input_schema = {"properties": {}, "required": []}
 
         mock_list_response = MagicMock()
         mock_list_response.tools = [mock_tool]
@@ -827,12 +778,11 @@ class TestRunJSONParsing:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock tool list response
         mock_tool = MagicMock()
         mock_tool.name = "test_tool"
-        mock_tool.inputSchema = {"properties": {}, "required": []}
+        mock_tool.input_schema = {"properties": {}, "required": []}
 
         mock_list_response = MagicMock()
         mock_list_response.tools = [mock_tool]
@@ -878,12 +828,11 @@ class TestRunJSONParsing:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock tool list response
         mock_tool = MagicMock()
         mock_tool.name = "test_tool"
-        mock_tool.inputSchema = {"properties": {}, "required": []}
+        mock_tool.input_schema = {"properties": {}, "required": []}
 
         mock_list_response = MagicMock()
         mock_list_response.tools = [mock_tool]
@@ -927,12 +876,11 @@ class TestRunJSONParsing:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock tool list response
         mock_tool = MagicMock()
         mock_tool.name = "test_tool"
-        mock_tool.inputSchema = {"properties": {}, "required": []}
+        mock_tool.input_schema = {"properties": {}, "required": []}
 
         mock_list_response = MagicMock()
         mock_list_response.tools = [mock_tool]
@@ -976,12 +924,11 @@ class TestRunJSONParsing:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock tool list response
         mock_tool = MagicMock()
         mock_tool.name = "test_tool"
-        mock_tool.inputSchema = {"properties": {}, "required": []}
+        mock_tool.input_schema = {"properties": {}, "required": []}
 
         mock_list_response = MagicMock()
         mock_list_response.tools = [mock_tool]
@@ -1024,12 +971,11 @@ class TestRunJSONParsing:
         mock_server_class.return_value = mock_server_instance
 
         mock_client = AsyncMock()
-        mock_client.ping.return_value = True
 
         # Mock tool list response
         mock_tool = MagicMock()
         mock_tool.name = "test_tool"
-        mock_tool.inputSchema = {"properties": {}, "required": []}
+        mock_tool.input_schema = {"properties": {}, "required": []}
 
         mock_list_response = MagicMock()
         mock_list_response.tools = [mock_tool]
@@ -1051,3 +997,49 @@ class TestRunJSONParsing:
         # Verify HTML is output as plain text
         output = mock_stdout.getvalue()
         assert html_response in output
+
+
+class TestRunAgainstRealServer:
+    """Exercise `run` against a real in-process server and Client.
+
+    The mocked-Client tests above cannot see protocol-era behavior (for
+    example session-only calls such as ping() or renamed SDK attributes).
+    This test drives the genuine FastMCP Client in its default (modern)
+    mode against a genuine Server, with only the platform client faked.
+    """
+
+    @pytest.mark.asyncio
+    @patch("sys.stdout", new_callable=StringIO)
+    async def test_call_reaches_tool_and_returns_data(self, mock_stdout):
+        """`call` lists tools, validates, invokes a real tool, prints data"""
+        from itential_mcp.config.models import Config, ServerConfig, AuthConfig
+
+        cfg = Config(
+            server=ServerConfig(transport="stdio", tools_path=None, log_level="INFO"),
+            auth=AuthConfig(type="none"),
+        )
+
+        fake_platform = MagicMock()
+        fake_platform.configuration_manager.get_device_groups = AsyncMock(
+            return_value=[
+                {
+                    "id": "g1",
+                    "name": "group-one",
+                    "description": "first group",
+                    "devices": ["dev1"],
+                }
+            ]
+        )
+        fake_ctx = MagicMock()
+        fake_ctx.__aenter__ = AsyncMock(return_value=fake_platform)
+        fake_ctx.__aexit__ = AsyncMock(return_value=None)
+
+        with (
+            patch("itential_mcp.server.server.PlatformClient", return_value=fake_ctx),
+            patch("itential_mcp.runtime.runner.config.get", return_value=cfg),
+        ):
+            await runner.run("get_device_groups")
+
+        fake_platform.configuration_manager.get_device_groups.assert_awaited_once()
+        output = mock_stdout.getvalue()
+        assert "group-one" in output
