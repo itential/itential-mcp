@@ -9,6 +9,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from itential_mcp.models.base import AliasedModel
+
 
 class ServiceStatus(BaseModel):
     """
@@ -41,7 +43,7 @@ class ServiceStatus(BaseModel):
     ]
 
 
-class PlatformStatus(BaseModel):
+class PlatformStatus(AliasedModel):
     """
     Represents the overall platform status information.
 
@@ -237,7 +239,7 @@ class CpuInfo(BaseModel):
     ]
 
 
-class SystemInfo(BaseModel):
+class SystemInfo(AliasedModel):
     """
     Represents system-level hardware and OS information.
 
@@ -327,7 +329,7 @@ class SystemInfo(BaseModel):
     ]
 
 
-class MemoryUsage(BaseModel):
+class MemoryUsage(AliasedModel):
     """
     Represents memory usage statistics for a process.
 
@@ -455,7 +457,7 @@ def _coerce_scalar_cpu_usage_to_none(value):
     return None
 
 
-class ServerVersions(BaseModel):
+class ServerVersions(AliasedModel):
     """
     Represents version information for Node.js and its dependencies.
 
@@ -499,7 +501,7 @@ class ServerVersions(BaseModel):
     zlib: Annotated[str, Field(description="zlib compression library version")]
 
 
-class ServerInfo(BaseModel):
+class ServerInfo(AliasedModel):
     """
     Represents comprehensive server runtime information.
 
@@ -728,7 +730,7 @@ class LoggerConfig(BaseModel):
         return value
 
 
-class ApplicationInfo(BaseModel):
+class ApplicationInfo(AliasedModel):
     """
     Represents detailed information about a running application.
 
@@ -909,7 +911,7 @@ class ApplicationInfo(BaseModel):
     ]
 
 
-class AdapterInfo(BaseModel):
+class AdapterInfo(AliasedModel):
     """
     Represents detailed information about a running adapter.
 

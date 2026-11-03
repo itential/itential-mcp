@@ -33,6 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   session-only ping() probe (reachability is proven by the tool listing) and
   read tool input schemas via the snake_case input_schema attribute. The call
   subcommand now negotiates the modern 2026-07-28 protocol era. (#436)
+- Tools whose responses contain aliased fields (`get_health`,
+  `get_command_templates`, `describe_inventory`, `describe_job`, and others)
+  failed output validation on FastMCP 4 because structured content was
+  serialized by field name instead of by alias. Response models now serialize
+  by alias, so the wire keys are unchanged from FastMCP 3. (#439)
 
 ### Docs
 - Refresh CLAUDE.md and AGENTS.md (version, tool count, ipsdk floor, Python

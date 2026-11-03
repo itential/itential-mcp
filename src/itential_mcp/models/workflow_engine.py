@@ -8,10 +8,12 @@ import inspect
 
 from typing import Annotated, Any, Mapping
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
+
+from itential_mcp.models.base import AliasedModel
 
 
-class JobMetricElement(BaseModel):
+class JobMetricElement(AliasedModel):
     """
     Represents a single job metric object from the Workflow Engine.
 
@@ -42,8 +44,6 @@ class JobMetricElement(BaseModel):
         - Serialization with by_alias=True preserves original API field names
         - Snake_case properties provide Pythonic access to the data
     """
-
-    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
 
     object_id: Annotated[
         str,
@@ -219,7 +219,7 @@ class GetJobMetricsResponse(BaseModel):
     ]
 
 
-class TaskMetricElement(BaseModel):
+class TaskMetricElement(AliasedModel):
     """
     Represents a single task metric object from the Workflow Engine.
 
@@ -271,8 +271,6 @@ class TaskMetricElement(BaseModel):
         - Serialization with by_alias=True preserves original API field names
         - Snake_case properties provide Pythonic access to the data
     """
-
-    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
 
     object_id: Annotated[
         str | None,

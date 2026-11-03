@@ -10,6 +10,8 @@ from typing import Annotated, Any, Literal, Mapping
 
 from pydantic import BaseModel, Field, RootModel
 
+from itential_mcp.models.base import AliasedModel
+
 from itential_mcp.models.work_center import ManualTaskSummary
 
 
@@ -251,7 +253,7 @@ class StartWorkflowResponse(BaseModel):
     ]
 
 
-class JobElement(BaseModel):
+class JobElement(AliasedModel):
     """
     Represents a single job object from the operations manager.
 
@@ -339,7 +341,7 @@ class GetJobsResponse(RootModel):
     ]
 
 
-class DescribeJobResponse(BaseModel):
+class DescribeJobResponse(AliasedModel):
     """
     Response model for job detail endpoints.
 
