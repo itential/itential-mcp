@@ -2,6 +2,8 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
+
 from typing import Any
 
 from ipsdk.platform import AsyncPlatform
@@ -109,3 +111,55 @@ class ServiceBase:
             skip += limit
 
         return results
+
+    async def _get_page(
+        self,
+        endpoint: str,
+        *,
+        params: dict[str, Any] | None = None,
+        limit: int = 100,
+        skip: int = 0,
+        data_key: str = "results",
+        total_key: str = "total",
+    ) -> tuple[list[dict[str, Any]], int]:
+        """Retrieve a single bounded page of results from an API endpoint.
+
+        Unlike `_paginate`, this helper issues exactly one GET request using the
+        supplied skip/limit values and never follows additional pages. It is
+        intended for tools that expose their own limit/skip pagination to the
+        caller so response payloads stay bounded.
+
+        Args:
+            endpoint: API endpoint path to query (e.g., "/api/resources")
+            params: Optional query parameters (for example filters) to include
+                in the request. The mapping is copied, not modified. The
+                'limit' and 'skip' parameters are added automatically.
+            limit: Maximum number of items to request (default: 100)
+            skip: Number of items to skip before the page starts (default: 0)
+            data_key: Key in the response containing the data items
+                (default: "results")
+            total_key: Key in the response containing the total number of
+                items matching the query (default: "total")
+
+        Returns:
+            tuple[list[dict[str, Any]], int]: The items in the requested page
+                and the total number of items available on the platform. If the
+                response has no total, the number of items returned plus skip
+                is used.
+
+        Raises:
+            Exception: If the request to the platform fails
+        """
+        query = dict(params or {})
+        query["limit"] = limit
+        query["skip"] = skip
+
+        res = await self.client.get(endpoint, params=query)
+        data = res.json()
+
+        items = data.get(data_key, [])
+        total = data.get(total_key)
+        if total is None:
+            total = skip + len(items)
+
+        return items, total

@@ -179,10 +179,10 @@ class TestGetJobMetricsResponse:
 
     def test_get_job_metrics_response_empty(self):
         """Test empty GetJobMetricsResponse"""
-        response = GetJobMetricsResponse(root=[])
+        response = GetJobMetricsResponse(results=[])
 
-        assert response.root == []
-        assert len(response.root) == 0
+        assert response.results == []
+        assert len(response.results) == 0
 
     def test_get_job_metrics_response_with_elements(self):
         """Test GetJobMetricsResponse with job metric elements"""
@@ -201,20 +201,22 @@ class TestGetJobMetricsResponse:
             totalRunTime=300.5,
         )
 
-        response = GetJobMetricsResponse(root=[element1, element2])
+        response = GetJobMetricsResponse(results=[element1, element2])
 
-        assert len(response.root) == 2
-        assert response.root[0].object_id == "job-1"
-        assert response.root[0].workflow == {"name": "workflow-one"}
-        assert response.root[1].object_id == "job-2"
-        assert response.root[1].workflow == {"name": "workflow-two"}
+        assert len(response.results) == 2
+        assert response.results[0].object_id == "job-1"
+        assert response.results[0].workflow == {"name": "workflow-one"}
+        assert response.results[1].object_id == "job-2"
+        assert response.results[1].workflow == {"name": "workflow-two"}
 
     def test_get_job_metrics_response_default_factory(self):
         """Test GetJobMetricsResponse default factory creates empty list"""
         response = GetJobMetricsResponse()
 
-        assert response.root == []
-        assert len(response.root) == 0
+        assert response.results == []
+        assert response.total == 0
+        assert response.returned == 0
+        assert response.has_more is False
 
     def test_get_job_metrics_response_iteration(self):
         """Test GetJobMetricsResponse can be iterated"""
@@ -233,9 +235,9 @@ class TestGetJobMetricsResponse:
             totalRunTime=20.0,
         )
 
-        response = GetJobMetricsResponse(root=[element1, element2])
+        response = GetJobMetricsResponse(results=[element1, element2])
 
-        job_metrics = list(response.root)
+        job_metrics = list(response.results)
         assert len(job_metrics) == 2
         assert job_metrics[0].object_id == "iter-job-1"
         assert job_metrics[1].object_id == "iter-job-2"
@@ -250,10 +252,10 @@ class TestGetJobMetricsResponse:
             totalRunTime=5.5,
         )
 
-        response = GetJobMetricsResponse(root=[element])
+        response = GetJobMetricsResponse(results=[element])
 
-        assert len(response.root) == 1
-        assert response.root[0].object_id == "single-job"
+        assert len(response.results) == 1
+        assert response.results[0].object_id == "single-job"
 
     def test_get_job_metrics_response_large_list(self):
         """Test GetJobMetricsResponse with many elements"""
@@ -268,12 +270,12 @@ class TestGetJobMetricsResponse:
             )
             elements.append(element)
 
-        response = GetJobMetricsResponse(root=elements)
+        response = GetJobMetricsResponse(results=elements)
 
-        assert len(response.root) == 100
-        assert response.root[0].object_id == "job-0"
-        assert response.root[99].object_id == "job-99"
-        assert response.root[50].jobs_complete == 50
+        assert len(response.results) == 100
+        assert response.results[0].object_id == "job-0"
+        assert response.results[99].object_id == "job-99"
+        assert response.results[50].jobs_complete == 50
 
 
 class TestTaskMetricElement:
@@ -466,10 +468,10 @@ class TestGetTaskMetricsResponse:
 
     def test_get_task_metrics_response_empty(self):
         """Test empty GetTaskMetricsResponse"""
-        response = GetTaskMetricsResponse(root=[])
+        response = GetTaskMetricsResponse(results=[])
 
-        assert response.root == []
-        assert len(response.root) == 0
+        assert response.results == []
+        assert len(response.results) == 0
 
     def test_get_task_metrics_response_with_elements(self):
         """Test GetTaskMetricsResponse with task metric elements"""
@@ -490,20 +492,22 @@ class TestGetTaskMetricsResponse:
             workflow={"name": "workflow2"},
         )
 
-        response = GetTaskMetricsResponse(root=[element1, element2])
+        response = GetTaskMetricsResponse(results=[element1, element2])
 
-        assert len(response.root) == 2
-        assert response.root[0].task_id == "task-1"
-        assert response.root[0].task_type == "automatic"
-        assert response.root[1].task_id == "task-2"
-        assert response.root[1].task_type == "manual"
+        assert len(response.results) == 2
+        assert response.results[0].task_id == "task-1"
+        assert response.results[0].task_type == "automatic"
+        assert response.results[1].task_id == "task-2"
+        assert response.results[1].task_type == "manual"
 
     def test_get_task_metrics_response_default_factory(self):
         """Test GetTaskMetricsResponse default factory creates empty list"""
         response = GetTaskMetricsResponse()
 
-        assert response.root == []
-        assert len(response.root) == 0
+        assert response.results == []
+        assert response.total == 0
+        assert response.returned == 0
+        assert response.has_more is False
 
     def test_get_task_metrics_response_iteration(self):
         """Test GetTaskMetricsResponse can be iterated"""
@@ -524,9 +528,9 @@ class TestGetTaskMetricsResponse:
             workflow={"name": "iter-workflow-2"},
         )
 
-        response = GetTaskMetricsResponse(root=[element1, element2])
+        response = GetTaskMetricsResponse(results=[element1, element2])
 
-        task_metrics = list(response.root)
+        task_metrics = list(response.results)
         assert len(task_metrics) == 2
         assert task_metrics[0].task_id == "iter-task-1"
         assert task_metrics[1].task_id == "iter-task-2"
@@ -550,11 +554,11 @@ class TestGetTaskMetricsResponse:
             workflow={"name": "review-workflow"},
         )
 
-        response = GetTaskMetricsResponse(root=[automatic_task, manual_task])
+        response = GetTaskMetricsResponse(results=[automatic_task, manual_task])
 
-        assert len(response.root) == 2
-        assert response.root[0].task_type == "automatic"
-        assert response.root[1].task_type == "manual"
+        assert len(response.results) == 2
+        assert response.results[0].task_type == "automatic"
+        assert response.results[1].task_type == "manual"
 
     def test_get_task_metrics_response_same_workflow_different_apps(self):
         """Test GetTaskMetricsResponse with tasks from same workflow, different apps"""
@@ -583,13 +587,15 @@ class TestGetTaskMetricsResponse:
             workflow={"name": "data-pipeline"},
         )
 
-        response = GetTaskMetricsResponse(root=[task1, task2, task3])
+        response = GetTaskMetricsResponse(results=[task1, task2, task3])
 
-        assert len(response.root) == 3
+        assert len(response.results) == 3
         # All tasks should be from same workflow
-        assert all(task.workflow == {"name": "data-pipeline"} for task in response.root)
+        assert all(
+            task.workflow == {"name": "data-pipeline"} for task in response.results
+        )
         # But different apps
-        apps = [task.app for task in response.root]
+        apps = [task.app for task in response.results]
         assert apps == ["preprocessor", "transformer", "loader"]
 
     def test_get_task_metrics_response_large_list(self):
@@ -606,17 +612,17 @@ class TestGetTaskMetricsResponse:
             )
             elements.append(element)
 
-        response = GetTaskMetricsResponse(root=elements)
+        response = GetTaskMetricsResponse(results=elements)
 
-        assert len(response.root) == 50
-        assert response.root[0].task_id == "bulk-task-0"
-        assert response.root[49].task_id == "bulk-task-49"
+        assert len(response.results) == 50
+        assert response.results[0].task_id == "bulk-task-0"
+        assert response.results[49].task_id == "bulk-task-49"
 
         # Check distribution of task types
         automatic_count = sum(
-            1 for task in response.root if task.task_type == "automatic"
+            1 for task in response.results if task.task_type == "automatic"
         )
-        manual_count = sum(1 for task in response.root if task.task_type == "manual")
+        manual_count = sum(1 for task in response.results if task.task_type == "manual")
         assert automatic_count == 25
         assert manual_count == 25
 
@@ -661,10 +667,10 @@ class TestTaskMetricElementNullApp:
             for i in range(600)
         ]
 
-        response = GetTaskMetricsResponse(root=elements)
+        response = GetTaskMetricsResponse(results=elements)
 
-        assert len(response.root) == 600
-        assert all(e.app is None for e in response.root)
+        assert len(response.results) == 600
+        assert all(e.app is None for e in response.results)
 
     def test_app_string_still_works(self):
         """Regression — app='WorkFlowEngine' must still populate correctly."""
@@ -692,11 +698,11 @@ class TestTaskMetricElementNullApp:
             TaskMetricElement(taskType="manual", name="task-absent-app", metrics=[]),
         ]
 
-        response = GetTaskMetricsResponse(root=elements)
+        response = GetTaskMetricsResponse(results=elements)
 
-        assert response.root[0].app == "WorkFlowEngine"
-        assert response.root[1].app is None
-        assert response.root[2].app is None
+        assert response.results[0].app == "WorkFlowEngine"
+        assert response.results[1].app is None
+        assert response.results[2].app is None
 
     def test_null_app_serializes_correctly(self):
         """model_dump() on a null-app element must produce app: None."""
@@ -709,3 +715,59 @@ class TestTaskMetricElementNullApp:
 
         data = element.model_dump()
         assert data["app"] is None
+
+
+class TestMetricsResponsePagination:
+    """Pagination metadata on the job and task metrics response models."""
+
+    @pytest.mark.parametrize("model", [GetJobMetricsResponse, GetTaskMetricsResponse])
+    @pytest.mark.parametrize(
+        "skip,returned,total,has_more",
+        [
+            (0, 200, 500, True),
+            (200, 200, 500, True),
+            (400, 100, 500, False),
+            (0, 0, 0, False),
+            (0, 200, 200, False),
+        ],
+    )
+    def test_has_more_math(self, model, skip, returned, total, has_more):
+        """has_more is skip + returned < total."""
+        response = model(
+            results=[],
+            total=total,
+            returned=returned,
+            limit=200,
+            skip=skip,
+            has_more=skip + returned < total,
+        )
+
+        assert response.has_more is has_more
+        assert response.total == total
+        assert response.skip == skip
+
+    @pytest.mark.parametrize("model", [GetJobMetricsResponse, GetTaskMetricsResponse])
+    def test_serialization_uses_plain_field_names(self, model):
+        """The response serializes to the plain pagination keys."""
+        data = model(
+            results=[], total=1, returned=0, limit=5, skip=0, has_more=True
+        ).model_dump(by_alias=True)
+
+        assert set(data) == {
+            "results",
+            "total",
+            "returned",
+            "limit",
+            "skip",
+            "has_more",
+        }
+
+    @pytest.mark.parametrize("model", [GetJobMetricsResponse, GetTaskMetricsResponse])
+    def test_schema_is_object(self, model):
+        """The output schema is an object with the pagination properties."""
+        schema = model.model_json_schema()
+
+        assert schema["type"] == "object"
+        assert {"results", "total", "returned", "limit", "skip", "has_more"} <= set(
+            schema["properties"]
+        )

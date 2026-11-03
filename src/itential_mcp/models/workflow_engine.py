@@ -8,7 +8,7 @@ import inspect
 
 from typing import Annotated, Any, Mapping
 
-from pydantic import BaseModel, Field, RootModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class JobMetricElement(BaseModel):
@@ -42,6 +42,8 @@ class JobMetricElement(BaseModel):
         - Serialization with by_alias=True preserves original API field names
         - Snake_case properties provide Pythonic access to the data
     """
+
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
 
     object_id: Annotated[
         str,
@@ -103,53 +105,116 @@ class JobMetricElement(BaseModel):
     ]
 
 
-class GetJobMetricsResponse(RootModel):
+class GetJobMetricsResponse(BaseModel):
     """
     Response model for job metrics collection endpoints.
 
-    This Pydantic RootModel provides a standardized response format for API endpoints
-    that return collections of job metrics from the Itential Platform workflow engine.
-    It wraps a list of JobMetricElement objects, enabling type-safe handling of
-    job metrics data across the platform.
-
-    The root model pattern allows the response to be treated as a list while
-    maintaining proper validation and serialization capabilities for the contained
-    job metric elements.
+    This Pydantic model provides a paginated response format for tools that
+    return job-level metrics from the Itential Platform workflow engine. It
+    wraps one page of JobMetricElement objects together with pagination metadata so
+    callers can tell whether more results exist and how to request them.
 
     Args:
-        root: List of JobMetricElement objects containing job performance data.
-            Defaults to an empty list if not provided.
+        results: List of JobMetricElement objects in this page. Defaults to an empty list.
+        total: Total number of matching items available on the platform.
+        returned: Number of items in this page.
+        limit: The maximum number of items requested for this page.
+        skip: The number of items skipped before this page.
+        has_more: Whether more items exist beyond this page
+            (skip + returned < total).
 
     Attributes:
-        root (List[JobMetricElement]): Collection of job metric elements with
-            performance and completion statistics for workflow monitoring
+        results (list[JobMetricElement]): The page of job metric elements
+        total (int): Total number of matching items on the platform
+        returned (int): Number of items in this page
+        limit (int): Page size that was requested
+        skip (int): Offset of this page
+        has_more (bool): True when skip + returned < total
 
     Example:
-        Creating a response with multiple job metrics:
-
-        >>> job1 = JobMetricElement(_id="job1", workflow="wf1", metrics=[],
+        >>> job1 = JobMetricElement(_id="job1", workflow=None, metrics=[],
         ...                        jobsComplete=10, totalRunTime=100.0)
-        >>> job2 = JobMetricElement(_id="job2", workflow="wf2", metrics=[],
-        ...                        jobsComplete=20, totalRunTime=250.5)
-        >>> response = GetJobMetricsResponse([job1, job2])
-        >>> print(len(response.root))  # 2
-        >>> print(response.root[0].jobs_complete)  # 10
+        >>> response = GetJobMetricsResponse(
+        ...     results=[job1], total=250, returned=1, limit=1, skip=0, has_more=True
+        ... )
+        >>> print(len(response.results))  # 1
+        >>> print(response.results[0].jobs_complete)  # 10
+        >>> print(response.has_more)  # True
 
     Notes:
-        - Uses default_factory=list to create empty collections when needed
-        - Supports iteration and indexing through the root attribute
-        - Maintains type safety for all contained JobMetricElement objects
+        - Use skip=skip + returned on the next call to retrieve the next page
+        - Field names are plain (no aliases) so serialization matches the schema
     """
 
-    root: Annotated[
+    results: Annotated[
         list[JobMetricElement],
         Field(
             description=inspect.cleandoc(
                 """
-                List of job metric objects with performance and completion statistics
+                The job metric objects in this page, with performance and execution statistics
                 """
             ),
             default_factory=list,
+        ),
+    ]
+
+    total: Annotated[
+        int,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Total number of job metrics available on the platform for the query, across all pages
+                """
+            ),
+            default=0,
+        ),
+    ]
+
+    returned: Annotated[
+        int,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Number of items in results for this page
+                """
+            ),
+            default=0,
+        ),
+    ]
+
+    limit: Annotated[
+        int,
+        Field(
+            description=inspect.cleandoc(
+                """
+                The maximum number of items requested for this page
+                """
+            ),
+            default=0,
+        ),
+    ]
+
+    skip: Annotated[
+        int,
+        Field(
+            description=inspect.cleandoc(
+                """
+                The number of items skipped before this page
+                """
+            ),
+            default=0,
+        ),
+    ]
+
+    has_more: Annotated[
+        bool,
+        Field(
+            description=inspect.cleandoc(
+                """
+                True when more items exist beyond this page. Call again with skip increased by returned to retrieve the next page
+                """
+            ),
+            default=False,
         ),
     ]
 
@@ -207,8 +272,10 @@ class TaskMetricElement(BaseModel):
         - Snake_case properties provide Pythonic access to the data
     """
 
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
+
     object_id: Annotated[
-        str,
+        str | None,
         Field(
             alias="_id",
             description=inspect.cleandoc(
@@ -292,54 +359,115 @@ class TaskMetricElement(BaseModel):
     ]
 
 
-class GetTaskMetricsResponse(RootModel):
+class GetTaskMetricsResponse(BaseModel):
     """
     Response model for task metrics collection endpoints.
 
-    This Pydantic RootModel provides a standardized response format for API endpoints
-    that return collections of task-level metrics from the Itential Platform workflow
-    engine. It wraps a list of TaskMetricElement objects, enabling type-safe handling
-    of task performance data across automation workflows.
-
-    The root model pattern allows the response to be treated as a list while
-    maintaining proper validation and serialization capabilities for the contained
-    task metric elements, supporting comprehensive workflow monitoring and analysis.
+    This Pydantic model provides a paginated response format for tools that
+    return task-level metrics from the Itential Platform workflow engine. It
+    wraps one page of TaskMetricElement objects together with pagination metadata so
+    callers can tell whether more results exist and how to request them.
 
     Args:
-        root: List of TaskMetricElement objects containing task performance data.
-            Defaults to an empty list if not provided.
+        results: List of TaskMetricElement objects in this page. Defaults to an empty list.
+        total: Total number of matching items available on the platform.
+        returned: Number of items in this page.
+        limit: The maximum number of items requested for this page.
+        skip: The number of items skipped before this page.
+        has_more: Whether more items exist beyond this page
+            (skip + returned < total).
 
     Attributes:
-        root (List[TaskMetricElement]): Collection of task metric elements with
-            application usage patterns and execution statistics for workflow analysis
+        results (list[TaskMetricElement]): The page of task metric elements
+        total (int): Total number of matching items on the platform
+        returned (int): Number of items in this page
+        limit (int): Page size that was requested
+        skip (int): Offset of this page
+        has_more (bool): True when skip + returned < total
 
     Example:
-        Creating a response with multiple task metrics:
-
         >>> task1 = TaskMetricElement(taskType="automatic", name="validate-config",
         ...                          metrics=[], app="validator")
-        >>> task2 = TaskMetricElement(taskType="manual", name="approve-deploy",
-        ...                          metrics=[], app="approval-service")
-        >>> response = GetTaskMetricsResponse([task1, task2])
-        >>> print(len(response.root))  # 2
-        >>> print(response.root[0].task_type)  # "automatic"
-        >>> print(response.root[1].name)  # "approve-deploy"
+        >>> response = GetTaskMetricsResponse(
+        ...     results=[task1], total=1, returned=1, limit=200, skip=0, has_more=False
+        ... )
+        >>> print(len(response.results))  # 1
+        >>> print(response.results[0].task_type)  # "automatic"
+        >>> print(response.has_more)  # False
 
     Notes:
-        - Uses default_factory=list to create empty collections when needed
-        - Supports iteration and indexing through the root attribute
-        - Maintains type safety for all contained TaskMetricElement objects
-        - Enables filtering and analysis of tasks by application, workflow, or type
+        - Use skip=skip + returned on the next call to retrieve the next page
+        - Field names are plain (no aliases) so serialization matches the schema
     """
 
-    root: Annotated[
+    results: Annotated[
         list[TaskMetricElement],
         Field(
             description=inspect.cleandoc(
                 """
-                List of task metric objects with application usage and execution patterns
+                The task metric objects in this page, with performance and execution statistics
                 """
             ),
             default_factory=list,
+        ),
+    ]
+
+    total: Annotated[
+        int,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Total number of task metrics available on the platform for the query, across all pages
+                """
+            ),
+            default=0,
+        ),
+    ]
+
+    returned: Annotated[
+        int,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Number of items in results for this page
+                """
+            ),
+            default=0,
+        ),
+    ]
+
+    limit: Annotated[
+        int,
+        Field(
+            description=inspect.cleandoc(
+                """
+                The maximum number of items requested for this page
+                """
+            ),
+            default=0,
+        ),
+    ]
+
+    skip: Annotated[
+        int,
+        Field(
+            description=inspect.cleandoc(
+                """
+                The number of items skipped before this page
+                """
+            ),
+            default=0,
+        ),
+    ]
+
+    has_more: Annotated[
+        bool,
+        Field(
+            description=inspect.cleandoc(
+                """
+                True when more items exist beyond this page. Call again with skip increased by returned to retrieve the next page
+                """
+            ),
+            default=False,
         ),
     ]
