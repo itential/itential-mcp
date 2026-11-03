@@ -85,18 +85,23 @@ class SessionReasoningEvent(BaseModel):
     """
     Represents a single kept AGENT_REASONING event from an agent session.
 
-    describe_session filters the raw session event log down to only the
-    AGENT_REASONING events whose data.stopReason is "end_turn" — these are
-    the reasoning steps that represent a completed model turn, as opposed to
-    tool-execution events, pending-inference events, tool_use-stopReason
-    reasoning steps (mid-turn, not yet final), or reasoning events with no
-    data at all. Each kept event carries its own text payload.
+    By default describe_session filters the raw session event log down to
+    only the AGENT_REASONING events whose data.stopReason is "end_turn" —
+    these are the reasoning steps that represent a completed model turn, as
+    opposed to tool-execution events, pending-inference events,
+    tool_use-stopReason reasoning steps (mid-turn, not yet final), or
+    reasoning events with no data at all. With include_all_events=True every
+    AGENT_REASONING event is kept. Each kept event carries its own text
+    payload and stop reason.
 
     Attributes:
         event_id: Unique identifier for this event.
         sequence_number: Ordering number for this event within the session.
         timestamp: ISO 8601 timestamp when this event was emitted.
         text: Text content of this reasoning event.
+        stop_reason: Why the model turn stopped (for example "end_turn" or
+            "tool_use"), read from the raw event's data.stopReason. None if
+            the event carries no stop reason.
     """
 
     event_id: Annotated[
@@ -141,6 +146,19 @@ class SessionReasoningEvent(BaseModel):
             description=inspect.cleandoc(
                 """
                 Text content of this reasoning event
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    stop_reason: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Why the model turn stopped (for example end_turn or tool_use),
+                taken from the raw event's data.stopReason
                 """
             ),
             default=None,
@@ -303,14 +321,16 @@ class DescribeSessionResponse(BaseModel):
         session_id: Unique session identifier.
         agent_name: Name of the agent that ran.
         status: Session status (RUNNING, COMPLETE, FAILED).
-        output: Final text output produced by the agent (the last kept
-            reasoning event's text). None if the session has not yet
-            completed or produced no matching reasoning event.
+        output: Final text output produced by the agent (the last end_turn
+            reasoning event's text, or the last non-empty AGENT_REASONING text
+            when the session has no end_turn event). None if there is no such
+            text.
         started_at: ISO 8601 start timestamp.
         end_time: ISO 8601 end timestamp (None if still running).
         duration_ms: Total session duration in milliseconds.
         reasoning_events: Ordered list of kept AGENT_REASONING events (those
-            with data.stopReason == "end_turn").
+            with data.stopReason == "end_turn" by default, or all of them when
+            include_all_events is set).
         pending_manual_tasks: Manual tasks waiting on a human (None if unknown).
     """
 
@@ -353,9 +373,10 @@ class DescribeSessionResponse(BaseModel):
         Field(
             description=inspect.cleandoc(
                 """
-                Final text output produced by the agent; taken from the last
-                kept reasoning event's text. None if the session has not
-                completed or produced no matching reasoning event.
+                Final text output produced by the agent; the last end_turn
+                reasoning event's text, or the last non-empty AGENT_REASONING
+                text when the session has no end_turn event. None if there is
+                no such text.
                 """
             ),
             default=None,
@@ -403,8 +424,10 @@ class DescribeSessionResponse(BaseModel):
         Field(
             description=inspect.cleandoc(
                 """
-                Ordered list of kept AGENT_REASONING events (those with
-                data.stopReason == "end_turn") captured during agent execution
+                Ordered list of kept AGENT_REASONING events captured during
+                agent execution. By default only those with
+                data.stopReason == "end_turn"; all AGENT_REASONING events when
+                include_all_events is true
                 """
             ),
             default_factory=list,
