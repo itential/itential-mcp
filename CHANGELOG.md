@@ -37,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `get_command_templates`, `describe_inventory`, `describe_job`, and others)
   failed output validation on FastMCP 4 because structured content was
   serialized by field name instead of by alias. Response models now serialize
-  by alias, so the wire keys are unchanged from FastMCP 3. (#TBD)
+  by alias, so the wire keys are unchanged from FastMCP 3. (#439)
 
 ### Docs
 - Refresh CLAUDE.md and AGENTS.md (version, tool count, ipsdk floor, Python
