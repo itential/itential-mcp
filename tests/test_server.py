@@ -14,7 +14,6 @@ from itential_mcp import server
 from itential_mcp.server import server as server_module
 from itential_mcp.core import metadata
 from itential_mcp.platform import PlatformClient
-from itential_mcp.middleware.bindings import BindingsMiddleware
 
 instructions = """
 Tools for Itential - a network and infrastructure automation and orchestration
@@ -54,130 +53,6 @@ class TestLifespan:
             assert "client" in context
 
         # Context should be properly cleaned up after exiting
-
-
-class TestBindingsMiddleware:
-    """Test the BindingsMiddleware class"""
-
-    def test_middleware_initialization(self):
-        """Test BindingsMiddleware initializes with config"""
-        mock_config = MagicMock()
-        mock_config.tools = [MagicMock()]
-
-        middleware = BindingsMiddleware(mock_config)
-
-        assert middleware.config == mock_config
-
-    @pytest.mark.asyncio
-    async def test_on_call_tool_adds_tool_config(self):
-        """Test on_call_tool adds _tool_config to matching tool calls"""
-        # Setup config with tools
-        mock_tool1 = MagicMock()
-        mock_tool1.tool_name = "test_tool"
-        mock_tool2 = MagicMock()
-        mock_tool2.tool_name = "other_tool"
-
-        mock_config = MagicMock()
-        mock_config.tools = [mock_tool1, mock_tool2]
-
-        middleware = BindingsMiddleware(mock_config)
-
-        # Setup context
-        mock_context = MagicMock()
-        mock_context.message.name = "test_tool"
-        mock_context.message.arguments = {}
-
-        # Setup call_next
-        mock_response = MagicMock()
-        call_next = AsyncMock(return_value=mock_response)
-
-        # Execute
-        await middleware.on_call_tool(mock_context, call_next)
-
-        # Verify tool config was added
-        call_next.assert_called_once_with(mock_context)
-        # assert "_tool_config" in mock_context.message.arguments  # Can't check after cleanup
-        # assert mock_context.message.arguments["_tool_config"] == mock_tool1  # Can't check after cleanup
-
-        # Verify tool config was cleaned up after call
-        assert "_tool_config" not in mock_context.message.arguments
-
-    @pytest.mark.asyncio
-    async def test_on_call_tool_no_matching_tool(self):
-        """Test on_call_tool doesn't add config for non-matching tools"""
-        mock_tool = MagicMock()
-        mock_tool.tool_name = "other_tool"
-
-        mock_config = MagicMock()
-        mock_config.tools = [mock_tool]
-
-        middleware = BindingsMiddleware(mock_config)
-
-        # Setup context with non-matching tool name
-        mock_context = MagicMock()
-        mock_context.message.name = "test_tool"
-        mock_context.message.arguments = {}
-
-        mock_response = MagicMock()
-        call_next = AsyncMock(return_value=mock_response)
-
-        await middleware.on_call_tool(mock_context, call_next)
-
-        # Verify no tool config was added
-        call_next.assert_called_once_with(mock_context)
-        assert "_tool_config" not in mock_context.message.arguments
-
-    @pytest.mark.asyncio
-    async def test_on_call_tool_multiple_matching_tools(self):
-        """Test on_call_tool handles multiple tools with same name (last one wins)"""
-        mock_tool1 = MagicMock()
-        mock_tool1.tool_name = "test_tool"
-        mock_tool2 = MagicMock()
-        mock_tool2.tool_name = "test_tool"  # Same name
-
-        mock_config = MagicMock()
-        mock_config.tools = [mock_tool1, mock_tool2]
-
-        middleware = BindingsMiddleware(mock_config)
-
-        mock_context = MagicMock()
-        mock_context.message.name = "test_tool"
-        mock_context.message.arguments = {}
-
-        mock_response = MagicMock()
-        call_next = AsyncMock(return_value=mock_response)
-
-        await middleware.on_call_tool(mock_context, call_next)
-
-        # Verify the last matching tool config was used
-        call_next.assert_called_once_with(mock_context)
-        # After cleanup, should not be present
-        assert "_tool_config" not in mock_context.message.arguments
-
-    @pytest.mark.asyncio
-    async def test_on_call_tool_preserves_existing_arguments(self):
-        """Test on_call_tool preserves existing message arguments"""
-        mock_tool = MagicMock()
-        mock_tool.tool_name = "test_tool"
-
-        mock_config = MagicMock()
-        mock_config.tools = [mock_tool]
-
-        middleware = BindingsMiddleware(mock_config)
-
-        # Setup context with existing arguments
-        mock_context = MagicMock()
-        mock_context.message.name = "test_tool"
-        mock_context.message.arguments = {"existing_param": "value"}
-
-        mock_response = MagicMock()
-        call_next = AsyncMock(return_value=mock_response)
-
-        await middleware.on_call_tool(mock_context, call_next)
-
-        # Verify existing argument is preserved after cleanup
-        assert mock_context.message.arguments["existing_param"] == "value"
-        assert "_tool_config" not in mock_context.message.arguments
 
 
 class TestRun:

@@ -44,7 +44,6 @@ AI Agent → MCP Transport (stdio|sse|http)
 - **Dynamic bindings via environment**: Tools can be created at runtime without writing Python by setting `ITENTIAL_MCP_TOOL_<NAME>` env vars with JSON config. This enables exposing workflows as MCP tools without code changes.
 - **Tag system for tool filtering**: Each tool module declares `__tags__` and individual functions can use `@tags()`. Tool name is always auto-tagged. `include_tags`/`exclude_tags` in server config controls what tools are exposed to clients.
 - **Config immutability**: All config dataclasses use `frozen=True`. You cannot mutate config after load — set env vars before startup.
-- **BindingsMiddleware uses O(1) dict lookup**: Previously iterated all bindings on every request. Now uses `tool_name → Tool config` dict. Critical for deployments with many dynamic tools.
 
 ---
 
@@ -385,7 +384,6 @@ config/defaults.py              All default values in one place
 core/exceptions.py              Exception hierarchy
 utilities/tool.py               Tool discovery and tag system
 bindings/__init__.py            Dynamic binding orchestration
-middleware/bindings.py          O(1) bindings injection
 runtime/parser.py               CLI argument handling
 pyproject.toml                  Project metadata, dependencies, test config
 Makefile                        All development commands

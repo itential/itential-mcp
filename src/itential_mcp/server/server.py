@@ -29,7 +29,6 @@ from .. import bindings
 from ..core import logging
 from ..core import metadata
 from ..utilities import tool as toolutils
-from ..middleware.bindings import BindingsMiddleware
 from ..middleware.serialization import SerializationMiddleware
 
 
@@ -174,7 +173,6 @@ class Server:
                 logger=logger, include_payloads=True, max_payload_length=1000
             )
         )
-        self.mcp.add_middleware(BindingsMiddleware(self.config))
         self.mcp.add_middleware(SerializationMiddleware(self.config))
 
     async def __init_routes__(self) -> None:

@@ -15,6 +15,7 @@ from itential_mcp.platform import PlatformClient
 from itential_mcp.core import exceptions
 from itential_mcp.utilities import json as jsonutils
 
+from itential_mcp.models import operations_manager as models
 from itential_mcp.tools import operations_manager
 
 
@@ -120,8 +121,10 @@ async def new(
         platform_client (PlatformClient): The platform client for API communication.
 
     Returns:
-        Tuple[Callable, str]: A tuple containing the start_workflow function and
-            its description string including schema information.
+        Tuple[Callable, str]: A tuple containing a per-binding closure that
+            captures the endpoint tool configuration (so no internal
+            parameter appears in the tool schema) and its description string
+            including schema information.
 
     Raises:
         exceptions.NotFoundError: If the automation or trigger cannot be found.
@@ -136,4 +139,25 @@ async def new(
         """
     )
 
-    return start_workflow, description
+    async def _bound(
+        ctx: Context, data: dict | str | None = None
+    ) -> models.StartWorkflowResponse | models.StartAgentResponse:
+        """Start the workflow bound to this endpoint tool.
+
+        Args:
+            ctx (Context): The FastMCP context containing request and lifecycle information.
+            data (dict | None): Optional input data to pass to the workflow. Defaults to None.
+
+        Returns:
+            StartWorkflowResponse | StartAgentResponse: The workflow or agent
+                execution response.
+
+        Raises:
+            exceptions.NotFoundError: If the automation or trigger cannot be found.
+        """
+        return await start_workflow(ctx, _tool_config=t, data=data)
+
+    _bound.__name__ = t.tool_name
+    _bound.__qualname__ = t.tool_name
+
+    return _bound, description

@@ -362,7 +362,7 @@ class TestNew:
 
         func, description = await service.new(mock_service_tool, mock_platform_client)
 
-        assert func == service.run_service
+        assert callable(func) and func is not service.run_service
         assert isinstance(description, str)
         assert "Test service description" in description
         assert "Args:" in description
@@ -388,7 +388,7 @@ class TestNew:
 
         func, description = await service.new(mock_service_tool, mock_platform_client)
 
-        assert func == service.run_service
+        assert callable(func) and func is not service.run_service
         assert isinstance(description, str)
         assert "Args:" in description
         assert "data (dict)" in description
@@ -411,7 +411,7 @@ class TestNew:
 
         func, description = await service.new(mock_service_tool, mock_platform_client)
 
-        assert func == service.run_service
+        assert callable(func) and func is not service.run_service
         assert isinstance(description, str)
         assert "Args:" in description
 
@@ -433,7 +433,7 @@ class TestNew:
 
         func, description = await service.new(mock_service_tool, mock_platform_client)
 
-        assert func == service.run_service
+        assert callable(func) and func is not service.run_service
         assert description == "Simple service"
         assert "Args:" not in description
         assert "input schema:" not in description
@@ -456,7 +456,7 @@ class TestNew:
 
         func, description = await service.new(mock_service_tool, mock_platform_client)
 
-        assert func == service.run_service
+        assert callable(func) and func is not service.run_service
         assert "Service with empty decorator" in description
         # Empty dict evaluates to False, so no Args section should be added
         assert "Args:" not in description
@@ -502,7 +502,7 @@ class TestNew:
 
         func, description = await service.new(mock_service_tool, mock_platform_client)
 
-        assert func == service.run_service
+        assert callable(func) and func is not service.run_service
         assert "Complex service" in description
         assert "username" in description
         assert "timeout" in description
@@ -689,7 +689,7 @@ class TestServiceIntegration:
         func, description = await service.new(
             setup["tool_config"], setup["platform_client"]
         )
-        assert func == service.run_service
+        assert callable(func) and func is not service.run_service
         assert "Integration test service" in description
 
         # Test service execution
@@ -809,7 +809,7 @@ class TestEdgeCases:
 
         func, description = await service.new(tool_config, platform_client)
 
-        assert func == service.run_service
+        assert callable(func) and func is not service.run_service
         assert isinstance(description, str)
         assert len(description) > 1000  # Should be quite large
         assert "property_0" in description

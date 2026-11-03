@@ -106,7 +106,6 @@ async def bind_to_tool(
                 - name: Tool name exposed to MCP clients
                 - description: Tool description from binding module
                 - tags: Complete list of tags for filtering
-                - exclude_args: Arguments to hide from MCP schema
                 - annotations: Conservative ToolAnnotations (destructive,
                     not read-only, open-world) since the bound automation's
                     real-world effects are unknown at registration time
@@ -119,14 +118,12 @@ async def bind_to_tool(
     logger.info(f"Adding dynamic binding for tool: {tool.name} (type={tool.type})")
 
     # Step 1: Prepare base registration kwargs
-    # exclude_args hides internal parameters from the MCP tool schema.
     # annotations default to the conservative posture (destructive,
     # not-read-only, open-world) because a dynamically-bound tool triggers
     # an arbitrary platform automation/workflow whose effects are unknown to
     # us at registration time.
     kwargs = {
         "name": tool.tool_name,
-        "exclude_args": ("_tool_config",),
         "annotations": ToolAnnotations(
             destructive_hint=True,
             read_only_hint=False,

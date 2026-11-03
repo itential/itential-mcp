@@ -112,7 +112,6 @@ class TestBindToTool:
         # Since we're using AsyncMock with side_effect, we need to check the actual function returned
         assert callable(fn)
         assert kwargs["name"] == "test_tool_name"
-        assert kwargs["exclude_args"] == ("_tool_config",)
         assert kwargs["tags"] == ["bindings", "test_tool_name", "tag1", "tag2"]
         assert kwargs["annotations"].destructive_hint is True
         assert not kwargs["annotations"].read_only_hint
@@ -141,7 +140,6 @@ class TestBindToTool:
         # Since we're using AsyncMock with side_effect, we need to check the actual function returned
         assert callable(fn)
         assert kwargs["name"] == "test_tool_name"
-        assert kwargs["exclude_args"] == ("_tool_config",)
         assert kwargs["tags"] == ["bindings", "test_tool_name"]
         assert kwargs["annotations"].destructive_hint is True
         assert not kwargs["annotations"].read_only_hint
@@ -364,7 +362,6 @@ class TestBindingsIntegration:
         # Since we're using AsyncMock with side_effect, we need to check the actual function returned
         assert callable(bound_fn)
         assert bound_kwargs["name"] == "test_workflow"
-        assert bound_kwargs["exclude_args"] == ("_tool_config",)
         assert bound_kwargs["tags"] == [
             "bindings",
             "test_workflow",
