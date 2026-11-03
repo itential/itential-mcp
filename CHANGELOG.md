@@ -15,13 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (fastmcp>=4.1.5,<5, mcp>=2,<3, pydantic>=2.12, starlette>=0.27). FastMCP 4
   negotiates both the legacy (<=2025-11-25) and modern (2026-07-28
   sessionless) protocol eras per connection. Tool annotations are constructed
-  with snake_case fields; the wire format is unchanged. (#TBD)
+  with snake_case fields; the wire format is unchanged. (#436)
 
 ### Fixed
 - `itential-mcp call` works against a FastMCP 4 server: dropped the
   session-only ping() probe (reachability is proven by the tool listing) and
   read tool input schemas via the snake_case input_schema attribute. The call
-  subcommand now negotiates the modern 2026-07-28 protocol era. (#TBD)
+  subcommand now negotiates the modern 2026-07-28 protocol era. (#436)
 
 ### Docs
 - Refresh CLAUDE.md and AGENTS.md (version, tool count, ipsdk floor, Python
