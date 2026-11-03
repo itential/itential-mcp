@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   AGENT_REASONING event regardless of stop reason, so sessions whose turns all
   end in tool calls are no longer shown as empty. Each reasoning event also
   carries a new optional `stop_reason` field. (#440)
+- With `include_all_events`, `describe_session` also drops
+  `inference-pending` marker events, adds per-turn `duration_ms`,
+  `input_tokens` and `output_tokens` to each reasoning event, and groups the
+  turn's tool executions under a new `tool_calls` list (`tool_name`,
+  `tool_type`, `summary`, `status`, `duration_ms`, `error_message`). Tool
+  input and output are intentionally omitted. (#440)
 
 ### Changed
 - `describe_session` `output` now falls back to the text of the last

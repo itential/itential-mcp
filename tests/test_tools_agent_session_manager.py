@@ -554,6 +554,227 @@ class TestDescribeSessionTool:
 
         assert result.reasoning_events[0].timestamp == "2025-06-01T10:00:00Z"
 
+    @staticmethod
+    def _turn_events():
+        def reasoning(eid, ts, typ, text, data):
+            return {
+                "eventId": eid,
+                "sessionId": "s",
+                "timestamp": ts,
+                "sequenceNumber": int(ts // 1000),
+                "category": "AGENT_REASONING",
+                "type": typ,
+                "text": text,
+                "data": data,
+            }
+
+        def tool(eid, ts, name, status="succeeded", err=None):
+            return {
+                "eventId": eid,
+                "timestamp": ts,
+                "sequenceNumber": None,
+                "category": "TOOL_CALLED",
+                "type": "tool-execution",
+                "text": "",
+                "data": {
+                    "toolName": name,
+                    "toolType": "method",
+                    "summary": f"ran {name}",
+                    "status": status,
+                    "durationMs": 7,
+                    "errorMessage": err,
+                    "input": {"secret": "x"},
+                    "output": "big",
+                },
+            }
+
+        usage = {"inputTokens": 10, "outputTokens": 3}
+        return [
+            reasoning("p1", 1000, "inference-pending", "", {}),
+            reasoning(
+                "r1",
+                2000,
+                "inference-succeeded",
+                "",
+                {"durationMs": 50, "stopReason": "tool_use", "tokenUsage": usage},
+            ),
+            tool("t1", 2025, "alpha"),
+            tool("t2", 2026, "beta", "failed", "boom"),
+            reasoning("p2", 3000, "inference-pending", None, {}),
+            reasoning(
+                "r2",
+                4000,
+                "inference-succeeded",
+                "narration",
+                {"durationMs": 60, "stopReason": "tool_use", "tokenUsage": usage},
+            ),
+            tool("t3", 4025, "gamma"),
+            reasoning("p3", 5000, "inference-pending", "", {}),
+            reasoning(
+                "r3",
+                6000,
+                "inference-succeeded",
+                "all done",
+                {"stopReason": "end_turn"},
+            ),
+        ]
+
+    @staticmethod
+    def _svc(events):
+        mock_service = AsyncMock()
+        mock_service.get_session.return_value = {"sessionId": "s", "status": "OK"}
+        mock_service.get_session_messages.return_value = events
+        return mock_service
+
+    @pytest.mark.asyncio
+    async def test_default_mode_unchanged_with_tool_and_pending_events(self):
+        """Default mode ignores pending markers and tool events"""
+        ctx = _make_context(self._svc(self._turn_events()))
+
+        result = await agent_session_manager.describe_session(ctx, "s")
+
+        assert [e.event_id for e in result.reasoning_events] == ["r3"]
+        assert result.reasoning_events[0].tool_calls == []
+        assert result.output == "all done"
+
+    @pytest.mark.asyncio
+    async def test_include_all_groups_tool_calls_and_metrics(self):
+        """Pending markers dropped, tools grouped under preceding turn"""
+        ctx = _make_context(self._svc(self._turn_events()))
+
+        result = await agent_session_manager.describe_session(
+            ctx, "s", include_all_events=True
+        )
+
+        events = result.reasoning_events
+        assert [e.event_id for e in events] == ["r1", "r2", "r3"]
+        assert events[0].duration_ms == 50
+        assert events[0].input_tokens == 10
+        assert events[0].output_tokens == 3
+        assert events[0].text == ""
+        assert [c.tool_name for c in events[0].tool_calls] == ["alpha", "beta"]
+        failed = events[0].tool_calls[1]
+        assert failed.status == "failed"
+        assert failed.error_message == "boom"
+        assert failed.tool_type == "method"
+        assert failed.summary == "ran beta"
+        assert failed.duration_ms == 7
+        assert "input" not in failed.model_dump()
+        assert [c.tool_name for c in events[1].tool_calls] == ["gamma"]
+        assert events[2].tool_calls == []
+        assert events[2].duration_ms is None
+        assert events[2].input_tokens is None
+        assert result.output == "all done"
+
+    @pytest.mark.asyncio
+    async def test_include_all_sorts_out_of_order_by_timestamp(self):
+        """Shuffled input is ordered by timestamp, not sequenceNumber"""
+        events = list(reversed(self._turn_events()))
+        ctx = _make_context(self._svc(events))
+
+        result = await agent_session_manager.describe_session(
+            ctx, "s", include_all_events=True
+        )
+
+        assert [e.event_id for e in result.reasoning_events] == ["r1", "r2", "r3"]
+        assert [c.tool_name for c in result.reasoning_events[0].tool_calls] == [
+            "alpha",
+            "beta",
+        ]
+
+    @pytest.mark.asyncio
+    async def test_include_all_tolerates_missing_keys_and_type(self):
+        """Missing data keys, missing type and noise detection without type"""
+        events = [
+            {"eventId": "n", "category": "AGENT_REASONING", "text": "", "data": {}},
+            {"eventId": "a", "category": "AGENT_REASONING", "text": "hi"},
+            {
+                "eventId": "b",
+                "category": "AGENT_REASONING",
+                "type": "inference-succeeded",
+                "text": None,
+                "data": {"tokenUsage": None},
+            },
+            {"eventId": "t", "category": "TOOL_CALLED", "data": None},
+        ]
+        ctx = _make_context(self._svc(events))
+
+        result = await agent_session_manager.describe_session(
+            ctx, "s", include_all_events=True
+        )
+
+        assert [e.event_id for e in result.reasoning_events] == ["a", "b"]
+        assert result.reasoning_events[1].input_tokens is None
+        call = result.reasoning_events[1].tool_calls[0]
+        assert call.tool_name is None and call.status is None
+
+    @pytest.mark.asyncio
+    async def test_orphan_tool_event_attached_to_first_turn(self):
+        """A tool event before any kept turn goes to the first turn"""
+        events = [
+            {
+                "eventId": "t0",
+                "category": "TOOL_CALLED",
+                "data": {"toolName": "early"},
+            },
+            {
+                "eventId": "r1",
+                "category": "AGENT_REASONING",
+                "type": "inference-succeeded",
+                "text": "x",
+                "data": {"stopReason": "end_turn"},
+            },
+        ]
+        ctx = _make_context(self._svc(events))
+
+        result = await agent_session_manager.describe_session(
+            ctx, "s", include_all_events=True
+        )
+
+        assert [c.tool_name for c in result.reasoning_events[0].tool_calls] == ["early"]
+
+    @pytest.mark.asyncio
+    async def test_orphan_tool_event_dropped_without_turns(self):
+        """With no turn at all, tool events are dropped without error"""
+        events = [
+            {"eventId": "t0", "category": "TOOL_CALLED", "data": {"toolName": "a"}}
+        ]
+        ctx = _make_context(self._svc(events))
+
+        result = await agent_session_manager.describe_session(
+            ctx, "s", include_all_events=True
+        )
+
+        assert result.reasoning_events == []
+        assert result.output is None
+
+    @pytest.mark.asyncio
+    async def test_output_fallback_ignores_tool_events(self):
+        """Tool event text never becomes output"""
+        events = [
+            {
+                "eventId": "r1",
+                "timestamp": 1,
+                "category": "AGENT_REASONING",
+                "type": "inference-succeeded",
+                "text": "turn text",
+                "data": {"stopReason": "tool_use"},
+            },
+            {
+                "eventId": "t",
+                "timestamp": 2,
+                "category": "TOOL_CALLED",
+                "text": "tool text",
+                "data": {"toolName": "a"},
+            },
+        ]
+        for include_all in (False, True):
+            ctx = _make_context(self._svc(events))
+            result = await agent_session_manager.describe_session(
+                ctx, "s", include_all_events=include_all
+            )
+            assert result.output == "turn text"
+
     @pytest.mark.asyncio
     @pytest.mark.parametrize("include_all", [False, True])
     async def test_describe_session_output_fallback_no_end_turn(self, include_all):

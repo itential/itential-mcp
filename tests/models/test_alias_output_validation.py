@@ -147,7 +147,37 @@ _SESSION_EVENTS = [
         "timestamp": 1748779200000,
         "text": "calling a tool",
         "category": "AGENT_REASONING",
-        "data": {"stopReason": "tool_use"},
+        "type": "inference-succeeded",
+        "data": {
+            "stopReason": "tool_use",
+            "durationMs": 12,
+            "tokenUsage": {"inputTokens": 5, "outputTokens": 2},
+        },
+    },
+    {
+        "eventId": "tc1",
+        "sequenceNumber": None,
+        "timestamp": 1748779200500,
+        "text": "",
+        "category": "TOOL_CALLED",
+        "type": "tool-execution",
+        "data": {
+            "toolName": "demo_tool",
+            "toolType": "method",
+            "summary": "did a thing",
+            "status": "succeeded",
+            "durationMs": 4,
+            "errorMessage": None,
+        },
+    },
+    {
+        "eventId": "pend",
+        "sequenceNumber": 9,
+        "timestamp": 1748779200800,
+        "text": "",
+        "category": "AGENT_REASONING",
+        "type": "inference-pending",
+        "data": {},
     },
     {
         "eventId": "e2",
@@ -212,3 +242,12 @@ async def test_describe_session_include_all_events_output_validation(
     assert [e["event_id"] for e in data["reasoning_events"]] == expected
     assert data["output"] == "final answer"
     assert data["reasoning_events"][-1]["stop_reason"] == "end_turn"
+    if include_all:
+        first = data["reasoning_events"][0]
+        assert first["duration_ms"] == 12
+        assert first["input_tokens"] == 5
+        assert first["output_tokens"] == 2
+        assert first["tool_calls"][0]["tool_name"] == "demo_tool"
+        assert first["tool_calls"][0]["status"] == "succeeded"
+    else:
+        assert data["reasoning_events"][0]["tool_calls"] == []
