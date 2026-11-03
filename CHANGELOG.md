@@ -20,15 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   get_task_metrics_for_workflow, get_task_metrics_for_app,
   get_task_metrics_for_task, get_job_metrics, get_job_metrics_for_workflow)
   now return at most 200 items by default instead of every matching item.
-  Request more with the new `limit` (1-1000) and `skip` parameters. (#TBD)
+  Request more with the new `limit` (1-1000) and `skip` parameters. (#437)
 - BREAKING: The same six metrics tools now return an object
   (`results`, `total`, `returned`, `limit`, `skip`, `has_more`) instead of a
   bare list. Read the items from `results` and use `has_more` to decide
-  whether to request the next page with `skip`. (#TBD)
+  whether to request the next page with `skip`. (#437)
 
 ### Fixed
 - TaskMetricElement accepted a missing `_id` on input but declared a
-  non-nullable `object_id`, which failed MCP output validation. (#TBD)
+  non-nullable `object_id`, which failed MCP output validation. (#437)
 - `itential-mcp call` works against a FastMCP 4 server: dropped the
   session-only ping() probe (reachability is proven by the tool listing) and
   read tool input schemas via the snake_case input_schema attribute. The call
