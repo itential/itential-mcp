@@ -402,10 +402,10 @@ class TestCompleteManualTask:
 class TestCompleteManualTaskRegistration:
     def test_annotations(self):
         ann = work_center.complete_manual_task.annotations
-        assert ann.destructiveHint is True
-        assert ann.readOnlyHint is False
-        assert ann.idempotentHint is False
-        assert ann.openWorldHint is False
+        assert ann.destructive_hint is True
+        assert ann.read_only_hint is False
+        assert ann.idempotent_hint is False
+        assert ann.open_world_hint is False
 
     def test_docstring_caveats(self):
         doc = work_center.complete_manual_task.__doc__

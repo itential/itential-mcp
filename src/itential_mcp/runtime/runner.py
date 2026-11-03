@@ -52,16 +52,12 @@ async def run(tool: str, params: Mapping[str, Any] | None = None) -> None:
     """
     async with Server(config.get()) as srv:
         async with Client(srv.mcp) as client:
-            # Basic server interaction
-            if await client.ping() is False:
-                raise ValueError("ERROR: cannot reach the server")
-
             tools = {}
 
             res = await client.list_tools_mcp()
 
             for t in res.tools:
-                tools[t.name] = t.inputSchema
+                tools[t.name] = t.input_schema
 
             kwargs = {"arguments": json.loads(params) if params else None}
 

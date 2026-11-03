@@ -114,8 +114,8 @@ class TestBindToTool:
         assert kwargs["name"] == "test_tool_name"
         assert kwargs["exclude_args"] == ("_tool_config",)
         assert kwargs["tags"] == ["bindings", "test_tool_name", "tag1", "tag2"]
-        assert kwargs["annotations"].destructiveHint is True
-        assert not kwargs["annotations"].readOnlyHint
+        assert kwargs["annotations"].destructive_hint is True
+        assert not kwargs["annotations"].read_only_hint
         assert kwargs["title"] == "Test Tool Name"
 
     @patch("itential_mcp.bindings._import_binding")
@@ -143,8 +143,8 @@ class TestBindToTool:
         assert kwargs["name"] == "test_tool_name"
         assert kwargs["exclude_args"] == ("_tool_config",)
         assert kwargs["tags"] == ["bindings", "test_tool_name"]
-        assert kwargs["annotations"].destructiveHint is True
-        assert not kwargs["annotations"].readOnlyHint
+        assert kwargs["annotations"].destructive_hint is True
+        assert not kwargs["annotations"].read_only_hint
         assert kwargs["title"] == "Test Tool Name"
 
     @patch("itential_mcp.bindings._import_binding")
@@ -371,8 +371,8 @@ class TestBindingsIntegration:
             "workflow",
             "automation",
         ]
-        assert bound_kwargs["annotations"].destructiveHint is True
-        assert not bound_kwargs["annotations"].readOnlyHint
+        assert bound_kwargs["annotations"].destructive_hint is True
+        assert not bound_kwargs["annotations"].read_only_hint
         assert bound_kwargs["title"] == "Test Workflow"
 
         # Verify the endpoint module was called correctly

@@ -3,7 +3,8 @@ name = "itential-mcp"
 description = "Itential MCP Server"
 
 dependencies = [
-    "fastmcp>=3.4.1,<4",
+    "fastmcp>=4.1.5,<5",
+    "mcp>=2,<3",
     "ipsdk>=0.9.0",
     "python-toon",
     "wsproto",
@@ -49,7 +50,12 @@ Documentation = "https://github.com/itential/itential-mcp"
 itential-mcp = "itential_mcp.app:run"
 
 [tool.uv]
-constraint-dependencies = ["cryptography>=50.0.0,<51", "mcp>=1.28.1,<2", "pydantic-settings>=2.14.2"]
+constraint-dependencies = [
+    "cryptography>=50.0.0,<51",
+    "pydantic>=2.12",
+    "pydantic-settings>=2.14.2",
+    "starlette>=0.27",
+]
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning>=0.7.0"]
