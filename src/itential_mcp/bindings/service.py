@@ -15,6 +15,7 @@ from itential_mcp.platform import PlatformClient
 from itential_mcp.core import exceptions
 from itential_mcp.utilities import json as jsonutils
 
+from itential_mcp.models import gateway_manager as models
 from itential_mcp.tools import gateway_manager
 
 
@@ -112,4 +113,25 @@ async def new(
             """
         )
 
-    return run_service, description
+    async def _bound(
+        ctx: Context, input_params: dict | str | None = None
+    ) -> models.RunServiceResponse:
+        """Run the service bound to this service tool.
+
+        Args:
+            ctx (Context): The FastMCP context object containing request context and lifecycle information.
+            input_params (dict | None): Optional input parameters to pass to the service execution.
+                Defaults to None.
+
+        Returns:
+            RunServiceResponse: The response from the service execution.
+
+        Raises:
+            exceptions.NotFoundError: If the configured service cannot be found.
+        """
+        return await run_service(ctx, _tool_config=t, input_params=input_params)
+
+    _bound.__name__ = t.tool_name
+    _bound.__qualname__ = t.tool_name
+
+    return _bound, description

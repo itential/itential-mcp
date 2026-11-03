@@ -33,6 +33,7 @@ def mock_endpoint_tool():
     tool = MagicMock()
     tool.automation = "test-automation"
     tool.name = "test-trigger"
+    tool.tool_name = "test_trigger_tool"
     return tool
 
 
@@ -318,7 +319,7 @@ class TestNew:
         mock_get_trigger.assert_called_once_with(
             mock_platform_client, mock_endpoint_tool
         )
-        assert fn == start_workflow
+        assert fn.__name__ == mock_endpoint_tool.tool_name
         assert "Test trigger description" in description
         assert "Args:" in description
         assert "data (dict):" in description
@@ -342,7 +343,7 @@ class TestNew:
         fn, description = await new(mock_endpoint_tool, mock_platform_client)
 
         # Verify
-        assert fn == start_workflow
+        assert fn.__name__ == mock_endpoint_tool.tool_name
         assert "Args:\ndata (dict):" in description
 
     @patch("itential_mcp.bindings.endpoint._get_trigger")
@@ -364,7 +365,7 @@ class TestNew:
         fn, description = await new(mock_endpoint_tool, mock_platform_client)
 
         # Verify
-        assert fn == start_workflow
+        assert fn.__name__ == mock_endpoint_tool.tool_name
         assert "Args:\ndata (dict):" in description
 
     @patch("itential_mcp.bindings.endpoint._get_trigger")
@@ -421,7 +422,7 @@ class TestEndpointIntegration:
         fn, description = await new(mock_endpoint_tool, mock_platform_client)
 
         # Verify
-        assert fn == start_workflow
+        assert fn.__name__ == mock_endpoint_tool.tool_name
         assert "Complete test workflow" in description
         assert "Args:" in description
         assert "data (dict):" in description
