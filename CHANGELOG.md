@@ -12,13 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (default false). When true, `reasoning_events` contains every
   AGENT_REASONING event regardless of stop reason, so sessions whose turns all
   end in tool calls are no longer shown as empty. Each reasoning event also
-  carries a new optional `stop_reason` field. (#TBD)
+  carries a new optional `stop_reason` field. (#440)
 
 ### Changed
 - `describe_session` `output` now falls back to the text of the last
   non-empty AGENT_REASONING text when the session has no `end_turn` event,
   instead of being null. This is visible in the default mode; `reasoning_events` is still
-  filtered to `end_turn` events unless `include_all_events` is set. (#TBD)
+  filtered to `end_turn` events unless `include_all_events` is set. (#440)
 - BREAKING: Dropped support for Python 3.10, which reached end-of-life on
   2026-10-31. The minimum supported version is now Python 3.11. Update your
   environment to Python 3.11 or later before upgrading.
