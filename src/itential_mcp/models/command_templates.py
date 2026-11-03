@@ -10,8 +10,10 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 
+from itential_mcp.models.base import AliasedModel
 
-class CommandTemplate(BaseModel):
+
+class CommandTemplate(AliasedModel):
     """Represents a command template configuration.
 
     This model represents a command template that can be executed against
@@ -107,7 +109,7 @@ class GetCommandTemplatesResponse(BaseModel):
     ]
 
 
-class CommandTemplateDetail(BaseModel):
+class CommandTemplateDetail(AliasedModel):
     """Represents detailed command template information.
 
     This model extends the basic CommandTemplate with detailed information
@@ -567,7 +569,7 @@ class CreateCommandTemplateRequest(BaseModel):
     ]
 
 
-class CreateCommandTemplateResponse(BaseModel):
+class CreateCommandTemplateResponse(AliasedModel):
     """Response model for the create command template API endpoint.
 
     This model wraps the result of creating a new command template,
@@ -726,7 +728,7 @@ class UpdateCommandTemplateRequest(BaseModel):
     ]
 
 
-class UpdateCommandTemplateResponse(BaseModel):
+class UpdateCommandTemplateResponse(AliasedModel):
     """Response model for the update command template API endpoint.
 
     This model wraps the result of updating an existing command template,

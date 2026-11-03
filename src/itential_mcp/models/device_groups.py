@@ -9,8 +9,10 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field, RootModel
 
+from itential_mcp.models.base import AliasedModel
 
-class DeviceGroupElement(BaseModel):
+
+class DeviceGroupElement(AliasedModel):
     """
     Represents an individual device group element in Itential Platform.
 
@@ -89,7 +91,7 @@ class GetDeviceGroupsResponse(RootModel):
     ]
 
 
-class CreateDeviceGroupResponse(BaseModel):
+class CreateDeviceGroupResponse(AliasedModel):
     """
     Response model for creating a device group on Itential Platform.
 

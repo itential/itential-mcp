@@ -10,10 +10,12 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, RootModel
 
+from itential_mcp.models.base import AliasedModel
+
 from itential_mcp.models.work_center import ManualTaskSummary
 
 
-class SessionMessage(BaseModel):
+class SessionMessage(AliasedModel):
     """
     Represents a single event message from an agent session.
 
@@ -77,8 +79,6 @@ class SessionMessage(BaseModel):
             default=None,
         ),
     ]
-
-    model_config = {"populate_by_name": True}
 
 
 class SessionReasoningEvent(BaseModel):

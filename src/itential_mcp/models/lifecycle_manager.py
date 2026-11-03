@@ -10,6 +10,8 @@ from typing import Annotated, Any, Literal, Mapping
 
 from pydantic import BaseModel, Field, RootModel
 
+from itential_mcp.models.base import AliasedModel
+
 
 class GetResourcesElement(BaseModel):
     """Represents a single resource model configuration from the lifecycle manager.
@@ -425,7 +427,7 @@ class RunActionResponse(BaseModel):
     ]
 
 
-class ActionExecutionError(BaseModel):
+class ActionExecutionError(AliasedModel):
     """Represents an error that occurred during action execution.
 
     Attributes:
@@ -495,7 +497,7 @@ class ActionExecutionError(BaseModel):
     ]
 
 
-class ActionExecutionProgressComponent(BaseModel):
+class ActionExecutionProgressComponent(AliasedModel):
     """Represents progress information for a component in action execution.
 
     Attributes:
@@ -607,7 +609,7 @@ class ActionExecutionProgressComponent(BaseModel):
     ]
 
 
-class ActionExecutionElement(BaseModel):
+class ActionExecutionElement(AliasedModel):
     """Represents a single action execution record from Lifecycle Manager.
 
     This model captures comprehensive information about an action execution

@@ -64,8 +64,8 @@ class TestInventoryElement:
             nodeCount=3,
         )
 
-        # Test model_dump() - should use field names
-        model_dict = element.model_dump()
+        # Test model_dump(by_alias=False) - should use field names (default is by alias)
+        model_dict = element.model_dump(by_alias=False)
         assert "object_id" in model_dict
         assert "_id" not in model_dict
         assert model_dict["object_id"] == "serialize-inv"
@@ -177,7 +177,7 @@ class TestGetInventoriesResponse:
         )
 
         response = GetInventoriesResponse(root=[inv])
-        serialized = response.model_dump()
+        serialized = response.model_dump(by_alias=False)
 
         # GetInventoriesResponse is a RootModel, so it serializes directly as a list
         assert isinstance(serialized, list)
@@ -250,8 +250,8 @@ class TestCreateInventoryResponse:
             message="Created with alias",
         )
 
-        # Test model_dump() - should use field names
-        model_dict = response.model_dump()
+        # Test model_dump(by_alias=False) - should use field names (default is by alias)
+        model_dict = response.model_dump(by_alias=False)
         assert "object_id" in model_dict
         assert "_id" not in model_dict
         assert model_dict["object_id"] == "alias-create-test"
@@ -395,8 +395,8 @@ class TestDescribeInventoryResponse:
             groups=["Solutions Engineering"],
         )
 
-        # Test model_dump() - should use field names
-        model_dict = response.model_dump()
+        # Test model_dump(by_alias=False) - should use field names (default is by alias)
+        model_dict = response.model_dump(by_alias=False)
         assert "object_id" in model_dict
         assert "_id" not in model_dict
 
@@ -690,7 +690,7 @@ class TestModelInteroperability:
             assert instance.object_id == "test-id-123"
 
             # Verify serialization without alias uses object_id
-            model_dict = instance.model_dump()
+            model_dict = instance.model_dump(by_alias=False)
             assert "object_id" in model_dict
             assert "_id" not in model_dict
 

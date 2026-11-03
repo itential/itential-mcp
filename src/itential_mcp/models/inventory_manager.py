@@ -7,10 +7,12 @@ from __future__ import annotations
 import inspect
 from typing import Annotated, Any
 
-from pydantic import BaseModel, Field, RootModel
+from pydantic import BaseModel, ConfigDict, Field, RootModel
+
+from itential_mcp.models.base import AliasedModel
 
 
-class InventoryElement(BaseModel):
+class InventoryElement(AliasedModel):
     """
     Represents an individual inventory element in Itential Platform.
 
@@ -67,7 +69,7 @@ class InventoryElement(BaseModel):
         ),
     ]
 
-    model_config = {"extra": "allow"}
+    model_config = ConfigDict(extra="allow")
 
 
 class GetInventoriesResponse(RootModel):
@@ -92,7 +94,7 @@ class GetInventoriesResponse(RootModel):
     ]
 
 
-class CreateInventoryResponse(BaseModel):
+class CreateInventoryResponse(AliasedModel):
     """
     Response model for creating an inventory on Itential Platform.
 
@@ -135,10 +137,10 @@ class CreateInventoryResponse(BaseModel):
         ),
     ]
 
-    model_config = {"extra": "allow"}
+    model_config = ConfigDict(extra="allow")
 
 
-class DescribeInventoryResponse(BaseModel):
+class DescribeInventoryResponse(AliasedModel):
     """
     Response model for describing a specific inventory from Itential Platform.
 
@@ -231,7 +233,7 @@ class DescribeInventoryResponse(BaseModel):
         ),
     ]
 
-    model_config = {"extra": "allow"}
+    model_config = ConfigDict(extra="allow")
 
 
 class AddNodesToInventoryResponse(BaseModel):
