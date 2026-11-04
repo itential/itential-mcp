@@ -446,21 +446,6 @@ class AuthConfig:
         },
     )
 
-    oauth_provider_type: (
-        Literal["generic", "google", "azure", "auth0", "github", "okta"] | None
-    ) = _create_field_with_env(
-        "ITENTIAL_MCP_SERVER_AUTH_OAUTH_PROVIDER_TYPE",
-        "OAuth provider type for predefined configurations",
-        json_schema_extra={
-            "x-itential-mcp-cli-enabled": True,
-            "x-itential-mcp-arguments": ("--auth-oauth-provider-type",),
-            "x-itential-mcp-options": {
-                "choices": ("generic", "google", "azure", "auth0", "github", "okta"),
-                "metavar": "<type>",
-            },
-        },
-    )
-
 
 @dataclass(frozen=True)
 class PlatformConfig:

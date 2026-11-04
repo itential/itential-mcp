@@ -10,7 +10,6 @@ from unittest.mock import patch
 from itential_mcp.server.auth import (
     _build_oauth_provider,
     _build_oauth_proxy_provider,
-    _get_provider_config,
 )
 from itential_mcp.core.exceptions import ConfigurationException
 
@@ -56,46 +55,3 @@ class TestOAuthProxyProviderCoverage:
             _build_oauth_proxy_provider(auth_config)
 
         assert "client_id" in str(exc_info.value)
-
-
-class TestProviderConfigurationDefaults:
-    """Test provider-specific configuration defaults"""
-
-    def test_auth0_default_scopes(self):
-        """Test _get_provider_config returns auth0 default scopes"""
-        auth_config = {}  # No scopes provided
-
-        config = _get_provider_config("auth0", auth_config)
-
-        assert "scopes" in config
-        assert config["scopes"] == ["openid", "email", "profile"]
-
-    def test_okta_default_scopes(self):
-        """Test _get_provider_config returns okta default scopes"""
-        auth_config = {}  # No scopes provided
-
-        config = _get_provider_config("okta", auth_config)
-
-        assert "scopes" in config
-        assert config["scopes"] == ["openid", "email", "profile"]
-
-    def test_generic_provider_no_defaults(self):
-        """Test _get_provider_config returns empty config for generic provider"""
-        auth_config = {}
-
-        config = _get_provider_config("generic", auth_config)
-
-        # Generic provider should have no default scopes
-        assert (
-            "scopes" not in config
-            or config.get("scopes") is None
-            or len(config.get("scopes", [])) == 0
-        )
-
-    def test_generic_provider_with_custom_scopes(self):
-        """Test _get_provider_config respects custom scopes for generic provider"""
-        auth_config = {"scopes": ["custom", "scopes"]}
-
-        config = _get_provider_config("generic", auth_config)
-
-        assert config["scopes"] == ["custom", "scopes"]

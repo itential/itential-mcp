@@ -67,9 +67,6 @@ ITENTIAL_MCP_SERVER_AUTH_OAUTH_TOKEN_URL = None  # OAuth token endpoint URL
 ITENTIAL_MCP_SERVER_AUTH_OAUTH_USERINFO_URL = None  # OAuth userinfo endpoint URL
 ITENTIAL_MCP_SERVER_AUTH_OAUTH_SCOPES = None  # OAuth scopes to request
 ITENTIAL_MCP_SERVER_AUTH_OAUTH_REDIRECT_URI = None  # OAuth redirect URI for callback
-ITENTIAL_MCP_SERVER_AUTH_OAUTH_PROVIDER_TYPE = (
-    None  # OAuth provider type for predefined configurations
-)
 
 # Platform Configuration Defaults
 ITENTIAL_MCP_PLATFORM_HOST = "localhost"  # Itential Platform server hostname

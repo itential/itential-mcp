@@ -251,15 +251,6 @@
 #
 # auth_oauth_redirect_uri = http://localhost:8000/auth/callback
 
-# Configures the OAuth provider type for predefined configurations.  This
-# allows using predefined settings for common OAuth providers.  Valid values
-# are: generic, google, azure, auth0, github, okta.
-#
-# Default value: null
-# Environment variable: ITENTIAL_MCP_SERVER_AUTH_OAUTH_PROVIDER_TYPE
-#
-# auth_oauth_provider_type = google
-
 
 # The platform section handles configuration options for connecting to an
 # instance of Itential Platform.  All configuration options in this section are

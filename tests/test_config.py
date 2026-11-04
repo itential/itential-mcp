@@ -682,8 +682,8 @@ def _write_config_file(tmp_path, section: str, key: str, value: str):
     return str(config_path)
 
 
-# Enumeration of all 39 env-backed fields across ServerConfig (14),
-# AuthConfig (15), and PlatformConfig (10), verified directly against
+# Enumeration of all 38 env-backed fields across ServerConfig (14),
+# AuthConfig (14), and PlatformConfig (10), verified directly against
 # src/itential_mcp/config/models.py. Each tuple is:
 #   (section, file_key, env_var, file_value, env_value, expected)
 # "section" is the config-file section name and file_key prefix used to
@@ -783,7 +783,7 @@ _PRECEDENCE_CASES = [
         "20",
         20,
     ),
-    # --- AuthConfig (15), written under the [auth] file section using the
+    # --- AuthConfig (14), written under the [auth] file section using the
     # bare field name. Note: the documented file spelling is actually
     # [server] auth_<field> = ... (see docs/mcp.conf.example); [auth] is an
     # undocumented alternate section that has also always been accepted.
@@ -903,14 +903,6 @@ _PRECEDENCE_CASES = [
         "https://env.example.com/callback",
         "https://env.example.com/callback",
     ),
-    (
-        "auth",
-        "oauth_provider_type",
-        "ITENTIAL_MCP_SERVER_AUTH_OAUTH_PROVIDER_TYPE",
-        "generic",
-        "okta",
-        "okta",
-    ),
     # --- PlatformConfig (10) ---
     (
         "platform",
@@ -973,8 +965,8 @@ _PRECEDENCE_CASES = [
     ("platform", "ttl", "ITENTIAL_MCP_PLATFORM_TTL", "60", "120", 120),
 ]
 
-assert len(_PRECEDENCE_CASES) == 39, (
-    f"Expected 39 env-backed fields, found {len(_PRECEDENCE_CASES)}"
+assert len(_PRECEDENCE_CASES) == 38, (
+    f"Expected 38 env-backed fields, found {len(_PRECEDENCE_CASES)}"
 )
 
 _FILE_BEATS_DEFAULT_CASES = list(_PRECEDENCE_CASES)
@@ -1005,7 +997,7 @@ def _get_config_attr(cfg, section: str, file_key: str):
 
 class TestConfigPrecedence:
     """Verify env vars (and CLI flags funneled into os.environ) beat the
-    config file, which in turn beats defaults -- across all 39 env-backed
+    config file, which in turn beats defaults -- across all 38 env-backed
     fields on ServerConfig, AuthConfig, and PlatformConfig.
     """
 
@@ -1257,11 +1249,11 @@ _SERVER_AUTH_SAMPLE_CASES = [
     c for c in _AUTH_PRECEDENCE_CASES if c[1] in _SERVER_AUTH_SAMPLE_KEYS
 ]
 
-# All 8 oauth_* fields, for bug #27's mangling regression test.
+# All 7 oauth_* fields, for bug #27's mangling regression test.
 _OAUTH_FIELD_CASES = [c for c in _AUTH_PRECEDENCE_CASES if c[1].startswith("oauth_")]
 
-assert len(_OAUTH_FIELD_CASES) == 8, (
-    f"Expected 8 oauth_* fields, found {len(_OAUTH_FIELD_CASES)}"
+assert len(_OAUTH_FIELD_CASES) == 7, (
+    f"Expected 7 oauth_* fields, found {len(_OAUTH_FIELD_CASES)}"
 )
 
 

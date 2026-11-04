@@ -37,7 +37,6 @@ def make_auth_config(**kwargs) -> AuthConfig:
         "oauth_userinfo_url": None,
         "oauth_scopes": None,
         "oauth_redirect_uri": None,
-        "oauth_provider_type": None,
     }
     defaults.update(kwargs)
     return AuthConfig(**defaults)

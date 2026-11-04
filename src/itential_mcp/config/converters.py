@@ -144,7 +144,6 @@ def auth_to_dict(auth_config: AuthConfig | dict[str, Any]) -> dict[str, Any]:
         "userinfo_url": auth_config.oauth_userinfo_url or None,
         "scopes": oauth_scopes,
         "redirect_uri": auth_config.oauth_redirect_uri or None,
-        "provider_type": auth_config.oauth_provider_type or None,
     }
 
     return {k: v for k, v in data.items() if v not in (None, "", [])}

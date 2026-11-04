@@ -42,7 +42,6 @@ For OAuth proxy mode (`oauth_proxy`):
 | `ITENTIAL_MCP_SERVER_AUTH_OAUTH_AUTHORIZATION_URL` | `--auth-oauth-authorization-url` | **Required** - Upstream authorization endpoint |
 | `ITENTIAL_MCP_SERVER_AUTH_OAUTH_TOKEN_URL` | `--auth-oauth-token-url` | **Required** - Upstream token endpoint |
 | `ITENTIAL_MCP_SERVER_AUTH_OAUTH_USERINFO_URL` | `--auth-oauth-userinfo-url` | Optional - Upstream user info endpoint |
-| `ITENTIAL_MCP_SERVER_AUTH_OAUTH_PROVIDER_TYPE` | `--auth-oauth-provider-type` | Provider type: `google`, `azure`, `auth0`, `github`, `okta`, `generic` |
 | `ITENTIAL_MCP_SERVER_AUTH_JWKS_URI` | `--auth-jwks-uri` | **Required** (one of `jwks_uri` or `public_key`) - JWKS endpoint for verifying upstream tokens |
 | `ITENTIAL_MCP_SERVER_AUTH_PUBLIC_KEY` | `--auth-public-key` | **Required** (one of `jwks_uri` or `public_key`) - Static public key/secret for verifying upstream tokens |
 
@@ -50,11 +49,14 @@ For OAuth proxy mode (`oauth_proxy`):
 
 **`auth_type = oauth` (full OAuth authorization server mode) is not currently supported.** Setting `ITENTIAL_MCP_SERVER_AUTH_TYPE` (or `--auth-type`) to `oauth` always raises `ConfigurationException` at server startup.
 
-The underlying `OAuthProvider` construction has no persistent storage backend for dynamically registered OAuth clients: a client can successfully `POST /register`, but the registration is never retrievable afterward, so every real authorization-code handshake fails. There is no built-in storage subclass suitable for production use (the only one available is explicitly testing-only and issues fake, unverified tokens), so rather than accept configuration that silently produces a confusing runtime failure during a real handshake, the server now fails fast at startup with a clear error.
+Full authorization-server mode needs a user/credential store and Platform identity verification, which is tracked under the per-user "on behalf of" work. Rather than accept configuration that cannot complete a real handshake, the server fails fast at startup with a clear error.
 
 **If you need OAuth authentication today, use [OAuth Proxy Mode](#oauth-proxy-mode) instead**, which delegates authentication to a real upstream identity provider (Google, Azure, Auth0, GitHub, Okta, or a generic provider) and is fully supported.
 
-Implementing real client/token storage for full OAuth provider mode is tracked as a future roadmap item.
+
+## OAuth Issuer and One-Time Re-authorization
+
+In OAuth proxy mode the authorization-server issuer (and the `iss` claim of tokens the server issues) tracks the server's public base URL, which is the `scheme://netloc` derived from `ITENTIAL_MCP_SERVER_AUTH_OAUTH_REDIRECT_URI`. If you change the public URL (host, port, or scheme), the issuer and `iss` change with it and existing clients must re-authorize once.
 
 ## OAuth Proxy Mode
 
@@ -66,12 +68,11 @@ OAuth proxy mode validates tokens issued by the upstream provider using a `JWTVe
 
 ### Supported Providers
 
-The MCP server includes predefined configurations for popular OAuth providers:
+Example configurations for popular OAuth providers:
 
 #### Google OAuth
 ```bash
 export ITENTIAL_MCP_SERVER_AUTH_TYPE="oauth_proxy"
-export ITENTIAL_MCP_SERVER_AUTH_OAUTH_PROVIDER_TYPE="google"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_ID="your-google-client-id"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_SECRET="your-google-client-secret"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_AUTHORIZATION_URL="https://accounts.google.com/o/oauth2/auth"
@@ -84,7 +85,6 @@ export ITENTIAL_MCP_SERVER_AUTH_OAUTH_REDIRECT_URI="http://localhost:8000/auth/c
 #### Azure AD OAuth
 ```bash
 export ITENTIAL_MCP_SERVER_AUTH_TYPE="oauth_proxy"
-export ITENTIAL_MCP_SERVER_AUTH_OAUTH_PROVIDER_TYPE="azure"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_ID="your-azure-client-id"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_SECRET="your-azure-client-secret"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_AUTHORIZATION_URL="https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
@@ -99,7 +99,6 @@ export ITENTIAL_MCP_SERVER_AUTH_JWKS_URI="https://login.microsoftonline.com/{ten
 #### GitHub OAuth
 ```bash
 export ITENTIAL_MCP_SERVER_AUTH_TYPE="oauth_proxy"
-export ITENTIAL_MCP_SERVER_AUTH_OAUTH_PROVIDER_TYPE="github"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_ID="your-github-client-id"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_SECRET="your-github-client-secret"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_AUTHORIZATION_URL="https://github.com/login/oauth/authorize"
@@ -121,7 +120,6 @@ layer's JWKS endpoint instead of a GitHub URL.
 #### Auth0 OAuth
 ```bash
 export ITENTIAL_MCP_SERVER_AUTH_TYPE="oauth_proxy"
-export ITENTIAL_MCP_SERVER_AUTH_OAUTH_PROVIDER_TYPE="auth0"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_ID="your-auth0-client-id"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_SECRET="your-auth0-client-secret"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_AUTHORIZATION_URL="https://your-domain.auth0.com/authorize"
@@ -135,7 +133,6 @@ export ITENTIAL_MCP_SERVER_AUTH_JWKS_URI="https://your-domain.auth0.com/.well-kn
 #### Okta OAuth
 ```bash
 export ITENTIAL_MCP_SERVER_AUTH_TYPE="oauth_proxy"
-export ITENTIAL_MCP_SERVER_AUTH_OAUTH_PROVIDER_TYPE="okta"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_ID="your-okta-client-id"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_SECRET="your-okta-client-secret"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_AUTHORIZATION_URL="https://your-domain.okta.com/oauth2/default/v1/authorize"
@@ -149,7 +146,6 @@ export ITENTIAL_MCP_SERVER_AUTH_JWKS_URI="https://your-domain.okta.com/oauth2/de
 #### Generic OAuth Provider
 ```bash
 export ITENTIAL_MCP_SERVER_AUTH_TYPE="oauth_proxy"
-export ITENTIAL_MCP_SERVER_AUTH_OAUTH_PROVIDER_TYPE="generic"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_ID="your-client-id"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_SECRET="your-client-secret"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_AUTHORIZATION_URL="https://provider.example.com/oauth/authorize"
@@ -203,7 +199,6 @@ OAuth requires HTTP-based transports because it needs to handle redirect URLs an
 ```bash
 # Set up Google OAuth with Server-Sent Events transport
 export ITENTIAL_MCP_SERVER_AUTH_TYPE="oauth_proxy"
-export ITENTIAL_MCP_SERVER_AUTH_OAUTH_PROVIDER_TYPE="google"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_ID="123456789.apps.googleusercontent.com"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_SECRET="your-google-client-secret"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_AUTHORIZATION_URL="https://accounts.google.com/o/oauth2/auth"
@@ -220,7 +215,6 @@ itential-mcp --transport sse --host 0.0.0.0 --port 8000
 
 ```bash
 export ITENTIAL_MCP_SERVER_AUTH_TYPE="oauth_proxy"
-export ITENTIAL_MCP_SERVER_AUTH_OAUTH_PROVIDER_TYPE="azure"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_ID="your-azure-app-id"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_CLIENT_SECRET="your-azure-app-secret"
 export ITENTIAL_MCP_SERVER_AUTH_OAUTH_AUTHORIZATION_URL="https://login.microsoftonline.com/your-tenant-id/oauth2/v2.0/authorize"

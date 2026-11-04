@@ -8,20 +8,15 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 from itential_mcp.server.auth import (
-    build_auth_provider,
     _build_oauth_provider,
     _build_oauth_proxy_provider,
-    _get_provider_config,
-    supports_transport,
 )
-from itential_mcp.config.models import AuthConfig, Config
+from itential_mcp.config.models import AuthConfig
 from itential_mcp.core.exceptions import ConfigurationException
 
 from fastmcp.server.auth import (
     JWTVerifier,
-    RemoteAuthProvider,
     OAuthProxy,
-    OAuthProvider,
 )
 
 
@@ -49,7 +44,6 @@ def make_auth_config(**kwargs) -> AuthConfig:
         "oauth_userinfo_url": None,
         "oauth_scopes": None,
         "oauth_redirect_uri": None,
-        "oauth_provider_type": None,
     }
     defaults.update(kwargs)
     return AuthConfig(**defaults)
@@ -88,7 +82,6 @@ class TestOAuthConfiguration:
             oauth_userinfo_url="https://auth.example.com/oauth/userinfo",
             oauth_scopes="openid, email, profile",
             oauth_redirect_uri="http://localhost:8000/callback",
-            oauth_provider_type="generic",
         )
 
         from itential_mcp.config.converters import auth_to_dict
@@ -103,7 +96,7 @@ class TestOAuthConfiguration:
         assert data["userinfo_url"] == "https://auth.example.com/oauth/userinfo"
         assert data["scopes"] == ["openid", "email", "profile"]
         assert data["redirect_uri"] == "http://localhost:8000/callback"
-        assert data["provider_type"] == "generic"
+        assert "provider_type" not in data
 
 
 class TestOAuthProviderBuilding:
@@ -464,174 +457,56 @@ class TestOAuthProviderBuilding:
         assert isinstance(provider._token_validator, JWTVerifier)
 
 
-class TestProviderConfiguration:
-    """Test provider-specific configuration logic."""
+class TestOAuthProviderTypeRemoved:
+    """Test the removed oauth_provider_type option stays removed."""
 
-    def test_google_provider_config(self):
-        """Test Google provider configuration defaults."""
-        from itential_mcp.config.converters import auth_to_dict
+    def test_config_has_no_oauth_provider_type_attr(self):
+        """AuthConfig no longer exposes oauth_provider_type."""
+        assert not hasattr(make_auth_config(), "oauth_provider_type")
 
-        auth_config = auth_to_dict(make_auth_config())
-        config = _get_provider_config("google", auth_config)
+    def test_no_provider_type_cli_argument(self):
+        """The --auth-oauth-provider-type flag is rejected by the parser."""
+        from itential_mcp.runtime import parser
 
-        assert config["scopes"] == ["openid", "email", "profile"]
+        with pytest.raises(SystemExit):
+            parser.parse_args(["run", "--auth-oauth-provider-type", "google"])
 
-    def test_azure_provider_config(self):
-        """Test Azure provider configuration defaults."""
-        from itential_mcp.config.converters import auth_to_dict
+    def test_no_get_provider_config(self):
+        """server.auth no longer defines _get_provider_config."""
+        from itential_mcp.server import auth
 
-        auth_config = auth_to_dict(make_auth_config())
-        config = _get_provider_config("azure", auth_config)
+        assert not hasattr(auth, "_get_provider_config")
 
-        assert config["scopes"] == ["openid", "email", "profile"]
-
-    def test_github_provider_config(self):
-        """Test GitHub provider configuration defaults."""
-        from itential_mcp.config.converters import auth_to_dict
-
-        auth_config = auth_to_dict(make_auth_config())
-        config = _get_provider_config("github", auth_config)
-
-        assert config["scopes"] == ["user:email"]
-
-    def test_provider_config_custom_scopes(self):
-        """Test provider configuration with custom scopes."""
-        from itential_mcp.config.converters import auth_to_dict
-
-        auth_config = auth_to_dict(make_auth_config(oauth_scopes="custom,scope"))
-        config = _get_provider_config("google", auth_config)
-
-        assert config["scopes"] == ["custom", "scope"]
-
-    def test_provider_config_custom_redirect_uri(self):
-        """Test provider configuration with custom redirect URI."""
-        from itential_mcp.config.converters import auth_to_dict
-
-        auth_config = auth_to_dict(
-            make_auth_config(oauth_redirect_uri="http://custom.example.com/callback")
-        )
-        config = _get_provider_config("google", auth_config)
-
-        assert config["redirect_uri"] == "http://custom.example.com/callback"
-        assert config["scopes"] == ["openid", "email", "profile"]
-
-    def test_unsupported_provider_type(self):
-        """Test unsupported provider type raises exception."""
-        from itential_mcp.config.converters import auth_to_dict
-
-        auth_config = auth_to_dict(make_auth_config())
-
+    def test_oauth_provider_error_message(self):
+        """type=oauth still fails fast with the corrected rationale."""
         with pytest.raises(ConfigurationException) as exc_info:
-            _get_provider_config("unsupported", auth_config)
-
-        assert "Unsupported OAuth provider type" in str(exc_info.value)
-        assert "unsupported" in str(exc_info.value)
-
-
-class TestTransportCompatibility:
-    """Test transport compatibility validation."""
-
-    def test_jwt_supports_all_transports(self):
-        """Test that JWT providers support all transport types."""
-        jwt_provider = MagicMock(spec=JWTVerifier)
-
-        assert supports_transport(jwt_provider, "stdio")
-        assert supports_transport(jwt_provider, "sse")
-        assert supports_transport(jwt_provider, "http")
-
-    def test_oauth_providers_support_http_transports_only(self):
-        """Test that OAuth providers only support HTTP-based transports."""
-        remote_provider = MagicMock(spec=RemoteAuthProvider)
-        oauth_proxy = MagicMock(spec=OAuthProxy)
-        oauth_provider = MagicMock(spec=OAuthProvider)
-
-        for provider in [remote_provider, oauth_proxy, oauth_provider]:
-            assert not supports_transport(provider, "stdio")
-            assert supports_transport(provider, "sse")
-            assert supports_transport(provider, "http")
-
-
-class TestFullAuthProviderFactory:
-    """Test the complete auth provider factory."""
-
-    def test_no_auth_provider(self):
-        """Test building no auth provider."""
-        config = MagicMock(spec=Config)
-        config.auth = AuthConfig(type="none")
-        provider = build_auth_provider(config)
-        assert provider is None
-
-    def test_none_auth_provider(self):
-        """Test building none auth provider."""
-        config = MagicMock(spec=Config)
-        config.auth = AuthConfig(type="none")
-        provider = build_auth_provider(config)
-        assert provider is None
-
-    @patch("itential_mcp.server.auth.JWTVerifier")
-    def test_jwt_auth_provider(self, mock_jwt):
-        """Test building JWT auth provider."""
-        config = MagicMock(spec=Config)
-        config.auth = AuthConfig(type="jwt", public_key="test_key")
-
-        mock_provider = MagicMock()
-        mock_jwt.return_value = mock_provider
-
-        provider = build_auth_provider(config)
-        assert provider == mock_provider
-
-    def test_oauth_auth_provider_raises(self):
-        """Test that building type=oauth via the factory fails fast."""
-        config = MagicMock(spec=Config)
-        config.auth = AuthConfig(
-            type="oauth",
-            oauth_redirect_uri="http://localhost:8000/auth/callback",
-        )
-
-        with pytest.raises(ConfigurationException) as exc_info:
-            build_auth_provider(config)
+            _build_oauth_provider({})
 
         message = str(exc_info.value)
-        assert "not currently supported" in message
+        assert "user/credential store" in message
         assert "oauth_proxy" in message
+        assert "persist" not in message
 
     @patch("itential_mcp.server.auth.OAuthProxy")
     @patch("itential_mcp.server.auth.JWTVerifier")
-    def test_oauth_proxy_auth_provider(self, mock_jwt_verifier, mock_oauth_proxy):
-        """Test building OAuth proxy auth provider."""
-        config = MagicMock(spec=Config)
-        config.auth = AuthConfig(
-            type="oauth_proxy",
-            oauth_client_id="test_client",
-            oauth_client_secret="test_secret",
-            oauth_authorization_url="https://accounts.google.com/oauth/authorize",
-            oauth_token_url="https://oauth2.googleapis.com/token",
-            oauth_redirect_uri="http://localhost:8000/auth/callback",
-            jwks_uri="https://accounts.google.com/.well-known/jwks.json",
+    def test_oauth_proxy_passes_valid_scopes(self, mock_jwt_verifier, mock_oauth_proxy):
+        """oauth_scopes are forwarded to OAuthProxy as valid_scopes."""
+        from itential_mcp.config.converters import auth_to_dict
+
+        auth_config = auth_to_dict(
+            make_auth_config(
+                type="oauth_proxy",
+                oauth_client_id="c",
+                oauth_client_secret="s",
+                oauth_authorization_url="https://idp.example.com/authorize",
+                oauth_token_url="https://idp.example.com/token",
+                oauth_redirect_uri="http://localhost:8000/auth/callback",
+                oauth_scopes="openid, email",
+                jwks_uri="https://idp.example.com/jwks.json",
+            )
         )
 
-        mock_verifier_instance = MagicMock()
-        mock_jwt_verifier.return_value = mock_verifier_instance
+        _build_oauth_proxy_provider(auth_config)
 
-        mock_provider = MagicMock()
-        mock_oauth_proxy.return_value = mock_provider
-
-        provider = build_auth_provider(config)
-        assert provider == mock_provider
-
-    def test_unsupported_auth_type(self):
-        """Test unsupported auth type raises exception."""
-        config = MagicMock(spec=Config)
-        # We need a way to pass an unsupported type for testing, but Literal enforces it.
-        # Use patch or bypass validation for this test case if needed, or if it raises on initialization.
-        with patch.object(AuthConfig, "type", "unsupported"):
-            # This might not work if it's a frozen dataclass.
-            # Let's mock the whole AuthConfig object for this specific case.
-            mock_auth = MagicMock(spec=AuthConfig)
-            mock_auth.type = "unsupported"
-            config.auth = mock_auth
-
-            with pytest.raises(ConfigurationException) as exc_info:
-                build_auth_provider(config)
-
-            assert "Unsupported authentication type" in str(exc_info.value)
+        kwargs = mock_oauth_proxy.call_args.kwargs
+        assert kwargs["valid_scopes"] == ["openid", "email"]

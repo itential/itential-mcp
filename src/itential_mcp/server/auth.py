@@ -123,14 +123,11 @@ def _build_oauth_provider(auth_config: dict[str, Any]) -> AuthProvider:
     """Reject full OAuth 2.0 authorization server configuration.
 
     Full authorization server mode (``type=oauth``) is not currently
-    supported: FastMCP's ``OAuthProvider`` has no built-in persistent
-    storage backend, so dynamic client registration silently fails to
-    persist registered clients. This results in a confusing runtime
-    failure ("Client ID not found") during a real authorization-code
-    handshake, well after startup. Implementing a real fix requires new
-    client/token storage and credential-verification capability, which is
-    tracked separately. Until then, this configuration fails fast at
-    startup instead.
+    supported. FastMCP's ``OAuthProvider`` authorization-server mode needs
+    a user/credential store and Platform identity verification, which is
+    tracked under the per-user "on behalf of" work. Until that exists,
+    this configuration fails fast at startup instead of failing during a
+    real authorization-code handshake.
 
     Args:
         auth_config (dict[str, Any]): Authentication configuration dictionary.
@@ -144,8 +141,8 @@ def _build_oauth_provider(auth_config: dict[str, Any]) -> AuthProvider:
     """
     raise ConfigurationException(
         "Full OAuth authorization server mode ('oauth') is not currently "
-        "supported (dynamic client registration cannot persist registered "
-        "clients). Use 'oauth_proxy' to delegate authentication to an "
+        "supported (it requires a user/credential store and Platform identity "
+        "verification). Use 'oauth_proxy' to delegate authentication to an "
         "upstream OAuth provider instead."
     )
 
@@ -224,61 +221,6 @@ def _build_oauth_proxy_provider(auth_config: dict[str, Any]) -> AuthProvider:
 
     logging.info("Server authentication enabled using OAuth proxy provider")
     return provider
-
-
-def _get_provider_config(
-    provider_type: str, auth_config: dict[str, Any]
-) -> dict[str, Any]:
-    """Get provider-specific OAuth configuration.
-
-    Args:
-        provider_type (str): The OAuth provider type (google, azure, etc.)
-        auth_config (dict[str, Any]): Authentication configuration dictionary.
-
-    Returns:
-        dict[str, Any]: Provider-specific configuration parameters.
-
-    Raises:
-        ConfigurationException: If provider type is not supported.
-    """
-    # TODO: not currently called by any provider builder — oauth_provider_type
-    # config/CLI flag is accepted but has no effect until this is wired in.
-    config: dict[str, Any] = {}
-
-    # Add custom scopes if specified
-    if auth_config.get("scopes"):
-        config["scopes"] = auth_config["scopes"]
-
-    # Add custom redirect URI if specified
-    if auth_config.get("redirect_uri"):
-        config["redirect_uri"] = auth_config["redirect_uri"]
-
-    # Provider-specific defaults and overrides
-    if provider_type == "google":
-        if not auth_config.get("scopes"):
-            config["scopes"] = ["openid", "email", "profile"]
-    elif provider_type == "azure":
-        if not auth_config.get("scopes"):
-            config["scopes"] = ["openid", "email", "profile"]
-    elif provider_type == "auth0":
-        if not auth_config.get("scopes"):
-            config["scopes"] = ["openid", "email", "profile"]
-    elif provider_type == "github":
-        if not auth_config.get("scopes"):
-            config["scopes"] = ["user:email"]
-    elif provider_type == "okta":
-        if not auth_config.get("scopes"):
-            config["scopes"] = ["openid", "email", "profile"]
-    elif provider_type == "generic":
-        # Generic provider requires explicit configuration
-        pass
-    else:
-        raise ConfigurationException(
-            f"Unsupported OAuth provider type: {provider_type}. "
-            f"Supported types: google, azure, auth0, github, okta, generic"
-        )
-
-    return config
 
 
 def supports_transport(auth_provider: AuthProvider, transport: str) -> bool:
