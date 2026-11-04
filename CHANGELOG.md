@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the workflow engine metrics tools. `agent_name` is still supported but is
   filtered client-side (the platform has no server-side name filter), so it
   scans all sessions and is slower; `total` and `has_more` reflect the
-  filtered set. (#TBD)
+  filtered set. (#442)
 - `describe_session` `output` now falls back to the text of the last
   non-empty AGENT_REASONING text when the session has no `end_turn` event,
   instead of being null. This is visible in the default mode; `reasoning_events` is still
