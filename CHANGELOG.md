@@ -57,17 +57,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   so behavior is unchanged, but configs should drop it. A leftover environment
   variable or config file key is silently ignored; the CLI flag is rejected by
   the argument parser as an unrecognized argument and `itential-mcp run` exits
-  with code 2. (#TBD)
+  with code 2. (#443)
 - `auth_type = oauth` still fails fast at startup, but its error message and
   docs now state the real blocker: full authorization-server mode needs a
   user/credential store and Platform identity verification (tracked under the
   per-user "on behalf of" work), not a missing client storage backend. Also
   documented that the OAuth issuer tracks the server's public base URL, so
-  changing it causes a one-time client re-authorization. (#TBD)
+  changing it causes a one-time client re-authorization. (#443)
 
 ### Fixed
 - Removed the dead `_get_provider_config` helper from `server/auth.py`, which
-  no provider builder ever called. (#TBD)
+  no provider builder ever called. (#443)
 - TaskMetricElement accepted a missing `_id` on input but declared a
   non-nullable `object_id`, which failed MCP output validation. (#437)
 - `itential-mcp call` works against a FastMCP 4 server: dropped the
