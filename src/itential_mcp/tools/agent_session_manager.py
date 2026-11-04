@@ -184,6 +184,87 @@ def _is_end_turn_reasoning_event(raw: dict) -> bool:
     return data.get("stopReason") == "end_turn"
 
 
+def _is_pending_marker(raw: dict) -> bool:
+    """
+    Check whether a raw AGENT_REASONING event is an inference-pending marker.
+
+    Pending markers only signal the start of an LLM call and carry no
+    content. When the event has no type, it is treated as a marker only if
+    it has no text, no stopReason and empty data.
+
+    Args:
+        raw (dict): A single raw event dict from get_session_messages.
+
+    Returns:
+        bool: True if the event is noise that should not be surfaced.
+    """
+    event_type = raw.get("type")
+    if event_type is not None:
+        return event_type == "inference-pending"
+    data = raw.get("data") or {}
+    return not _has_text(raw.get("text")) and not data.get("stopReason") and not data
+
+
+def _sort_by_timestamp(raw_messages: list[dict]) -> list[dict]:
+    """
+    Stable-sort raw events by timestamp, never by sequenceNumber.
+
+    Tool events have a null sequenceNumber. Events without a usable
+    timestamp inherit the previous event's key so they keep their place.
+
+    Args:
+        raw_messages (list[dict]): Raw events from get_session_messages.
+
+    Returns:
+        list[dict]: The events ordered by timestamp.
+    """
+    keyed = []
+    last = 0
+    for raw in raw_messages:
+        ts = raw.get("timestamp")
+        if isinstance(ts, (int, float)) and not isinstance(ts, bool):
+            last = ts
+        keyed.append((last, raw))
+    keyed.sort(key=lambda item: item[0])
+    return [raw for _, raw in keyed]
+
+
+def _tool_call_from_raw(raw: dict) -> models.SessionToolCall:
+    """
+    Build a SessionToolCall from a raw TOOL_CALLED event.
+
+    Tool input and output are deliberately not copied.
+
+    Args:
+        raw (dict): A raw TOOL_CALLED event.
+
+    Returns:
+        models.SessionToolCall: The summarized tool call.
+    """
+    data = raw.get("data") or {}
+    return models.SessionToolCall(
+        tool_name=data.get("toolName"),
+        tool_type=data.get("toolType"),
+        summary=data.get("summary"),
+        status=data.get("status"),
+        duration_ms=data.get("durationMs"),
+        error_message=data.get("errorMessage"),
+    )
+
+
+def _has_text(value: object) -> bool:
+    """
+    Check whether a value is a non-empty, non-whitespace string.
+
+    Args:
+        value (object): The candidate text value.
+
+    Returns:
+        bool: True if value is a string with non-whitespace content.
+    """
+    return isinstance(value, str) and bool(value.strip())
+
+
 def _parse_timestamp(value: str) -> datetime:
     """
     Parse an ISO 8601 / RFC3339 timestamp string into a timezone-aware datetime.
@@ -284,33 +365,60 @@ async def describe_session(
         str,
         Field(description="The session ID to retrieve full details for"),
     ],
+    *,
+    include_all_events: Annotated[
+        bool,
+        Field(
+            description=(
+                "By default reasoning_events only contains AGENT_REASONING "
+                "events whose stop reason is end_turn. Set true to return "
+                "every AGENT_REASONING event regardless of stop reason "
+                "(including tool_use turns, but not inference-pending "
+                "markers), each with duration and token metrics and the "
+                "tool calls that followed it. Useful for sessions whose "
+                "turns all end in tool calls."
+            ),
+        ),
+    ] = False,
 ) -> models.DescribeSessionResponse:
     """
     Get detailed information about a specific agent session.
 
     Returns the full session record including the filtered reasoning event
-    log and the final text output produced by the agent. The raw event log
-    is filtered down to only AGENT_REASONING events whose data.stopReason is
-    "end_turn" — these represent completed model turns. Tool-execution
-    events, pending-inference events, tool_use-stopReason reasoning steps
-    (mid-turn, not yet final), reasoning events with no data at all, and
-    session-status events are all dropped.
+    log and the final text output produced by the agent. By default the raw
+    event log is filtered down to only AGENT_REASONING events whose
+    data.stopReason is "end_turn" — these represent completed model turns.
+    Tool-execution events, pending-inference events, tool_use-stopReason
+    reasoning steps (mid-turn, not yet final), reasoning events with no data
+    at all, and session-status events are all dropped. Pass
+    include_all_events=True to keep every AGENT_REASONING event except
+    inference-pending markers instead, with per-turn duration and token
+    metrics and the tool calls made after each turn.
 
     Args:
         ctx (Context): The FastMCP Context object.
         session_id (str): Unique session identifier. Session IDs are returned
             by get_sessions.
+        include_all_events (bool): When True, reasoning_events contains every
+            AGENT_REASONING event (any stop reason, timestamp order) except
+            inference-pending markers, instead of only end_turn events, and
+            each event carries its tool_calls. Defaults to False.
 
     Returns:
         models.DescribeSessionResponse: Full session details with the following fields:
             - session_id: Unique session identifier
             - agent_name: Name of the agent that ran
             - status: Session status (RUNNING, COMPLETE, FAILED)
-            - output: Final text produced by the agent (None if not yet complete)
+            - output: Final text produced by the agent (None if no reasoning
+              event exists yet)
             - started_at: ISO 8601 start timestamp
             - end_time: ISO 8601 end timestamp (None if still running)
             - duration_ms: Total session duration in milliseconds
-            - reasoning_events: Ordered list of kept AGENT_REASONING events
+            - reasoning_events: Ordered list of kept AGENT_REASONING events,
+              each with its stop_reason (None when absent) plus, with
+              include_all_events, duration_ms, input_tokens, output_tokens
+              and tool_calls (tool_name, tool_type, summary, status,
+              duration_ms, error_message)
             - pending_manual_tasks: Manual tasks waiting on a human. None means
               unknown (the lookup failed with an error other than not-found);
               an empty list means none pending (including any session that is
@@ -325,9 +433,23 @@ async def describe_session(
           calls) are not guaranteed to be listed.
         - The platform runs all MCP operations as the MCP service account or
           OAuth client, with no per-user authorization.
-        - Only AGENT_REASONING events with data.stopReason == "end_turn" are
-          kept; everything else is filtered out of reasoning_events
-        - The output field is taken from the last kept reasoning event's text
+        - By default only AGENT_REASONING events with data.stopReason ==
+          "end_turn" are kept; everything else is filtered out of
+          reasoning_events. With include_all_events=True every
+          AGENT_REASONING event is kept regardless of stop reason, except
+          inference-pending markers
+        - Tool calls (TOOL_CALLED events) are grouped under the nearest
+          preceding kept reasoning turn by timestamp order. A tool call with
+          no preceding turn is attached to the first turn, or dropped if
+          there is no turn. Tool input and output are intentionally omitted.
+          Default mode leaves tool_calls empty
+        - The output field is the text of the last end_turn reasoning event.
+          If the session has no end_turn event (for example every turn ended
+          in a tool call), it falls back to the last non-empty
+          text (skipping None, empty and whitespace-only text) of any
+          AGENT_REASONING event, regardless of stop reason; None if there
+          is none. This rule is the same
+          whether or not include_all_events is set
         - Reasoning event timestamps are converted from epoch milliseconds to
           ISO 8601 format
     """
@@ -360,11 +482,43 @@ async def describe_session(
     if isinstance(end_time, int):
         end_time = timeutils.epoch_to_timestamp(end_time)
 
-    reasoning_events = []
-    output = None
+    reasoning_events: list[models.SessionReasoningEvent] = []
+    end_turn_output = None
+    last_output = None
+    # Tool calls seen before any kept turn; attached to the first turn after
+    # the loop so they are not lost.
+    orphan_tool_calls: list[models.SessionToolCall] = []
+
+    if include_all_events:
+        raw_messages = _sort_by_timestamp(raw_messages)
 
     for raw in raw_messages:
-        if not _is_end_turn_reasoning_event(raw):
+        category = raw.get("category")
+
+        if include_all_events and category == "TOOL_CALLED":
+            # Tool events are linked to their turn by order only. They never
+            # feed the output fallback.
+            tool_call = _tool_call_from_raw(raw)
+            if reasoning_events:
+                reasoning_events[-1].tool_calls.append(tool_call)
+            else:
+                orphan_tool_calls.append(tool_call)
+            continue
+
+        if category != "AGENT_REASONING":
+            continue
+
+        data = raw.get("data") or {}
+        stop_reason = data.get("stopReason")
+        is_end_turn = _is_end_turn_reasoning_event(raw)
+
+        if not is_end_turn and not include_all_events:
+            # Not kept, but still the fallback candidate for output.
+            if _has_text(raw.get("text")):
+                last_output = raw.get("text")
+            continue
+
+        if include_all_events and _is_pending_marker(raw):
             continue
 
         event_timestamp = raw.get("timestamp")
@@ -373,15 +527,38 @@ async def describe_session(
 
         event_text = raw.get("text")
 
+        token_usage = data.get("tokenUsage")
+        if not isinstance(token_usage, dict):
+            token_usage = {}
+
         reasoning_event = models.SessionReasoningEvent(
             event_id=raw.get("eventId"),
             sequence_number=raw.get("sequenceNumber"),
             timestamp=event_timestamp,
             text=event_text,
+            stop_reason=stop_reason if isinstance(stop_reason, str) else None,
+            duration_ms=data.get("durationMs"),
+            input_tokens=token_usage.get("inputTokens"),
+            output_tokens=token_usage.get("outputTokens"),
         )
         reasoning_events.append(reasoning_event)
 
-        output = event_text
+        if _has_text(event_text):
+            last_output = event_text
+        if is_end_turn:
+            end_turn_output = event_text
+
+    if orphan_tool_calls:
+        if reasoning_events:
+            reasoning_events[0].tool_calls[:0] = orphan_tool_calls
+        else:
+            await ctx.debug(
+                f"dropping {len(orphan_tool_calls)} tool call(s) with no "
+                "reasoning turn to attach to"
+            )
+
+    has_end_turn = any(e.stop_reason == "end_turn" for e in reasoning_events)
+    output = end_turn_output if has_end_turn else last_output
 
     return models.DescribeSessionResponse(
         session_id=session.get("sessionId", session_id),

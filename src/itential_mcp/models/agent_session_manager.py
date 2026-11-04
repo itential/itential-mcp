@@ -81,22 +81,124 @@ class SessionMessage(AliasedModel):
     ]
 
 
+class SessionToolCall(BaseModel):
+    """
+    Represents one tool execution made during an agent session turn.
+
+    Built from a raw TOOL_CALLED event. The tool's input and output are
+    intentionally omitted because they can be large and may contain
+    sensitive data.
+
+    Attributes:
+        tool_name: Name of the tool that was called.
+        tool_type: Kind of tool (for example method, view or workflow).
+        summary: Short platform-provided summary of the call.
+        status: Outcome of the call (for example succeeded or failed).
+        duration_ms: Execution time in milliseconds.
+        error_message: Error message when the call failed.
+    """
+
+    tool_name: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Name of the tool that was called
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    tool_type: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Kind of tool, for example method, view or workflow
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    summary: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Short platform-provided summary of the call
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    status: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Outcome of the call, for example succeeded or failed
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    duration_ms: Annotated[
+        int | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Execution time of the tool call in milliseconds
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    error_message: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Error message when the call failed
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+
 class SessionReasoningEvent(BaseModel):
     """
     Represents a single kept AGENT_REASONING event from an agent session.
 
-    describe_session filters the raw session event log down to only the
-    AGENT_REASONING events whose data.stopReason is "end_turn" — these are
-    the reasoning steps that represent a completed model turn, as opposed to
-    tool-execution events, pending-inference events, tool_use-stopReason
-    reasoning steps (mid-turn, not yet final), or reasoning events with no
-    data at all. Each kept event carries its own text payload.
+    By default describe_session filters the raw session event log down to
+    only the AGENT_REASONING events whose data.stopReason is "end_turn" —
+    these are the reasoning steps that represent a completed model turn, as
+    opposed to tool-execution events, pending-inference events,
+    tool_use-stopReason reasoning steps (mid-turn, not yet final), or
+    reasoning events with no data at all. With include_all_events=True every
+    AGENT_REASONING event except inference-pending markers is kept, with
+    per-turn metrics and the tool calls that followed it. Each kept event carries its own text
+    payload and stop reason.
 
     Attributes:
         event_id: Unique identifier for this event.
         sequence_number: Ordering number for this event within the session.
         timestamp: ISO 8601 timestamp when this event was emitted.
         text: Text content of this reasoning event.
+        stop_reason: Why the model turn stopped (for example "end_turn" or
+            "tool_use"), read from the raw event's data.stopReason. None if
+            the event carries no stop reason.
+        duration_ms: Model inference duration in milliseconds (data.durationMs).
+        input_tokens: Input tokens for this turn (data.tokenUsage.inputTokens).
+        output_tokens: Output tokens for this turn (data.tokenUsage.outputTokens).
+        tool_calls: Tool calls that followed this turn, as SessionToolCall
+            items. Only populated with include_all_events=True; tool input
+            and output are intentionally omitted.
     """
 
     event_id: Annotated[
@@ -144,6 +246,68 @@ class SessionReasoningEvent(BaseModel):
                 """
             ),
             default=None,
+        ),
+    ]
+
+    stop_reason: Annotated[
+        str | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Why the model turn stopped (for example end_turn or tool_use),
+                taken from the raw event's data.stopReason
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    duration_ms: Annotated[
+        int | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Duration of the model inference in milliseconds, from data.durationMs
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    input_tokens: Annotated[
+        int | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Input tokens used by this model turn, from data.tokenUsage.inputTokens
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    output_tokens: Annotated[
+        int | None,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Output tokens produced by this model turn, from data.tokenUsage.outputTokens
+                """
+            ),
+            default=None,
+        ),
+    ]
+
+    tool_calls: Annotated[
+        list[SessionToolCall],
+        Field(
+            description=inspect.cleandoc(
+                """
+                Tool calls made right after this turn (only populated when
+                include_all_events is true; tool input and output are omitted)
+                """
+            ),
+            default_factory=list,
         ),
     ]
 
@@ -303,14 +467,16 @@ class DescribeSessionResponse(BaseModel):
         session_id: Unique session identifier.
         agent_name: Name of the agent that ran.
         status: Session status (RUNNING, COMPLETE, FAILED).
-        output: Final text output produced by the agent (the last kept
-            reasoning event's text). None if the session has not yet
-            completed or produced no matching reasoning event.
+        output: Final text output produced by the agent (the last end_turn
+            reasoning event's text, or the last non-empty AGENT_REASONING text
+            when the session has no end_turn event). None if there is no such
+            text.
         started_at: ISO 8601 start timestamp.
         end_time: ISO 8601 end timestamp (None if still running).
         duration_ms: Total session duration in milliseconds.
         reasoning_events: Ordered list of kept AGENT_REASONING events (those
-            with data.stopReason == "end_turn").
+            with data.stopReason == "end_turn" by default, or all of them when
+            include_all_events is set).
         pending_manual_tasks: Manual tasks waiting on a human (None if unknown).
     """
 
@@ -353,9 +519,10 @@ class DescribeSessionResponse(BaseModel):
         Field(
             description=inspect.cleandoc(
                 """
-                Final text output produced by the agent; taken from the last
-                kept reasoning event's text. None if the session has not
-                completed or produced no matching reasoning event.
+                Final text output produced by the agent; the last end_turn
+                reasoning event's text, or the last non-empty AGENT_REASONING
+                text when the session has no end_turn event. None if there is
+                no such text.
                 """
             ),
             default=None,
@@ -403,8 +570,10 @@ class DescribeSessionResponse(BaseModel):
         Field(
             description=inspect.cleandoc(
                 """
-                Ordered list of kept AGENT_REASONING events (those with
-                data.stopReason == "end_turn") captured during agent execution
+                Ordered list of kept AGENT_REASONING events captured during
+                agent execution. By default only those with
+                data.stopReason == "end_turn"; all AGENT_REASONING events when
+                include_all_events is true
                 """
             ),
             default_factory=list,
