@@ -220,8 +220,8 @@ make format
 # Auto-fix issues where possible
 make fix
 
-# Run full premerge pipeline
-make premerge
+# Run full CI pipeline
+make ci
 ```
 
 ### Style Guidelines

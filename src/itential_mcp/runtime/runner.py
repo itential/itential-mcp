@@ -80,10 +80,16 @@ async def run(tool: str, params: Mapping[str, Any] | None = None) -> None:
             # Execute operations
             result = await client.call_tool(tool, **kwargs)
 
-            # Safely parse JSON response, fall back to plain text if parsing fails
-            try:
-                data = json_utils.loads(result.content[0].text)
-                print(f"\n{json.dumps(data, indent=4)}")
-            except exceptions.ValidationException:
-                # If JSON parsing fails, return the plain text
-                print(f"\n{result.content[0].text}")
+            # Prefer structured content; the text block is dropped in json mode
+            if getattr(result, "structured_content", None) is not None:
+                print(f"\n{json.dumps(result.structured_content, indent=4)}")
+            elif result.content:
+                # Safely parse JSON text, fall back to plain text if parsing fails
+                try:
+                    data = json_utils.loads(result.content[0].text)
+                    print(f"\n{json.dumps(data, indent=4)}")
+                except exceptions.ValidationException:
+                    # If JSON parsing fails, return the plain text
+                    print(f"\n{result.content[0].text}")
+            else:
+                print()

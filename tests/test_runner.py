@@ -24,6 +24,99 @@ class MockCallToolResult:
     is_error: bool = False
 
 
+class TestRunStructuredContent:
+    """Test cases for preferring structured_content over text content"""
+
+    @staticmethod
+    def _mocks(mock_result):
+        mock_server_instance = MagicMock()
+        mock_server_instance.mcp = MagicMock()
+        mock_server_instance.__aenter__ = AsyncMock(return_value=mock_server_instance)
+        mock_server_instance.__aexit__ = AsyncMock(return_value=None)
+
+        mock_client = AsyncMock()
+        mock_tool = MagicMock()
+        mock_tool.name = "test_tool"
+        mock_tool.input_schema = {"properties": {}, "required": []}
+        mock_list_response = MagicMock()
+        mock_list_response.tools = [mock_tool]
+        mock_client.list_tools_mcp.return_value = mock_list_response
+        mock_client.call_tool.return_value = mock_result
+        return mock_server_instance, mock_client
+
+    @pytest.mark.asyncio
+    @patch("sys.stdout", new_callable=StringIO)
+    @patch("itential_mcp.runtime.runner.Client")
+    @patch("itential_mcp.runtime.runner.Server")
+    @patch("itential_mcp.runtime.runner.config.get")
+    async def test_run_prefers_structured_content(
+        self, mock_config_get, mock_server_class, mock_client_class, mock_stdout
+    ):
+        """Test output is printed from structured_content, not content text"""
+        mock_config_get.return_value = MagicMock()
+
+        # content text is deliberately different and must not be used
+        text = MagicMock()
+        text.text = json.dumps({"from": "text"})
+        mock_result = MockCallToolResult(
+            content=[text], structured_content={"from": "structured"}
+        )
+        server, client = self._mocks(mock_result)
+        mock_server_class.return_value = server
+        mock_client_class.return_value.__aenter__.return_value = client
+        mock_client_class.return_value.__aexit__.return_value = None
+
+        await runner.run("test_tool")
+
+        output = mock_stdout.getvalue()
+        assert '"from": "structured"' in output
+        assert "text" not in output
+
+    @pytest.mark.asyncio
+    @patch("sys.stdout", new_callable=StringIO)
+    @patch("itential_mcp.runtime.runner.Client")
+    @patch("itential_mcp.runtime.runner.Server")
+    @patch("itential_mcp.runtime.runner.config.get")
+    async def test_run_structured_content_with_empty_content(
+        self, mock_config_get, mock_server_class, mock_client_class, mock_stdout
+    ):
+        """Test structured_content is printed when content is empty"""
+        mock_config_get.return_value = MagicMock()
+
+        mock_result = MockCallToolResult(
+            content=[], structured_content={"result": "success"}
+        )
+        server, client = self._mocks(mock_result)
+        mock_server_class.return_value = server
+        mock_client_class.return_value.__aenter__.return_value = client
+        mock_client_class.return_value.__aexit__.return_value = None
+
+        await runner.run("test_tool")
+
+        assert json.loads(mock_stdout.getvalue()) == {"result": "success"}
+
+    @pytest.mark.asyncio
+    @patch("sys.stdout", new_callable=StringIO)
+    @patch("itential_mcp.runtime.runner.Client")
+    @patch("itential_mcp.runtime.runner.Server")
+    @patch("itential_mcp.runtime.runner.config.get")
+    async def test_run_no_content_no_structured_content(
+        self, mock_config_get, mock_server_class, mock_client_class, mock_stdout
+    ):
+        """Test a blank line is printed when there is no output at all"""
+        mock_config_get.return_value = MagicMock()
+
+        mock_result = MockCallToolResult(content=[])
+        server, client = self._mocks(mock_result)
+        mock_server_class.return_value = server
+        mock_client_class.return_value.__aenter__.return_value = client
+        mock_client_class.return_value.__aexit__.return_value = None
+
+        await runner.run("test_tool")
+
+        assert mock_stdout.getvalue() == "\n"
+
+
 class TestRun:
     """Test cases for the run function"""
 

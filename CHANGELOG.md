@@ -42,6 +42,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`results`, `total`, `returned`, `limit`, `skip`, `has_more`) instead of a
   bare list. Read the items from `results` and use `has_more` to decide
   whether to request the next page with `skip`. (#437)
+- BREAKING: In the default `json` response format, tool results now return
+  only `structuredContent`; the duplicate serialized-JSON text content block
+  is no longer sent. Clients reading `structuredContent` (modern MCP clients,
+  FastMCP Client) are unaffected; a client reading only the text block would
+  see empty results. `toon` format is unchanged and still returns its TOON
+  text block alongside `structuredContent`. (#TBD)
 
 ### Fixed
 - TaskMetricElement accepted a missing `_id` on input but declared a

@@ -157,6 +157,44 @@ class TestSerializationMiddlewareJsonFormat:
         # String data should pass through unchanged
         assert result == mock_response
 
+    @pytest.mark.asyncio
+    async def test_json_drops_duplicate_text_content(
+        self, mock_config_json, mock_context, sample_dict
+    ):
+        """Test that json mode drops the duplicate text block."""
+        middleware = SerializationMiddleware(mock_config_json)
+
+        mock_content_item = MagicMock()
+        mock_content_item.text = "{}"
+        mock_response = MagicMock()
+        mock_response.structured_content = sample_dict
+        mock_response.content = [mock_content_item]
+        call_next = AsyncMock(return_value=mock_response)
+
+        result = await middleware.on_call_tool(mock_context, call_next)
+
+        assert result.content == []
+        assert result.structured_content == sample_dict
+
+    @pytest.mark.asyncio
+    async def test_json_keeps_content_without_structured_content(
+        self, mock_config_json, mock_context
+    ):
+        """Test that json mode leaves content alone with no structured_content."""
+        middleware = SerializationMiddleware(mock_config_json)
+
+        mock_content_item = MagicMock()
+        mock_content_item.text = "plain text"
+        mock_response = MagicMock()
+        mock_response.structured_content = None
+        mock_response.content = [mock_content_item]
+        call_next = AsyncMock(return_value=mock_response)
+
+        result = await middleware.on_call_tool(mock_context, call_next)
+
+        assert result.content == [mock_content_item]
+        assert result.content[0].text == "plain text"
+
 
 class TestSerializationMiddlewareToonFormat:
     """Test cases for TOON format serialization."""

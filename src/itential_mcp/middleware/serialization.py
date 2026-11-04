@@ -27,7 +27,8 @@ class SerializationMiddleware(Middleware):
     format using serialization functions from the serializers package.
 
     Serialization Formats:
-        - json: Standard JSON format (default for backward compatibility)
+        - json: Standard JSON format (default). Results are returned only as
+          structuredContent; the duplicate text content block is dropped.
         - toon: TOON format for LLM-optimized token efficiency (30-60% reduction)
 
     The middleware operates on the `on_call_tool` hook, transforming responses
@@ -61,11 +62,12 @@ class SerializationMiddleware(Middleware):
 
         This method intercepts tool call results and applies the appropriate
         serialization transformation:
-        - For dicts and lists, serializes to the configured format
-        - For other types, passes through unchanged
-
-        The serialization respects the MCP protocol by converting serialized
-        strings back to dictionaries with appropriate structure.
+        - In json mode, results carrying structured content have their
+          duplicate text content block removed so the data is only sent once
+          (as structuredContent)
+        - In toon mode, dicts and lists are serialized to TOON and written to
+          the first text content block
+        - For other formats or types, passes through unchanged
 
         Args:
             context (MiddlewareContext): The middleware context containing the
@@ -82,7 +84,14 @@ class SerializationMiddleware(Middleware):
         """
         res = await call_next(context)
 
-        if self.format == "toon":
+        if self.format == "json":
+            # FastMCP duplicates structured results as a serialized-JSON text
+            # block. Drop it so the payload is only sent once, as
+            # structuredContent.
+            if getattr(res, "structured_content", None) is not None:
+                res.content = []
+
+        elif self.format == "toon":
             # Get the result content from the response
             result = (
                 res.structured_content if hasattr(res, "structured_content") else res
