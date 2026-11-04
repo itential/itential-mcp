@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import pytest
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 from itential_mcp.platform.services import ServiceBase
 from ipsdk.platform import AsyncPlatform
@@ -52,6 +52,38 @@ class TestServiceBase:
         assert "service implementations" in docstring
         assert "Args:" in docstring
         assert "Attributes:" in docstring
+
+
+class TestGetPageSkipParam:
+    """Test the skip_param argument of ServiceBase._get_page"""
+
+    @staticmethod
+    def _service():
+        client = AsyncMock(spec=AsyncPlatform)
+        res = MagicMock()
+        res.json.return_value = {"results": [{"a": 1}], "total": 3}
+        client.get.return_value = res
+        return ServiceBase(client), client
+
+    @pytest.mark.asyncio
+    async def test_skip_param_defaults_to_skip(self):
+        """Test the skip value is sent as 'skip' by default"""
+        service, client = self._service()
+
+        items, total = await service._get_page("/x", limit=5, skip=2)
+
+        client.get.assert_called_once_with("/x", params={"limit": 5, "skip": 2})
+        assert items == [{"a": 1}]
+        assert total == 3
+
+    @pytest.mark.asyncio
+    async def test_skip_param_offset(self):
+        """Test the skip value is sent as 'offset' when requested"""
+        service, client = self._service()
+
+        await service._get_page("/x", limit=5, skip=2, skip_param="offset")
+
+        client.get.assert_called_once_with("/x", params={"limit": 5, "offset": 2})
 
 
 class ConcreteService(ServiceBase):

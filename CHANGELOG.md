@@ -21,6 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   input and output are intentionally omitted. (#440)
 
 ### Changed
+- BREAKING: `get_sessions` now returns at most 100 sessions per call (newest
+  first) instead of every matching session, and an object (`results`, `total`,
+  `returned`, `limit`, `skip`, `has_more`) instead of a bare list. Read
+  sessions from `results` and page with `has_more`/`skip`. New `limit` (1-100,
+  default 100) and `skip` parameters; the platform caps `limit` at 100, unlike
+  the workflow engine metrics tools. `agent_name` is still supported but is
+  filtered client-side (the platform has no server-side name filter), so it
+  scans all sessions and is slower; `total` and `has_more` reflect the
+  filtered set. (#TBD)
 - `describe_session` `output` now falls back to the text of the last
   non-empty AGENT_REASONING text when the session has no `end_turn` event,
   instead of being null. This is visible in the default mode; `reasoning_events` is still

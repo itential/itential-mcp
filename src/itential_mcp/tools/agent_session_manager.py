@@ -7,7 +7,7 @@ from __future__ import annotations
 import asyncio
 
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import Field
 
@@ -288,6 +288,67 @@ def _parse_timestamp(value: str) -> datetime:
         raise ValidationException(f"Invalid ISO 8601 timestamp: {value!r}") from exc
 
 
+def _started_at_sort_key(item: dict[str, Any]) -> tuple[int, int, str]:
+    """Sort key ordering sessions by start time; sessions without one sort oldest.
+
+    Args:
+        item (dict[str, Any]): A normalized session dictionary.
+
+    Returns:
+        tuple[int, int, str]: A comparable key (epoch values and ISO strings
+            are each ordered naturally).
+    """
+    started_at = item.get("started_at")
+    if isinstance(started_at, int):
+        return (2, started_at, "")
+    if isinstance(started_at, str):
+        return (1, 0, started_at)
+    return (0, 0, "")
+
+
+def _build_session_element(
+    *,
+    session_id: str,
+    agent_name: str | None,
+    status: str,
+    started_at: Any,
+    end_time: Any,
+    duration_ms: int | None,
+    total_input_tokens: int | None,
+    total_output_tokens: int | None,
+) -> models.SessionElement:
+    """Build a SessionElement, converting epoch-millisecond timestamps.
+
+    Args:
+        session_id (str): Unique session identifier.
+        agent_name (str | None): Name of the agent that ran.
+        status (str): Session status.
+        started_at (Any): Epoch milliseconds or an already formatted timestamp.
+        end_time (Any): Epoch milliseconds or an already formatted timestamp.
+        duration_ms (int | None): Session duration in milliseconds.
+        total_input_tokens (int | None): Total input tokens used.
+        total_output_tokens (int | None): Total output tokens used.
+
+    Returns:
+        models.SessionElement: The populated session element.
+    """
+    if isinstance(started_at, int):
+        started_at = timeutils.epoch_to_timestamp(started_at)
+    if isinstance(end_time, int):
+        end_time = timeutils.epoch_to_timestamp(end_time)
+
+    return models.SessionElement(
+        session_id=session_id,
+        agent_name=agent_name,
+        status=status,
+        started_at=started_at,
+        end_time=end_time,
+        duration_ms=duration_ms,
+        total_input_tokens=total_input_tokens,
+        total_output_tokens=total_output_tokens,
+    )
+
+
 @annotate(read_only=True, idempotent=True, open_world=False, title="Get Sessions")
 async def get_sessions(
     ctx: Annotated[Context, Field(description="The FastMCP Context object")],
@@ -298,64 +359,137 @@ async def get_sessions(
             default=None,
         ),
     ],
+    *,
+    limit: Annotated[
+        int,
+        Field(
+            description=(
+                "Maximum number of sessions to return in this call (1-100, "
+                "the platform maximum)"
+            ),
+            ge=1,
+            le=100,
+        ),
+    ] = 100,
+    skip: Annotated[
+        int,
+        Field(
+            description="Number of sessions to skip before the page starts",
+            ge=0,
+        ),
+    ] = 0,
 ) -> models.GetSessionsResponse:
     """
-    List agent sessions from Itential Platform.
+    List agent sessions from Itential Platform, one page at a time.
 
     Agent sessions are created when an agent automation is triggered via an
     endpoint trigger. Each session records the agent that ran, its execution
-    status, and timing information.
+    status, and timing information. Sessions are returned newest first.
 
     Args:
         ctx (Context): The FastMCP Context object.
-        agent_name (str | None): Filter sessions to a specific agent by name.
-            When omitted, all sessions are returned.
+        agent_name (str | None): Filter sessions to a specific agent by exact
+            name. When omitted, sessions for all agents are returned.
+        limit (int): Maximum number of sessions to return (1-100, default
+            100). The platform caps page size at 100.
+        skip (int): Number of sessions to skip before the page starts
+            (default 0).
 
     Returns:
-        models.GetSessionsResponse: List of session objects with the following fields:
-            - session_id: Unique session identifier (use with describe_session)
-            - agent_name: Name of the agent that ran
-            - status: Session status (RUNNING, COMPLETE, FAILED)
-            - started_at: ISO 8601 start timestamp
-            - end_time: ISO 8601 end timestamp (None if still running)
-            - duration_ms: Total session duration in milliseconds
+        models.GetSessionsResponse: An object with the following fields:
+            - results: List of session objects for this page, each with:
+                - session_id: Unique session identifier (use with describe_session)
+                - agent_name: Name of the agent that ran
+                - status: Session status (RUNNING, COMPLETE, FAILED)
+                - started_at: ISO 8601 start timestamp
+                - end_time: ISO 8601 end timestamp (None if still running)
+                - duration_ms: Total session duration in milliseconds
+            - total: Total number of matching sessions on the platform
+            - returned: Number of sessions in this page
+            - limit: The page size that was requested
+            - skip: The offset of this page
+            - has_more: True when more sessions exist beyond this page
 
     Notes:
+        - agent_name filtering is done client-side (the platform has no
+          server-side name filter), so the tool scans all sessions and is
+          slower; total and has_more reflect the filtered set
+        - To page, call again with skip increased by the number of sessions
+          the platform returned until has_more is False
+        - returned can be lower than limit when sessions without an
+          execution-engine session ID are omitted from the page
         - Use describe_session with a session_id to get the full event log and output
-        - Sessions that failed before an execution-engine session ID was
-          assigned are not listed
         - Timestamps are converted from epoch milliseconds to ISO 8601 format
     """
     await ctx.debug("inside get_sessions(...)")
 
     client = ctx.request_context.lifespan_context.get("client")
 
-    data = await client.agent_session_manager.get_sessions(agent_name)
+    session_elements: list[models.SessionElement] = []
 
-    session_elements = []
-
-    for item in data:
-        started_at = item.get("started_at")
-        if isinstance(started_at, int):
-            started_at = timeutils.epoch_to_timestamp(started_at)
-
-        end_time = item.get("end_time")
-        if isinstance(end_time, int):
-            end_time = timeutils.epoch_to_timestamp(end_time)
-
-        session_element = models.SessionElement(
-            session_id=item["session_id"],
-            agent_name=item.get("agent_name"),
-            status=item["status"],
-            started_at=started_at,
-            end_time=end_time,
-            duration_ms=item.get("duration_ms"),
-            total_input_tokens=item.get("total_input_tokens"),
-            total_output_tokens=item.get("total_output_tokens"),
+    if agent_name is None:
+        raw_items, total = await client.agent_session_manager.get_sessions_page(
+            limit=limit,
+            skip=skip,
         )
-        session_elements.append(session_element)
 
-    return models.GetSessionsResponse(root=session_elements)
+        for item in raw_items:
+            session_id = item.get("sessionId")
+            if session_id is None:
+                # Sessions that failed before the execution engine assigned an
+                # ID carry no sessionId and cannot be inspected, so they are
+                # not listed.
+                await ctx.debug(
+                    f"Skipping agent session without a sessionId (status={item.get('status')})"
+                )
+                continue
+
+            session_elements.append(
+                _build_session_element(
+                    session_id=session_id,
+                    agent_name=(item.get("agentSnapshot") or {}).get("name"),
+                    status=item["status"],
+                    started_at=item.get("startedAt"),
+                    end_time=item.get("endTime"),
+                    duration_ms=item.get("durationMs"),
+                    total_input_tokens=item.get("totalInputTokens"),
+                    total_output_tokens=item.get("totalOutputTokens"),
+                )
+            )
+
+        has_more = bool(raw_items) and skip + len(raw_items) < total
+    else:
+        # The platform has no working server-side agent-name filter, so fetch
+        # every session, filter by exact name and page in memory.
+        data = await client.agent_session_manager.get_sessions(agent_name)
+        data = sorted(data, key=_started_at_sort_key, reverse=True)
+        total = len(data)
+        page = data[skip : skip + limit]
+
+        for item in page:
+            session_elements.append(
+                _build_session_element(
+                    session_id=item["session_id"],
+                    agent_name=item.get("agent_name"),
+                    status=item["status"],
+                    started_at=item.get("started_at"),
+                    end_time=item.get("end_time"),
+                    duration_ms=item.get("duration_ms"),
+                    total_input_tokens=item.get("total_input_tokens"),
+                    total_output_tokens=item.get("total_output_tokens"),
+                )
+            )
+
+        has_more = skip + len(page) < total
+
+    return models.GetSessionsResponse(
+        results=session_elements,
+        total=total,
+        returned=len(session_elements),
+        limit=limit,
+        skip=skip,
+        has_more=has_more,
+    )
 
 
 @annotate(read_only=True, idempotent=True, open_world=False, title="Describe Session")

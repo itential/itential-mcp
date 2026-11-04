@@ -121,6 +121,7 @@ class ServiceBase:
         skip: int = 0,
         data_key: str = "results",
         total_key: str = "total",
+        skip_param: str = "skip",
     ) -> tuple[list[dict[str, Any]], int]:
         """Retrieve a single bounded page of results from an API endpoint.
 
@@ -133,13 +134,16 @@ class ServiceBase:
             endpoint: API endpoint path to query (e.g., "/api/resources")
             params: Optional query parameters (for example filters) to include
                 in the request. The mapping is copied, not modified. The
-                'limit' and 'skip' parameters are added automatically.
+                'limit' and skip parameters are added automatically.
             limit: Maximum number of items to request (default: 100)
             skip: Number of items to skip before the page starts (default: 0)
             data_key: Key in the response containing the data items
                 (default: "results")
             total_key: Key in the response containing the total number of
                 items matching the query (default: "total")
+            skip_param: Name of the query parameter the endpoint uses for the
+                number of items to skip (default: "skip"). Some endpoints use
+                "offset" instead.
 
         Returns:
             tuple[list[dict[str, Any]], int]: The items in the requested page
@@ -152,7 +156,7 @@ class ServiceBase:
         """
         query = dict(params or {})
         query["limit"] = limit
-        query["skip"] = skip
+        query[skip_param] = skip
 
         res = await self.client.get(endpoint, params=query)
         data = res.json()

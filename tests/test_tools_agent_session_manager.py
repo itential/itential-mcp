@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import inspect
+import typing
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -78,6 +79,22 @@ class TestModule:
             )
 
 
+def _raw_session(session_id="sess-001", **overrides):
+    """Build a raw platform session item."""
+    item = {
+        "sessionId": session_id,
+        "agentSnapshot": {"name": "network-agent"},
+        "status": "COMPLETE",
+        "startedAt": "2025-06-01T10:00:00Z",
+        "endTime": "2025-06-01T10:01:00Z",
+        "durationMs": 60000,
+        "totalInputTokens": 12345,
+        "totalOutputTokens": 678,
+    }
+    item.update(overrides)
+    return item
+
+
 class TestGetSessionsTool:
     """Test the get_sessions tool function"""
 
@@ -85,163 +102,289 @@ class TestGetSessionsTool:
     async def test_get_sessions_returns_response_with_elements(self):
         """Test get_sessions returns a populated GetSessionsResponse"""
         mock_service = AsyncMock()
-        mock_service.get_sessions.return_value = [
-            {
-                "session_id": "sess-001",
-                "agent_name": "network-agent",
-                "status": "COMPLETE",
-                "started_at": "2025-06-01T10:00:00Z",
-                "end_time": "2025-06-01T10:01:00Z",
-                "duration_ms": 60000,
-            }
-        ]
+        mock_service.get_sessions_page.return_value = ([_raw_session()], 1)
         ctx = _make_context(mock_service)
 
         result = await agent_session_manager.get_sessions(ctx, None)
 
         assert isinstance(result, GetSessionsResponse)
-        assert len(result.root) == 1
-        assert result.root[0].session_id == "sess-001"
-        assert result.root[0].agent_name == "network-agent"
-        assert result.root[0].status == "COMPLETE"
-        assert result.root[0].duration_ms == 60000
+        assert len(result.results) == 1
+        element = result.results[0]
+        assert element.session_id == "sess-001"
+        assert element.agent_name == "network-agent"
+        assert element.status == "COMPLETE"
+        assert element.duration_ms == 60000
+        assert element.total_input_tokens == 12345
+        assert element.total_output_tokens == 678
 
     @pytest.mark.asyncio
-    async def test_get_sessions_empty_returns_empty_response(self):
-        """Test get_sessions with no sessions returns an empty response"""
+    async def test_get_sessions_defaults(self):
+        """Test default limit/skip are passed and reflected in the response"""
         mock_service = AsyncMock()
-        mock_service.get_sessions.return_value = []
+        mock_service.get_sessions_page.return_value = ([], 0)
         ctx = _make_context(mock_service)
 
         result = await agent_session_manager.get_sessions(ctx, None)
 
-        assert isinstance(result, GetSessionsResponse)
-        assert len(result.root) == 0
+        mock_service.get_sessions_page.assert_called_once_with(limit=100, skip=0)
+        assert result.results == []
+        assert result.total == 0
+        assert result.returned == 0
+        assert result.limit == 100
+        assert result.skip == 0
+        assert result.has_more is False
 
     @pytest.mark.asyncio
-    async def test_get_sessions_surfaces_token_fields(self):
-        """Regression test: get_sessions must populate total_input_tokens/
-        total_output_tokens from the service layer, not silently drop them
-        (live-caught 2026-08-05 by integration-tester — the tool constructor
-        call omitted these kwargs despite SessionElement declaring them)"""
+    async def test_get_sessions_passes_limit_skip(self):
+        """Test limit and skip are passed to the paged service call"""
         mock_service = AsyncMock()
+        mock_service.get_sessions_page.return_value = ([], 0)
+        ctx = _make_context(mock_service)
+
+        await agent_session_manager.get_sessions(ctx, None, limit=25, skip=50)
+
+        mock_service.get_sessions_page.assert_called_once_with(limit=25, skip=50)
+
+    @pytest.mark.asyncio
+    async def test_get_sessions_empty_page_has_more_false(self):
+        """Test has_more is false when the platform returns an empty page even
+        though skip + 0 < total"""
+        mock_service = AsyncMock()
+        mock_service.get_sessions_page.return_value = ([], 10)
+        ctx = _make_context(mock_service)
+
+        result = await agent_session_manager.get_sessions(ctx, None, skip=0)
+
+        assert result.has_more is False
+        assert result.total == 10
+
+    @staticmethod
+    def _norm(session_id, started_at, agent="my-agent"):
+        return {
+            "session_id": session_id,
+            "agent_name": agent,
+            "status": "COMPLETE",
+            "started_at": started_at,
+            "end_time": None,
+            "duration_ms": None,
+            "total_input_tokens": None,
+            "total_output_tokens": None,
+        }
+
+    def _agent_ctx(self, count=5):
+        mock_service = AsyncMock()
+        # deliberately oldest-first to prove the tool sorts newest-first
         mock_service.get_sessions.return_value = [
-            {
-                "session_id": "sess-001",
-                "agent_name": "network-agent",
-                "status": "COMPLETE",
-                "started_at": "2025-06-01T10:00:00Z",
-                "end_time": "2025-06-01T10:01:00Z",
-                "duration_ms": 60000,
-                "total_input_tokens": 12345,
-                "total_output_tokens": 678,
-            }
+            self._norm(f"s{i}", f"2025-06-0{i + 1}T00:00:00Z") for i in range(count)
         ]
-        ctx = _make_context(mock_service)
-
-        result = await agent_session_manager.get_sessions(ctx, None)
-
-        assert result.root[0].total_input_tokens == 12345
-        assert result.root[0].total_output_tokens == 678
+        return mock_service, _make_context(mock_service)
 
     @pytest.mark.asyncio
-    async def test_get_sessions_missing_token_fields_default_none(self):
-        """Test get_sessions tolerates a service payload without token fields"""
-        mock_service = AsyncMock()
-        mock_service.get_sessions.return_value = [
-            {
-                "session_id": "sess-001",
-                "agent_name": "network-agent",
-                "status": "COMPLETE",
-                "started_at": "2025-06-01T10:00:00Z",
-                "end_time": "2025-06-01T10:01:00Z",
-                "duration_ms": 60000,
-            }
-        ]
-        ctx = _make_context(mock_service)
-
-        result = await agent_session_manager.get_sessions(ctx, None)
-
-        assert result.root[0].total_input_tokens is None
-        assert result.root[0].total_output_tokens is None
-
-    @pytest.mark.asyncio
-    async def test_get_sessions_passes_agent_name_filter(self):
-        """Test get_sessions passes agent_name through to the service"""
-        mock_service = AsyncMock()
-        mock_service.get_sessions.return_value = []
-        ctx = _make_context(mock_service)
+    async def test_agent_name_uses_client_side_path(self):
+        """Test agent_name calls the full-scan service, not the paged one"""
+        mock_service, ctx = self._agent_ctx()
 
         await agent_session_manager.get_sessions(ctx, agent_name="my-agent")
 
         mock_service.get_sessions.assert_called_once_with("my-agent")
+        mock_service.get_sessions_page.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_get_sessions_epoch_started_at_converted(self):
-        """Test get_sessions converts epoch integer started_at to ISO 8601"""
+    async def test_agent_name_slices_newest_first(self):
+        """Test results are sorted newest-first and sliced by skip/limit"""
+        _, ctx = self._agent_ctx(5)
+
+        result = await agent_session_manager.get_sessions(
+            ctx, agent_name="my-agent", limit=2, skip=1
+        )
+
+        assert [e.session_id for e in result.results] == ["s3", "s2"]
+        assert result.total == 5
+        assert result.returned == 2
+        assert result.limit == 2
+        assert result.skip == 1
+        assert result.has_more is True
+
+    @pytest.mark.asyncio
+    async def test_agent_name_last_page_has_more_false(self):
+        """Test has_more is false when the slice reaches the filtered total"""
+        _, ctx = self._agent_ctx(5)
+
+        result = await agent_session_manager.get_sessions(
+            ctx, agent_name="my-agent", limit=2, skip=3
+        )
+
+        assert [e.session_id for e in result.results] == ["s1", "s0"]
+        assert result.total == 5
+        assert result.has_more is False
+
+    @pytest.mark.asyncio
+    async def test_agent_name_skip_beyond_end(self):
+        """Test skip beyond the filtered set yields an empty page"""
+        _, ctx = self._agent_ctx(3)
+
+        result = await agent_session_manager.get_sessions(
+            ctx, agent_name="my-agent", limit=10, skip=50
+        )
+
+        assert result.results == []
+        assert result.total == 3
+        assert result.returned == 0
+        assert result.has_more is False
+
+    @pytest.mark.asyncio
+    async def test_agent_name_no_matches(self):
+        """Test no matching sessions yields an empty response"""
+        mock_service = AsyncMock()
+        mock_service.get_sessions.return_value = []
+        ctx = _make_context(mock_service)
+
+        result = await agent_session_manager.get_sessions(ctx, agent_name="nope")
+
+        assert result.results == []
+        assert result.total == 0
+        assert result.has_more is False
+
+    @pytest.mark.asyncio
+    async def test_agent_name_epoch_sorted_and_converted(self):
+        """Test epoch started_at values sort numerically and are converted"""
         mock_service = AsyncMock()
         mock_service.get_sessions.return_value = [
-            {
-                "session_id": "sess-001",
-                "agent_name": None,
-                "status": "COMPLETE",
-                "started_at": 1748779200000,
-                "end_time": None,
-                "duration_ms": None,
-            }
+            self._norm("old", 1000),
+            self._norm("new", 2000),
+            self._norm("none", None),
         ]
         ctx = _make_context(mock_service)
 
         with patch(
             "itential_mcp.tools.agent_session_manager.timeutils.epoch_to_timestamp"
         ) as mock_ts:
-            mock_ts.return_value = "2025-06-01T12:00:00Z"
+            mock_ts.side_effect = lambda v: f"ts-{v}"
+            result = await agent_session_manager.get_sessions(
+                ctx, agent_name="my-agent"
+            )
 
-            result = await agent_session_manager.get_sessions(ctx, None)
-
-        mock_ts.assert_called_with(1748779200000)
-        assert result.root[0].started_at == "2025-06-01T12:00:00Z"
+        assert [e.session_id for e in result.results] == ["new", "old", "none"]
+        assert result.results[0].started_at == "ts-2000"
 
     @pytest.mark.asyncio
-    async def test_get_sessions_epoch_end_time_converted(self):
-        """Test get_sessions converts epoch integer end_time to ISO 8601"""
+    async def test_get_sessions_has_more_true(self):
+        """Test has_more is true when more sessions remain"""
         mock_service = AsyncMock()
-        mock_service.get_sessions.return_value = [
-            {
-                "session_id": "sess-001",
-                "agent_name": None,
-                "status": "COMPLETE",
-                "started_at": None,
-                "end_time": 1748779260000,
-                "duration_ms": None,
-            }
-        ]
+        mock_service.get_sessions_page.return_value = (
+            [_raw_session("a"), _raw_session("b")],
+            10,
+        )
+        ctx = _make_context(mock_service)
+
+        result = await agent_session_manager.get_sessions(ctx, None, limit=2, skip=4)
+
+        assert result.total == 10
+        assert result.returned == 2
+        assert result.skip == 4
+        assert result.limit == 2
+        assert result.has_more is True
+
+    @pytest.mark.asyncio
+    async def test_get_sessions_has_more_false_on_last_page(self):
+        """Test has_more is false when the page reaches the total"""
+        mock_service = AsyncMock()
+        mock_service.get_sessions_page.return_value = (
+            [_raw_session("a"), _raw_session("b")],
+            6,
+        )
+        ctx = _make_context(mock_service)
+
+        result = await agent_session_manager.get_sessions(ctx, None, limit=2, skip=4)
+
+        assert result.has_more is False
+
+    @pytest.mark.asyncio
+    async def test_get_sessions_drops_session_without_id(self):
+        """Test rows with no sessionId are skipped, returned counts kept rows,
+        and has_more is computed from the raw item count"""
+        mock_service = AsyncMock()
+        mock_service.get_sessions_page.return_value = (
+            [_raw_session("a"), _raw_session(None), _raw_session("c")],
+            10,
+        )
+        ctx = _make_context(mock_service)
+
+        result = await agent_session_manager.get_sessions(ctx, None, limit=3)
+
+        assert [e.session_id for e in result.results] == ["a", "c"]
+        assert result.returned == 2
+        assert result.returned < result.limit
+        assert result.has_more is True
+
+    @pytest.mark.asyncio
+    async def test_get_sessions_has_more_uses_raw_count_when_row_dropped(self):
+        """Test a dropped row does not make has_more true on the last page"""
+        mock_service = AsyncMock()
+        mock_service.get_sessions_page.return_value = (
+            [_raw_session("a"), _raw_session(None)],
+            2,
+        )
+        ctx = _make_context(mock_service)
+
+        result = await agent_session_manager.get_sessions(ctx, None, limit=5)
+
+        assert result.returned == 1
+        assert result.has_more is False
+
+    @pytest.mark.asyncio
+    async def test_get_sessions_missing_token_fields_default_none(self):
+        """Test get_sessions tolerates a payload without token fields"""
+        mock_service = AsyncMock()
+        item = _raw_session()
+        del item["totalInputTokens"]
+        del item["totalOutputTokens"]
+        mock_service.get_sessions_page.return_value = ([item], 1)
+        ctx = _make_context(mock_service)
+
+        result = await agent_session_manager.get_sessions(ctx, None)
+
+        assert result.results[0].total_input_tokens is None
+        assert result.results[0].total_output_tokens is None
+
+    @pytest.mark.asyncio
+    async def test_get_sessions_missing_agent_snapshot(self):
+        """Test get_sessions tolerates a missing agentSnapshot"""
+        mock_service = AsyncMock()
+        item = _raw_session()
+        del item["agentSnapshot"]
+        mock_service.get_sessions_page.return_value = ([item], 1)
+        ctx = _make_context(mock_service)
+
+        result = await agent_session_manager.get_sessions(ctx, None)
+
+        assert result.results[0].agent_name is None
+
+    @pytest.mark.asyncio
+    async def test_get_sessions_epoch_timestamps_converted(self):
+        """Test get_sessions converts epoch integer timestamps to ISO 8601"""
+        mock_service = AsyncMock()
+        mock_service.get_sessions_page.return_value = (
+            [_raw_session(startedAt=1748779200000, endTime=1748779260000)],
+            1,
+        )
         ctx = _make_context(mock_service)
 
         with patch(
             "itential_mcp.tools.agent_session_manager.timeutils.epoch_to_timestamp"
         ) as mock_ts:
-            mock_ts.return_value = "2025-06-01T12:01:00Z"
+            mock_ts.side_effect = lambda v: f"ts-{v}"
 
             result = await agent_session_manager.get_sessions(ctx, None)
 
-        mock_ts.assert_called_with(1748779260000)
-        assert result.root[0].end_time == "2025-06-01T12:01:00Z"
+        assert result.results[0].started_at == "ts-1748779200000"
+        assert result.results[0].end_time == "ts-1748779260000"
 
     @pytest.mark.asyncio
     async def test_get_sessions_string_timestamps_not_converted(self):
         """Test get_sessions leaves string timestamps untouched"""
         mock_service = AsyncMock()
-        mock_service.get_sessions.return_value = [
-            {
-                "session_id": "sess-001",
-                "agent_name": None,
-                "status": "COMPLETE",
-                "started_at": "2025-06-01T10:00:00Z",
-                "end_time": "2025-06-01T10:01:00Z",
-                "duration_ms": 60000,
-            }
-        ]
+        mock_service.get_sessions_page.return_value = ([_raw_session()], 1)
         ctx = _make_context(mock_service)
 
         with patch(
@@ -250,8 +393,26 @@ class TestGetSessionsTool:
             result = await agent_session_manager.get_sessions(ctx, None)
 
         mock_ts.assert_not_called()
-        assert result.root[0].started_at == "2025-06-01T10:00:00Z"
-        assert result.root[0].end_time == "2025-06-01T10:01:00Z"
+        assert result.results[0].started_at == "2025-06-01T10:00:00Z"
+        assert result.results[0].end_time == "2025-06-01T10:01:00Z"
+
+    @pytest.mark.parametrize("kwargs", [{"limit": 0}, {"limit": 101}, {"skip": -1}])
+    def test_get_sessions_field_bounds(self, kwargs):
+        """Test the limit/skip Field bounds reject out-of-range values"""
+        from pydantic import TypeAdapter, ValidationError
+
+        hints = typing.get_type_hints(
+            agent_session_manager.get_sessions, include_extras=True
+        )
+        name, value = next(iter(kwargs.items()))
+        adapter = TypeAdapter(hints[name])
+
+        with pytest.raises(ValidationError):
+            adapter.validate_python(value)
+
+        # boundaries are accepted
+        adapter.validate_python(1 if name == "limit" else 0)
+        adapter.validate_python(100 if name == "limit" else 5)
 
 
 class TestDescribeSessionTool:
@@ -1842,7 +2003,8 @@ class TestEarlyFailedSessionsThroughService:
     async def test_get_sessions(self):
         result = await agent_session_manager.get_sessions(self._ctx(), None)
 
-        assert [e.session_id for e in result.root] == ["sess-001"]
+        assert [e.session_id for e in result.results] == ["sess-001"]
+        assert result.returned == 1
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("include_failed", [False, True])

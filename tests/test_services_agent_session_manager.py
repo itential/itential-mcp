@@ -41,6 +41,92 @@ class TestService:
         assert service.name == "agent_session_manager"
 
 
+class TestGetSessionsPage:
+    """Test the get_sessions_page method"""
+
+    @pytest.fixture
+    def mock_client(self):
+        return AsyncMock(spec=AsyncPlatform)
+
+    @pytest.fixture
+    def service(self, mock_client):
+        return Service(mock_client)
+
+    @staticmethod
+    def _response(data, total):
+        res = MagicMock()
+        res.json.return_value = {"data": data, "total": total}
+        return res
+
+    @pytest.mark.asyncio
+    async def test_sends_offset_limit_and_sort_defaults(self, service, mock_client):
+        """Test offset/limit/sortBy/sortOrder are sent and (data, total) returned"""
+        items = [{"sessionId": "s1"}]
+        mock_client.get.return_value = self._response(items, 7)
+
+        data, total = await service.get_sessions_page()
+
+        mock_client.get.assert_called_once_with(
+            "/agent-session-manager/sessions",
+            params={
+                "sortBy": "startedAt",
+                "sortOrder": "desc",
+                "limit": 100,
+                "offset": 0,
+            },
+        )
+        assert data == items
+        assert total == 7
+
+    @pytest.mark.asyncio
+    async def test_custom_paging_and_sort(self, service, mock_client):
+        """Test custom limit/skip/sort values are sent, skip as offset"""
+        mock_client.get.return_value = self._response([], 0)
+
+        await service.get_sessions_page(
+            limit=10, skip=30, sort_by="endedAt", sort_order="asc"
+        )
+
+        params = mock_client.get.call_args.kwargs["params"]
+        assert params["limit"] == 10
+        assert params["offset"] == 30
+        assert "skip" not in params
+        assert params["sortBy"] == "endedAt"
+        assert params["sortOrder"] == "asc"
+
+    @pytest.mark.asyncio
+    async def test_sends_no_filters_param(self, service, mock_client):
+        """Test no server-side filters param is ever sent"""
+        mock_client.get.return_value = self._response([], 0)
+
+        await service.get_sessions_page()
+
+        assert "filters" not in mock_client.get.call_args.kwargs["params"]
+
+    @pytest.mark.asyncio
+    async def test_agent_name_not_accepted(self, service):
+        """Test get_sessions_page no longer takes agent_name"""
+        with pytest.raises(TypeError):
+            await service.get_sessions_page(agent_name="x")
+
+    @pytest.mark.asyncio
+    async def test_single_request_only(self, service, mock_client):
+        """Test exactly one request is issued even when more pages exist"""
+        mock_client.get.return_value = self._response([{"sessionId": "s1"}], 500)
+
+        await service.get_sessions_page(limit=1)
+
+        assert mock_client.get.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_client_error_propagates(self, service, mock_client):
+        """Test client errors propagate"""
+        mock_client.get.side_effect = Exception("boom")
+
+        with pytest.raises(Exception, match="boom"):
+            await service.get_sessions_page()
+
+
 class TestGetSessions:
     """Test the get_sessions method"""
 

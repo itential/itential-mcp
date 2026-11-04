@@ -212,43 +212,53 @@ class TestSessionElement:
 class TestGetSessionsResponse:
     """Test the GetSessionsResponse model"""
 
-    def test_get_sessions_response_empty_default(self):
-        """Test GetSessionsResponse default factory produces empty list"""
-        response = GetSessionsResponse()
-
-        assert response.root == []
-        assert len(response.root) == 0
-
-    def test_get_sessions_response_empty_explicit(self):
-        """Test GetSessionsResponse with an explicitly empty list"""
-        response = GetSessionsResponse(root=[])
-
-        assert response.root == []
-
-    def test_get_sessions_response_with_elements(self):
-        """Test GetSessionsResponse with multiple session elements"""
+    def test_get_sessions_response_wrapper_shape(self):
+        """Test GetSessionsResponse exposes results and pagination metadata"""
         elem1 = SessionElement(session_id="sess-001", status="COMPLETE")
         elem2 = SessionElement(
-            session_id="sess-002",
-            agent_name="my-agent",
-            status="RUNNING",
+            session_id="sess-002", agent_name="my-agent", status="RUNNING"
         )
 
-        response = GetSessionsResponse(root=[elem1, elem2])
+        response = GetSessionsResponse(
+            results=[elem1, elem2],
+            total=5,
+            returned=2,
+            limit=2,
+            skip=0,
+            has_more=True,
+        )
 
-        assert len(response.root) == 2
-        assert response.root[0].session_id == "sess-001"
-        assert response.root[1].session_id == "sess-002"
-        assert response.root[1].agent_name == "my-agent"
+        assert len(response.results) == 2
+        assert response.results[1].agent_name == "my-agent"
+        assert response.total == 5
+        assert response.returned == 2
+        assert response.limit == 2
+        assert response.skip == 0
+        assert response.has_more is True
 
-    def test_get_sessions_response_is_iterable(self):
-        """Test GetSessionsResponse root list is iterable"""
-        elem = SessionElement(session_id="sess-001", status="COMPLETE")
-        response = GetSessionsResponse(root=[elem])
+    def test_get_sessions_response_empty_results(self):
+        """Test GetSessionsResponse with no results"""
+        response = GetSessionsResponse(
+            results=[], total=0, returned=0, limit=100, skip=0, has_more=False
+        )
 
-        sessions = list(response.root)
-        assert len(sessions) == 1
-        assert sessions[0].session_id == "sess-001"
+        assert response.results == []
+        assert response.has_more is False
+
+    def test_get_sessions_response_dump_keys(self):
+        """Test serialized keys match the documented object shape"""
+        response = GetSessionsResponse(
+            total=0, returned=0, limit=100, skip=0, has_more=False
+        )
+
+        assert set(response.model_dump()) == {
+            "results",
+            "total",
+            "returned",
+            "limit",
+            "skip",
+            "has_more",
+        }
 
 
 class TestDescribeSessionResponse:
