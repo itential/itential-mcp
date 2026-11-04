@@ -47,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is no longer sent. Clients reading `structuredContent` (modern MCP clients,
   FastMCP Client) are unaffected; a client reading only the text block would
   see empty results. `toon` format is unchanged and still returns its TOON
-  text block alongside `structuredContent`. (#TBD)
+  text block alongside `structuredContent`. (#441)
 
 ### Fixed
 - TaskMetricElement accepted a missing `_id` on input but declared a
