@@ -431,26 +431,88 @@ class SessionElement(BaseModel):
     ]
 
 
-class GetSessionsResponse(RootModel):
+class GetSessionsResponse(BaseModel):
     """
     Response model for agent session collection endpoints.
 
-    Wraps a list of SessionElement objects returned from the AgentSessionManager
-    when listing sessions, optionally filtered by agent name.
+    Wraps one page of SessionElement objects together with pagination
+    metadata so callers can tell whether more sessions exist and how to
+    request them.
 
     Attributes:
-        root: List of SessionElement objects with session metadata and status.
+        results: SessionElement objects in this page.
+        total: Total number of matching sessions on the platform.
+        returned: Number of sessions in this page.
+        limit: The page size that was requested.
+        skip: The number of sessions skipped before this page.
+        has_more: Whether more sessions exist beyond this page.
     """
 
-    root: Annotated[
+    results: Annotated[
         list[SessionElement],
         Field(
             description=inspect.cleandoc(
                 """
-                List of agent session objects with status and timing metadata
+                Agent session objects in this page with status and timing metadata
                 """
             ),
             default_factory=list,
+        ),
+    ]
+
+    total: Annotated[
+        int,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Total number of matching sessions available on the platform
+                """
+            ),
+        ),
+    ]
+
+    returned: Annotated[
+        int,
+        Field(
+            description=inspect.cleandoc(
+                """
+                Number of sessions in this page
+                """
+            ),
+        ),
+    ]
+
+    limit: Annotated[
+        int,
+        Field(
+            description=inspect.cleandoc(
+                """
+                The maximum number of sessions requested for this page
+                """
+            ),
+        ),
+    ]
+
+    skip: Annotated[
+        int,
+        Field(
+            description=inspect.cleandoc(
+                """
+                The number of sessions skipped before this page
+                """
+            ),
+        ),
+    ]
+
+    has_more: Annotated[
+        bool,
+        Field(
+            description=inspect.cleandoc(
+                """
+                True when more sessions exist beyond this page; request the
+                next page with skip = skip + limit
+                """
+            ),
         ),
     ]
 

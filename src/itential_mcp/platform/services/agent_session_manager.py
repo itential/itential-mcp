@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from itential_mcp.core import logging
 from itential_mcp.platform.services import ServiceBase
 
@@ -103,6 +105,45 @@ class Service(ServiceBase):
             results = [r for r in results if r["agent_name"] == agent_name]
 
         return results
+
+    async def get_sessions_page(
+        self,
+        *,
+        limit: int = 100,
+        skip: int = 0,
+        sort_by: str = "startedAt",
+        sort_order: str = "desc",
+    ) -> tuple[list[dict[str, Any]], int]:
+        """Retrieve a single bounded page of raw agent sessions.
+
+        Issues exactly one request. Items are returned as the platform sent
+        them (not normalized) so callers can compute pagination from the raw
+        item count.
+
+        Args:
+            limit (int): Maximum sessions to request (platform maximum 100).
+            skip (int): Number of sessions to skip (sent as `offset`).
+            sort_by (str): Field to sort by. Defaults to "startedAt".
+            sort_order (str): "asc" or "desc". Defaults to "desc".
+
+        Returns:
+            tuple[list[dict[str, Any]], int]: Raw session items and the total
+                number of matching sessions.
+
+        Raises:
+            Exception: If the request to the platform fails.
+        """
+        params: dict[str, Any] = {"sortBy": sort_by, "sortOrder": sort_order}
+
+        return await self._get_page(
+            "/agent-session-manager/sessions",
+            params=params,
+            limit=limit,
+            skip=skip,
+            data_key="data",
+            total_key="total",
+            skip_param="offset",
+        )
 
     async def get_session(self, session_id: str) -> dict:
         """Retrieve detailed information about a specific agent session.
